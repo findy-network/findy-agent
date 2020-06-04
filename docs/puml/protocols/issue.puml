@@ -1,0 +1,66 @@
+@startuml
+
+title Issuing PSM
+
+state "Waiting Start Cmd/Msg" as wstart
+
+[*] -> wstart
+wstart --> PSM: CredOfferCmd
+wstart --> PSM: CredProposeMsg
+wstart --> PSM: CredProposeCmd
+wstart --> PSM: CredOfferMsg
+
+state "IssuingProtocolRunning" as PSM {
+	state "Sending CredOffer" as sinvi
+	state "Waiting CredRequest" as wreq
+	state "Sending CredIssue" as sresp
+	state "Waiting CredAck" as wack
+
+	[*] --> sinvi: CredOfferCmd
+	[*] --> sinvi : CredProposeMsg
+	sinvi: do/send until http/200
+
+	sinvi --> wreq : http/200
+
+	wreq: exit/return http 200
+
+	wreq --> sresp: CregRequestMsg
+	sresp: do/send until http/200
+
+	sresp --> wack: http/200
+	wack --> [*]: CredAckMsg
+	note right: Issuer PSM
+
+	wack: exit/return http/200
+
+||
+	state "Sending CredPropose" as sprop
+	state "Waiting CredOffer" as woffer
+	state "Sending CredRequest" as sreq
+	state "Waiting CredIssue" as wresp
+	state "Sending CredAck" as sack
+
+	[*] --> sprop: CredProposeCmd
+	[*] --> sreq: CredOfferMsg
+
+	sprop -> woffer: http/200
+	sprop: do/send until http/200
+
+	woffer --> sreq: CredOfferMsg
+	woffer: exit/return http/200
+
+	sreq --> wresp : http/200
+	sreq: do/send until http/200
+
+	wresp: exit/return http 200
+
+	wresp --> sack: Response Msg received
+	sack: do/send until http/200
+	sack --> [*]: http/200
+	note left: Holder State Machine
+}
+
+
+PSM --> [*]
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+
+title Protocol State Machine
+
+state "Waiting Start Cmd/Msg" as wstart
+
+[*] -> wstart
+wstart --> PSM: InvitationCmd
+wstart --> PSM: ConnReqMsg
+
+state "ConnectionProtocolRunning" as PSM {
+
+	state "Sending ConnReq" as sreq
+	state "Waiting ConnResp" as wresp
+
+	'[*] -left-> sreq: InvitationCmd
+	[*] --> sreq: InvitationCmd
+
+	sreq --> wresp : http/200
+	sreq: do/send until http/200
+	
+	wresp: exit/return http 200
+
+	wresp --> [*]: ConnRespMsg
+
+||
+
+	state "Sending ConnResp" as sresp
+
+	[*] --> sresp: ConnReqMsg
+
+	sresp: do/send until http 200
+
+	sresp --> [*]: http/200
+}
+
+PSM --> [*]
+
+@enduml

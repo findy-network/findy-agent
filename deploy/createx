@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+	echo "Usage: ""$0"" <number> <wallet_key>"
+	exit 1
+fi
+
+if [ "$TEST_HOST" = "" ]; then
+	TEST_HOST="localhost:8080"
+fi
+
+findy-agent client \
+handshake \
+-cloudpw "$1" \
+-email "$1""@a.com" \
+-url "http://""$TEST_HOST" \
+-wallet "$1" \
+-pwd "$2"

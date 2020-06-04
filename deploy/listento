@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [[ "$2" = "" ]]; then
+	echo "Usage: ""$0"" <me_n> <listen_to_n>"
+        exit 1
+fi
+
+if [[ "$TEST_HOST" = "" ]]; then
+	TEST_HOST="localhost"
+fi
+
+if [[ "$TEST_PORT" = "" ]]; then
+	TEST_PORT=8080
+fi
+
+findy-agent client \
+listen \
+-cloudpw "h""$1" \
+-edgepw "h""$2""$1" \
+-url "ws://""$TEST_HOST"":""$TEST_PORT" \
+-wallet "c""$1" \
+-pwd "c""$1" \
+-name findyws \
+-hostaddr "$TEST_HOST" \
+-port "$TEST_PORT"

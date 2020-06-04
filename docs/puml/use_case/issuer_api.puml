@@ -1,0 +1,13 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor Agency
+
+rectangle "Issuer - Service Agent" {
+  Agency -- (get)
+  (get) <|-- (authorization)
+  (get) <|-- (attributes)
+  (get) <|- (values)
+}
+@enduml

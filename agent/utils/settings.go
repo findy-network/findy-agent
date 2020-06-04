@@ -1,0 +1,130 @@
+package utils
+
+import (
+	"path/filepath"
+	"time"
+
+	"github.com/golang/glog"
+)
+
+const HTTPReqTimeout = 1 * time.Minute
+
+var Settings = &Hub{}
+
+type Hub struct {
+	registerName string // name of the persistent register where agents and their wallets are stored
+
+	serviceName   string        // name of the this service which is used in URLs, etc.
+	serviceName2  string        // name of the this service which is used in URLs, etc.
+	hostAddr      string        // Ip host name of the server's host seen from internet
+	versionInfo   string        // Version number etc. in free format as a string
+	wsServiceName string        // web socket service name, mostly for the ws CLI clients to use
+	timeout       time.Duration // timeout setting for http requests and connections
+	exportPath    string        // wallet export path
+	cryptVerbose  bool          // obsolete, replaced by glog V-level system
+	localTestMode bool
+}
+
+func (h *Hub) RegisterName() string {
+	return h.registerName
+}
+
+func (h *Hub) SetRegisterName(registerName string) {
+	h.registerName = registerName
+}
+
+func (h *Hub) LocalTestMode() bool {
+	return h.localTestMode
+}
+
+func (h *Hub) SetLocalTestMode(localTestMode bool) {
+	h.localTestMode = localTestMode
+}
+
+// CryptVerbose returns verbose level of the crypt procedures
+func (h *Hub) CryptVerbose() bool {
+	return h.cryptVerbose
+}
+
+// SetCryptVerbose sets the verbose level of crypt procedures
+func (h *Hub) SetCryptVerbose(cryptVerbose bool) {
+	h.cryptVerbose = cryptVerbose
+}
+
+// SetTimeout sets the default timeout for HTTP and WS requests.
+func (h *Hub) SetTimeout(to time.Duration) {
+	h.timeout = to
+}
+
+// SetServiceName sets the service name of this agency. Service name is used in the
+// URLs and endpoint addresses.
+func (h *Hub) SetServiceName(n string) {
+	h.serviceName = n
+}
+
+func (h *Hub) SetServiceName2(n string) {
+	h.serviceName2 = n
+}
+
+// ServiceName2 returns service name to new worker EA based endpoints. This is
+// something that will be refactored later.
+func (h *Hub) ServiceName2() string {
+	return h.serviceName2
+}
+
+// SetWsName sets web socket service name. It's in the different URL than HTTP.
+func (h *Hub) SetWsName(n string) {
+	h.wsServiceName = n
+}
+
+// SetVersionInfo sets current version info of this agency. The info is shown in
+// the certain API calls like Ping.
+func (h *Hub) SetVersionInfo(info string) {
+	h.versionInfo = info
+}
+
+// SetHostAddr sets current host name of this service agency. The host name is
+// used in the URLs and endpoints.
+func (h *Hub) SetHostAddr(ipName string) {
+	h.hostAddr = ipName
+}
+
+// SetExportPath sets path for wallet exports.
+func (h *Hub) SetExportPath(exportPath string) {
+	h.exportPath = exportPath
+}
+
+func (h *Hub) HostAddr() string {
+	return h.hostAddr
+}
+
+func (h *Hub) ServiceName() string {
+	if h.serviceName == "" && glog.V(3) {
+		glog.Info("warning service name is empty")
+	}
+	return h.serviceName
+}
+
+func (h *Hub) VersionInfo() string {
+	return h.versionInfo
+}
+
+func (h *Hub) Timeout() time.Duration {
+	if h.timeout == 0 {
+		return HTTPReqTimeout
+	}
+	return h.timeout
+}
+
+func (h *Hub) WsServiceName() string {
+	return h.wsServiceName
+}
+
+func (h *Hub) ExportPath() string {
+	return h.exportPath
+}
+
+func (h *Hub) WalletExportPath(filename string) (exportPath, url string) {
+	return filepath.Join(h.exportPath, filename),
+		h.hostAddr + filepath.Join("/static", filename)
+}

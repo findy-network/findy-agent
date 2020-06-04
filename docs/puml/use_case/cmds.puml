@@ -1,0 +1,40 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+skinparam usecase {
+	'ArrowColor Black
+	BackgroundColor<< 1st >> Yellow
+	BackgroundColor<< 2nd >> Yellow
+	BackgroundColor<< 3rd >> Yellow
+	BackgroundColor<< 4th >> Yellow
+	'BorderColor<< Protocol >> Black
+	'ArrowColor<< Protocol >> Black
+}
+
+actor admin
+actor sa_admin
+
+admin <|- sa_admin
+rectangle "Findy Agency CLI - Commands" {
+	sa_admin -- (onboard)
+	sa_admin -- (agent)
+	sa_admin -- (connection)
+
+	(agent) <|-- (connect)
+	(agent) <|-- (ping)
+	(agent) <|-- (invite)
+	(ping) <|-- (ping sa)
+
+	(connection) <|-- (trust ping)
+	(connection) <|-- (basic msg)
+	(connection) <|-- (proof)
+	(connection) <|-- (issue)
+
+	(onboard) << 1st >>
+	(invite) << 2nd >>
+	(connect) << 3rd >>
+	(connection) << 4th >>
+}
+
+@enduml

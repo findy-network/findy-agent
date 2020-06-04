@@ -1,0 +1,18 @@
+@startuml
+title The verifier is a pickup automate
+
+== 1. invite ==
+Prover <- Verifier: read QR Invite
+
+== 2. connection / pairwise ==
+Prover -> Verifier: connection request
+Verifier -> Prover: connection response
+
+== 3. proof ==
+Verifier -> Prover: proof request
+Prover -> Verifier: proof presentation
+
+== 4. application logic ==
+Prover <-- Verifier: a pin code for the locker
+
+@enduml

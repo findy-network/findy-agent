@@ -1,0 +1,73 @@
+@startuml
+title Aries Connection Protocol - Receive ConnectionRequest
+
+Participant "Ext Agent\n(EA2)" as EA2 order 300
+
+box "Agency Service" #white
+	DataBase "LMDB" as Bolt order 100
+	Participant Agency order 10
+	Participant "Server" as http order 15
+	Participant "Connection Protocol" as proto order 16
+	Participant DIDDoc as doc order 17
+	Participant Connection as connObj order 18
+	Participant ConnectionResponse as PW order 20
+end box
+
+box "Indy SDK related" #lightyellow
+	Participant crypto order 190
+	Database "EA1 wallet" as wallet order 200
+end box
+
+Participant EA1 order 1
+
+EA2 -> http++ : ConnectionRequestRAW{}
+http -> Bolt++ : Save RAW
+return OK
+return Responce OK
+
+http ->> Agency: ConnectionRequestRAW{}
+activate Agency
+Agency -> crypto++ : unpack(ConnectionRequestRAW)
+return ConnectionRequest
+
+Agency ->> proto : ConnectionRequest{}
+deactivate Agency
+activate proto
+|||
+
+proto -> Bolt ++: get PSM(key{rcvrDID, threadID})
+return psm
+|||
+
+proto -> wallet ++ : new DID
+return did+verkey
+|||
+proto -> doc ** : create
+proto -> doc: set my DID
+activate doc
+proto -> doc: set my service
+note left: id, type, priority, recipients keys,\n service endpoints
+proto -> doc: commit
+deactivate doc
+proto -> Bolt ++ : save diddoc
+return ok
+|||
+
+proto -> connObj**: new(diddoc)
+connObj -> proto: ConnectionSignature{}
+|||
+
+proto -> PW ** : new(UUID, Type)
+proto -> PW : set attributes
+activate PW
+proto -> PW : set ConnectionSignature{}
+note left: remember connection~sign
+deactivate PW
+
+proto -> crypto ++ : pack(Request)
+return msg
+proto ->> EA2 : msg
+proto -> Bolt : update & save PSM state
+deactivate proto
+
+@enduml

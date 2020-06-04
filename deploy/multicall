@@ -1,0 +1,5 @@
+#!/bin/bash
+
+sleep "$WAIT"
+
+for i in $(seq 1 $2); do $1 "$PREFIX"_100"$i"; done

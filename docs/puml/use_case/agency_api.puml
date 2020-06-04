@@ -1,0 +1,11 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor EA
+
+rectangle "Agency Service API" {
+  EA -- (ping)
+  EA -- (ob-board/handshake)
+}
+@enduml

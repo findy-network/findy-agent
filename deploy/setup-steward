@@ -1,0 +1,7 @@
+#!/bin/bash
+
+findy-agent create steward \
+-wallet "sovrin_steward_wallet" \
+-pwd "steward_wallet_key" \
+-pool "von" \
+-seed "000000000000000000000000Steward1"

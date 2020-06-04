@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor admin
+
+admin -- (setup server)
+(setup server) .> (bring pool file) : include
+(bring steward wallet) .> (setup server) : extends
+(setup server) ..> (setup docker volume) : include
+(setup server) ..> (setup Salt) : include
+
+rectangle "Agency CLI - Server" {
+  admin -- (stop)
+  admin -- (start)
+  (reset register) .> (start) : extends
+}
+
+admin -- (edit register.json)
+@enduml

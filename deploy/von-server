@@ -1,0 +1,11 @@
+#!/bin/bash
+
+findy-agent server \
+-wallet "sovrin_steward_wallet" \
+-pwd "steward_wallet_key" \
+-pool "von" \
+-did "Th7MpTaRZVRYnPiabds81Y" \
+-register "../findy.json" \
+-hostaddr "172.16.0.10" \
+-cv
+

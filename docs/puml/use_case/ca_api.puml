@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+skinparam usecase {
+	'ArrowColor Black
+	BackgroundColor<< Protocol >> LightBlue
+	'BorderColor<< Protocol >> Black
+	'ArrowColor<< Protocol >> Black
+}
+
+actor EA
+
+rectangle "Agency Service - CA API" {
+  EA -- (task)
+  EA -- (reqister notify\n[ws/apns] )
+  (task) <|-- (ready)
+  (task) <|-- (status)
+  (task) <|-- (list)
+
+  EA -- (get)
+  (get) <|-- (wallet)
+  (get) <|-- (schema)
+  (get) <|-- (cred def)
+  EA -- (create)
+  (create) <|-- (cred def)
+  (create) <|-- (schema)
+
+  (basic message) << Protocol >>
+  (present proof) << Protocol >>
+  (issue credential) << Protocol >>
+  (trust ping) << Protocol >>
+
+
+  EA -- (start protocol)
+  EA -- (continue protocol)
+  (start protocol) ..> (trust ping)
+  (start protocol) ..> (issue credential)
+  (start protocol) ..> (present proof)
+  (start protocol) ..> (basic message)
+  EA -- (ping CA)
+  EA -- (ping SA)
+  (continue protocol) ..> (present proof)
+  (continue protocol) ..> (issue credential)
+}
+@enduml

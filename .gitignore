@@ -1,0 +1,38 @@
+.DS_Store
+.idea
+pool_transactions_genesis
+*.swp
+findy*.json
+findy-agent
+mywc
+deploy/.indy_client
+agent/utils/salt.go
+*.bolt
+memo
+.memo.swo
+*.bak
+turva
+tmp*.json
+testlogfile
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+.envrc
+.docker
+.secrets
+.vscode
+Dockerrun.aws.json
+s3.config
+
+__debug_bin

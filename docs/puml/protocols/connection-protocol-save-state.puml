@@ -1,0 +1,35 @@
+@startuml
+Title CA to CA Pairwise / Connection Protocol
+
+Database Bolt1 order 100
+participant CA1 order 200
+participant CA2 order 300
+Database Bolt2 order 400
+
+activate CA1
+Bolt1 <-- CA1: save(sending_CONN_INV)
+CA1 -> CA2 ++ : conn_INV
+CA2 --> Bolt2: save(recv_CONN_INV)
+return http 200
+Bolt1 <-- CA1: save(waiting_CONN_REQ)
+deactivate CA1
+...
+CA2 --> Bolt2: save(sending_CONN_REQ)
+activate CA2
+CA1 <- CA2 ++ : CONN_REQ
+Bolt1 <-- CA1 : save(recv_CONN_REQ)
+return http 200
+CA2 --> Bolt2 : save(waiting_CONN_RES)
+deactivate CA2
+...
+Bolt1 <-- CA1 : save(sending_CONN_RES)
+activate CA1
+CA1 -> CA2 ++ : CONN_RES
+CA2 --> Bolt2 : save(recv_CONN_RES)
+CA2 --> Bolt2 : save(is_READY)
+return http 200
+Bolt1 <-- CA1 : save(is_READY)
+deactivate CA1
+
+
+@enduml

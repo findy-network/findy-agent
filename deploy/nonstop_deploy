@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then
+        echo "Usage: ""$0"" <image-id>"
+        exit 1
+fi
+
+#scp -q -i ~/findy-agency.pem token ec2-user@findy:. &
+
+docker save $1 | gzip - -c | ssh -i ~/findy-agency.pem ec2-user@findy 'cat | gunzip - -c | docker load'
+
+#paplay /usr/share/sounds/ubuntu/stereo/phone-incoming-call.ogg

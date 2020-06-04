@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ "$3" = "" ]; then
+	echo "Usage: ""$0"" <me_n> <to_n> <msg>"
+        exit 1
+fi
+
+if [ "$TEST_HOST" = "" ]; then
+	TEST_HOST="localhost:8080"
+fi
+
+findy-agent client \
+send \
+-msg "$3" \
+-cloudpw "h""$1" \
+-edgepw "h""$1""$2" \
+-url "http://""$TEST_HOST" \
+-wallet "c""$1" \
+-pwd "c""$1"
