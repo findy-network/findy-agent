@@ -1,8 +1,6 @@
 package issuer
 
 import (
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -13,6 +11,8 @@ import (
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 // HandleCredentialPropose is protocol function for IssueCredentialPropose at Issuer.

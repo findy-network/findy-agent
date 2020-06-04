@@ -1,8 +1,8 @@
 package e2
 
 import (
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/lainio/err2"
 )
 
 type _PL struct{}

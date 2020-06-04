@@ -1,8 +1,8 @@
 package comm
 
 import (
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/golang/glog"
 )
 
 // processor is a controller of all of the protocol handlers. It keeps

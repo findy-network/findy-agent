@@ -4,14 +4,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 func NotifyEdge(did, plType, nonce, pwName string) {

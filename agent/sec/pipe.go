@@ -4,11 +4,11 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-wrapper-go/crypto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 // Pipe is secure way to transport data between DID connection. All agent to

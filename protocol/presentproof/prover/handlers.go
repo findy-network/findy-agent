@@ -2,7 +2,6 @@
 package prover
 
 import (
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -11,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
 	"github.com/findy-network/findy-agent/std/presentproof"
+	"github.com/lainio/err2"
 )
 
 // HandleRequestPresentation is a handler func at PROVER side.

@@ -6,9 +6,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/cmds"
 	findypool "github.com/findy-network/findy-wrapper-go/pool"
+	"github.com/lainio/err2"
 )
 
 type CreateCmd struct {

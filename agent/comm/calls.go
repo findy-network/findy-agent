@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 // errorMessageMaxLength is the maximum length of the response body we will

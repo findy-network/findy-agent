@@ -3,10 +3,10 @@ package ssi
 import (
 	"encoding/json"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
+	"github.com/lainio/err2"
 )
 
 type Schema struct {

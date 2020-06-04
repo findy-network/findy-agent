@@ -1,7 +1,6 @@
 package holder
 
 import (
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -12,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/lainio/err2"
 )
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder

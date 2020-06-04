@@ -1,8 +1,6 @@
 package pairwise
 
 import (
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -11,6 +9,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 type Saver interface {

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/agency"
@@ -23,6 +22,7 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/server"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
 )
 

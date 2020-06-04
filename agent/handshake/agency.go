@@ -11,8 +11,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -24,6 +22,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 var Hub *Agency

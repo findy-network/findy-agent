@@ -1,8 +1,8 @@
 package sa
 
 import (
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/golang/glog"
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/mesg"

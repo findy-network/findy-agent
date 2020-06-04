@@ -5,7 +5,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/mesg"
@@ -13,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/lainio/err2"
 )
 
 // timeout to wait a task before we stop. When real ledger is in use, this must

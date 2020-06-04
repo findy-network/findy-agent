@@ -3,8 +3,6 @@ package caapi
 import (
 	"fmt"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -21,6 +19,8 @@ import (
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/ledger"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 var caHandlers = map[string]comm.PlHandlerFunc{

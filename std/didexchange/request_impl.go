@@ -3,13 +3,13 @@ package didexchange
 import (
 	"encoding/gob"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 )
 
 var Creator = &Factor{}

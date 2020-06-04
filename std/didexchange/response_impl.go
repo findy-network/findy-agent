@@ -3,7 +3,6 @@ package didexchange
 import (
 	"encoding/gob"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -12,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 )
 
 var ResponseCreator = &ResponseFactor{}

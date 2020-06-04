@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -24,6 +22,8 @@ import (
 	stewardCmd "github.com/findy-network/findy-agent/cmds/steward"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 var versionInfo = "OP Tech Lab - Findy Agency v. " + utils.Version

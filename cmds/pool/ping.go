@@ -3,9 +3,9 @@ package pool
 import (
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/lainio/err2"
 )
 
 type PingCmd struct {

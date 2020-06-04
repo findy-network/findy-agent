@@ -5,9 +5,9 @@ import (
 	"os/user"
 	"path/filepath"
 
+	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/findy-network/findy-wrapper-go/wallet"
 )
 
 type Wallet struct {

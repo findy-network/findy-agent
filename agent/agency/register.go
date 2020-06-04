@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/golang/glog"
 )
 
 var Register utils.Reg // stores Agents already on-boarded, has Email as key

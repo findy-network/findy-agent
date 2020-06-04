@@ -3,10 +3,10 @@ package agent
 import (
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/lainio/err2"
 )
 
 type PingCmd struct {

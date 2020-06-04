@@ -1,8 +1,6 @@
 package prot
 
 import (
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -12,6 +10,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines

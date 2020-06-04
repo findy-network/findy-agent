@@ -3,9 +3,9 @@ package prot
 import (
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/findy-network/findy-agent/agent/psm"
 )
 
 type TaskStatus struct {

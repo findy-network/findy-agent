@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/endp"
@@ -17,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/lainio/err2"
 )
 
 type Cmd struct {

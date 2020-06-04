@@ -1,13 +1,13 @@
 package psm
 
 import (
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
+	"github.com/lainio/err2"
 )
 
 type IssueCredRep struct {

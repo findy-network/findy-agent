@@ -11,7 +11,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
@@ -20,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/pool"
+	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
 

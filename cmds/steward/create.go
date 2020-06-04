@@ -4,11 +4,11 @@ import (
 	"errors"
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/lainio/err2"
 )
 
 type CreateCmd struct {

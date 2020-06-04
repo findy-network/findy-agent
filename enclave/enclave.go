@@ -14,10 +14,10 @@ import (
 	"errors"
 	"os"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 const emailBucket = "email_bucket"

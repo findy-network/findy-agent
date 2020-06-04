@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
 	"github.com/findy-network/findy-agent/agent/cloud"
@@ -32,6 +30,8 @@ import (
 	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
 	"github.com/findy-network/findy-wrapper-go/config"
 	"github.com/findy-network/findy-wrapper-go/pool"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 type Cmd struct {

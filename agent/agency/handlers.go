@@ -11,12 +11,12 @@ package agency
 import (
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/txp"
+	"github.com/golang/glog"
 )
 
 const (

@@ -4,12 +4,12 @@ import (
 	"errors"
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/lainio/err2"
 )
 
 type PingCmd struct {

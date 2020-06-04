@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 const connectionSigExpTime = 10 * 60 * 60

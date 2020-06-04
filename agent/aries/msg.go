@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -15,6 +14,7 @@ import (
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 )
 
 var MsgCreator = MsgFactor{}

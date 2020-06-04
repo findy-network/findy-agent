@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -19,6 +17,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
 

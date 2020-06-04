@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -44,6 +43,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/lainio/err2"
 )
 
 // Client is a helper struct which implements an EA. The EA can be used to

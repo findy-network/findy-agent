@@ -1,14 +1,14 @@
 package psm
 
 import (
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 type PresentProofRep struct {

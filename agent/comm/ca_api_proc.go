@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/golang/glog"
 )
 
 type caAPIProcessor struct {

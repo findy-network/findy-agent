@@ -3,8 +3,6 @@ package connection
 import (
 	"errors"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -23,6 +21,8 @@ import (
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 type statusPairwise struct {

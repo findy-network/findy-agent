@@ -8,7 +8,6 @@ import (
 	"io"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -18,6 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/lainio/err2"
 )
 
 const walletKeyLength = 44

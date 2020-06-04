@@ -3,9 +3,9 @@ package ssi
 import (
 	"sync"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/lainio/err2"
 )
 
 type State uint32

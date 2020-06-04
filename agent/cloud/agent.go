@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -27,6 +25,8 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	indypw "github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
 

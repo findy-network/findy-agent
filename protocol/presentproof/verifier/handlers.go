@@ -2,8 +2,6 @@
 package verifier
 
 import (
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -16,6 +14,8 @@ import (
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 // HandleProposePresentation is a protocol handler function at VERIFIER side.

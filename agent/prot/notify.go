@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"os"
 
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 )

@@ -20,10 +20,10 @@ import (
 	"encoding/gob"
 	"encoding/json"
 
-	"github.com/golang/glog"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/golang/glog"
 )
 
 var PayloadCreator = PayloadFactor{}

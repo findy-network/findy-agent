@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/lainio/err2"
 	bolt "go.etcd.io/bbolt"
 )
 

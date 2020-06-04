@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/cloud"
@@ -22,6 +20,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
+	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
 

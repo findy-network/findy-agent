@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/agent/agency"
 	_ "github.com/findy-network/findy-agent/agent/caapi"
 	"github.com/findy-network/findy-agent/agent/handshake"
@@ -29,6 +28,7 @@ import (
 	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/lainio/err2"
 )
 
 //const testServiceName = agency.CAAPIPath

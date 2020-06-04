@@ -3,9 +3,9 @@ package key
 import (
 	"io"
 
-	"github.com/lainio/err2"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/lainio/err2"
 )
 
 type CreateCmd struct {
