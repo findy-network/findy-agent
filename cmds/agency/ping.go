@@ -5,11 +5,11 @@ import (
 	"io"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/agency"
-	"github.com/optechlab/findy-agent/agent/e2"
-	"github.com/optechlab/findy-agent/agent/endp"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/cmds"
 )
 
 type PingCmd struct {

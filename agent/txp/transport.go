@@ -1,10 +1,10 @@
 package txp
 
 import (
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/ssi"
 )
 
 // Transport is communication mechanism between agents

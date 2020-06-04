@@ -4,12 +4,12 @@ import (
 	"encoding/gob"
 
 	"github.com/golang/glog"
-	"github.com/optechlab/findy-agent/agent/aries"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/std/decorator"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 var Creator = &Factor{}

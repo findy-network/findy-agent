@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 /*

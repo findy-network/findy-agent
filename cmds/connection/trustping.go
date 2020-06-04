@@ -3,9 +3,9 @@ package connection
 import (
 	"io"
 
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/cmds"
 )
 
 type TrustPingCmd struct {

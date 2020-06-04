@@ -3,7 +3,7 @@ package common
 import (
 	"testing"
 
-	"github.com/optechlab/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/stretchr/testify/assert"
 )
 

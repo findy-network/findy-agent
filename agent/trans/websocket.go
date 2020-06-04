@@ -4,9 +4,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 
-	"github.com/optechlab/findy-agent/agent/agency"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/endp"
 
 	"golang.org/x/net/websocket"
 )

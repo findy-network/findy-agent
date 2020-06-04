@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func TestLedgerConnection_Open(t *testing.T) {

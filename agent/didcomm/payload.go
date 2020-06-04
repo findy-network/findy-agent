@@ -12,11 +12,11 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/std/decorator"
-	didexchange "github.com/optechlab/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/std/decorator"
+	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 )
 
 // CreatorGod creates payloads and messages by namespace string.

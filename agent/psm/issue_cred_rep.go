@@ -2,12 +2,12 @@ package psm
 
 import (
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/anoncreds"
-	"github.com/optechlab/findy-go/dto"
-	"github.com/optechlab/findy-go/ledger"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-wrapper-go/ledger"
 )
 
 type IssueCredRep struct {

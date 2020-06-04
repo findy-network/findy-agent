@@ -3,14 +3,14 @@ package pairwise
 import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/agency"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/did"
+	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/did"
 )
 
 type Saver interface {

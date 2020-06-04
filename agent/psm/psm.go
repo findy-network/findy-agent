@@ -5,10 +5,10 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 /*

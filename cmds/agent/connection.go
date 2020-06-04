@@ -3,11 +3,11 @@ package agent
 import (
 	"io"
 
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/cmds"
-	"github.com/optechlab/findy-agent/cmds/connection"
-	didexchange "github.com/optechlab/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/cmds/connection"
+	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 )
 
 type ConnectionCmd struct {

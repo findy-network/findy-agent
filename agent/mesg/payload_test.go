@@ -3,7 +3,7 @@ package mesg
 import (
 	"testing"
 
-	"github.com/optechlab/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/pltype"
 )
 
 func TestPayload_protocol(t *testing.T) {

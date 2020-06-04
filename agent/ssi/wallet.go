@@ -7,7 +7,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-go/wallet"
+	"github.com/findy-network/findy-wrapper-go/wallet"
 )
 
 type Wallet struct {

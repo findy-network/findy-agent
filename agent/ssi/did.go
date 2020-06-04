@@ -5,10 +5,10 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-go/did"
-	"github.com/optechlab/findy-go/dto"
-	"github.com/optechlab/findy-go/pairwise"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-wrapper-go/pairwise"
 )
 
 type DidComm interface {

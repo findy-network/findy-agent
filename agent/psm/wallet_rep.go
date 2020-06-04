@@ -1,8 +1,8 @@
 package psm
 
 import (
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 type WalletRep struct {

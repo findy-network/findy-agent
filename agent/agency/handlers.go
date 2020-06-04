@@ -12,11 +12,11 @@ import (
 	"sync"
 
 	"github.com/golang/glog"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/endp"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/txp"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/txp"
 )
 
 const (

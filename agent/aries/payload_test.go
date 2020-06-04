@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/optechlab/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
 )
 
 func TestPayload_ReadWriteJSON(t *testing.T) {

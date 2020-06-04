@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
 
-	"github.com/optechlab/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/stretchr/testify/assert"
 )
 

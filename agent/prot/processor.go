@@ -3,15 +3,15 @@ package prot
 import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/aries"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/e2"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-agent/std/decorator"
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/std/decorator"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines

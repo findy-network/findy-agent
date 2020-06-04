@@ -6,9 +6,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-go/crypto"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-wrapper-go/crypto"
 )
 
 // Pipe is secure way to transport data between DID connection. All agent to

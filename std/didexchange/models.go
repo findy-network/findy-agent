@@ -6,8 +6,8 @@
 package didexchange
 
 import (
-	"github.com/optechlab/findy-agent/std/decorator"
-	"github.com/optechlab/findy-agent/std/did"
+	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/findy-network/findy-agent/std/did"
 )
 
 // Request defines a2a DID exchange request

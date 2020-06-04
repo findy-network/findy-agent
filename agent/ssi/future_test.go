@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func fillChannel(cmd uint32, ch findy.Channel) {

@@ -2,9 +2,9 @@
 package preview
 
 import (
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/std/issuecredential"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/std/issuecredential"
 )
 
 // StoreCredPreview copies credential attribute data to rep object

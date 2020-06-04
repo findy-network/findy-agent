@@ -3,12 +3,12 @@ package comm
 import (
 	"sync"
 
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/endp"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/txp"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/txp"
 	"golang.org/x/net/websocket"
 )
 

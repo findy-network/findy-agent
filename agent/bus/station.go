@@ -3,7 +3,7 @@ package bus
 import (
 	"sync"
 
-	"github.com/optechlab/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/psm"
 )
 
 var ReadyStation = New()

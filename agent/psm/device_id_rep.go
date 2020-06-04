@@ -1,6 +1,6 @@
 package psm
 
-import "github.com/optechlab/findy-go/dto"
+import "github.com/findy-network/findy-wrapper-go/dto"
 
 type DeviceIDRep struct {
 	DID         string

@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/agency"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/endp"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/trans"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-go/did"
-	"github.com/optechlab/findy-go/pool"
+	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/trans"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/findy-network/findy-wrapper-go/pool"
 	"golang.org/x/net/websocket"
 )
 

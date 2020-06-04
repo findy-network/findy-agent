@@ -2,7 +2,7 @@ package e2
 
 import (
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/sec"
 )
 
 type _Pipe struct{}

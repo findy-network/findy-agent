@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,7 +3,7 @@ package steward
 import (
 	"testing"
 
-	"github.com/optechlab/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/cmds"
 	"github.com/stretchr/testify/assert"
 )
 

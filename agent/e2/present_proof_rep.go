@@ -2,7 +2,7 @@ package e2
 
 import (
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/psm"
 )
 
 type _PresentProofRep struct{}

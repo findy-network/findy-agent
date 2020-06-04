@@ -1,8 +1,8 @@
 package comm
 
 import (
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
 )
 
 type Packet struct {

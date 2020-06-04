@@ -3,9 +3,9 @@ package comm
 import (
 	"fmt"
 
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
 )
 
 var noEncryptedTypes = map[string]bool{

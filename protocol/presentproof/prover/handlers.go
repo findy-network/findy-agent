@@ -3,14 +3,14 @@ package prover
 
 import (
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/e2"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/prot"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/protocol/presentproof/preview"
-	"github.com/optechlab/findy-agent/std/presentproof"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
+	"github.com/findy-network/findy-agent/std/presentproof"
 )
 
 // HandleRequestPresentation is a handler func at PROVER side.

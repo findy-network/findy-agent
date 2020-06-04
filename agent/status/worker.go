@@ -5,11 +5,11 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/cloud"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/prot"
-	"github.com/optechlab/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/cloud"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
+	"github.com/findy-network/findy-agent/agent/psm"
 )
 
 type worker struct {

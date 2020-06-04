@@ -3,8 +3,8 @@ package didexchange
 import (
 	"strings"
 
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/service"
 )
 
 func (r *Response) Sign(pipe sec.Pipe) (err error) {

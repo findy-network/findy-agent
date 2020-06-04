@@ -5,12 +5,12 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/did"
-	"github.com/optechlab/findy-go/ledger"
-	"github.com/optechlab/findy-go/pairwise"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/findy-network/findy-wrapper-go/ledger"
+	"github.com/findy-network/findy-wrapper-go/pairwise"
 )
 
 type AgentType interface {

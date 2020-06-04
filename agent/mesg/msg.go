@@ -6,16 +6,16 @@ import (
 	"encoding/json"
 
 	"github.com/golang/glog"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-agent/std/decorator"
-	didexchange "github.com/optechlab/findy-agent/std/didexchange/invitation"
-	"github.com/optechlab/findy-go/crypto"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/std/decorator"
+	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-wrapper-go/crypto"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 var MsgCreator = MsgFactor{}

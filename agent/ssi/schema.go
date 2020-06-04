@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-go/anoncreds"
-	"github.com/optechlab/findy-go/dto"
-	"github.com/optechlab/findy-go/ledger"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-wrapper-go/ledger"
 )
 
 type Schema struct {

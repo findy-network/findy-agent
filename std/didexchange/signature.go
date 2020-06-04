@@ -9,9 +9,9 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/sec"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 const connectionSigExpTime = 10 * 60 * 60

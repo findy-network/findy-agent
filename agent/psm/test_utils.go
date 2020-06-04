@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"github.com/optechlab/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/comm"
 )
 
 const (

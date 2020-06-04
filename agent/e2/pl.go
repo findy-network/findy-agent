@@ -2,7 +2,7 @@ package e2
 
 import (
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
 )
 
 type _PL struct{}

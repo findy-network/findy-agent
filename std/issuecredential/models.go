@@ -11,7 +11,7 @@ all, and 3) IDs.
 // Package issuecredential is package for Aries protocol messages for same name.
 package issuecredential
 
-import "github.com/optechlab/findy-agent/std/decorator"
+import "github.com/findy-network/findy-agent/std/decorator"
 
 // Propose is an optional message sent by the potential Holder to the Issuer
 // to initiate the protocol or in response to a offer-credential message when the Holder

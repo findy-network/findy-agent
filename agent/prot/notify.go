@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/sideshow/apns2"
 	"github.com/sideshow/apns2/certificate"
 )

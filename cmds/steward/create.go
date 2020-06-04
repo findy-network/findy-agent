@@ -5,10 +5,10 @@ import (
 	"io"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/cloud"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/cmds"
-	"github.com/optechlab/findy-go/did"
+	"github.com/findy-network/findy-agent/agent/cloud"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/cmds"
+	"github.com/findy-network/findy-wrapper-go/did"
 )
 
 type CreateCmd struct {

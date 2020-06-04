@@ -1,7 +1,7 @@
 package psm
 
 import (
-	"github.com/optechlab/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/endp"
 )
 
 var (

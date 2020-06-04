@@ -3,12 +3,12 @@ package psm
 import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/anoncreds"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 type PresentProofRep struct {

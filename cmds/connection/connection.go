@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/cloud"
-	"github.com/optechlab/findy-agent/agent/e2"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/trans"
-	"github.com/optechlab/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/agent/cloud"
+	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/trans"
+	"github.com/findy-network/findy-agent/cmds"
 )
 
 // timeout to wait a task before we stop. When real ledger is in use, this must

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/optechlab/findy-agent/std/decorator"
+	"github.com/findy-network/findy-agent/std/decorator"
 )
 
 // todo: move this to right place later!

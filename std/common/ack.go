@@ -5,7 +5,7 @@ copied from aries-frakework-go
 
 package common
 
-import "github.com/optechlab/findy-agent/std/decorator"
+import "github.com/findy-network/findy-agent/std/decorator"
 
 // Ack acknowledgement struct
 type Ack struct {

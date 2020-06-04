@@ -3,12 +3,12 @@ package notification
 import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/prot"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/std/common"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/std/common"
 )
 
 // processor is a protocol processor for Basic Message protocol.

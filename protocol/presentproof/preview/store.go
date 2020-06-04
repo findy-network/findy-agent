@@ -2,10 +2,10 @@
 package preview
 
 import (
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-go/anoncreds"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func StoreProofData(requestData []byte, rep *psm.PresentProofRep) {

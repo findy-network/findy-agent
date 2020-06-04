@@ -4,8 +4,8 @@ import (
 	"sync"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-go"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 type State uint32

@@ -1,10 +1,10 @@
 package comm
 
 import (
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/std/didexchange"
-	"github.com/optechlab/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-agent/std/didexchange/invitation"
 )
 
 type Task struct {

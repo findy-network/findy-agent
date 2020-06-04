@@ -6,12 +6,12 @@ import (
 	"io"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/endp"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-agent/cmds"
-	didexchange "github.com/optechlab/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/cmds"
+	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 )
 
 type InvitationCmd struct {

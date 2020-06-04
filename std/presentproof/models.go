@@ -1,6 +1,6 @@
 package presentproof
 
-import "github.com/optechlab/findy-agent/std/decorator"
+import "github.com/findy-network/findy-agent/std/decorator"
 
 // MARK: Request
 

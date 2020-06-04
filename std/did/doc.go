@@ -3,8 +3,8 @@ package did
 import (
 	"time"
 
-	"github.com/optechlab/findy-agent/agent/service"
-	"github.com/optechlab/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
 )
 
 // Doc DID Document definition

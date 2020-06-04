@@ -5,9 +5,9 @@ import (
 	"io"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/cloud"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/agent/cloud"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/cmds"
 )
 
 type ExportCmd struct {

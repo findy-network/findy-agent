@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/cmds"
-	findypool "github.com/optechlab/findy-go/pool"
+	"github.com/findy-network/findy-agent/cmds"
+	findypool "github.com/findy-network/findy-wrapper-go/pool"
 )
 
 type CreateCmd struct {

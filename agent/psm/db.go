@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/endp"
 	bolt "go.etcd.io/bbolt"
 )
 

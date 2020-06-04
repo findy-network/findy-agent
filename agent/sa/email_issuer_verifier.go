@@ -2,13 +2,13 @@ package sa
 
 import (
 	"github.com/golang/glog"
-	"github.com/optechlab/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/agent/utils"
 
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/mesg"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-go/anoncreds"
-	"github.com/optechlab/findy-go/dto"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 const (

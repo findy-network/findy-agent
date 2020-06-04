@@ -5,16 +5,16 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/comm"
-	"github.com/optechlab/findy-agent/agent/didcomm"
-	"github.com/optechlab/findy-agent/agent/e2"
-	"github.com/optechlab/findy-agent/agent/pltype"
-	"github.com/optechlab/findy-agent/agent/prot"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/protocol/issuecredential/holder"
-	"github.com/optechlab/findy-agent/protocol/issuecredential/issuer"
-	"github.com/optechlab/findy-agent/std/issuecredential"
-	"github.com/optechlab/findy-go/anoncreds"
+	"github.com/findy-network/findy-agent/agent/comm"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/holder"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/issuer"
+	"github.com/findy-network/findy-agent/std/issuecredential"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
 )
 
 type statusIssueCredential struct {

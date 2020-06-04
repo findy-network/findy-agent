@@ -6,7 +6,7 @@
 package invitation
 
 import (
-	"github.com/optechlab/findy-agent/std/decorator"
+	"github.com/findy-network/findy-agent/std/decorator"
 )
 
 // Invitation model

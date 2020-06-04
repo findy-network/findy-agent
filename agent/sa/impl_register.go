@@ -1,6 +1,6 @@
 package sa
 
-import "github.com/optechlab/findy-agent/agent/didcomm"
+import "github.com/findy-network/findy-agent/agent/didcomm"
 
 var implReg = make(map[string]Handler)
 

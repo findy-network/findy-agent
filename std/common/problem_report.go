@@ -4,7 +4,7 @@ copied from aries-framework-go
 
 package common
 
-import "github.com/optechlab/findy-agent/std/decorator"
+import "github.com/findy-network/findy-agent/std/decorator"
 
 // ProblemReport problem report definition
 // TODO: need to provide full ProblemReport structure https://github.com/hyperledger/aries-framework-go/issues/912

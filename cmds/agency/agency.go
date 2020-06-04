@@ -12,26 +12,26 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-agent/agent/agency"
-	_ "github.com/optechlab/findy-agent/agent/caapi" // Command handlers need these
-	"github.com/optechlab/findy-agent/agent/cloud"
-	"github.com/optechlab/findy-agent/agent/handshake"
-	"github.com/optechlab/findy-agent/agent/psm"
-	"github.com/optechlab/findy-agent/agent/ssi"
-	"github.com/optechlab/findy-agent/agent/utils"
-	"github.com/optechlab/findy-agent/cmds"
-	"github.com/optechlab/findy-agent/enclave"
-	_ "github.com/optechlab/findy-agent/protocol/basicmessage" // protocols needed
-	_ "github.com/optechlab/findy-agent/protocol/connection"
-	_ "github.com/optechlab/findy-agent/protocol/issuecredential"
-	_ "github.com/optechlab/findy-agent/protocol/notification"
-	_ "github.com/optechlab/findy-agent/protocol/presentproof"
-	_ "github.com/optechlab/findy-agent/protocol/trustping"
-	"github.com/optechlab/findy-agent/server"
-	_ "github.com/optechlab/findy-go/addons/echo" // Install ledger plugins
-	_ "github.com/optechlab/findy-go/addons/mem"
-	"github.com/optechlab/findy-go/config"
-	"github.com/optechlab/findy-go/pool"
+	"github.com/findy-network/findy-agent/agent/agency"
+	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
+	"github.com/findy-network/findy-agent/agent/cloud"
+	"github.com/findy-network/findy-agent/agent/handshake"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/enclave"
+	_ "github.com/findy-network/findy-agent/protocol/basicmessage" // protocols needed
+	_ "github.com/findy-network/findy-agent/protocol/connection"
+	_ "github.com/findy-network/findy-agent/protocol/issuecredential"
+	_ "github.com/findy-network/findy-agent/protocol/notification"
+	_ "github.com/findy-network/findy-agent/protocol/presentproof"
+	_ "github.com/findy-network/findy-agent/protocol/trustping"
+	"github.com/findy-network/findy-agent/server"
+	_ "github.com/findy-network/findy-wrapper-go/addons/echo" // Install ledger plugins
+	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
+	"github.com/findy-network/findy-wrapper-go/config"
+	"github.com/findy-network/findy-wrapper-go/pool"
 )
 
 type Cmd struct {

@@ -1,7 +1,7 @@
 package ssi
 
 import (
-	indypool "github.com/optechlab/findy-go/pool"
+	indypool "github.com/findy-network/findy-wrapper-go/pool"
 )
 
 var pool Future
