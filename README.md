@@ -21,9 +21,9 @@ to the same ecosystem.
 _Please be noted that the whole Findy Agency is still under construction, and
 there are many [missing features](#missing-features-for-production) for full
 production use._ However, it's currently tested for an extended period of pilot
-and development use, where it's proven to be stable. The current focus of the
-project is to offer an efficient and straightforward multi-tenant agency with
-Aries compatible agent protocols.
+and development use, where it's proven to be stable and scalable. The current
+focus of the project is to offer an efficient and straightforward multi-tenant
+agency with Aries compatible agent protocols.
 
 You can use the agency and related Go packages roughly for four purposes:
 
@@ -35,7 +35,7 @@ protocols](#aries-protocol-state-machine) and interoperability.
 creating schemas and credential definitions into the wallet and writing them to
 the ledger. You don't need to use or install indy CLI.
 
-1. As an admin tool to monitor and maintain agency.
+1. As an admin tool to monitor and maintain an agency.
 
 1. As a framework to implement Service Agents like issuers and verifiers.
 
@@ -94,14 +94,13 @@ the client wallet and move it where the final SA will run.
     -email ${EXPORT_NAME}_server \
     -pwd ${EXPORT_KEY} \
     -url http://localhost:8080 \
-    -cloudpw ${EXPORT_NAME}_pairwise \
     -exportpath ${EXPORT_DIR}/${EXPORT_NAME}.export
 ```
 
 As you can see, that is a long command, and lots of information is needed. The
 suggestion is to write these commands to owns scripts. With the findy-agent
 repo, there are many scripts where to start. If more convenient CLI would be
-needed, please check the `findy-cli`.
+needed, please check the `findy-agent-cli`.
 
 ## Agency Network
 
@@ -140,12 +139,13 @@ the agency notifies the SA through indy's version of DIDComm.
 
 ## Command-line Interface
 
-findy-agent offers an extensive set of commands. In addition to that, many other
-tasks have to be taken care of before an agency setup can work. The following
-use case diagram shows most of the tasks and uses system boundaries to
-illustrate which of them are directly operable by findy-agent.
+findy-agent offers an extensive set of commands by itself, and more
+user-friendly command set exists in findy-agent-cli. In addition to that, many
+other tasks have to be taken care of before a full agency setup can work. The
+following use case diagram shows most of the tasks and uses system boundaries to
+illustrate which of them are directly operable by findy-agent or findy-agent-cli.
 
-![server.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/use_case/server.puml?token=ALTNNXE4TWJQ2W4U3BRFXPK6XVZMY)
+![server.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/server.puml?token=ALTNNXBZNG4AWKPJR5L3AO263EK2U)
 
 As the diagram shows the prerequisites to start the agency are:
  - A steward wallet is available, or you have seed to create steward wallet by
@@ -162,13 +162,13 @@ When an agency is running, you can operate with it findy-agent executable when
 you use it as a client mode. The following use case diagram shows the essential
 commands after the agency started.
 
-![client.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/use_case/client.puml?token=ALTNNXFD4Q7RUR6XIK3H7ZK6XVZQY)
+![client.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/client.puml?token=ALTNNXFY7CBEGDUQ35LCEPK63EKXM)
 
 The use case diagram is a summary of the creation commands available. With these
 commands, you can create all that is needed in the identity network from the
 command line.
 
-![create.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/use_case/create.puml?token=ALTNNXHQ7RCGTVQLADUILKC6XVZY6)
+![create.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/create.puml?token=ALTNNXBHTU4XY4PD5TNA5NC63EK6C)
 
 ## Agency Architecture
 
@@ -182,7 +182,7 @@ findy-agent is installed on a single node, and a wallet application is running
 on a mobile device. The picture includes an external agent that is running on
 another node (grey).
 
-![main-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/architecture/main_components.puml?token=ALTNNXBMN4Z4ABWNPLIH6VC6XVZJ6)
+![main-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/architecture/main_components.puml?token=ALTNNXBJAFKTEYOFVBYJP5263HQCI)
 
 The wallet app and the agency they both include a wallet for pairwise (blue).
 These wallets are used only for a pairwise between EA and CA. That makes it
@@ -195,7 +195,7 @@ importantly, it makes it possible to 24/7 presence in the cloud for each agent.
 The next image shows an almost identical setup, but the mobile agent is replaced
 with the service agent. It's below the agency in the picture.
 
-![sa-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/architecture/service_agent_components.puml?token=ALTNNXHMZMU6MOVIFMQSW326XVZCQ)
+![sa-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/architecture/service_agent_components.puml?token=ALTNNXGNQCC5CRZC6LAP4AK63HQFS)
 
 The issuer server could run on the same node as the agency, but the most common
 case is where it runs on its own. Typical SA includes application logic, and the
@@ -211,7 +211,7 @@ Receiving the message is done by first saving the incoming message to the
 database and after that returning OK. If the receiver cannot save the incoming
 message, it returns an error code.
 
-![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/protocols/connection-protocol-save-state.puml?token=ALTNNXBWOADLUQH564RIGH26X6P22)
+![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/connection-protocol-save-state.puml?token=ALTNNXFRZILUS4GSP7D7BTC63HQKS)
 
 The next UML diagram implements the connection protocol as a finite state
 machine, which has two top-level states: Waiting Start Cmd/Msg, and
@@ -227,7 +227,7 @@ connection response back and finalizes its state machine. The agent who started
 the connection protocol receives the connection response message and finalizes
 its state machine.
 
-![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/protocols/connection-psm-invitee.puml?token=ALTNNXGERLIOWFA4DKMJWWC6X6PXI)
+![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/connection-psm-invitee.puml?token=ALTNNXBXZ3TT27IN4NODCLS63HQOK)
 
 The previously seen ConnectionProtocolRunning state divides two separate state
 machines. The left sub-state machine is on when the agent is an inviter, and the
@@ -238,7 +238,7 @@ prover/verifier. However, most of the Aries protocols are more complicated
 because both of the roles can initiate the protocol, and depending on the
 message it sends, the role it gets for the protocol.
 
-![issue.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/optechlab/findy-agent/readme/docs/puml/protocols/issue.puml?token=ALTNNXHNWPZWKLL4FLMZZJ26X6PSE)
+![issue.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/issue.puml?token=ALTNNXCWFHM42FL75MONOU263HQRY)
 
 The issuing protocol state machine is waiting for a command to initiate the
 protocol or incoming message to connect already started protocol (Waiting Start
@@ -268,7 +268,8 @@ to understand from the state machine diagram.
 - [ ] Haven't been able to test with stable ledger.
 - [ ] Check if we have received the message already.
 - [ ] Check incoming order of the messages, same as declared in the PSM. 
-- [ ] libindy under pressure, wallet handles, etc.
+- [x] libindy under pressure, wallet handles, etc. Done: wallet pool, more tests
+      needed
 - [ ] API for browsing connections, credentials etc.
 - [ ] PSM archive logic, dedicated storage for persistent client data (see the
       PSM runner).
