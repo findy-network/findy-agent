@@ -145,7 +145,7 @@ other tasks have to be taken care of before a full agency setup can work. The
 following use case diagram shows most of the tasks and uses system boundaries to
 illustrate which of them are directly operable by findy-agent or findy-agent-cli.
 
-![server.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/server.puml?token=ALTNNXBZNG4AWKPJR5L3AO263EK2U)
+![server.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/server.puml?token=ALTNNXGBNKKTQBQVJUH4HXS63I4DW)
 
 As the diagram shows the prerequisites to start the agency are:
  - A steward wallet is available, or you have seed to create steward wallet by
