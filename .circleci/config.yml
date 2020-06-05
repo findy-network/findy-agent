@@ -39,6 +39,8 @@ workflows:
       - push:
           filters:
             tags:
-              only: /^v.*/
+              # skip deployment for now
+              #              only: /^v.*/
+              ignore: /.*/
             branches:
               ignore: /.*/

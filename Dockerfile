@@ -1,8 +1,8 @@
 FROM optechlab/indy-golang:1.14.2
 
-WORKDIR /go/src/github.com/optechlab/findy-agent
+WORKDIR /go/src/github.com/findy-network/findy-agent
 
-ADD .docker/findy-go /go/src/github.com/optechlab/findy-go
+ADD .docker/findy-wrapper-go /go/src/github.com/findy-network/findy-wrapper-go
 ADD . .
 
 RUN make deps && make install
