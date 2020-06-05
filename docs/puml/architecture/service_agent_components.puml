@@ -1,0 +1,56 @@
+@startuml
+
+
+node "Ext Agent" #lightgray {
+	 Aries - [Agent]
+}
+
+node "Agency Node" {
+	database "Cloud Wallet" #lightblue {
+		[EA pairwise]
+	}
+	package "Findy Go" {
+		[libindy]
+	}
+	package "Findy Agent" {
+		rest - [CA]
+		[ProtocolProcessor] - AriesIN
+		[ProtocolProcessor] -left-> [CA]
+	}
+	database "wEA Wallet" #Yellow {
+		[credDefs]
+	}
+	note left of [credDefs] #White
+		Schema and
+		CredDefs
+		are in the
+		Agency node.
+		CA offers
+		API for EA
+		to create
+		them.
+	end note
+}
+
+node "Issuer Server" as IS {
+	package "Service Agent" {
+		[indysdk] - lite
+		note left of [indysdk]
+			Currently needed only
+			for EA to CA pairwise.
+		end note
+		[EA] - SA_API
+		database "CA Wallet" as CAW #Lightblue {
+			[CA pairwise]
+		}
+	}
+}
+
+[EA] ..> rest: CA API calls
+[CA] ..> SA_API: schema, creads, etc.
+[EA pairwise] <..> [CA pairwise]: DIDComm pairwise
+
+AriesIN <.down. [Agent]
+[ProtocolProcessor] .up.> Aries
+
+@enduml

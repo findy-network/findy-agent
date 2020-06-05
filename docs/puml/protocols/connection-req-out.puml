@@ -1,0 +1,56 @@
+@startuml
+title Aries Connection Protocol - Send ConnectionRequest
+
+participant "Ext Agent\n(EA2)" as EA2 order 300
+
+box "Agency Service" #white
+	DataBase "LMDB" as Bolt order 100
+	participant Agency order 10
+	Participant "API proc" as API order 15
+	Participant "Connection Protocol" as proto order 16
+	Participant DIDDoc as doc order 17
+	Participant ConnectionRequest as PW order 20
+end box
+
+box "Indy SDK related" #lightyellow
+	Participant crypto order 190
+	Database "EA1 wallet" as wallet order 200
+end box
+
+Participant EA1 order 1
+
+EA1 -> Agency ++ : enter connection invite
+Agency -> API++ : start Task
+API ->> proto: start protocol
+activate proto
+API --> Agency: TASK ID
+deactivate API
+Agency --> EA1: TASK ID
+deactivate Agency
+
+proto -> Bolt: create PSM
+proto -> wallet ++ : new DID
+return did+verkey
+|||
+proto -> doc ** : create
+proto -> doc: set my DID
+activate doc
+proto -> doc: set my service
+note left: id, type, priority, recipients keys,\n service endpoints
+proto -> doc: commit
+deactivate doc
+proto -> Bolt ++ : save diddoc
+return ok
+|||
+proto -> PW ** : new(UUID, Type)
+proto -> PW : set attributes
+activate PW
+proto -> PW : set diddoc
+deactivate PW
+proto -> crypto ++ : pack(Request)
+return msg
+proto ->> EA2 : msg
+proto -> Bolt : update & save PSM state
+deactivate proto
+
+@enduml

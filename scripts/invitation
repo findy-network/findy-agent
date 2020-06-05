@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [[ "$2" = "" ]]; then
+        echo "Usage: ""$0"" <info> <invitation>"
+        exit 1
+fi
+
+if [[ "$TEST_HOST" = "" ]]; then
+	TEST_HOST="localhost"
+fi
+
+if [[ "$TEST_PORT" = "" ]]; then
+	TEST_PORT=8080
+fi
+
+findy-agent client pairwise \
+-cloudpw "$1" \
+-endp "$2" \
+-url "http://localhost:8080" \
+-wallet "$1" \
+-pwd "$1"

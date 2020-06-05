@@ -1,0 +1,17 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor admin
+actor issuer_admin
+
+rectangle "Agency CLI - client" {
+  admin -- (handshake)
+  admin -- (ping)
+  admin -- (pairwise/DID exchange)
+
+  issuer_admin -- (handshake and export)
+  issuer_admin -- (creat schema)
+  issuer_admin -- (creat cred def)
+}
+@enduml

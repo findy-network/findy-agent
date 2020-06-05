@@ -1,0 +1,59 @@
+@startuml
+
+
+node "Mobile Device" {
+	package "FindyWallet.app" {
+		database "CA Wallet"  #Lightblue {
+			[CA pairwise]
+		}
+		[indysdk]
+		[EA] - apns
+	}
+}
+
+node "Agency Node" {
+	database "Cloud Wallet"  #Lightblue {
+		[EA pairwise]
+	}
+	database "LMDB" {
+		[PSM]
+	}
+	package "Findy Agent" {
+		rest - [CA]
+		[wEA]
+		[CA] --> [wEA]
+		[ProtocolProcessor] - AriesIN
+		[ProtocolProcessor] -left-> [CA]
+		database "wEA Wallet" #Yellow {
+			[creds]
+		}
+'		note bottom of [creds]
+'			teste
+'		end note
+		[wEA] -> [creds]
+	}
+	[ProtocolProcessor] <--> [PSM]: protocol state
+	package "FindyGo" {
+		[libindy]
+	}
+}
+
+node "Ext Agency" #lightgray {
+	 Aries - [Agent]
+}
+
+[EA] .> rest: API calls
+apns <.. [CA]: notifications
+
+AriesIN <.. [Agent]
+[ProtocolProcessor] ..> Aries
+
+note right of [CA pairwise]
+	Communication between EA and CA
+	is going thru the old DIDComm. They
+	both store their DIDs to a wallet
+	which will not contain any other
+	DIDs or Creds.
+end note
+
+@enduml

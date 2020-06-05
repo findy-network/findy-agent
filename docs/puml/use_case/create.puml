@@ -1,0 +1,17 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor admin
+actor issuer_admin
+
+rectangle "Agency CLI - create" {
+  admin -- (create steward DID)
+  admin -- (create pool)
+  admin -- (ping pool/ledger)
+
+  issuer_admin -- (create schema)
+  issuer_admin -- (create cred def)
+  issuer_admin -- (create DID)
+}
+@enduml

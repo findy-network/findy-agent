@@ -1,0 +1,44 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: optechlab/indy-golang:1.14.2
+      - image: optechlab/indy-pool:1.12.1
+
+    working_directory: /go/src/github.com/findy-network/findy-agent
+
+    environment:
+      TEST_WORKDIR: /home/circleci/.test/
+
+    steps:
+      - checkout
+
+      - run: make deps
+      - run: make check
+      - run: make test
+
+  push:
+    docker:
+      - image: circleci/python:3.7.4
+
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run: sudo pip install awscli
+      - run: ./tools/push.sh
+      - run: ./tools/update.sh
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
+  push:
+    jobs:
+      - push:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
