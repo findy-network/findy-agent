@@ -1,6 +1,6 @@
 IMAGE_NAME?=findy-agent
 VERSION=$(shell cat ./VERSION)
-FINDY_GO_VERSION?=5e830f4a00e8
+FINDY_WRAPPER_GO_VERSION?=f011c1caaca
 
 deps:
 	go get -t ./...
@@ -17,7 +17,7 @@ vet:
 install:
 	@echo "Installing version $(VERSION)"
 	go install \
-		-ldflags "-X 'github.com/optechlab/findy-agent/agent/utils.Version=$(VERSION)'" \
+		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
 		./...
 
 shadow:
@@ -44,8 +44,8 @@ test_cov:
 check: check_fmt vet shadow
 
 image:
-	-git clone git@github.com:optechlab/findy-go.git .docker/findy-go
-	cd .docker/findy-go && git -c advice.detachedHead=false checkout $(FINDY_GO_VERSION)
+	-git clone git@github.com:findy-network/findy-wrapper-go.git .docker/findy-wrapper-go
+	cd .docker/findy-wrapper-go && git -c advice.detachedHead=false checkout $(FINDY_WRAPPER_GO_VERSION)
 	docker build -t $(IMAGE_NAME) .
 
 
