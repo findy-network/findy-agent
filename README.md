@@ -49,7 +49,7 @@ or build your agency with the sources which set the `utils.Salt` variable.
 
 1. [Install](https://github.com/hyperledger/indy-sdk/#installing-the-sdk) libindy-dev.
 2. Clone the repo: `git clone https://github.com/findy-network/findy-agent`
-3. Install needed Go pacakges: `make deps`. This installs _findy-go_ which is mandatory.
+3. Install needed Go pacakges: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
 4. Install the command line application: `make install`
 5. Verify the installation: `findy-agent -version`
 
@@ -145,7 +145,7 @@ other tasks have to be taken care of before a full agency setup can work. The
 following use case diagram shows most of the tasks and uses system boundaries to
 illustrate which of them are directly operable by findy-agent or findy-agent-cli.
 
-![server.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/server.puml?token=ALTNNXGBNKKTQBQVJUH4HXS63I4DW)
+![server.puml](http://www.plantuml.com/plantuml/svg/TL0nRiCm3DprYaCcUt0Ua250qQb0Dx-0aHXLjImP59qqAFBtsatGs2qw4UJTyN0N-QZG30d-JU62iDMGaobTI0C9zHZ8TkIvrKjap30b7zaOife5vFgGfcKUQ1fKXNKSK5XEBBLPhzZkKHqa98yXvuXZY5nZXv1i71sRErQKpoGEPugHzQPQ_zc1FvIJAtyC7boNRSU2KuvZltRvLz9Ir2NJ_CJ5vibpiXSylxwWGVkjtU3J08leceVwruL4vrCbF5bCzVamfRitSKCNOQxB8jc5Xs3xNdAglm00)
 
 As the diagram shows the prerequisites to start the agency are:
  - A steward wallet is available, or you have seed to create steward wallet by
@@ -162,13 +162,13 @@ When an agency is running, you can operate with it findy-agent executable when
 you use it as a client mode. The following use case diagram shows the essential
 commands after the agency started.
 
-![client.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/client.puml?token=ALTNNXFY7CBEGDUQ35LCEPK63EKXM)
+![client.puml](http://www.plantuml.com/plantuml/svg/VOr12i8m44NtESN7bLqKpo2w4Tnv01cIQJAqJKioeaMykv6Ag8YRuVFc_PcE6uKEIEA3mabYgp94ark98oNgCP9joVD1fuxnM5Fq7Hj3LeS4Sht4PvQSJvoECp8l5OkrvsWdRFOxrB2TSDG5hWPp6tMDPQ3eSg2MgmyyIlHVX2IT9VDgkzk2BxOKVIaLv_tzvqsKKDnnI5hz4crYKcGRkAS_GfaEZflAtEu0)
 
 The use case diagram is a summary of the creation commands available. With these
 commands, you can create all that is needed in the identity network from the
 command line.
 
-![create.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/use_case/create.puml?token=ALTNNXBHTU4XY4PD5TNA5NC63EK6C)
+![create.puml](http://www.plantuml.com/plantuml/svg/VOv12i8m44NtESMdAxieda7ifk3E0yYGJDDWceHqH8fuTsihOa6wck6zFyFtt0ea8ZlR2OpBhCN5e8Qh2uaozKYahsJvBADdl3K5wrafqX8poFGkV7Ot33VEbmMfRnJ5mNBG8uwd1XLqPX8ky51Ohb5Ls2qKW_2Tia7TrEK_dsBqQv5Si3FUUpQMSwac_TjazLvtt5EvaPY6WU5sApENUxu0)
 
 ## Agency Architecture
 
@@ -182,7 +182,7 @@ findy-agent is installed on a single node, and a wallet application is running
 on a mobile device. The picture includes an external agent that is running on
 another node (grey).
 
-![main-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/architecture/main_components.puml?token=ALTNNXBJAFKTEYOFVBYJP5263HQCI)
+![main-components](http://www.plantuml.com/plantuml/svg/TLB1Yjim43rRNp5a3psjFo0i2swIBO7D4cYXb923R4ziiOh6I4fTK_BldP6TD87TGsBBR-RDUs_ag4QORQWq5c69lqs5C_YhiavNxxfXwCMuUlYfhSMOwwvBO5Rhg4iT65uKC88pW8TNqxInj2TCHTcEmKuRtvk0U_vmvjzEw4BzBkVTgjZ38-ZE1SNWMIcNr1GDkcg0DpwaSJVJB9tgJmSot-syystdwsRvTTI-stxVZEYzHv2nSQpn628hOmD9PxyQdmlH-_WCrmzRJv4giloiC0JougVm1iFwxJFSuY4AnyZzNo5pNfqz_49hgPzYh3pMOGpmIvOvYWWbnKX7e0DSK4QooB9Htj3L87KNyI03BpJi_2DXJycPX3E7Re8XH2qizqbzeob9Qqevx--sj_eJOTmW-x2oeCRhGHh6P2JN5FLUUj8To9z14fz3iLr3nHa49PS2dl8yvJGNC-PWAXqDyMLHKyHZmKJsaQUScLEjYEFOlCX9gTrVpGKTZoStyKE9iKTqm0lH7EIYK9a9q91n3SJMd_WFWMmDo_LIEdFuqUAWCbvAoucHHwamNl00aK13dnQhihurLGkziLOiGKKkQkDup03SZ5vbgOSyB6HRkRfkyXy0)
 
 The wallet app and the agency they both include a wallet for pairwise (blue).
 These wallets are used only for a pairwise between EA and CA. That makes it
@@ -195,7 +195,7 @@ importantly, it makes it possible to 24/7 presence in the cloud for each agent.
 The next image shows an almost identical setup, but the mobile agent is replaced
 with the service agent. It's below the agency in the picture.
 
-![sa-components](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/architecture/service_agent_components.puml?token=ALTNNXGNQCC5CRZC6LAP4AK63HQFS)
+![sa-components](http://www.plantuml.com/plantuml/svg/TLFHQkim37sElqAahri-e8n1IBjBu386VIYNKePhAssOQnVRMM-vzD-lv6Hf0zjJefmZwUX8iKuZvCk_4SezsfZ3pBJxGznxUO5_8eFIjnZW4JO9tegh43QbSAmky4f1pamjezp9G4XbNATXBOt1iTxETCYiRBCiuIHRVsu3RaLs5Tb9gW-vfxoNrkeB_79vJpJjZZzyIngqCizZYAolAhUSzUPTTCePUYeCmVajWMc8-lKdt60J7v-74jVxKSwaTXpa3nhZphquvL4li0bzWdKHWQk0Q-26mMnzQ2CIVwKEU9GWhQQW6d1wbHwXjH0FJ1eSPNiBffLKhK7FlFAjXiPvM9OKH0VKGgR2b7aaCbeDBEAsdZg43Zsiq7-Ypq46g5SiVJIIaLRXlPKRzZRe3xRCzCAdattX16HLvprb6XACg563i-R2GAyJI6LrMpKFD8fCLy1DLkKxJKRntV7S32VDLRc6sU_90MMRQd91xF-LvqurY-8P-2Bct9nTKrGi25vjmlgESmXf8G_9I1qU0ACgnEGsuOdvasPpMDIBoXsFuoSXXjCYjdPdMup_oNU7LdGdAfaon7y0)
 
 The issuer server could run on the same node as the agency, but the most common
 case is where it runs on its own. Typical SA includes application logic, and the
@@ -211,7 +211,7 @@ Receiving the message is done by first saving the incoming message to the
 database and after that returning OK. If the receiver cannot save the incoming
 message, it returns an error code.
 
-![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/connection-protocol-save-state.puml?token=ALTNNXFRZILUS4GSP7D7BTC63HQKS)
+![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/svg/XP71IiGm48RlUOevMfRKRVMqBCBQzU2bhbO4JqjCWmPAKjAn-_ecSQjD6jXB8Fbcvl_8l4hi15GxGEtE0vFc90S1rr1ffGH7gHKSZ4RDTKV8dY7xO9RVwmuBqAOL1ehrclJCeEIoPmhjd8cK2rAUoOqbmR09t5f0cCqT6JgnWln6RIbrjmqCR1HNWr2jL9_7wgckZu_rMqPSABtp2QiLR81RVKU8Uw6M-91pkn5ydFKQWTz6mHTYxvLJYIScyI_nvU4v8wq8DFCyJsO5ghvnrbPwxotzzvxAGWbOYFj9iNYG3sdp9Z8llNaoBL9lid0nyPTFPMcDkNgJfMlaOE5k_tvX9SloQ1Va1m00)
 
 The next UML diagram implements the connection protocol as a finite state
 machine, which has two top-level states: Waiting Start Cmd/Msg, and
@@ -227,7 +227,7 @@ connection response back and finalizes its state machine. The agent who started
 the connection protocol receives the connection response message and finalizes
 its state machine.
 
-![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/connection-psm-invitee.puml?token=ALTNNXBXZ3TT27IN4NODCLS63HQOK)
+![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/svg/TP4nQyCm48LdwrSSMGg5uD1HGvTC7GmX7ZgK3iQ-9WBtb4Zdjj3ql_TqbetRaCdIUtVllfFPSO-m2vvzwtkekM64gccFZj2OgDVLS-FOqI6vWM7xtfLLFAoWYV0PasJCo_qhh1-dw_Y1jIYxkhBmH1zEafmdwRrojvveZsU9d0Sc2TlKC97j1o91qA7I1T_65BcuHkeINSxHaXZmF1TC-6D1F8taGKuISgVeFRwnyAIs_xY55jmmPOQeQciWM3Wodyg7pMQqB7I-Z4880x7h5wufjCC2VZak0_8GI6r8TdOrMG3i3A_FTBdSMZzl5_Ds2_OqQldKHTQk-J90_0ima_yOa_v0Diml)
 
 The previously seen ConnectionProtocolRunning state divides two separate state
 machines. The left sub-state machine is on when the agent is an inviter, and the
@@ -238,7 +238,7 @@ prover/verifier. However, most of the Aries protocols are more complicated
 because both of the roles can initiate the protocol, and depending on the
 message it sends, the role it gets for the protocol.
 
-![issue.puml](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/findy-network/findy-agent/dev/docs/puml/protocols/issue.puml?token=ALTNNXCWFHM42FL75MONOU263HQRY)
+![issue.puml](http://www.plantuml.com/plantuml/svg/VLJ1Ri8m33qtNs5nd8IATknXqiHbEw0XEEmmxL2r1YAw198K9etz-nmdfIsqEu7zulTiFuEJha9ujRQMQWlBzK88wtA7C7dFfVEvjSkDW_bNcIxiTWAvXRFrAI4-7ZvX-jI4uGEcb26Q3EO6oxVD1WsL3e9Bem_Q8h7-1uzLCxMlRVgDCr2PquMkLhLI57B3L0G_8eaFrwXAFzYLXTzOgKxo-gOPthzPuR56wyBe1e-3H5uT0v51UnWaUYxsWIGlza8al3uQYPLlzjK7uMvXIImgTMgf2wYLanNid3kaZxEPY3Wp-9Q9e8FvJ0RuBLrgqDL6CGWj69Jz72oyZHi8mY4zBkpn84nZTdGJ7pD0isNDGfXJQLgLaTkTo_WKqOHBJ0B5RQT1wN8PD28kALXne63GYjRti_PV1wcwnjkkyLscrlXpp_WkKMEylJ7UjtTtx2tCDlLlFU4Q_jLntztzHhfHPqB567NI40vls_jwREw93Eu9CzkuRhYOyNkBzsBPx1M5Mba4QWeC5YXFI4i9u8W6e-rfjNa-h0etT5SlkYff-ZMxiyYBdLGeVeKG_iyXbee_)
 
 The issuing protocol state machine is waiting for a command to initiate the
 protocol or incoming message to connect already started protocol (Waiting Start
