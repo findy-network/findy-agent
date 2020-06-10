@@ -34,6 +34,8 @@ const (
 	walletKey1  = "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp"
 	walletName2 = "unit_test_wallet2"
 	walletKey2  = "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp"
+	walletName3 = "unit_test_wallet3"
+	walletKey3  = "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp"
 	email1      = "email1"
 	email2      = "email2"
 )
@@ -202,7 +204,7 @@ func Test_Onboard(t *testing.T) {
 		Email:      email1,
 		AgencyAddr: httpTestServer.URL,
 	}
-	onboardCmd.Validate()
+	assert.NoError(t, onboardCmd.Validate())
 	_, err := onboardCmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 	onboardCmd = onboard.Cmd{
@@ -220,13 +222,32 @@ func Test_Onboard(t *testing.T) {
 
 func Test_Export(t *testing.T) {
 	exportPath := filepath.Join(walletExportPath, walletName1)
-	exportPath = filepath.Join(exportPath, ".export")
-	exportCmd := agent.ExportCmd{
+	exportPath = exportPath + ".export"
+	cmd := agent.ExportCmd{
 		Cmd:       wallet1Cmd,
 		Filename:  exportPath,
 		ExportKey: walletKey1,
 	}
-	_, err := exportCmd.Exec(os.Stdout)
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
+
+func Test_Import(t *testing.T) {
+	importFile := filepath.Join(walletExportPath, walletName1)
+	importFile = importFile + ".export"
+	cmd := agent.ImportCmd{
+		Cmd: cmds.Cmd{
+			WalletName: walletName3,
+			WalletKey:  walletKey3,
+		},
+		Filename: importFile,
+		Key:      walletKey1,
+	}
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 }
 
@@ -234,15 +255,20 @@ func Test_Ping(t *testing.T) {
 	cmd := agent.PingCmd{
 		Cmd: wallet1Cmd,
 	}
-	_, err := cmd.Exec(os.Stdout)
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 }
 
 func Test_Invite(t *testing.T) {
 	cmd := agent.InvitationCmd{
-		Cmd: wallet1Cmd,
+		Cmd:  wallet1Cmd,
+		Name: "test_label",
 	}
-	_, err := cmd.Exec(os.Stdout)
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 }
 
@@ -251,7 +277,9 @@ func Test_ConnectionCmd(t *testing.T) {
 		Cmd:        wallet1Cmd,
 		Invitation: invitation2,
 	}
-	_, err := cmd.Exec(os.Stdout)
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 }
 
@@ -323,7 +351,7 @@ func Test_CredDefCreate(t *testing.T) {
 func Test_CredDefGet(t *testing.T) {
 	cmd := creddef.GetCmd{
 		Cmd: wallet1Cmd,
-		ID:  schemaID,
+		ID:  credDefID,
 	}
 	assert.NoError(t, cmd.Validate())
 	r2, err := cmd.Exec(os.Stdout)
