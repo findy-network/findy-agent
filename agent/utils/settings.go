@@ -22,7 +22,18 @@ type Hub struct {
 	timeout       time.Duration // timeout setting for http requests and connections
 	exportPath    string        // wallet export path
 	cryptVerbose  bool          // obsolete, replaced by glog V-level system
-	localTestMode bool
+
+	localTestMode bool // tells if are running unit tests, will be obsolete
+
+	certFileForAPNS string // APNS certification file in P12
+}
+
+func (h *Hub) CertFileForAPNS() string {
+	return h.certFileForAPNS
+}
+
+func (h *Hub) SetCertFileForAPNS(certFileForAPNS string) {
+	h.certFileForAPNS = certFileForAPNS
 }
 
 func (h *Hub) RegisterName() string {

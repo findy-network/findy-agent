@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/apns"
 	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
@@ -55,6 +56,7 @@ type Cmd struct {
 	URL               string
 	VersionInfo       string
 	Salt              string
+	APNSP12CertFile   string
 }
 
 func (c *Cmd) Validate() error {
@@ -85,6 +87,13 @@ func (c *Cmd) Validate() error {
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
 	}
+	if c.APNSP12CertFile != "" {
+		_, err := os.Stat(c.APNSP12CertFile)
+		if os.IsNotExist(err) {
+			return errors.New("apns p12 cert file does not exist")
+		}
+	}
+
 	return nil
 }
 
@@ -104,6 +113,9 @@ func (c *Cmd) Setup() (err error) {
 	c.setRuntimeSettings()
 	server.BuildHostAddr(c.HostPort)
 
+	if c.APNSP12CertFile != "" {
+		err2.Check(apns.Init())
+	}
 	return nil
 }
 

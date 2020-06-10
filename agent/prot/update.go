@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/apns"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -22,7 +23,7 @@ func NotifyEdge(did, plType, nonce, pwName string) {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warning(err)
 			})
-			notifyNewTasks(did)
+			apns.Push(did)
 
 			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce: nonce,
