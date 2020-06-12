@@ -107,7 +107,6 @@ var loggingFlags string
 func init() {
 	startServerCmd.Uint64Var(&serverCmd.PoolProtocol, "proto", 2, "ledger protocol version")
 	startServerCmd.StringVar(&serverCmd.PoolName, "pool", "FINDY_MEM_LEDGER", "name of the pool config")
-	startServerCmd.StringVar(&serverCmd.PoolTxnName, "txn", "", "name of pool txn file from pool config will be created")
 	startServerCmd.StringVar(&serverCmd.WalletName, "wallet", "", "steward wallet name, password needed")
 	startServerCmd.StringVar(&serverCmd.WalletPwd, "pwd", "", "steward wallet password")
 	startServerCmd.StringVar(&serverCmd.StewardSeed, "seed", "", "seed for steward DID to be created to new steward wallet")
@@ -135,7 +134,6 @@ func init() {
 	createCmd.StringVar(&loggingFlags, "logging", "-logtostderr=true -v=2", "logging startup arguments")
 	createCmd.Uint64Var(&serverCmd.PoolProtocol, "proto", 2, "ledger protocol version")
 	createCmd.StringVar(&serverCmd.PoolName, "pool", "FINDY_MEM_LEDGER", "name of the pool config")
-	createCmd.StringVar(&serverCmd.PoolTxnName, "txn", "", "name of pool txn file from pool config will be created")
 	createCmd.StringVar(&serverCmd.WalletName, "wallet", "", "steward wallet name, password needed")
 	createCmd.StringVar(&serverCmd.WalletPwd, "pwd", "", "steward wallet KEY (generate)")
 	createCmd.StringVar(&serverCmd.StewardSeed, "seed", "", "seed for steward DID to be created to new steward wallet")
@@ -158,6 +156,7 @@ var (
 	schemaAttrs   = createCmd.String("sc_attrs", "[\"email\"]", "Schema attributes as JSON array")
 	schemaID      = createCmd.String("sc_id", "", "Schema ID got from schema creation")
 	credDefTag    = createCmd.String("cred_def_tag", "", "Schema credential definition tag")
+	poolTxnName   = createCmd.String("txn", "", "name of pool txn file from pool config will be created")
 )
 
 func normalMain() {
@@ -225,7 +224,7 @@ func runCreate() {
 		case cnx:
 			poolCreateCmd := pool.CreateCmd{
 				Name: serverCmd.PoolName,
-				Txn:  serverCmd.PoolTxnName,
+				Txn:  *poolTxnName,
 			}
 			err2.Check(poolCreateCmd.Validate())
 			err2.Try(poolCreateCmd.Exec(os.Stdout))
