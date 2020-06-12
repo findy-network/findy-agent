@@ -38,7 +38,6 @@ import (
 type Cmd struct {
 	PoolProtocol      uint64
 	PoolName          string
-	PoolTxnName       string
 	WalletName        string
 	WalletPwd         string
 	StewardSeed       string

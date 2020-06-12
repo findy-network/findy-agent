@@ -99,7 +99,6 @@ func setUp() {
 	agencyCmd = agency.Cmd{
 		PoolProtocol:      2,
 		PoolName:          "FINDY_MEM_LEDGER",
-		PoolTxnName:       "",
 		WalletName:        "sovrin_steward_wallet",
 		WalletPwd:         "steward_wallet_key",
 		StewardSeed:       "",
