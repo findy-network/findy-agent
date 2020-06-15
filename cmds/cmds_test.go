@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/findy-network/findy-agent/cmds/agent"
 	"github.com/findy-network/findy-agent/cmds/agent/creddef"
+	"github.com/findy-network/findy-agent/cmds/agent/sa"
 	"github.com/findy-network/findy-agent/cmds/agent/schema"
 	"github.com/findy-network/findy-agent/cmds/connection"
 	"github.com/findy-network/findy-agent/cmds/onboard"
@@ -253,6 +254,17 @@ func Test_Import(t *testing.T) {
 func Test_Ping(t *testing.T) {
 	cmd := agent.PingCmd{
 		Cmd: wallet1Cmd,
+	}
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
+
+func Test_EAImpl(t *testing.T) {
+	cmd := sa.EAImplCmd{
+		Cmd:      wallet1Cmd,
+		EAImplID: "email_issuer_verifier",
 	}
 	err := cmd.Validate()
 	assert.NoError(t, err)

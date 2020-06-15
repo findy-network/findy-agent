@@ -19,6 +19,14 @@ func (c *CreateCmd) Validate() error {
 	return nil
 }
 
+type CreateResult struct {
+	Key string
+}
+
+func (r CreateResult) JSON() ([]byte, error) {
+	return nil, nil
+}
+
 func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	err2.Return(&err)
 
@@ -27,5 +35,5 @@ func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	walletKey := result.Str1()
 	cmds.Fprintln(w, walletKey)
 
-	return r, nil
+	return &CreateResult{Key: walletKey}, nil
 }
