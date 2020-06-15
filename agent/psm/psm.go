@@ -1,8 +1,6 @@
 package psm
 
 import (
-	"log"
-
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -182,9 +180,12 @@ func (p *PSM) Timestamp() int64 {
 	return 0
 }
 
+// Next is for getting the upcoming protocol message type. For example, if we
+// are waiting a certain message from other end, we can check the message type
+// with this function.
 func (p *PSM) Next() string {
 	if state := p.lastState(); state != nil {
-		// todo: when pltype.Termination is the len() returns 0
+		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
 			return mesg.ProtocolMsgForType(state.PLInfo.Type)
 		}
@@ -193,14 +194,14 @@ func (p *PSM) Next() string {
 	return ""
 }
 
+// PendingUserAction returns true if we the PSM is waiting an user action msg.
 func (p *PSM) PendingUserAction() bool {
 	if state := p.lastState(); state != nil {
-		// todo: when pltype.Termination is the len() returns 0
+		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
 			return pltype.UserAction == mesg.ProtocolMsgForType(state.PLInfo.Type)
 		}
 	}
-	glog.Warning("no payload type found for PSM!", p.InDID)
 	return false
 }
 
@@ -221,10 +222,9 @@ func (p *PSM) lastState() *State {
 }
 
 func (p *PSM) Protocol() string {
-	if len(p.States) > 0 {
+	if len(p.States) > 0 && p.States[0].PLInfo.Type != "" {
 		return mesg.ProtocolForType(p.States[0].PLInfo.Type)
 	}
-	log.Println("WARNING: no protocol found for state!", p.InDID)
 	return ""
 }
 
