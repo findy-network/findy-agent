@@ -31,7 +31,9 @@ func (c EAImplCmd) Validate() error {
 }
 
 func (c EAImplCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	return c.Cmd.Exec(w, pltype.CAAttachEADefImpl, &mesg.Msg{},
+	return c.Cmd.Exec(w, pltype.CAAttachEADefImpl, &mesg.Msg{
+		ID: c.EAImplID,
+	},
 		func(_ cmds.Edge, im *mesg.Msg) (cmds.Result, error) {
 			defer err2.Annotate("EA impl", &err)
 			cmds.Fprintln(w, "EA implementation successfully set")
