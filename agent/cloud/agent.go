@@ -132,6 +132,7 @@ func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 
 // AttachSAImpl sets implementation ID for SA to use for Mocks.
 func (a *Agent) AttachSAImpl(implID string) {
+	glog.V(3).Infof("setting implementation (%s)", implID)
 	a.SAImplID = implID
 }
 
