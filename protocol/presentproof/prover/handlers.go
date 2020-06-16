@@ -31,10 +31,12 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		}
 		err2.Check(psm.AddPresentProofRep(rep))
 
+		sendNext, waitingNext := checkAutoPermission(packet)
+
 		return prot.ExecPSM(prot.Transition{
 			Packet:      packet,
-			SendNext:    pltype.Nothing, // See notification below
-			WaitingNext: pltype.PresentProofUserAction,
+			SendNext:    sendNext,
+			WaitingNext: waitingNext,
 			InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
 				defer err2.Annotate("proof req handler", &err)
 
@@ -47,6 +49,13 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 				rep.ProofReq = string(data)
 
 				preview.StoreProofData(data, rep)
+
+				pres, autoAccept := om.FieldObj().(*presentproof.Presentation)
+				if autoAccept {
+					err2.Check(rep.CreateProof(packet, repK.DID))
+					pres.PresentationAttaches = presentproof.NewPresentationAttach(
+						pltype.LibindyPresentationID, []byte(rep.Proof))
+				}
 
 				// Save the proof request to the Proof Rep
 				err2.Check(psm.AddPresentProofRep(rep))
@@ -76,7 +85,21 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 			pres.PresentationAttaches = presentproof.NewPresentationAttach(
 				pltype.LibindyPresentationID, []byte(rep.Proof))
 
+			// Save the proof request to the Proof Rep
+			err2.Check(psm.AddPresentProofRep(rep))
+
 			return true, nil
 		},
 	})
+}
+
+func checkAutoPermission(packet comm.Packet) (next string, wait string) {
+	if packet.Receiver.AutoPermission() {
+		next = pltype.PresentProofPresentation
+		wait = pltype.PresentProofACK
+	} else {
+		next = pltype.Nothing
+		wait = pltype.PresentProofUserAction
+	}
+	return next, wait
 }

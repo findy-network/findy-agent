@@ -68,6 +68,12 @@ type Agent struct {
 	pwNames  PipeMap          // Map of pairwise secure pipes by name
 }
 
+func (a *Agent) AutoPermission() bool {
+	autoPermissionOn := a.SAImplID == "permissive_sa"
+	glog.V(1).Infof("auto permission = %v", autoPermissionOn)
+	return autoPermissionOn
+}
+
 type SeedAgent struct {
 	RootDID string
 	CADID   string
@@ -130,10 +136,18 @@ func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 	return r.Err()
 }
 
-// AttachSAImpl sets implementation ID for SA to use for Mocks.
+// AttachSAImpl sets implementation ID for SA to use for mocks and auto accepts.
 func (a *Agent) AttachSAImpl(implID string) {
-	glog.V(3).Infof("setting implementation (%s)", implID)
+	glog.V(2).Infof("setting implementation (%s)", implID)
 	a.SAImplID = implID
+	if a.IsCA() {
+		wa, ok := a.WorkerEA().(*Agent)
+		if !ok {
+			glog.Errorf("type assert, wrong agent type for %s",
+				a.RootDid().Did())
+		}
+		wa.SAImplID = implID
+	}
 }
 
 // CallableEA tells if we can call EA from here, from Agency. It means that EA
