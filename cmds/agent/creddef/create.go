@@ -45,7 +45,7 @@ func (c CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 		Schema: &ssi.Schema{ID: c.SchemaID},
 		Info:   c.Tag,
 	}, func(_ cmds.Edge, im *mesg.Msg) (cmds.Result, error) {
-		cmds.Fprintln(w, "cred def id:", im.ID)
+		cmds.Fprintln(w, im.ID)
 		return &CreateResult{ID: im.ID}, nil
 	})
 }

@@ -22,7 +22,7 @@ func Exists(implID string) bool {
 func List() []string {
 	l := make([]string, len(implReg))
 	var i int
-	for id, _ := range implReg {
+	for id := range implReg {
 		l[i] = id
 		i++
 	}
