@@ -53,6 +53,10 @@ var (
 		WalletName: walletName1,
 		WalletKey:  walletKey1,
 	}
+	wallet2Cmd = cmds.Cmd{
+		WalletName: walletName2,
+		WalletKey:  walletKey2,
+	}
 )
 
 func TestMain(m *testing.M) {
@@ -264,9 +268,17 @@ func Test_Ping(t *testing.T) {
 func Test_EAImpl(t *testing.T) {
 	cmd := sa.EAImplCmd{
 		Cmd:      wallet1Cmd,
-		EAImplID: "email_issuer_verifier",
+		EAImplID: "permissive_sa",
 	}
 	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+	cmd = sa.EAImplCmd{
+		Cmd:      wallet2Cmd,
+		EAImplID: "permissive_sa",
+	}
+	err = cmd.Validate()
 	assert.NoError(t, err)
 	_, err = cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
@@ -370,4 +382,18 @@ func Test_CredDefGet(t *testing.T) {
 	schR2, ok := r2.(*creddef.GetResult)
 	assert.True(t, ok)
 	assert.NotEmpty(t, schR2.CredDef)
+}
+
+func Test_Issue(t *testing.T) {
+	cmd := connection.IssueCmd{
+		Cmd: connection.Cmd{
+			Cmd:  wallet1Cmd,
+			Name: invitation2.ID,
+		},
+		CredDefID:  credDefID,
+		Attributes: `[{"name":"email","value":"test@email.com"}]`,
+	}
+	assert.NoError(t, cmd.Validate())
+	_, err := cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
 }
