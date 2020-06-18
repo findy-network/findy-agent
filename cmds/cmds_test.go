@@ -397,3 +397,18 @@ func Test_Issue(t *testing.T) {
 	_, err := cmd.Exec(os.Stdout)
 	assert.NoError(t, err)
 }
+
+func Test_Proof(t *testing.T) {
+	attributes := fmt.Sprintf(`[{"name":"email","creddefid":"%s"}]`,
+		credDefID)
+	cmd := connection.ReqProofCmd{
+		Cmd: connection.Cmd{
+			Cmd:  wallet1Cmd,
+			Name: invitation2.ID,
+		},
+		Attributes: attributes,
+	}
+	assert.NoError(t, cmd.Validate())
+	_, err := cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
