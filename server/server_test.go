@@ -31,11 +31,6 @@ import (
 	"github.com/lainio/err2"
 )
 
-//const testServiceName = agency.CAAPIPath
-//const testServiceName2 = agency.ProtocolPath
-//
-//var mux *http.ServeMux
-
 var endpoint2 service.Addr
 var credDefID string
 
@@ -123,6 +118,9 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/worker/email*")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	if os.Getenv("TEST_WORKDIR") != "" {
+		removeFiles(home, "/wallets/*")
+	}
 	enclave.WipeSealedBox()
 	ssi.ClosePool()
 }
@@ -632,6 +630,82 @@ func TestClient_CredOffer(t *testing.T) {
 	}
 }
 
+func TestClient_CredOfferAutoPermissionOn(t *testing.T) {
+	type args struct {
+		wallet  ssi.Wallet
+		myEndp  string
+		verkey  string
+		name    string
+		emailCr string
+	}
+	tests := []struct {
+		name string
+		args args
+		want error
+	}{
+		{"1st",
+			args{
+				wallet: ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet2"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+				name:    "pw_name",
+				emailCr: "name2@site.net",
+			},
+			nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clientHolder := caclient.Client{
+				BaseAddress: "http://localhost:8080",
+				Wallet: &ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet1"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+			}
+			err := clientHolder.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("clientHolder.SetSAImpl() %v, want %v", got, tt.want)
+			}
+
+			client := caclient.Client{
+				BaseAddress: "http://localhost:8080",
+				Wallet:      &tt.args.wallet,
+			}
+
+			tID, err := client.CredOffer(tt.args.name, credDefID, tt.args.emailCr)
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.CredOffer() %v, want %v", got, tt.want)
+			}
+
+			time.Sleep(3 * time.Second)
+
+			for {
+				time.Sleep(1 * time.Second)
+				ready, err := client.TaskReady(tID)
+				if got := err; !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
+				}
+				if ready {
+					err := clientHolder.SetSAImpl("") // remove auto accept
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("clientHolder.SetSAImpl() %v, want %v", got, tt.want)
+					}
+					break
+				}
+			}
+
+		})
+	}
+}
+
 func TestClient_PwAndTrustPing(t *testing.T) {
 	type args struct {
 		wallet ssi.Wallet
@@ -876,6 +950,84 @@ func TestClient_ProofRequest(t *testing.T) {
 					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
 				}
 				if ready {
+					break
+				}
+			}
+
+		})
+	}
+}
+
+func TestClient_ProofRequestAutoPermissionOn(t *testing.T) {
+	type args struct {
+		wallet  ssi.Wallet
+		myEndp  string
+		verkey  string
+		name    string
+		emailCr string
+	}
+	tests := []struct {
+		name string
+		args args
+		want error
+	}{
+		{"1st",
+			args{
+				wallet: ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet2"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+				name:    "pw_name",
+				emailCr: "name@site.net",
+			},
+			nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			clientHolder := caclient.Client{
+				BaseAddress: "http://localhost:8080",
+				Wallet: &ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet1"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+			}
+			// set auto accept on
+			err := clientHolder.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("clientHolder.SetSAImpl() %v, want %v", got, tt.want)
+			}
+
+			client := caclient.Client{
+				BaseAddress: "http://localhost:8080",
+				Wallet:      &tt.args.wallet,
+			}
+
+			tID, err := client.ProofRequest(tt.args.name, "")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.ProofProp() %v, want %v", got, tt.want)
+			}
+
+			time.Sleep(2 * time.Second)
+
+			for {
+				time.Sleep(1 * time.Second)
+				ready, err := client.TaskReady(tID)
+				if got := err; !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
+				}
+				if ready {
+					err := clientHolder.SetSAImpl("")
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("clientHolder.SetSAImpl() %v, want %v", got, tt.want)
+					}
+
 					break
 				}
 			}

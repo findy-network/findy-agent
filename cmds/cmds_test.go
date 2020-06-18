@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/findy-network/findy-agent/cmds/agent"
 	"github.com/findy-network/findy-agent/cmds/agent/creddef"
+	"github.com/findy-network/findy-agent/cmds/agent/sa"
 	"github.com/findy-network/findy-agent/cmds/agent/schema"
 	"github.com/findy-network/findy-agent/cmds/connection"
 	"github.com/findy-network/findy-agent/cmds/onboard"
@@ -51,6 +52,10 @@ var (
 	wallet1Cmd = cmds.Cmd{
 		WalletName: walletName1,
 		WalletKey:  walletKey1,
+	}
+	wallet2Cmd = cmds.Cmd{
+		WalletName: walletName2,
+		WalletKey:  walletKey2,
 	}
 )
 
@@ -260,6 +265,25 @@ func Test_Ping(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func Test_EAImpl(t *testing.T) {
+	cmd := sa.EAImplCmd{
+		Cmd:      wallet1Cmd,
+		EAImplID: "permissive_sa",
+	}
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+	cmd = sa.EAImplCmd{
+		Cmd:      wallet2Cmd,
+		EAImplID: "permissive_sa",
+	}
+	err = cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
+
 func Test_Invite(t *testing.T) {
 	cmd := agent.InvitationCmd{
 		Cmd:  wallet1Cmd,
@@ -358,4 +382,33 @@ func Test_CredDefGet(t *testing.T) {
 	schR2, ok := r2.(*creddef.GetResult)
 	assert.True(t, ok)
 	assert.NotEmpty(t, schR2.CredDef)
+}
+
+func Test_Issue(t *testing.T) {
+	cmd := connection.IssueCmd{
+		Cmd: connection.Cmd{
+			Cmd:  wallet1Cmd,
+			Name: invitation2.ID,
+		},
+		CredDefID:  credDefID,
+		Attributes: `[{"name":"email","value":"test@email.com"}]`,
+	}
+	assert.NoError(t, cmd.Validate())
+	_, err := cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
+
+func Test_Proof(t *testing.T) {
+	attributes := fmt.Sprintf(`[{"name":"email","creddefid":"%s"}]`,
+		credDefID)
+	cmd := connection.ReqProofCmd{
+		Cmd: connection.Cmd{
+			Cmd:  wallet1Cmd,
+			Name: invitation2.ID,
+		},
+		Attributes: attributes,
+	}
+	assert.NoError(t, cmd.Validate())
+	_, err := cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
 }

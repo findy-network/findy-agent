@@ -36,10 +36,12 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		}
 		err2.Check(psm.AddIssueCredRep(rep))
 
+		sendNext, waitingNext := checkAutoPermission(packet)
+
 		return prot.ExecPSM(prot.Transition{
 			Packet:      packet,
-			SendNext:    pltype.Nothing,
-			WaitingNext: pltype.IssueCredentialUserAction,
+			SendNext:    sendNext,
+			WaitingNext: waitingNext,
 			InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
 				defer err2.Annotate("cred offer ask user", &err)
 
@@ -62,7 +64,16 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 				}
 				rep.Values = values
 				preview.StoreCredPreview(&offer.CredentialPreview, rep)
-				// Save the Rep with the offer
+
+				req, autoAccept := om.FieldObj().(*issuecredential.Request)
+				if autoAccept {
+					credRq := err2.String.Try(rep.BuildCredRequest(packet))
+					req.RequestsAttach =
+						issuecredential.NewRequestAttach([]byte(credRq))
+				}
+
+				// Save the rep with the offer and with the request if
+				// auto accept
 				err2.Check(psm.AddIssueCredRep(rep))
 
 				return true, nil
@@ -99,6 +110,17 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			return true, nil
 		},
 	})
+}
+
+func checkAutoPermission(packet comm.Packet) (next string, wait string) {
+	if packet.Receiver.AutoPermission() {
+		next = pltype.IssueCredentialRequest
+		wait = pltype.IssueCredentialIssue
+	} else {
+		next = pltype.Nothing
+		wait = pltype.IssueCredentialUserAction
+	}
+	return next, wait
 }
 
 // HandleCredentialIssue is protocol function for CRED_ISSUE for prover/holder.

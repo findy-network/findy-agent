@@ -38,6 +38,7 @@ type Receiver interface {
 	AddWs(msgDID string, ws *websocket.Conn)
 	SetCnxCh(cnxCh chan bool)
 	MasterSecret() (string, error)
+	AutoPermission() bool
 }
 
 type Receivers struct {

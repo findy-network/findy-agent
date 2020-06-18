@@ -41,7 +41,7 @@ func (c CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	return c.Cmd.Exec(w, pltype.CASchemaCreate, &mesg.Msg{
 		Schema: c.Schema,
 	}, func(_ cmds.Edge, im *mesg.Msg) (cmds.Result, error) {
-		cmds.Fprintln(w, "schema id:", im.ID)
+		cmds.Fprintln(w, im.Schema.ID)
 		return &CreateResult{Schema: im.Schema}, nil
 	})
 }
