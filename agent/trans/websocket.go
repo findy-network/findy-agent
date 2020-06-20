@@ -33,18 +33,21 @@ func WsListen(ws *websocket.Conn) {
 
 	a, ok := agency.Handler(cnxAddr.ReceiverDID()).(comm.Receiver)
 	if ok && a != nil {
-		//a := h.(*cloud.Agent)
 
 		// Please notice that ws connection to CA is only made thru our
 		// receiving Msg DID. We can have many ws connections to CA for many
 		// different EA2EA pairwise.
 		a.AddWs(a.WDID(), ws)
-		waitChan := make(chan bool)
-		a.SetCnxCh(waitChan)
 
-		_ = <-waitChan // =========== keep websocket Open until told not to =============
+		// empty listen loop
+		for {
+			var data []byte
+			if err := websocket.Message.Receive(ws, &data); err != nil {
+				glog.Warning("websocket is closed: ", err)
+				return
+			}
+		}
 
-		err2.Check(ws.Close())
 	} else {
 		err2.Check(ws.WriteClose(400))
 	}

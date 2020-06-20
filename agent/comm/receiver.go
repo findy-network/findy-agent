@@ -36,7 +36,6 @@ type Receiver interface {
 	CAEndp(wantWorker bool) (endP *endp.Addr)
 	AddPipeToPWMap(p sec.Pipe, name string)
 	AddWs(msgDID string, ws *websocket.Conn)
-	SetCnxCh(cnxCh chan bool)
 	MasterSecret() (string, error)
 	AutoPermission() bool
 }
