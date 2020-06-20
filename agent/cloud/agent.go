@@ -198,8 +198,10 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 // like apns, http, even rpc, etc.
 func (a *Agent) NotifyEA(plType string, im didcomm.MessageHdr) {
 	defer err2.CatchTrace(func(err error) {
-		glog.Warning("cannot notify EA anymore:", err)
-		glog.V(1).Info("---> cleaning up websocket for this DID:", a.WDID())
+		if glog.V(3) {
+			glog.Info("cannot notify EA anymore: ", err)
+			glog.Info("---> cleaning up websocket for this DID: ", a.WDID())
+		}
 		a.rmWs(a.WDID())
 	})
 

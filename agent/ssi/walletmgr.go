@@ -81,7 +81,7 @@ type WalletMap map[string]*Handle
 
 type Mgr struct {
 	opened WalletMap
-	l      sync.RWMutex // lock
+	l      sync.Mutex // lock
 }
 
 var Wallets = &Mgr{
@@ -89,12 +89,12 @@ var Wallets = &Mgr{
 }
 
 func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
-	m.l.RLock()
+	m.l.Lock()
+	defer m.l.Unlock()
+
 	if len(m.opened) < maxOpened {
-		m.l.RUnlock()
 		return m.openNewWallet(cfg)
 	}
-	m.l.RUnlock()
 
 	// we have exceeded max opened count, move the oldest of the opened once to
 	// closed one
@@ -108,8 +108,6 @@ func (m *Mgr) openNewWallet(cfg *Wallet) ManagedWallet {
 		f:   cfg.Open(),
 		cfg: cfg,
 	}
-	m.l.Lock()
-	defer m.l.Unlock()
 	m.opened[cfg.UniqueID()] = h
 	h.h = h.f.Int()
 	return h
@@ -117,21 +115,18 @@ func (m *Mgr) openNewWallet(cfg *Wallet) ManagedWallet {
 
 func (m *Mgr) reopen(h *Handle) int {
 	m.l.Lock()
+	defer m.l.Unlock()
+
 	if len(m.opened) < maxOpened {
 		m.opened[h.cfg.UniqueID()] = h
-		m.l.Unlock()
 		return h.Open()
 	}
-	m.l.Unlock()
 
 	return m.closeOldestAndReopen(h)
 }
 
 func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	oldest := m.findOldest()
-
-	m.l.Lock()
-	defer m.l.Unlock()
 	w := m.opened[oldest]
 	w.Close()
 	delete(m.opened, oldest)
@@ -142,12 +137,9 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 
 func (m *Mgr) closeOldestAndOpen(cfg *Wallet) ManagedWallet {
 	oldest := m.findOldest()
-
-	m.l.Lock()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
 	w.Close()
-	m.l.Unlock()
 
 	return m.openNewWallet(cfg)
 }
@@ -157,8 +149,6 @@ func (m *Mgr) findOldest() string {
 	var maxDelta int64
 	now := time.Now().UnixNano()
 
-	m.l.RLock()
-	defer m.l.RUnlock()
 	for s, wallet := range m.opened {
 		delta := now - wallet.timestamp()
 		if delta > maxDelta {

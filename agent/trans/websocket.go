@@ -43,7 +43,7 @@ func WsListen(ws *websocket.Conn) {
 		for {
 			var data []byte
 			if err := websocket.Message.Receive(ws, &data); err != nil {
-				glog.Warning("websocket is closed: ", err)
+				glog.V(3).Info("websocket is closed: ", err)
 				return
 			}
 		}
