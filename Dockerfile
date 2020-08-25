@@ -1,4 +1,4 @@
-FROM optechlab/indy-golang:1.14.2
+FROM optechlab/indy-golang:1.15.0
 
 WORKDIR /go/src/github.com/findy-network/findy-agent
 
@@ -7,7 +7,7 @@ ADD . .
 
 RUN make deps && make install
 
-FROM optechlab/indy-base:1.14.2
+FROM optechlab/indy-base:1.15.0
 
 ADD ./tools/start-server.sh /start-server.sh
 
