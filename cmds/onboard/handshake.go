@@ -23,6 +23,7 @@ type Cmd struct {
 	cmds.Cmd
 	Email      string
 	AgencyAddr string
+	Salt       string
 }
 
 type Result struct {
@@ -68,7 +69,7 @@ func (c Cmd) Exec(progress io.Writer) (r Result, err error) {
 	}()
 	defer edge.Agent.CloseWallet()
 
-	msg := mesg.NewHandshake(c.Email, pltype.HandshakePairwiseName)
+	msg := mesg.NewHandshake(mesg.ChecksumParams{Email: c.Email, Salt: c.Salt}, pltype.HandshakePairwiseName)
 
 	endpointAdd := &endp.Addr{
 		BasePath: c.AgencyAddr,

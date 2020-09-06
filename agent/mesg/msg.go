@@ -326,10 +326,15 @@ func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
 	return newMsgFrom(string(msgJSON))
 }
 
-func NewHandshake(email, pwName string) *Msg {
-	checkStr := checksum(email)
+type ChecksumParams struct {
+	Email string
+	Salt  string
+}
+
+func NewHandshake(csp ChecksumParams, pwName string) *Msg {
+	checkStr := checksum(csp)
 	msg := Msg{
-		Endpoint: email,
+		Endpoint: csp.Email,
 		Name:     pwName,
 		Info:     checkStr,
 		Nonce:    "0",
@@ -337,15 +342,20 @@ func NewHandshake(email, pwName string) *Msg {
 	return &msg
 }
 
-func checksum(email string) string {
-	salted := []byte(email + utils.Salt)
+func checksum(csp ChecksumParams) string {
+	var salted []byte
+	if csp.Salt != "" {
+		salted = []byte(csp.Email + csp.Salt)
+	} else {
+		salted = []byte(csp.Email + utils.Salt)
+	}
 	checkSum := sha256.Sum256(salted)
 	checkStr := base64.StdEncoding.EncodeToString(checkSum[:])
 	return checkStr
 }
 
 func (m *Msg) ChecksumOK() bool {
-	return m.Info == checksum(m.Endpoint)
+	return m.Info == checksum(ChecksumParams{Email: m.Endpoint})
 }
 
 func (m *Msg) anonDecrypt(wallet int, did *ssi.DID) *Msg {
