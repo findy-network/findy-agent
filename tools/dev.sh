@@ -28,7 +28,7 @@ run() {
   $AGENT server \
     -pool findy \
     -wallet sovrin_steward_wallet \
-    -pwd steward_wallet_key \
+    -pwd 9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     -did Th7MpTaRZVRYnPiabds81Y
 }
 
@@ -53,7 +53,7 @@ scratch() {
     -pool findy \
     -seed 000000000000000000000000Steward1 \
     -wallet sovrin_steward_wallet \
-    -pwd steward_wallet_key
+    -pwd 9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
 
   run
 }
@@ -85,7 +85,6 @@ onboard() {
     -email ${EXPORT_NAME}_server \
     -pwd ${EXPORT_KEY} \
     -url http://localhost:8080 \
-    -cloudpw ${EXPORT_NAME}_pairwise \
     -exportpath ${EXPORT_DIR}/${EXPORT_NAME}.export
 }
 

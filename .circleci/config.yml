@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: optechlab/indy-golang:1.14.2
+      - image: optechlab/indy-golang:1.15.0
       - image: optechlab/indy-pool:1.12.1
 
     working_directory: /go/src/github.com/findy-network/findy-agent
