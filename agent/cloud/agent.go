@@ -60,7 +60,6 @@ type Agent struct {
 	ca       *Agent           // if this is worker agent (see prev) this is the CA
 	callerPw *pairwise.Caller // the helper class for binding DID pairwise, this we are Caller
 	calleePw *pairwise.Callee // the helper class for binding DID pairwise, this we are Callee
-	cnxCh    chan bool        // Channel for triggering to shutdown the WebSocket communication
 	cnxes    cnxMap           // web socket connections by DID
 	cnxesLK  sync.Mutex       // web socket map's lock
 	pwLock   sync.Mutex       // pw map lock, see below:
@@ -104,10 +103,6 @@ func NewSeedAgent(rootDid, caDid string, cfg *ssi.Wallet) *SeedAgent {
 		CADID:   caDid,
 		Wallet:  cfg,
 	}
-}
-
-func (a *Agent) SetCnxCh(cnxCh chan bool) {
-	a.cnxCh = cnxCh
 }
 
 type PipeMap map[string]sec.Pipe
@@ -203,8 +198,10 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 // like apns, http, even rpc, etc.
 func (a *Agent) NotifyEA(plType string, im didcomm.MessageHdr) {
 	defer err2.CatchTrace(func(err error) {
-		glog.Warning("cannot notify EA anymore:", err)
-		glog.V(1).Info("---> cleaning up ws socked for this DID:", a.WDID())
+		if glog.V(3) {
+			glog.Info("cannot notify EA anymore: ", err)
+			glog.Info("---> cleaning up websocket for this DID: ", a.WDID())
+		}
 		a.rmWs(a.WDID())
 	})
 

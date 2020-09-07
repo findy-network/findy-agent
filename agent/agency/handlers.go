@@ -90,45 +90,62 @@ func Handler(endpoint Endpoint) (handler comm.Handler) {
 	return handler
 }
 
-// IsHandlerInThisAgency checks prepares the endpoint. If the valid endpoint
-// doesn't yet have a CA, it will be constructed in the handlerFromSeed()
+// IsHandlerInThisAgency checks and prepares the endpoint. If the valid endpoint
+// doesn't yet have a CA, it will be constructed from a seed. This is called
+// intensively during the agency's run. It is somewhat optimized with read locks
+// and lazy fetch.
 func IsHandlerInThisAgency(endpoint *endp.Addr) (is bool) {
 	if endp.IsInEndpoints(endpoint.PlRcvr) {
 		return true
+	}
+
+	// Checking must start from seeds. If an EA contacts same time from 2
+	// different client, only other can build a handler. Still both must get
+	// the handler. Other one builds it and other one gets it from the handlers
+	// map.
+
+	seedHandlers.RLock()
+	_, isStillSeed := seedHandlers.m[endpoint.PlRcvr]
+	seedHandlers.RUnlock()
+	if isStillSeed {
+		buildHandlerFromSeed(endpoint)
 	}
 
 	handlers.RLock()
 	_, found := handlers.m[endpoint.PlRcvr]
 	handlers.RUnlock()
 
-	if !found {
-		found = handlerFromSeed(endpoint)
-	}
 	return found
 }
 
-// handlerFromSeed try to find the seed handler for the endpoint and moves the
+// buildHandlerFromSeed gets the seed handler for the endpoint and moves the
 // seed to active handlers by constructing a CA for the endpoint if seed handler
 // is available.
-func handlerFromSeed(endp *endp.Addr) bool {
-	seedHandlers.RLock()
+func buildHandlerFromSeed(endp *endp.Addr) {
+	seedHandlers.Lock()
+	defer seedHandlers.Unlock()
+
+	// Try to get seed with the write lock on. If cannot get it it means other
+	// instance of us got it already and it will build the handler.
 	seed, ok := seedHandlers.m[endp.PlRcvr]
-	seedHandlers.RUnlock()
+	if !ok {
+		glog.V(3).Info("cannot find seed for endpoint anymore: ",
+			endp.PlRcvr)
+		return
+	}
 
 	h, err := seed.Prepare()
-	if !ok || err != nil {
-		glog.V(3).Info("cannot find seed for endpoint: ",
+	if err != nil {
+		glog.V(3).Info("cannot build a handler from a seed: ",
 			endp.PlRcvr)
-		return false
+		return
 	}
-	seedHandlers.Lock()
 	delete(seedHandlers.m, endp.PlRcvr)
-	seedHandlers.Unlock()
 
 	handlers.Lock()
 	defer handlers.Unlock()
 	handlers.m[endp.PlRcvr] = h
-	return true
+	return
 }
 
 // RcvrCA returns the CA which is the actual PL receiver and Handler.
