@@ -56,7 +56,7 @@ func setUp() {
 
 	handshake.RegisterGobs()
 
-	sw := ssi.NewWalletCfg("sovrin_steward_wallet", "steward_wallet_key")
+	sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 
 	exportPath := os.Getenv("TEST_WORKDIR")
 	var sealedBoxPath string

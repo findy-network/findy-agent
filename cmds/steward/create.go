@@ -41,7 +41,7 @@ func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	stewardAgent.OpenPool(c.PoolName)
 	_ = stewardAgent.Pool() // read from future
 
-	agentWallet := ssi.NewWalletCfg(c.WalletName, c.WalletKey)
+	agentWallet := ssi.NewRawWalletCfg(c.WalletName, c.WalletKey)
 	agentWallet.Create()
 	walletFuture := agentWallet.Open()
 
