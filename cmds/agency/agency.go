@@ -153,7 +153,7 @@ func (c *Cmd) initSealedBox() (err error) {
 }
 
 func openStewardWallet(did string, serverCmd *Cmd) *cloud.Agent {
-	aw := ssi.NewWalletCfg(serverCmd.WalletName, serverCmd.WalletPwd)
+	aw := ssi.NewRawWalletCfg(serverCmd.WalletName, serverCmd.WalletPwd)
 	a := cloud.Agent{}
 	a.OpenWallet(*aw)
 	a.SetRootDid(a.OpenDID(did))

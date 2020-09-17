@@ -149,7 +149,7 @@ func setupPaths() (string, string) {
 	exportPath = filepath.Join(exportPath, "export_wallets")
 
 	if os.Getenv("CI") == "true" {
-		sw := ssi.NewWalletCfg("sovrin_steward_wallet", "steward_wallet_key")
+		sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "steward_wallet_key")
 		server.ResetEnv(sw, exportPath)
 	}
 
