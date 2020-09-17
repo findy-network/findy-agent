@@ -105,7 +105,7 @@ func setUp() {
 		PoolProtocol:      2,
 		PoolName:          "FINDY_MEM_LEDGER",
 		WalletName:        "sovrin_steward_wallet",
-		WalletPwd:         "steward_wallet_key",
+		WalletPwd:         "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE",
 		StewardSeed:       "",
 		ServiceName:       "ca-api",
 		ServiceName2:      "a2a",
@@ -149,7 +149,7 @@ func setupPaths() (string, string) {
 	exportPath = filepath.Join(exportPath, "export_wallets")
 
 	if os.Getenv("CI") == "true" {
-		sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "steward_wallet_key")
+		sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 		server.ResetEnv(sw, exportPath)
 	}
 

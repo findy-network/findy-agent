@@ -2,7 +2,7 @@
 
 findy-agent server \
 -wallet "sovrin_steward_wallet" \
--pwd "steward_wallet_key" \
+-pwd "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE" \
 -pool "FINDY_MEM_LEDGER" \
 -did "Th7MpTaRZVRYnPiabds81Y" \
 -register "../findy.json"
