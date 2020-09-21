@@ -113,6 +113,7 @@ func (c *Cmd) Setup() (err error) {
 	server.BuildHostAddr(c.HostPort)
 
 	if c.APNSP12CertFile != "" {
+		utils.Settings.SetCertFileForAPNS(c.APNSP12CertFile)
 		err2.Check(apns.Init())
 	}
 	return nil
