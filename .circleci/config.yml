@@ -17,30 +17,8 @@ jobs:
       - run: make check
       - run: make test
 
-  push:
-    docker:
-      - image: circleci/python:3.7.4
-
-    steps:
-      - checkout
-      - setup_remote_docker
-
-      - run: sudo pip install awscli
-      - run: ./tools/push.sh
-      - run: ./tools/update.sh
-
 workflows:
   version: 2
   test:
     jobs:
       - test
-  push:
-    jobs:
-      - push:
-          filters:
-            tags:
-              # skip deployment for now
-              #              only: /^v.*/
-              ignore: /.*/
-            branches:
-              ignore: /.*/

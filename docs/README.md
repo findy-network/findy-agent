@@ -1,7 +1,7 @@
 # Documentation
 
 Most of the architecture-level documentation is currently in the main readme
-file. Infra has its documentation as well. The rest of the documentation is code
+file. The rest of the documentation is code
 files where it is accessible with Go doc. This folder includes most of the
 pictures and drawings.
 
