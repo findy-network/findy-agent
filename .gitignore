@@ -32,7 +32,5 @@ testlogfile
 .docker
 .secrets
 .vscode
-Dockerrun.aws.json
-s3.config
 
 __debug_bin
