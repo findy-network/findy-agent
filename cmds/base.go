@@ -155,6 +155,10 @@ func (edge Edge) MsgToCA(w io.Writer,
 	if ipl.Type == pltype.ConnectionError {
 		return mesg.Msg{}, fmt.Errorf("%v", ipl.Message.Error)
 	}
+	if ipl.Message.Error != "" {
+		return mesg.Msg{}, fmt.Errorf("msg to ca: %v", ipl.Message.Error)
+	}
+
 	return ipl.Message, nil
 }
 
