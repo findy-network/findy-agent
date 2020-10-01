@@ -40,7 +40,7 @@ func (c Cmd) Validate() error {
 }
 
 func (c Cmd) ValidateWalletKey() error {
-	return ValidateKey(c.WalletKey)
+	return ValidateKey(c.WalletKey, "wallet")
 }
 
 func (c Cmd) ValidateWalletExistence(should bool) error {
@@ -52,12 +52,13 @@ func (c Cmd) ValidateWalletExistence(should bool) error {
 	return nil
 }
 
-func ValidateKey(k string) error {
+func ValidateKey(k string, name string) error {
 	if k == "" {
-		return errors.New("wallet key cannot be empty")
+		return fmt.Errorf("%s key cannot be empty", name)
 	}
 	if len(k) != walletKeyLength {
-		return errors.New("wallet key is not valid")
+		return fmt.Errorf("%s key is not valid (%d/%d)", name,
+			len(k), walletKeyLength)
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ func (c ExportCmd) Validate() error {
 	if c.Filename == "" {
 		return errors.New("export path cannot be empty")
 	}
-	if err := cmds.ValidateKey(c.ExportKey); err != nil {
+	if err := cmds.ValidateKey(c.ExportKey, "export"); err != nil {
 		return err
 	}
 	return nil

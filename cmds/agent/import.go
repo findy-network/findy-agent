@@ -27,7 +27,7 @@ func (c ImportCmd) Validate() error {
 	if c.Filename == "" {
 		return errors.New("export path cannot be empty")
 	}
-	if err := cmds.ValidateKey(c.Key); err != nil {
+	if err := cmds.ValidateKey(c.Key, "import"); err != nil {
 		return err
 	}
 	_, err := os.Stat(c.Filename)
