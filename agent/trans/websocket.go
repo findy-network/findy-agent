@@ -26,7 +26,7 @@ func WsListen(ws *websocket.Conn) {
 	cnxAddr.BasePath = r.URL.Host
 	glog.V(2).Info("incoming WebSocket connection to: ", cnxAddr)
 
-	if !agency.IsHandlerInThisAgency(cnxAddr) || !cnxAddr.IsEncrypted() {
+	if !agency.IsHandlerInThisAgency(cnxAddr.PlRcvr) || !cnxAddr.IsEncrypted() {
 		glog.Warning("Accepting only safe connections")
 		return
 	}

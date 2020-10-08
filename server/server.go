@@ -117,7 +117,7 @@ func caAPITransport(w http.ResponseWriter, r *http.Request) {
 	ourAddress := logRequestInfo("C/SA API TRANSPORT", r)
 	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
-	if !agency.IsHandlerInThisAgency(ourAddress) {
+	if !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) {
 		errorResponse(w)
 		return
 	}
@@ -162,7 +162,7 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
-	if !agency.IsHandlerInThisAgency(ourAddress) || !saveIncoming(ourAddress, data) {
+	if !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) || !saveIncoming(ourAddress, data) {
 		errorResponse(w)
 		return
 	}
