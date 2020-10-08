@@ -77,7 +77,6 @@ func StartPSM(ts Initial) (err error) {
 		Thread: decorator.NewThread(ts.T.Nonce, ""),
 		Info:   ts.T.Info,
 		ID:     ts.T.ID,
-		Msg:    ts.T.Msg,
 	})
 
 	// Let caller of StartPSM() to update T data so that it can set what we'll
@@ -289,7 +288,6 @@ func createTaskForRequest(packet comm.Packet, im, om didcomm.Msg, taskID string,
 		Nonce:        taskID,                // new task ID as nonce
 		ID:           im.SubLevelID(),       // additional ..
 		Info:         im.Info(),             // .. message data ..
-		Msg:          im.SubMsg(),           // .. transfer
 		ReceiverEndp: im.ReceiverEP(),
 
 		ConnectionInvitation: im.ConnectionInvitation(),

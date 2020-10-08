@@ -15,7 +15,6 @@ type Task struct {
 	Message      string
 	ID           string
 	Info         string
-	Msg          map[string]interface{}
 
 	// Pairwise
 	ConnectionInvitation *invitation.Invitation

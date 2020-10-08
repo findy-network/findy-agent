@@ -82,12 +82,6 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 				// Note!! StartPSM() sends certain Task fields to other end
 				// as PL.Message like msg.ID, .SubMsg, .Info
 
-				// Check if we have previous thread id to transfer
-				propose := msg.FieldObj().(*presentproof.Propose)
-				if id, ok := t.Msg["id"]; ok {
-					propose.Thread.PID = id.(string)
-				}
-
 				rep := &psm.PresentProofRep{
 					Key:        key,
 					Values:     t.Info,
