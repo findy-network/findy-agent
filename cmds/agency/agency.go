@@ -33,6 +33,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/optechlab/findy-grpc/foragent/rpcserver"
 )
 
 type Cmd struct {
@@ -56,6 +57,7 @@ type Cmd struct {
 	VersionInfo       string
 	Salt              string
 	APNSP12CertFile   string
+	AllowRPC          bool
 }
 
 func (c *Cmd) Validate() error {
@@ -122,6 +124,9 @@ func (c *Cmd) Setup() (err error) {
 func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
+	if c.AllowRPC {
+		go rpcserver.Serve()
+	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil
