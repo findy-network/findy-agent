@@ -297,14 +297,21 @@ func createTaskForRequest(packet comm.Packet, im, om didcomm.Msg, taskID string,
 		CredentialAttrs:      im.CredentialAttributes(),
 		ProofAttrs:           im.ProofAttributes(),
 	}
+	updatePSM(packet.Receiver, t, state)
+	return t
+}
+
+func updatePSM(receiver comm.Receiver, t *comm.Task, state psm.SubState) {
+	defer err2.Catch(func(err error) {
+		glog.Errorf("error in psm update: %s", err)
+	})
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
-		Type:   packet.Payload.Type(),
+		Type:   t.TypeID,
 		Thread: decorator.NewThread(t.Nonce, ""),
 	})
-	wDID := packet.Receiver.WDID()
-	opl := aries.PayloadCreator.NewMsg(t.Nonce, packet.Payload.Type(), msg)
+	wDID := receiver.WDID()
+	opl := aries.PayloadCreator.NewMsg(t.Nonce, t.TypeID, msg)
 	err2.Check(UpdatePSM(wDID, "", t, opl, state))
-	return t
 }
 
 // InitTask initialises the task to waiting state
@@ -336,6 +343,22 @@ func FindAndStart(packet comm.Packet, im, om didcomm.Msg, taskID string) (tID st
 	go proc.Starter(packet.Receiver, t)
 
 	return taskID
+}
+
+// FindAndStartTask start the protocol by using CA API Type in the packet.PL.
+func FindAndStartTask(receiver comm.Receiver, task *comm.Task) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Errorf("Cannot start protocol: %s", err)
+	})
+
+	proc, ok := starters[task.TypeID]
+	if !ok {
+		s := "!!!! No protocol starter !!!"
+		glog.Error(s, task.TypeID)
+		panic(s)
+	}
+	updatePSM(receiver, task, psm.Sending)
+	go proc.Starter(receiver, task)
 }
 
 func Continue(packet comm.Packet, im didcomm.Msg) {
