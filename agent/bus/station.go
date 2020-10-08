@@ -14,6 +14,7 @@ func New() *Station {
 
 type KeyType = psm.StateKey
 type Ready chan bool
+type StateChan chan psm.SubState
 
 func newReady() Ready {
 	return make(Ready, 1) // We need a buffered channel
@@ -22,6 +23,39 @@ func newReady() Ready {
 type Station struct {
 	channels map[KeyType]Ready
 	lk       sync.Mutex
+}
+
+type StationMap map[KeyType]StateChan
+
+var SubState = struct {
+	StationMap
+	sync.Mutex
+}{StationMap: make(StationMap)}
+
+func AddListener(key KeyType) StateChan {
+	SubState.Lock()
+	defer SubState.Unlock()
+
+	SubState.StationMap[key] = make(StateChan)
+	return SubState.StationMap[key]
+}
+
+func RmListener(key KeyType) {
+	SubState.Lock()
+	defer SubState.Unlock()
+	delete(SubState.StationMap, key)
+}
+
+func Broadcast(key KeyType, state psm.SubState) {
+	SubState.Lock()
+	defer SubState.Unlock()
+
+	c, ok := SubState.StationMap[key]
+	if !ok {
+		return
+	}
+
+	c <- state
 }
 
 func (s *Station) BroadcastReady(key KeyType, ok bool) {

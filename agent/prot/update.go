@@ -123,4 +123,6 @@ func triggerEnd(info endingInfo) {
 			NotifyEdge(info.meDID, pltype.CANotifyUserAction, info.nonce, info.pwName)
 		}
 	}
+	// To brave one who wants to know all
+	bus.Broadcast(key, info.subState)
 }
