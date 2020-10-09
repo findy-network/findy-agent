@@ -120,9 +120,10 @@ func triggerEnd(info endingInfo) {
 	case psm.Waiting:
 		// Notify also tasks that are waiting for user action
 		if info.pendingUserAction {
+			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(info.meDID, pltype.CANotifyUserAction, info.nonce, info.pwName)
 		}
 	}
 	// To brave one who wants to know all
-	bus.Broadcast(key, info.subState)
+	bus.WantAll.Broadcast(key, info.subState)
 }

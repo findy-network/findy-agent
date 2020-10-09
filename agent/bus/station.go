@@ -25,32 +25,42 @@ type Station struct {
 	lk       sync.Mutex
 }
 
-type StationMap map[KeyType]StateChan
+type mapIndex int
 
-var SubState = struct {
-	StationMap
+const (
+	allStates = 0 + iota
+	userActions
+)
+
+type stationMap map[KeyType]StateChan
+type lockMap struct {
+	stationMap
 	sync.Mutex
-}{StationMap: make(StationMap)}
-
-func AddListener(key KeyType) StateChan {
-	SubState.Lock()
-	defer SubState.Unlock()
-
-	SubState.StationMap[key] = make(StateChan)
-	return SubState.StationMap[key]
 }
 
-func RmListener(key KeyType) {
-	SubState.Lock()
-	defer SubState.Unlock()
-	delete(SubState.StationMap, key)
+var Maps = [...]lockMap{{stationMap: make(stationMap)}, {stationMap: make(stationMap)}}
+var WantAll mapIndex = allStates
+var WantUserActions mapIndex = userActions
+
+func (m mapIndex) AddListener(key KeyType) StateChan {
+	Maps[m].Lock()
+	defer Maps[m].Unlock()
+
+	Maps[m].stationMap[key] = make(StateChan)
+	return Maps[m].stationMap[key]
 }
 
-func Broadcast(key KeyType, state psm.SubState) {
-	SubState.Lock()
-	defer SubState.Unlock()
+func (m mapIndex) RmListener(key KeyType) {
+	Maps[m].Lock()
+	defer Maps[m].Unlock()
+	delete(Maps[m].stationMap, key)
+}
 
-	c, ok := SubState.StationMap[key]
+func (m mapIndex) Broadcast(key KeyType, state psm.SubState) {
+	Maps[m].Lock()
+	defer Maps[m].Unlock()
+
+	c, ok := Maps[m].stationMap[key]
 	if !ok {
 		return
 	}
