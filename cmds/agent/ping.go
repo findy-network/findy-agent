@@ -3,6 +3,7 @@ package agent
 import (
 	"io"
 
+	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/cmds"
@@ -11,7 +12,8 @@ import (
 
 type PingCmd struct {
 	cmds.Cmd
-	PingSA bool
+	PingSA  bool
+	DIDOnly bool
 }
 
 func (c PingCmd) Validate() error {
@@ -40,10 +42,19 @@ func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	return c.Cmd.Exec(w, pltype.CAPingOwnCA, &mesg.Msg{},
 		func(_ cmds.Edge, im *mesg.Msg) (cmds.Result, error) {
 			defer err2.Annotate("ping sa", &err)
-			cmds.Fprintln(w, "Endpoint from the server:")
-			cmds.Fprintln(w, im.Endpoint)
-			cmds.Fprintln(w, "Verkey from the server:")
-			cmds.Fprintln(w, im.EndpVerKey)
+			if c.DIDOnly {
+				did := im.Did
+				if did == "" {
+					ea := endp.NewClientAddr(im.Endpoint)
+					did = ea.ReceiverDID()
+				}
+				cmds.Fprint(w, did)
+			} else {
+				cmds.Fprintln(w, "Endpoint from the server:")
+				cmds.Fprintln(w, im.Endpoint)
+				cmds.Fprintln(w, "Verkey from the server:")
+				cmds.Fprintln(w, im.EndpVerKey)
+			}
 			return &Result{}, nil
 		})
 }

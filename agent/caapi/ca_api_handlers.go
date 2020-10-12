@@ -216,6 +216,7 @@ func doCAPingOwnCA(packet comm.Packet) didcomm.Payload {
 	return comm.ProcessMsg(packet, func(im, om didcomm.Msg) (err error) {
 		a := packet.Receiver
 		om.SetEndpoint(a.CAEndp(true).AE())
+		om.SetDid(packet.Receiver.Trans().PayloadPipe().In.Did())
 		return nil
 	})
 }
