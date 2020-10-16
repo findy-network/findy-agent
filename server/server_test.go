@@ -25,7 +25,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/issuecredential"
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
-	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
+	_ "github.com/findy-network/findy-wrapper-go/addons"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/lainio/err2"

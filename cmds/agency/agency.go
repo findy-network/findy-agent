@@ -27,13 +27,11 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
-	_ "github.com/findy-network/findy-wrapper-go/addons/echo" // Install ledger plugins
-	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
+	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/optechlab/findy-grpc/foragent/rpcserver"
 )
 
 type Cmd struct {
@@ -125,7 +123,7 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
 	if c.AllowRPC {
-		go rpcserver.Serve()
+		StartGrpcServer()
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
