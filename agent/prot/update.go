@@ -42,6 +42,13 @@ func NotifyEdge(did, plType, nonce, pwName string) {
 }
 
 // UpdatePSM adds new sub state to PSM with timestamp and all the working data.
+// The PSM key is meDID (worker agent) and the task.Nonce. The PSM includes all
+// state history.
+//  meDID = handling agent DID i.e. worker agent DID
+//  msgMe = our end's connection aka pairwise DID (important!)
+//  task  = current comm.Task struct for additional protocol information
+//  opl   = output payload we are building to send, state by state
+//  subs  = current sub state of the protocol state machine (PSM)
 func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
 	defer err2.Annotate("create psm", &err)
 
