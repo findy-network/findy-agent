@@ -28,14 +28,25 @@ func NotifyEdge(did, plType, nonce, pwName string) {
 		myCA := r.MyCA()
 		go func() {
 			defer err2.CatchTrace(func(err error) {
-				glog.Warning(err)
+				glog.Warningf("=======\n%s\n=======", err)
 			})
 			apns.Push(did)
+
+			taskStatus := StatusForTask(did, nonce)
+
+			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
+				AgentKeyType:     bus.AgentKeyType{AgentDID: did},
+				NotificationType: plType,
+				ProtocolID:       nonce,
+				ProtocolFamily:   taskStatus.Type,
+				ConnectionID:     pwName,
+				TimestampMs:      taskStatus.TimestampMs,
+			})
 
 			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce: nonce,
 				Name:  pwName,
-				Body:  StatusForTask(did, nonce),
+				Body:  taskStatus,
 			}).(didcomm.Msg)
 
 			// Websocket
