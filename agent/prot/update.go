@@ -15,6 +15,13 @@ import (
 	"github.com/lainio/err2"
 )
 
+// NotifyEdge sends notification to client (previously edge agent). It sends
+// notifications via apns, web socket, and web hook if any of these are
+// available.
+//  did      = worker agent DID
+//  plType   = notification message type id
+//  nonce    = protocol ID (not a Aries message ID but thead ID)
+//  pwName   = connection ID (note!! not a pairwise Label)
 func NotifyEdge(did, plType, nonce, pwName string) {
 	r := comm.ActiveRcvrs.Get(did)
 	if r != nil {
