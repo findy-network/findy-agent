@@ -60,7 +60,7 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	key := state.AgentKeyType
 	for k, ch := range AgentMaps[m].agentStationMap {
 		if key.AgentDID == k.AgentDID {
-			glog.V(3).Infoln(key.AgentDID, " agent notify:", key.ClientID)
+			glog.V(3).Infoln(key.AgentDID, " agent notify:", k.ClientID)
 			state.AgentKeyType.ClientID = k.ClientID
 			ch <- state
 		}
