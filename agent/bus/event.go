@@ -2,6 +2,8 @@ package bus
 
 import (
 	"sync"
+
+	"github.com/golang/glog"
 )
 
 type AgentKeyType struct {
@@ -38,6 +40,7 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
+	glog.V(3).Infoln(key.AgentDID, " notify add for:", key.ClientID)
 	AgentMaps[m].agentStationMap[key] = make(AgentStateChan, 1)
 	return AgentMaps[m].agentStationMap[key]
 }
@@ -45,6 +48,8 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
+
+	glog.V(3).Infoln(key.AgentDID, " notify rm for:", key.ClientID)
 	delete(AgentMaps[m].agentStationMap, key)
 }
 
@@ -55,6 +60,8 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	key := state.AgentKeyType
 	for k, ch := range AgentMaps[m].agentStationMap {
 		if key.AgentDID == k.AgentDID {
+			glog.V(3).Infoln(key.AgentDID, " agent notify:", key.ClientID)
+			state.AgentKeyType.ClientID = k.ClientID
 			ch <- state
 		}
 	}
