@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -36,6 +37,7 @@ func NotifyEdge(did, plType, nonce, pwName string) {
 
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
 				AgentKeyType:     bus.AgentKeyType{AgentDID: did},
+				ID:               utils.UUID(),
 				NotificationType: plType,
 				ProtocolID:       nonce,
 				ProtocolFamily:   taskStatus.Type,

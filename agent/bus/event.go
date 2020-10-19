@@ -15,6 +15,7 @@ type AgentStateChan chan AgentNotify
 
 type AgentNotify struct {
 	AgentKeyType
+	ID               string
 	NotificationType string
 	ConnectionID     string
 	ProtocolID       string

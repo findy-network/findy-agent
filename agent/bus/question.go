@@ -10,13 +10,12 @@ type AgentQuestionChan chan AgentQuestion
 type AgentAnswerChan chan AgentAnswer
 
 type AgentQuestion struct {
-	QID QuestionKeyType
 	AgentNotify
 	AgentAnswerChan
 }
 
 type AgentAnswer struct {
-	QID QuestionKeyType
+	ID QuestionKeyType
 	AgentKeyType
 
 	ACK  bool
@@ -62,7 +61,7 @@ func (m mapIndex) AgentRmAnswerer(key AgentKeyType) {
 	questionChannels[m].Lock()
 	defer questionChannels[m].Unlock()
 
-	glog.V(3).Infoln(key.AgentDID, " answerer RM for:", key.ClientID)
+	glog.V(3).Infoln(key.AgentDID, " answerer REMOVE for:", key.ClientID)
 	delete(questionChannels[m].agentQuestionMap, key)
 }
 
@@ -76,10 +75,12 @@ func (m mapIndex) AgentSendQuestion(question AgentQuestion) AgentAnswerChan {
 	// send question to first answerer
 	for k, ch := range questionChannels[m].agentQuestionMap {
 		if key.AgentDID == k.AgentDID {
-			glog.V(3).Infoln(key.AgentDID, " agent QUESTION:", k.ClientID)
+			glog.V(3).Infoln(key.AgentDID, " agent QUESTION ID:", question.ID)
 			question.AgentKeyType.ClientID = k.ClientID
 			question.AgentAnswerChan = make(AgentAnswerChan, 1)
-			askedQuestions[m].questionMap[question.QID] = question
+			askedQuestions[m].Lock()
+			askedQuestions[m].questionMap[question.ID] = question
+			askedQuestions[m].Unlock()
 			ch <- question
 			return question.AgentAnswerChan
 		}
@@ -93,8 +94,11 @@ func (m mapIndex) AgentSendAnswer(answer AgentAnswer) {
 	askedQuestions[m].Lock()
 	defer askedQuestions[m].Unlock()
 
-	if q, ok := askedQuestions[m].questionMap[answer.QID]; ok {
-		glog.V(3).Infoln(q.AgentDID, " agent ANSWER:", q.ClientID)
+	if q, ok := askedQuestions[m].questionMap[answer.ID]; ok {
+		glog.V(3).Infoln(q.AgentDID, " agent ANSWER for QID:", answer.ID)
 		q.AgentAnswerChan <- answer
+		delete(askedQuestions[m].questionMap, answer.ID)
+	} else {
+		glog.Warningf("couldn't find question channel for %s", answer.ID)
 	}
 }
