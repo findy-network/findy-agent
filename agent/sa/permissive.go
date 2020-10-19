@@ -19,7 +19,7 @@ func init() {
 	Add(PermissiveSA, permissiveHandler)
 }
 
-func permissiveHandler(plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
+func permissiveHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
 	glog.V(1).Info("SA API call received:", plType, im.Info())
 
 	switch plType {
