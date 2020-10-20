@@ -48,10 +48,17 @@ or build your agency with the sources which set the `utils.Salt` variable.
 ## Get Started
 
 1. [Install](https://github.com/hyperledger/indy-sdk/#installing-the-sdk) libindy-dev.
-2. Clone the repo: `git clone https://github.com/findy-network/findy-agent`
-3. Install needed Go packages: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
-4. Install the command line application: `make install`
-5. Verify the installation: `findy-agent -version`
+2. Install Go. Make sure environment variable `GOPATH`is defined.
+3. Create parent folder for findy-agent-project in your [\$GOPATH](https://github.com/golang/go/wiki/SettingGOPATH):
+
+   ```
+   $GOPATH/src/github.com/findy-network
+   ```
+
+4. Clone [findy-agent](https://github.com/findy-network/findy-agent) (or move) repository to the newly created parent folder.
+4. Install needed Go packages: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
+5. Install the command line application: `make install`
+6. Verify the installation: `findy-agent -version`
 
     It should output:
     `OP Tech Lab - Findy Agency v. X.X`
