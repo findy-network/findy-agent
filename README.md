@@ -1,14 +1,16 @@
 # findy-agent
 
-* [About findy-agent](#about-findy-agent)
-* [Get Started](#get-started)
-* [Run The Agency](#run-the-agency)
-* [Edge Agent On-boarding](#edge-agent-on-boarding)
-* [Agency Network](#agency-network)
-* [Commandline Interface](#command-line-interface)
-* [Agency Architecture](#agency-architecture)
-* [Aries Protocol State Machine](#aries-protocol-state-machine)
-* [Missing Features](#missing-features-for-production)
+- [findy-agent](#findy-agent)
+  - [About findy-agent](#about-findy-agent)
+        - [Onboard Binding](#onboard-binding)
+  - [Get Started](#get-started)
+  - [Run The Agency](#run-the-agency)
+  - [Edge Agent On-boarding](#edge-agent-on-boarding)
+  - [Agency Network](#agency-network)
+  - [Command-line Interface](#command-line-interface)
+  - [Agency Architecture](#agency-architecture)
+  - [Aries Protocol State Machine](#aries-protocol-state-machine)
+  - [Missing Features For Production](#missing-features-for-production)
  
 ## About findy-agent
 
@@ -56,9 +58,9 @@ or build your agency with the sources which set the `utils.Salt` variable.
    ```
 
 4. Clone [findy-agent](https://github.com/findy-network/findy-agent) (or move) repository to the newly created parent folder.
-4. Install needed Go packages: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
-5. Install the command line application: `make install`
-6. Verify the installation: `findy-agent -version`
+5. Install needed Go packages: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
+6. Install the command line application: `make install`
+7. Verify the installation: `findy-agent -version`
 
     It should output:
     `OP Tech Lab - Findy Agency v. X.X`
