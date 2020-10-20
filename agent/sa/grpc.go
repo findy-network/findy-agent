@@ -20,20 +20,16 @@ func init() {
 	Add(GRPCSA, grpcHandler)
 }
 
-// todo:
-//  1. notify agent listener = send question to controller via channel (what channel?)
-//  2. wait reply with the channel (what channel to listen) to arrive
-//  3. channel communication would be same as listeners but other way around
-//     we would register a question with UUID and reply channel to wait
-//     when outside get notification about the question it can answer to it
-//     by the UUID and reply would be delivered to the proper channel
-//     we should decide if it's better to have question listener different
-//     than the normal agent listener what we now have.
-// TODO:
-//  1. call directly the SA who has given us gRPC endpoint to call
-// how to authenticate? we should make it server, but if we don't make this isn't so easy
+// grpcHandler implements SA as a gRPC router. The blocking mechanism it uses is
+// based on Go channels and to be able to "reserve" current gorountine for the
+// blocking answer wait without thinking that goroutines are limited resource.
 //
-
+// During the implementation one option was to make the agency be the calling
+// side, but it would make e.g. authentication an issue. By the current
+// implementation we can have blocking call to make state management in the PSM
+// easier and still not use too much resources. However, this is not the perfect
+// solution. In the future we can make this fully async like user actions to
+// mobile EAs i.e. implement SA questions as an own states in the PSM.
 func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
 	glog.V(1).Info("grpc SA API call:", plType, im.Info())
 
@@ -41,8 +37,9 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	case pltype.CANotifyStatus:
 
 	case pltype.SAPing:
-		om = im
-		qid := utils.UUID()
+		om = im // this if from legacy impl. will check in future if needed.
+
+		qid := utils.UUID() // every question ID must have unique ID!
 		ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
 			AgentNotify: bus.AgentNotify{
 				AgentKeyType: bus.AgentKeyType{
@@ -55,16 +52,20 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 			},
 		})
 		a := <-ac
+
 		glog.V(1).Infoln("got answer for:", qid)
 		om.SetReady(a.ACK)
 		om.SetInfo(a.Info)
 
 	case pltype.SAIssueCredentialAcceptPropose:
+		// todo: add real call to SA
 		om = im
 		// in real case, make sure data matches the credential proposal
 		om.SetReady(true)
 
 	case pltype.SAPresentProofAcceptPropose:
+		// todo: add real call to SA
+
 		om = im
 		// todo: this should be get somewhere?
 		attrInfo := anoncreds.AttrInfo{
