@@ -109,11 +109,6 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 				propose.CredentialProposal = pc
 				propose.Comment = t.Info // todo: for legacy tests
 
-				// here we have Session and verify ID, this is to make libindy work
-				if id, ok := t.Msg["id"]; ok { // todo: legacy stuff!
-					propose.Thread.PID = id.(string) //  take safe still
-				}
-
 				rep := &psm.IssueCredRep{
 					Key:        key,
 					CredDefID:  *t.CredDefID,

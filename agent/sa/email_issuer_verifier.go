@@ -23,7 +23,7 @@ func init() {
 	Add(EmailIssuerVerifier, processMsgAsServiceAgent)
 }
 
-func processMsgAsServiceAgent(plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
+func processMsgAsServiceAgent(_, plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
 	glog.V(1).Info("SA API call received:", plType, im.Info())
 
 	switch plType {

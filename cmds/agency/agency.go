@@ -27,8 +27,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
-	_ "github.com/findy-network/findy-wrapper-go/addons/echo" // Install ledger plugins
-	_ "github.com/findy-network/findy-wrapper-go/addons/mem"
+	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/golang/glog"
@@ -56,6 +55,7 @@ type Cmd struct {
 	VersionInfo       string
 	Salt              string
 	APNSP12CertFile   string
+	AllowRPC          bool
 }
 
 func (c *Cmd) Validate() error {
@@ -122,6 +122,9 @@ func (c *Cmd) Setup() (err error) {
 func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
+	if c.AllowRPC {
+		StartGrpcServer()
+	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil

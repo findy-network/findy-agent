@@ -11,24 +11,44 @@ import (
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
+// NotifyEdge sends notification to client (previously edge agent). It sends
+// notifications via apns, web socket, and web hook if any of these are
+// available.
+//  did      = worker agent DID
+//  plType   = notification message type id
+//  nonce    = protocol ID (not a Aries message ID but thead ID)
+//  pwName   = connection ID (note!! not a pairwise Label)
 func NotifyEdge(did, plType, nonce, pwName string) {
 	r := comm.ActiveRcvrs.Get(did)
 	if r != nil {
 		myCA := r.MyCA()
 		go func() {
 			defer err2.CatchTrace(func(err error) {
-				glog.Warning(err)
+				glog.Warningf("=======\n%s\n=======", err)
 			})
 			apns.Push(did)
+
+			taskStatus := StatusForTask(did, nonce)
+
+			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
+				AgentKeyType:     bus.AgentKeyType{AgentDID: did},
+				ID:               utils.UUID(),
+				NotificationType: plType,
+				ProtocolID:       nonce,
+				ProtocolFamily:   taskStatus.Type,
+				ConnectionID:     pwName,
+				TimestampMs:      taskStatus.TimestampMs,
+			})
 
 			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce: nonce,
 				Name:  pwName,
-				Body:  StatusForTask(did, nonce),
+				Body:  taskStatus,
 			}).(didcomm.Msg)
 
 			// Websocket
@@ -42,6 +62,13 @@ func NotifyEdge(did, plType, nonce, pwName string) {
 }
 
 // UpdatePSM adds new sub state to PSM with timestamp and all the working data.
+// The PSM key is meDID (worker agent) and the task.Nonce. The PSM includes all
+// state history.
+//  meDID = handling agent DID i.e. worker agent DID
+//  msgMe = our end's connection aka pairwise DID (important!)
+//  task  = current comm.Task struct for additional protocol information
+//  opl   = output payload we are building to send, state by state
+//  subs  = current sub state of the protocol state machine (PSM)
 func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
 	defer err2.Annotate("create psm", &err)
 
@@ -120,7 +147,10 @@ func triggerEnd(info endingInfo) {
 	case psm.Waiting:
 		// Notify also tasks that are waiting for user action
 		if info.pendingUserAction {
+			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(info.meDID, pltype.CANotifyUserAction, info.nonce, info.pwName)
 		}
 	}
+	// To brave one who wants to know all
+	bus.WantAll.Broadcast(key, info.subState)
 }

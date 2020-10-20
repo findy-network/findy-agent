@@ -183,7 +183,7 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		return a.callEA(plType, im)
 	} else if a.SAImplID != "" {
 		glog.V(3).Infof("call SA impl %s", a.SAImplID)
-		return sa.Get(a.SAImplID)(plType, im)
+		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
 	}
 	// Default answer is definitely NO, we don't have issuer or prover
 	om = im

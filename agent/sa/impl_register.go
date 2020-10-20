@@ -29,4 +29,4 @@ func List() []string {
 	return l
 }
 
-type Handler func(plType string, im didcomm.Msg) (om didcomm.Msg, err error)
+type Handler func(WDID string, plType string, im didcomm.Msg) (om didcomm.Msg, err error)

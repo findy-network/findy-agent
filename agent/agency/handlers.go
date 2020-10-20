@@ -94,8 +94,8 @@ func Handler(endpoint Endpoint) (handler comm.Handler) {
 // doesn't yet have a CA, it will be constructed from a seed. This is called
 // intensively during the agency's run. It is somewhat optimized with read locks
 // and lazy fetch.
-func IsHandlerInThisAgency(endpoint *endp.Addr) (is bool) {
-	if endp.IsInEndpoints(endpoint.PlRcvr) {
+func IsHandlerInThisAgency(rcvrDID string) (is bool) {
+	if endp.IsInEndpoints(rcvrDID) {
 		return true
 	}
 
@@ -105,14 +105,14 @@ func IsHandlerInThisAgency(endpoint *endp.Addr) (is bool) {
 	// map.
 
 	seedHandlers.RLock()
-	_, isStillSeed := seedHandlers.m[endpoint.PlRcvr]
+	_, isStillSeed := seedHandlers.m[rcvrDID]
 	seedHandlers.RUnlock()
 	if isStillSeed {
-		buildHandlerFromSeed(endpoint)
+		buildHandlerFromSeed(rcvrDID)
 	}
 
 	handlers.RLock()
-	_, found := handlers.m[endpoint.PlRcvr]
+	_, found := handlers.m[rcvrDID]
 	handlers.RUnlock()
 
 	return found
@@ -121,30 +121,30 @@ func IsHandlerInThisAgency(endpoint *endp.Addr) (is bool) {
 // buildHandlerFromSeed gets the seed handler for the endpoint and moves the
 // seed to active handlers by constructing a CA for the endpoint if seed handler
 // is available.
-func buildHandlerFromSeed(endp *endp.Addr) {
+func buildHandlerFromSeed(rcvrDID string) {
 	seedHandlers.Lock()
 	defer seedHandlers.Unlock()
 
 	// Try to get seed with the write lock on. If cannot get it it means other
 	// instance of us got it already and it will build the handler.
-	seed, ok := seedHandlers.m[endp.PlRcvr]
+	seed, ok := seedHandlers.m[rcvrDID]
 	if !ok {
 		glog.V(3).Info("cannot find seed for endpoint anymore: ",
-			endp.PlRcvr)
+			rcvrDID)
 		return
 	}
 
 	h, err := seed.Prepare()
 	if err != nil {
 		glog.V(3).Info("cannot build a handler from a seed: ",
-			endp.PlRcvr)
+			rcvrDID)
 		return
 	}
-	delete(seedHandlers.m, endp.PlRcvr)
+	delete(seedHandlers.m, rcvrDID)
 
 	handlers.Lock()
 	defer handlers.Unlock()
-	handlers.m[endp.PlRcvr] = h
+	handlers.m[rcvrDID] = h
 	return
 }
 

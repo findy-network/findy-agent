@@ -284,6 +284,27 @@ func Test_EAImpl(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func Test_EAImpl_Endpoint(t *testing.T) {
+	cmd := sa.EAImplCmd{
+		Cmd:          wallet1Cmd,
+		EAServiceURL: "http://localhost:8080/service",
+		EAServiceKey: walletKey3,
+	}
+	err := cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+	cmd = sa.EAImplCmd{
+		Cmd:          wallet2Cmd,
+		EAServiceURL: "https://localhost/test/url",
+		EAServiceKey: walletKey3,
+	}
+	err = cmd.Validate()
+	assert.NoError(t, err)
+	_, err = cmd.Exec(os.Stdout)
+	assert.NoError(t, err)
+}
+
 func Test_Invite(t *testing.T) {
 	cmd := agent.InvitationCmd{
 		Cmd:  wallet1Cmd,
