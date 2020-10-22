@@ -12,6 +12,9 @@ then
 	go run ../../../../lainio/err2/cmd/main.go -name=Public -package=e2 -type=endp.Public | goimports > public.go
 	go run ../../../../lainio/err2/cmd/main.go -name=Payload -package=e2 -type=*mesg.Payload | goimports > payload.go
 	go run ../../../../lainio/err2/cmd/main.go -name=M -package=e2 -type=didcomm.Msg | goimports > m.go
-  go run ../../../../lainio/err2/cmd/main.go -name=PL -package=e2 -type=didcomm.Payload | goimports > pl.go
+	go run ../../../../lainio/err2/cmd/main.go -name=PL -package=e2 -type=didcomm.Payload | goimports > pl.go
+	go run ../../../../lainio/err2/cmd/main.go -name=Task -package=e2 -type=*comm.Task | goimports > task.go
+	go run ../../../../lainio/err2/cmd/main.go -name=Rcvr -package=e2 -type=comm.Receiver | goimports > receiver.go
+	go run ../../../../lainio/err2/cmd/main.go -name=Ctx -package=e2 -type=context.Context | goimports > ctx.go
 fi
 
