@@ -9,7 +9,7 @@ func StartGrpcServer() {
 	if plugin := plugins.GetPlugin("GRPC"); plugin != nil {
 		go plugin.Run()
 	} else {
-		glog.Warningf("---------\n%s\n---------",
+		glog.Warningf("\n---------\n%s\n---------",
 			"grpc plugin is not installed")
 	}
 }
