@@ -7,11 +7,12 @@ jobs:
     container: optechlab/indy-golang:1.15.0
     steps:
       - uses: actions/checkout@v2
-      - name: use ssh
-        run: git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+      - name: use token
+        run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "https://github.com/"
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.31
         env:
           GOPRIVATE: github.com/findy-network/findy-wrapper-go
+          HTTPS_PREFIX: ${{ secrets.https_prefix }}
