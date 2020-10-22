@@ -13,5 +13,3 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.31
-        env:
-          GOPRIVATE: github.com/findy-network/findy-wrapper-go

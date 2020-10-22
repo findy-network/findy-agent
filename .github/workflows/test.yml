@@ -15,3 +15,5 @@ jobs:
         run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "https://github.com/"
       - name: test
         run: make test
+        env:
+          TEST_WORKDIR: $HOME/.test/
