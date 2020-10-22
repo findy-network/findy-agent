@@ -17,3 +17,4 @@ jobs:
         run: make test
         env:
           TEST_WORKDIR: $HOME/.test/
+          CI: true
