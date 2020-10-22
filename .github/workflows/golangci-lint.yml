@@ -15,4 +15,3 @@ jobs:
           version: v1.31
         env:
           GOPRIVATE: github.com/findy-network/findy-wrapper-go
-          HTTPS_PREFIX: ${{ secrets.https_prefix }}
