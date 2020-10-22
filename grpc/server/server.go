@@ -14,22 +14,23 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-grpc/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	. "github.com/lainio/err2"
-	"github.com/optechlab/findy-grpc/jwt"
-	"github.com/optechlab/findy-grpc/rpc"
 	"google.golang.org/grpc"
 )
 
 func Serve() {
 	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/optechlab/findy-grpc/tls")
+	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/tls")
 	certFile := path.Join(tlsPath, "server.crt")
 	keyFile := path.Join(tlsPath, "server.pem")
 
@@ -48,15 +49,16 @@ func Serve() {
 	})
 }
 
-type agentServer struct{
+type agentServer struct {
 	pb.UnimplementedAgentServer
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer Return(&err)
+	defer Annotate("give answer", &err)
 
-	caDID, receiver, err := ca(ctx)
-	Check(err)
+	glog.V(0).Info("Give function start")
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 
 	glog.V(0).Infoln(caDID, "-agent answers:", answer.ClientId.Id, answer.Id)
 	bus.WantAllAgentAnswers.AgentSendAnswer(bus.AgentAnswer{
@@ -83,13 +85,8 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer
 		}
 	})
 
-	ctx := server.Context()
-	ctx, err = jwt.CheckTokenValidity(ctx)
-	Check(err)
-
-	caDID, receiver, err := ca(ctx)
-	Check(err)
-
+	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(0).Infoln(caDID, "-agent starts listener:", clientID.Id)
 
 	listenKey := bus.AgentKeyType{
@@ -152,8 +149,36 @@ loop:
 	return nil
 }
 
-type didCommServer struct{
+type didCommServer struct {
 	pb.UnimplementedDIDCommServer
+}
+
+func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
+	defer Return(&err)
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	task := e2.Task.Try(taskFrom(protocol))
+	glog.V(0).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeId)])
+	prot.FindAndStartTask(receiver, task)
+	return &pb.ProtocolID{Id: task.Nonce}, nil
+}
+
+func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {
+	defer Return(&err)
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	task := &comm.Task{
+		Nonce:  id.Id,
+		TypeID: typeID[id.TypeId],
+	}
+	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
+	glog.V(0).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)])
+	statusJSON := dto.ToJSON(prot.GetStatus(task.TypeID, &key))
+
+	return &pb.ProtocolStatus{
+		State:   &pb.ProtocolState{ProtocolId: id},
+		Message: statusJSON,
+	}, nil
 }
 
 func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
@@ -168,16 +193,9 @@ func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) 
 		}
 	})
 
-	ctx := server.Context()
-	ctx, err = jwt.CheckTokenValidity(ctx)
-	Check(err)
-
-	caDID, receiver, err := ca(ctx)
-	Check(err)
-
-	task, err := taskFrom(protocol)
-	Check(err)
-
+	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	task := e2.Task.Try(taskFrom(protocol))
 	glog.V(0).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeId)])
 
 	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)

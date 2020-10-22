@@ -8,11 +8,11 @@ import (
 
 	"github.com/findy-network/findy-agent-api/grpc/agency"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-grpc/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	. "github.com/lainio/err2"
-	"github.com/optechlab/findy-grpc/jwt"
-	"github.com/optechlab/findy-grpc/rpc"
 	"google.golang.org/grpc"
 )
 
@@ -31,7 +31,7 @@ func NewClient(user, addr string) (conn *grpc.ClientConn, err error) {
 	defer Return(&err)
 
 	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/optechlab/findy-grpc/tls")
+	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/tls")
 	certFile := path.Join(tlsPath, "ca.crt")
 
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
