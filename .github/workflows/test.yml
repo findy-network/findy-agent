@@ -16,6 +16,5 @@ jobs:
       - name: test
         run: make test
         env:
-          HOME: /github/home/
           TEST_WORKDIR: /github/home/.test/
           CI: true

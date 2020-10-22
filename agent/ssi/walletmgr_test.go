@@ -1,8 +1,8 @@
 package ssi
 
 import (
+	"github.com/findy-network/findy-agent/agent/utils"
 	"os"
-	"os/user"
 	"path/filepath"
 	"testing"
 
@@ -25,12 +25,7 @@ func TestMain(m *testing.M) {
 }
 
 func tearDown() {
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	home := currentUser.HomeDir
-
+	home := utils.HomeDir()
 	removeFiles(home, "/.indy_client/wallet/wallet_mgr_wallet*")
 }
 

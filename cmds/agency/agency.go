@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -145,9 +144,7 @@ func (c *Cmd) initSealedBox() (err error) {
 
 	sealedBoxPath := c.EnclavePath
 	if sealedBoxPath == "" {
-		currentUser, err := user.Current()
-		err2.Check(err)
-		home := currentUser.HomeDir
+		home := utils.HomeDir()
 
 		// make sure not use same location for the enclave as for tests!
 		sealedBoxPath = filepath.Join(home, ".indy_client/enclave.bolt")

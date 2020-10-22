@@ -1,13 +1,12 @@
 package ssi
 
 import (
+	"github.com/findy-network/findy-agent/agent/utils"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
 )
 
 type Wallet struct {
@@ -68,11 +67,7 @@ func walletPath() string {
 }
 
 func homeDir() string {
-	currentUser, err := user.Current()
-	if err != nil {
-		err2.Check(err)
-	}
-	return currentUser.HomeDir
+	return utils.HomeDir()
 }
 
 func (w *Wallet) StartCreation() (f *Future) {

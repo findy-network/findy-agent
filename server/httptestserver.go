@@ -124,7 +124,7 @@ func testDownloadFile(downloadDir, filepath, url string) (name string, err error
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
 	// Remove files
-	err := os.RemoveAll(os.Getenv("HOME") + "/.indy_client")
+	err := os.RemoveAll(utils.HomeDir() + "/.indy_client")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
