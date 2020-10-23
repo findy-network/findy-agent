@@ -5,7 +5,6 @@ import (
 	"os/user"
 )
 
-
 func HomeDir() string {
 	if v := os.Getenv("HOME"); v != "" {
 		return v

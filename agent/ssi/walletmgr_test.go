@@ -1,10 +1,11 @@
 package ssi
 
 import (
-	"github.com/findy-network/findy-agent/agent/utils"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/golang/glog"
 	"github.com/stretchr/testify/assert"

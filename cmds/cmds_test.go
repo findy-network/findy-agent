@@ -3,7 +3,6 @@ package cmds_test
 import (
 	"flag"
 	"fmt"
-	"github.com/findy-network/findy-agent/agent/utils"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/findy-network/findy-agent/cmds/agent"

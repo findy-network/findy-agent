@@ -1,9 +1,10 @@
 package ssi
 
 import (
-	"github.com/findy-network/findy-agent/agent/utils"
 	"os"
 	"path/filepath"
+
+	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
