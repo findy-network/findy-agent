@@ -1,5 +1,8 @@
 # findy-agent
 
+![lint](https://github.com/findy-network/findy-agent/workflows/golangci-lint/badge.svg?branch=dev)
+![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
+
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent)
         - [Onboard Binding](#onboard-binding)
