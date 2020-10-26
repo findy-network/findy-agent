@@ -5,7 +5,7 @@ import (
 	"os/user"
 )
 
-func IndyDir() string {
+func IndyBaseDir() string {
 	if v := os.Getenv("HOME"); v != "" {
 		return v
 	}

@@ -69,7 +69,7 @@ func TestMain(m *testing.M) {
 func tearDown() {
 	httpTestServer.Close()
 
-	home := utils.IndyDir()
+	home := utils.IndyBaseDir()
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")
@@ -136,7 +136,7 @@ func setupPaths() (string, string) {
 	exportPath := os.Getenv("TEST_WORKDIR")
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
-		exportPath = utils.IndyDir()
+		exportPath = utils.IndyBaseDir()
 		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/enclave.bolt")
 	} else {
 		sealedBoxPath = "enclave.bolt"

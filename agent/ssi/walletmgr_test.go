@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 }
 
 func tearDown() {
-	home := utils.IndyDir()
+	home := utils.IndyBaseDir()
 	removeFiles(home, "/.indy_client/wallet/wallet_mgr_wallet*")
 }
 

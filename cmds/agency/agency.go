@@ -144,7 +144,7 @@ func (c *Cmd) initSealedBox() (err error) {
 
 	sealedBoxPath := c.EnclavePath
 	if sealedBoxPath == "" {
-		home := utils.IndyDir()
+		home := utils.IndyBaseDir()
 
 		// make sure not use same location for the enclave as for tests!
 		sealedBoxPath = filepath.Join(home, ".indy_client/enclave.bolt")
