@@ -68,7 +68,7 @@ func walletPath() string {
 }
 
 func homeDir() string {
-	return utils.HomeDir()
+	return utils.IndyDir()
 }
 
 func (w *Wallet) StartCreation() (f *Future) {

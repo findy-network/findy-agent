@@ -216,7 +216,7 @@ func (edge *Client) GetWallet() (name string, err error) {
 	// we could put this to go func together with the rest of the block.
 	exportPath := os.Getenv("TEST_WORKDIR")
 	if len(exportPath) == 0 {
-		exportPath = utils.HomeDir()
+		exportPath = utils.IndyDir()
 	}
 	exportPath = filepath.Join(exportPath, "wallets")
 	walletFile := err2.String.Try(comm.FileDownload(exportPath, "", walletURL))

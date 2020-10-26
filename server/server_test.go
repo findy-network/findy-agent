@@ -60,7 +60,7 @@ func setUp() {
 	exportPath := os.Getenv("TEST_WORKDIR")
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
-		exportPath = utils.HomeDir()
+		exportPath = utils.IndyDir()
 		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/enclave.bolt")
 	} else {
 		sealedBoxPath = "enclave.bolt"
@@ -106,7 +106,7 @@ func setUp() {
 }
 
 func tearDown() {
-	home := utils.HomeDir()
+	home := utils.IndyDir()
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")
