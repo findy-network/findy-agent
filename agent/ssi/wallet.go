@@ -2,12 +2,12 @@ package ssi
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
+
+	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
 )
 
 type Wallet struct {
@@ -56,23 +56,15 @@ func (w Wallet) WorkerWalletBy(suffix string) *Wallet {
 func workerWalletPath() string {
 	const workerSubPath = "/.indy_client/worker"
 
-	home := homeDir()
+	home := utils.IndyBaseDir()
 	return filepath.Join(home, workerSubPath)
 }
 
 func walletPath() string {
 	const workerSubPath = "/.indy_client/wallet"
 
-	home := homeDir()
+	home := utils.IndyBaseDir()
 	return filepath.Join(home, workerSubPath)
-}
-
-func homeDir() string {
-	currentUser, err := user.Current()
-	if err != nil {
-		err2.Check(err)
-	}
-	return currentUser.HomeDir
 }
 
 func (w *Wallet) StartCreation() (f *Future) {

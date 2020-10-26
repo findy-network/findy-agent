@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -61,8 +60,7 @@ func setUp() {
 	exportPath := os.Getenv("TEST_WORKDIR")
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
-		currentUser, _ := user.Current()
-		exportPath = currentUser.HomeDir
+		exportPath = utils.IndyBaseDir()
 		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/enclave.bolt")
 	} else {
 		sealedBoxPath = "enclave.bolt"
@@ -108,11 +106,7 @@ func setUp() {
 }
 
 func tearDown() {
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	home := currentUser.HomeDir
+	home := utils.IndyBaseDir()
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")

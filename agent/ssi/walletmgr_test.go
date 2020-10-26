@@ -2,9 +2,10 @@ package ssi
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 	"testing"
+
+	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/golang/glog"
 	"github.com/stretchr/testify/assert"
@@ -25,12 +26,7 @@ func TestMain(m *testing.M) {
 }
 
 func tearDown() {
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	home := currentUser.HomeDir
-
+	home := utils.IndyBaseDir()
 	removeFiles(home, "/.indy_client/wallet/wallet_mgr_wallet*")
 }
 

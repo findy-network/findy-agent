@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,7 +17,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
@@ -126,7 +124,7 @@ func testDownloadFile(downloadDir, filepath, url string) (name string, err error
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
 	// Remove files
-	err := os.RemoveAll(os.Getenv("HOME") + "/.indy_client")
+	err := os.RemoveAll(utils.IndyBaseDir() + "/.indy_client")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -140,25 +138,6 @@ func ResetEnv(w *ssi.Wallet, exportPath string) {
 	err = ioutil.WriteFile("./findy.json", registry, 0644)
 	if err != nil {
 		fmt.Println(err.Error())
-	}
-
-	// Create pool
-	const maxTimeout = 5 * time.Second
-	const poolName = "myNewPool"
-
-	currentPath, _ := os.Getwd()
-	genesisPath := currentPath + "/../.circleci/genesis_transactions"
-	config := pool.Config{
-		GenesisTxn: genesisPath,
-	}
-	fmt.Println("Genesis path " + genesisPath)
-	select {
-	case r := <-pool.CreateConfig(poolName, config):
-		if r.Err() != nil {
-			fmt.Println("Pool create error, already exists?")
-		}
-	case <-time.After(maxTimeout):
-		panic(errors.New("timeout exceeded"))
 	}
 
 	// Create wallet

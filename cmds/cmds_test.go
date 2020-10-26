@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http/httptest"
 	"os"
-	"os/user"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/findy-network/findy-agent/cmds/agent"
@@ -69,11 +69,7 @@ func TestMain(m *testing.M) {
 func tearDown() {
 	httpTestServer.Close()
 
-	currentUser, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	home := currentUser.HomeDir
+	home := utils.IndyBaseDir()
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")
@@ -140,8 +136,7 @@ func setupPaths() (string, string) {
 	exportPath := os.Getenv("TEST_WORKDIR")
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
-		currentUser, _ := user.Current()
-		exportPath = currentUser.HomeDir
+		exportPath = utils.IndyBaseDir()
 		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/enclave.bolt")
 	} else {
 		sealedBoxPath = "enclave.bolt"
