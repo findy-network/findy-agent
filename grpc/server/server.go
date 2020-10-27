@@ -24,7 +24,7 @@ import (
 	"github.com/findy-network/findy-grpc/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
-	. "github.com/lainio/err2"
+	"github.com/lainio/err2"
 	"google.golang.org/grpc"
 )
 
@@ -54,7 +54,7 @@ type agentServer struct {
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer Annotate("give answer", &err)
+	defer err2.Annotate("give answer", &err)
 
 	glog.V(0).Info("Give function start")
 
@@ -75,7 +75,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 }
 
 func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer) (err error) {
-	defer Handle(&err, func() {
+	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.AgentStatus{
 			ClientId: &pb.ClientID{Id: clientID.Id},
@@ -120,7 +120,7 @@ loop:
 					clientID.Id, question.ClientID)
 			}
 			agentStatus.ClientId.Id = question.ClientID
-			Check(server.Send(&agentStatus))
+			err2.Check(server.Send(&agentStatus))
 
 		case notify := <-notifyChan:
 			glog.V(3).Infoln("notification", notify.ID, "arrived")
@@ -140,7 +140,7 @@ loop:
 					clientID.Id, notify.ClientID)
 			}
 			agentStatus.ClientId.Id = notify.ClientID
-			Check(server.Send(&agentStatus))
+			err2.Check(server.Send(&agentStatus))
 		case <-ctx.Done():
 			glog.V(1).Infoln("ctx.Done() received, returning")
 			break loop
@@ -154,7 +154,7 @@ type didCommServer struct {
 }
 
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := e2.Task.Try(taskFrom(protocol))
@@ -164,7 +164,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 }
 
 func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := &comm.Task{
@@ -182,7 +182,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
-	defer Handle(&err, func() {
+	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc run error: %s", err)
 		status := &pb.ProtocolState{
 			Info:  err.Error(),
@@ -226,7 +226,7 @@ loop:
 					ProtocolId: &pb.ProtocolID{Id: task.Nonce},
 					State:      pb.ProtocolState_WAIT_ACTION,
 				}
-				Check(server.Send(status))
+				err2.Check(server.Send(status))
 			}
 		}
 	}
@@ -238,13 +238,13 @@ loop:
 		ProtocolId: &pb.ProtocolID{Id: task.Nonce},
 		State:      statusCode,
 	}
-	Check(server.Send(status))
+	err2.Check(server.Send(status))
 
 	return nil
 }
 
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	task := &comm.Task{
 		Nonce:   utils.UUID(),
