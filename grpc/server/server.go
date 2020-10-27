@@ -67,7 +67,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 			AgentDID: receiver.WDID(),
 			ClientID: answer.ClientId.Id,
 		},
-		ACK:  true,
+		ACK:  answer.Ack,
 		Info: "welcome from gRPC",
 	})
 
