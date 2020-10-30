@@ -30,20 +30,31 @@ import (
 
 func Serve() {
 	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/tls")
-	certFile := path.Join(tlsPath, "server.crt")
-	keyFile := path.Join(tlsPath, "server.pem")
+	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
+	certFile := path.Join(tlsPath, "server/server.crt")
+	keyFile := path.Join(tlsPath, "server/server.key")
+	clientCertFile := path.Join(tlsPath, "client/client.crt")
 
-	glog.V(1).Infoln("starting gRPC server with tls path:", tlsPath)
-
+	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
+		certFile, keyFile, clientCertFile)
 	rpc.Serve(rpc.ServerCfg{
-		Port:     50051,
-		TLS:      true,
-		CertFile: certFile,
-		KeyFile:  keyFile,
+		Port: 50051,
+		TLS:  true,
+		PKI: rpc.PKI{
+			Server: rpc.CertFiles{
+				CertFile: certFile,
+				KeyFile:  keyFile,
+			},
+			Client: rpc.CertFiles{
+				CertFile: clientCertFile,
+			},
+		},
 		Register: func(s *grpc.Server) error {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
-			pb.RegisterAgentServer(s, &agentServer{})
+			//pb.RegisterAgentServer(s, &agentServer{})
+			//pb.RegisterAgencyServer(s, &agencyService{})
+			pb.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+			glog.Infoln("GRPC registration IIIIIII OK")
 			return nil
 		},
 	})
@@ -153,6 +164,14 @@ type didCommServer struct {
 	pb.UnimplementedDIDCommServer
 }
 
+func (s *didCommServer) Unpause(ctx context.Context, state *pb.ProtocolState) (*pb.ProtocolID, error) {
+	panic("implement me")
+}
+
+func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (*pb.ProtocolState, error) {
+	panic("implement me")
+}
+
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
@@ -192,6 +211,8 @@ func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) 
 			glog.Errorln("error sending response:", err)
 		}
 	})
+
+	glog.Infoln("run() call")
 
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))

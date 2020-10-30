@@ -80,6 +80,18 @@ func AddSeedHandler(endpoint Endpoint, handler comm.SeedHandler) {
 	seedHandlers.m[endpoint] = handler
 }
 
+func SeedHandlerCount() int {
+	seedHandlers.RLock()
+	defer seedHandlers.RUnlock()
+	return len(seedHandlers.m)
+}
+
+func HandlerCount() int {
+	handlers.RLock()
+	defer handlers.RUnlock()
+	return len(handlers.m)
+}
+
 func Handler(endpoint Endpoint) (handler comm.Handler) {
 	if endp.IsInEndpoints(endpoint) {
 		return nil
