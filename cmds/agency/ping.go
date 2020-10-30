@@ -1,14 +1,18 @@
 package agency
 
 import (
+	"context"
 	"errors"
 	"io"
+	"time"
 
+	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/findy-network/findy-agent/grpc/client"
 	"github.com/lainio/err2"
 )
 
@@ -21,6 +25,24 @@ func (c PingCmd) Validate() error {
 		return errors.New("server url cannot be empty")
 	}
 	return nil
+}
+
+func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
+	defer err2.Return(&err)
+
+	conn, err := client.OpenClientConn("findy-root", c.BaseAddr)
+	err2.Check(err)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	opsClient := pb.NewDevOpsClient(conn)
+	result, err := opsClient.Enter(ctx, &pb.Cmd{
+		Type: pb.Cmd_PING,
+	})
+	err2.Check(err)
+	cmds.Fprintln(w, "result:", result.GetPing())
+
+	return nil, nil
 }
 
 func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {

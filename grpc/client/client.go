@@ -29,8 +29,10 @@ func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func OpenConn(user, addr string, port int) (conn *grpc.ClientConn, err error) {
-	return OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+func TryOpenConn(user, addr string, port int) *grpc.ClientConn {
+	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+	err2.Check(err)
+	return conn
 }
 
 func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
