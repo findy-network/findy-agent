@@ -37,7 +37,7 @@ func (c CountCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 		Type: pb.Cmd_COUNT,
 	})
 	err2.Check(err)
-	cmds.Fprintln(w, result.GetCount())
+	cmds.Fprintln(w, "count result:\n", result.GetCount())
 
 	return nil, nil
 }
