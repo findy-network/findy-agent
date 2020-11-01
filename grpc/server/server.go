@@ -6,8 +6,6 @@ package server
 import (
 	"context"
 	"errors"
-	"os"
-	"path"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -29,26 +27,14 @@ import (
 )
 
 func Serve() {
-	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
-	certFile := path.Join(tlsPath, "server/server.crt")
-	keyFile := path.Join(tlsPath, "server/server.key")
-	clientCertFile := path.Join(tlsPath, "client/client.crt")
-
+	pki := rpc.LoadPKI()
 	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
-		certFile, keyFile, clientCertFile)
+		pki.Server.CertFile, pki.Server.KeyFile, pki.Client.CertFile)
+
 	rpc.Serve(rpc.ServerCfg{
 		Port: 50051,
 		TLS:  true,
-		PKI: rpc.PKI{
-			Server: rpc.CertFiles{
-				CertFile: certFile,
-				KeyFile:  keyFile,
-			},
-			Client: rpc.CertFiles{
-				CertFile: clientCertFile,
-			},
-		},
+		PKI:  *pki,
 		Register: func(s *grpc.Server) error {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
 			//pb.RegisterAgentServer(s, &agentServer{})

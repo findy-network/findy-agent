@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path"
 
 	"github.com/findy-network/findy-agent-api/grpc/agency"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
@@ -41,21 +39,10 @@ func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
 	if Conn != nil {
 		return nil, errors.New("client connection all ready open")
 	}
-	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
-	pw := rpc.PKI{
-		Server: rpc.CertFiles{
-			CertFile: path.Join(tlsPath, "server/server.crt"),
-		},
-		Client: rpc.CertFiles{
-			CertFile: path.Join(tlsPath, "client/client.crt"),
-			KeyFile:  path.Join(tlsPath, "client/client.key"),
-		},
-	}
-
+	pki := rpc.LoadPKI()
 	glog.V(5).Infoln("client with user:", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
-		PKI:  pw,
+		PKI:  *pki,
 		JWT:  jwt.BuildJWT(user),
 		Addr: addr,
 		TLS:  true,

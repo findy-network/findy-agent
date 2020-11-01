@@ -38,8 +38,8 @@ func (d devOpsServer) Enter(ctx context.Context, cmd *agency.Cmd) (cr *agency.Cm
 		err2.Check(flag.Set("v", cmd.GetLogging()))
 	case agency.Cmd_COUNT:
 		response := fmt.Sprintf("%d/%d cloud agents",
-			agencyServer.SeedHandlerCount(), agencyServer.HandlerCount())
-		cmdReturn.Response = &agency.CmdReturn_Ping{Ping: response}
+			agencyServer.HandlerCount(), agencyServer.SeedHandlerCount())
+		cmdReturn.Response = &agency.CmdReturn_Count{Count: response}
 	}
 	return cmdReturn, nil
 }
