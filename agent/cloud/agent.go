@@ -178,13 +178,15 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		err = nil          // clear error so protocol continues NACK to other end
 	})
 
-	if a.CallableEA() {
-		glog.V(3).Info("calling EA")
-		return a.callEA(plType, im)
-	} else if a.SAImplID != "" {
+	// since gRPC API support we prefer implementation IDs over web hooks
+	if a.SAImplID != "" {
 		glog.V(3).Infof("call SA impl %s", a.SAImplID)
 		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
+	} else if a.CallableEA() { // web hooks (aka indy-endpoints)
+		glog.V(3).Info("calling EA")
+		return a.callEA(plType, im)
 	}
+
 	// Default answer is definitely NO, we don't have issuer or prover
 	om = im
 	om.SetReady(false)

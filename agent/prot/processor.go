@@ -369,6 +369,16 @@ func Continue(packet comm.Packet, im didcomm.Msg) {
 	go proc.Continuator(packet.Receiver, im)
 }
 
+func Unpause(rcvr comm.Receiver, typeID string, im didcomm.Msg) {
+	proc, ok := continuators[typeID]
+	if !ok {
+		glog.Error("!!No prot continuator for:", typeID)
+		panic("no protocol continuator")
+	}
+
+	go proc.Continuator(rcvr, im)
+}
+
 func GetStatus(protocol string, key *psm.StateKey) interface{} {
 	proc, ok := statusProviders[protocol]
 	if !ok {
