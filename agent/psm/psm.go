@@ -53,6 +53,7 @@ const (
 	Sending
 	Ready
 	Failure
+	Archiving
 )
 
 const (
@@ -82,6 +83,8 @@ func (ss SubState) String() string {
 		return "Sending"
 	case Failure:
 		return "Failure"
+	case Archiving:
+		return "Archiving"
 	default:
 		return "Unknown State"
 	}
@@ -113,6 +116,10 @@ func NewStateKey(agent comm.Receiver, nonce string) StateKey {
 
 func (key *StateKey) Data() []byte {
 	return []byte(key.DID + key.Nonce)
+}
+
+func (key *StateKey) String() string {
+	return key.DID + "|" + key.Nonce
 }
 
 type PayloadInfo struct {
@@ -147,7 +154,7 @@ func (p *PSM) key() []byte {
 }
 
 func (p *PSM) IsReady() bool {
-	if lastState := p.lastState(); lastState != nil {
+	if lastState := p.LastState(); lastState != nil {
 		return lastState.Sub.IsReady() ||
 			lastState.Sub.Pure() == Failure // TODO: until we have recovery for PSM
 	}
@@ -174,7 +181,7 @@ func (p *PSM) PairwiseName() string {
 }
 
 func (p *PSM) Timestamp() int64 {
-	if state := p.lastState(); state != nil {
+	if state := p.LastState(); state != nil {
 		return state.Timestamp
 	}
 	return 0
@@ -184,7 +191,7 @@ func (p *PSM) Timestamp() int64 {
 // are waiting a certain message from other end, we can check the message type
 // with this function.
 func (p *PSM) Next() string {
-	if state := p.lastState(); state != nil {
+	if state := p.LastState(); state != nil {
 		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
 			return mesg.ProtocolMsgForType(state.PLInfo.Type)
@@ -196,7 +203,7 @@ func (p *PSM) Next() string {
 
 // PendingUserAction returns true if we the PSM is waiting an user action msg.
 func (p *PSM) PendingUserAction() bool {
-	if state := p.lastState(); state != nil {
+	if state := p.LastState(); state != nil {
 		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
 			return pltype.UserAction == mesg.ProtocolMsgForType(state.PLInfo.Type)
@@ -213,7 +220,7 @@ func (p *PSM) FirstState() *State {
 	return nil
 }
 
-func (p *PSM) lastState() *State {
+func (p *PSM) LastState() *State {
 	sCount := len(p.States)
 	if sCount > 0 {
 		return &p.States[sCount-1]
@@ -232,7 +239,7 @@ func (p *PSM) Protocol() string {
 // given it returns last state's Task.
 func (p *PSM) TaskFor(plType string) (t *comm.Task) {
 	if plType == "" {
-		return &p.lastState().T
+		return &p.LastState().T
 	}
 
 	for _, s := range p.States {

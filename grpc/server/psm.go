@@ -5,10 +5,7 @@ import (
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-grpc/jwt"
@@ -27,19 +24,21 @@ func (s *didCommServer) Unpause(ctx context.Context, state *pb.ProtocolState) (p
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent unpause protocol:", state.ProtocolId.TypeId, state.ProtocolId.Id)
 
-	om := mesg.MsgCreator.Create(didcomm.MsgInit{
-		Ready: state.GetState() == pb.ProtocolState_ACK,
-		ID:    state.ProtocolId.Id,
-	}).(didcomm.Msg)
-	prot.Unpause(receiver, typeID[state.ProtocolId.TypeId], om)
+	prot.Unpause(receiver, typeID[state.ProtocolId.TypeId],
+		state.ProtocolId.Id, state.GetState() == pb.ProtocolState_ACK)
 
 	return state.ProtocolId, nil
 }
 
-func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolState, err error) {
+func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
-	panic("implement me")
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent release protocol:", id.Id)
+	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
+	err2.Check(prot.AddFlagUpdatePSM(key, psm.Archiving))
+
+	return id, nil
 }
 
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
@@ -56,13 +55,9 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	task := &comm.Task{
-		Nonce:  id.Id,
-		TypeID: typeID[id.TypeId],
-	}
-	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
-	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)])
-	statusJSON := dto.ToJSON(prot.GetStatus(task.TypeID, &key))
+	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
+	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
+	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
 
 	return &pb.ProtocolStatus{
 		State:   &pb.ProtocolState{ProtocolId: id},

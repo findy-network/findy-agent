@@ -98,6 +98,19 @@ var typeID = [...]string{
 	pltype.CAContinuePresentProofProtocol,    // "CONTINUE_PROOF"
 }
 
+// typeID is look up table for
+var protocolName = [...]string{
+	pltype.AriesProtocolConnection, // "CONNECT",
+	pltype.ProtocolIssueCredential, // "ISSUE",
+	pltype.ProtocolIssueCredential, // "PROPOSE_ISSUING",
+	pltype.ProtocolPresentProof,    // "REQUEST_PROOF",
+	pltype.ProtocolPresentProof,    // "PROPOSE_PROOFING",
+	pltype.ProtocolTrustPing,       // "TRUST_PING",
+	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
+	pltype.ProtocolIssueCredential, // "CONTINUE_ISSUE"
+	pltype.ProtocolPresentProof,    // "CONTINUE_PROOF"
+}
+
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {
 	caDID = jwt.User(ctx)
 	if !agency.IsHandlerInThisAgency(caDID) {
