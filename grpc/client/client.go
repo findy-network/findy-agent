@@ -56,6 +56,7 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_ISSUE,
+		Role:         agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
 			CredDefId:      credDefID,
 			AttributesJson: attrsJSON,
@@ -74,6 +75,7 @@ func Connection(ctx context.Context, invitationJSON string) (connID string, ch c
 
 	protocol := &agency.Protocol{
 		TypeId:   agency.Protocol_CONNECT,
+		Role:     agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_InvitationJson{InvitationJson: invitationJSON},
 	}
 	ch, err = doStart(ctx, protocol)
@@ -86,6 +88,7 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_TRUST_PING,
+		Role:         agency.Protocol_INITIATOR,
 	}
 	return doStart(ctx, protocol)
 }
@@ -93,7 +96,8 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 func (pw Pairwise) ReqProof(ctx context.Context, proofAttrs string) (ch chan *agency.ProtocolState, err error) {
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
-		TypeId:       agency.Protocol_REQUEST_PROOF,
+		TypeId:       agency.Protocol_PROOF,
+		Role:         agency.Protocol_INITIATOR,
 		StartMsg:     &agency.Protocol_ProofAttributesJson{ProofAttributesJson: proofAttrs},
 	}
 	return doStart(ctx, protocol)

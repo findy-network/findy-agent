@@ -18,13 +18,13 @@ type didCommServer struct {
 	pb.UnimplementedDIDCommServer
 }
 
-func (s *didCommServer) Unpause(ctx context.Context, state *pb.ProtocolState) (pid *pb.ProtocolID, err error) {
+func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pid *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent unpause protocol:", state.ProtocolId.TypeId, state.ProtocolId.Id)
+	glog.V(1).Infoln(caDID, "-agent Resume protocol:", state.ProtocolId.TypeId, state.ProtocolId.Id)
 
-	prot.Unpause(receiver, typeID[state.ProtocolId.TypeId],
+	prot.Resume(receiver, uniqueTypeID(state.ProtocolId.Role, state.ProtocolId.TypeId),
 		state.ProtocolId.Id, state.GetState() == pb.ProtocolState_ACK)
 
 	return state.ProtocolId, nil

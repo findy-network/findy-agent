@@ -370,7 +370,7 @@ func Continue(packet comm.Packet, im didcomm.Msg) {
 	go proc.Continuator(packet.Receiver, im)
 }
 
-func Unpause(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
+func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	proc, ok := continuators[typeID]
 	if !ok {
 		glog.Error("!!No prot continuator for:", typeID)

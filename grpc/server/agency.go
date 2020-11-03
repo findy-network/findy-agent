@@ -1,13 +1,13 @@
 package server
 
 import (
-	"github.com/findy-network/findy-agent-api/grpc/agency"
+	"github.com/findy-network/findy-agent-api/grpc/ops"
 )
 
 type agencyService struct {
-	agency.UnimplementedAgencyServer
+	ops.UnimplementedAgencyServer
 }
 
-func (a agencyService) PSMHook(hook *agency.DataHook, server agency.Agency_PSMHookServer) error {
+func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServer) error {
 	panic("implement me")
 }

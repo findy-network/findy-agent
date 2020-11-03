@@ -6,8 +6,10 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
+	ops "github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -35,7 +37,7 @@ func Serve() {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
 			pb.RegisterAgentServer(s, &agentServer{})
 			//pb.RegisterAgencyServer(s, &agencyService{})
-			pb.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+			ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
 			glog.Infoln("GRPC registration IIIIIII OK")
 			return nil
 		},
@@ -47,7 +49,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 
 	task := &comm.Task{
 		Nonce:   utils.UUID(),
-		TypeID:  typeID[protocol.TypeId],
+		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeId),
 		Message: protocol.ConnectionId,
 	}
 	switch protocol.TypeId {
@@ -57,21 +59,25 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		task.ConnectionInvitation = &invitation
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
-	case pb.Protocol_ISSUE, pb.Protocol_PROPOSE_ISSUING:
-		credDef := protocol.GetCredDef()
-		if credDef == nil {
-			panic(errors.New("cred def cannot be nil for issuing protocol"))
+	case pb.Protocol_ISSUE:
+		if protocol.Role == pb.Protocol_INITIATOR {
+			credDef := protocol.GetCredDef()
+			if credDef == nil {
+				panic(errors.New("cred def cannot be nil for issuing protocol"))
+			}
+			task.CredDefID = &credDef.CredDefId
+			var credAttrs []didcomm.CredentialAttribute
+			dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
+			task.CredentialAttrs = &credAttrs
+			glog.V(1).Infoln("set cred attrs")
 		}
-		task.CredDefID = &credDef.CredDefId
-		var credAttrs []didcomm.CredentialAttribute
-		dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
-		task.CredentialAttrs = &credAttrs
-		glog.V(1).Infoln("set cred attrs")
-	case pb.Protocol_REQUEST_PROOF:
-		var proofAttrs []didcomm.ProofAttribute
-		dto.FromJSONStr(protocol.GetProofAttributesJson(), &proofAttrs)
-		task.ProofAttrs = &proofAttrs
-		glog.V(1).Infoln("set proof attrs")
+	case pb.Protocol_PROOF:
+		if protocol.Role == pb.Protocol_INITIATOR {
+			var proofAttrs []didcomm.ProofAttribute
+			dto.FromJSONStr(protocol.GetProofAttributesJson(), &proofAttrs)
+			task.ProofAttrs = &proofAttrs
+			glog.V(1).Infoln("set proof attrs")
+		}
 	}
 	return task, nil
 }
@@ -85,30 +91,38 @@ var notificationTypeID = map[string]pb.Notification_Type{
 	pltype.SAPresentProofAcceptValues:     pb.Notification_ACTION_NEEDED,
 }
 
+func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
+	i := int32(10*role) + int32(id)
+	glog.V(5).Infoln("unique id:", i, typeID[i])
+	s, ok := typeID[i]
+	if !ok {
+		msg := fmt.Sprintf("cannot find typeid for (%d+%d)", role, id)
+		glog.Error(msg)
+		panic(msg)
+	}
+	return s
+}
+
 // typeID is look up table for
-var typeID = [...]string{
-	pltype.CAPairwiseCreate,                  // "CONNECT",
-	pltype.CACredOffer,                       // "ISSUE",
-	pltype.CACredRequest,                     // "PROPOSE_ISSUING",
-	pltype.CAProofRequest,                    // "REQUEST_PROOF",
-	pltype.CAProofPropose,                    // "PROPOSE_PROOFING",
-	pltype.CATrustPing,                       // "TRUST_PING",
-	pltype.CABasicMessage,                    // "BASIC_MESSAGE",
-	pltype.CAContinueIssueCredentialProtocol, // "CONTINUE_ISSUE"
-	pltype.CAContinuePresentProofProtocol,    // "CONTINUE_PROOF"
+var typeID = map[int32]string{
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_CONNECT):       pltype.CAPairwiseCreate,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE):         pltype.CACredOffer,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE):         pltype.CACredRequest,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PROOF):         pltype.CAProofRequest,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_PROOF):         pltype.CAProofPropose,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_TRUST_PING):    pltype.CATrustPing,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_BASIC_MESSAGE): pltype.CABasicMessage,
+	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_ISSUE):            pltype.CAContinueIssueCredentialProtocol,
+	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_PROOF):            pltype.CAContinuePresentProofProtocol,
 }
 
 // typeID is look up table for
 var protocolName = [...]string{
 	pltype.AriesProtocolConnection, // "CONNECT",
 	pltype.ProtocolIssueCredential, // "ISSUE",
-	pltype.ProtocolIssueCredential, // "PROPOSE_ISSUING",
-	pltype.ProtocolPresentProof,    // "REQUEST_PROOF",
-	pltype.ProtocolPresentProof,    // "PROPOSE_PROOFING",
+	pltype.ProtocolPresentProof,    // "PROOF",
 	pltype.ProtocolTrustPing,       // "TRUST_PING",
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
-	pltype.ProtocolIssueCredential, // "CONTINUE_ISSUE"
-	pltype.ProtocolPresentProof,    // "CONTINUE_PROOF"
 }
 
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {
