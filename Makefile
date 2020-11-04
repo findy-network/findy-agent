@@ -1,5 +1,13 @@
 VERSION=$(shell cat ./VERSION)
 
+API_BRANCH=$(shell ./branch.sh ../findy-agent-api/)
+GRPC_BRANCH=$(shell ./branch.sh ../findy-grpc/)
+
+modules:
+	@echo Syncing modules for work brances ...
+	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
+	go get github.com/findy-network/findy-grpc@$(GRPC_BRANCH)
+
 deps:
 	go get -t ./...
 
