@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -12,7 +14,7 @@ import (
 	"github.com/findy-network/findy-grpc/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
-	. "github.com/lainio/err2"
+	"github.com/lainio/err2"
 	"google.golang.org/grpc"
 )
 
@@ -27,20 +29,36 @@ func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func NewClient(user, addr string) (conn *grpc.ClientConn, err error) {
-	defer Return(&err)
+func OpenConn(user, addr string, port int) (conn *grpc.ClientConn, err error) {
+	return OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+}
 
+func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
+	defer err2.Return(&err)
+
+	if Conn != nil {
+		return nil, errors.New("client connection all ready open")
+	}
 	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/tls")
-	certFile := path.Join(tlsPath, "ca.crt")
+	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
+	pw := rpc.PKI{
+		Server: rpc.CertFiles{
+			CertFile: path.Join(tlsPath, "server/server.crt"),
+		},
+		Client: rpc.CertFiles{
+			CertFile: path.Join(tlsPath, "client/client.crt"),
+			KeyFile:  path.Join(tlsPath, "client/client.key"),
+		},
+	}
 
+	glog.V(5).Infoln("client with user:", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
-		CertFile: certFile,
-		JWT:      jwt.BuildJWT(user),
-		Addr:     addr,
-		TLS:      true,
+		PKI:  pw,
+		JWT:  jwt.BuildJWT(user),
+		Addr: addr,
+		TLS:  true,
 	})
-	Check(err)
+	err2.Check(err)
 	Conn = conn
 	return
 }
@@ -58,7 +76,7 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 }
 
 func Connection(ctx context.Context, invitationJSON string) (connID string, ch chan *agency.ProtocolState, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	// assert that invitation is OK, and we need to return the connection ID
 	// because it's the task id as well
@@ -70,7 +88,7 @@ func Connection(ctx context.Context, invitationJSON string) (connID string, ch c
 		StartMsg: &agency.Protocol_InvitationJson{InvitationJson: invitationJSON},
 	}
 	ch, err = doStart(ctx, protocol)
-	Check(err)
+	err2.Check(err)
 	connID = invitation.ID
 	return connID, ch, err
 }
@@ -93,16 +111,16 @@ func (pw Pairwise) ReqProof(ctx context.Context, proofAttrs string) (ch chan *ag
 }
 
 func Listen(ctx context.Context, protocol *agency.ClientID) (ch chan *agency.AgentStatus, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	c := agency.NewAgentClient(Conn)
 	statusCh := make(chan *agency.AgentStatus)
 
 	stream, err := c.Listen(ctx, protocol)
-	Check(err)
+	err2.Check(err)
 	glog.V(0).Infoln("successful start of listen id:", protocol.Id)
 	go func() {
-		defer CatchTrace(func(err error) {
+		defer err2.CatchTrace(func(err error) {
 			glog.Warningln("error when reading response:", err)
 			close(statusCh)
 		})
@@ -113,7 +131,7 @@ func Listen(ctx context.Context, protocol *agency.ClientID) (ch chan *agency.Age
 				close(statusCh)
 				break
 			}
-			Check(err)
+			err2.Check(err)
 			statusCh <- status
 		}
 	}()
@@ -121,16 +139,16 @@ func Listen(ctx context.Context, protocol *agency.ClientID) (ch chan *agency.Age
 }
 
 func doStart(ctx context.Context, protocol *agency.Protocol) (ch chan *agency.ProtocolState, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	c := agency.NewDIDCommClient(Conn)
 	statusCh := make(chan *agency.ProtocolState)
 
 	stream, err := c.Run(ctx, protocol)
-	Check(err)
+	err2.Check(err)
 	glog.V(3).Infoln("successful start of:", protocol.TypeId)
 	go func() {
-		defer CatchTrace(func(err error) {
+		defer err2.CatchTrace(func(err error) {
 			glog.V(3).Infoln("err when reading response", err)
 			close(statusCh)
 		})
@@ -141,7 +159,7 @@ func doStart(ctx context.Context, protocol *agency.Protocol) (ch chan *agency.Pr
 				close(statusCh)
 				break
 			}
-			Check(err)
+			err2.Check(err)
 			statusCh <- status
 		}
 	}()

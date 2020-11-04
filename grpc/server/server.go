@@ -24,26 +24,37 @@ import (
 	"github.com/findy-network/findy-grpc/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
-	. "github.com/lainio/err2"
+	"github.com/lainio/err2"
 	"google.golang.org/grpc"
 )
 
 func Serve() {
 	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/tls")
-	certFile := path.Join(tlsPath, "server.crt")
-	keyFile := path.Join(tlsPath, "server.pem")
+	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
+	certFile := path.Join(tlsPath, "server/server.crt")
+	keyFile := path.Join(tlsPath, "server/server.key")
+	clientCertFile := path.Join(tlsPath, "client/client.crt")
 
-	glog.V(1).Infoln("starting gRPC server with tls path:", tlsPath)
-
+	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
+		certFile, keyFile, clientCertFile)
 	rpc.Serve(rpc.ServerCfg{
-		Port:     50051,
-		TLS:      true,
-		CertFile: certFile,
-		KeyFile:  keyFile,
+		Port: 50051,
+		TLS:  true,
+		PKI: rpc.PKI{
+			Server: rpc.CertFiles{
+				CertFile: certFile,
+				KeyFile:  keyFile,
+			},
+			Client: rpc.CertFiles{
+				CertFile: clientCertFile,
+			},
+		},
 		Register: func(s *grpc.Server) error {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
-			pb.RegisterAgentServer(s, &agentServer{})
+			//pb.RegisterAgentServer(s, &agentServer{})
+			//pb.RegisterAgencyServer(s, &agencyService{})
+			pb.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+			glog.Infoln("GRPC registration IIIIIII OK")
 			return nil
 		},
 	})
@@ -54,7 +65,7 @@ type agentServer struct {
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer Annotate("give answer", &err)
+	defer err2.Annotate("give answer", &err)
 
 	glog.V(0).Info("Give function start")
 
@@ -67,7 +78,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 			AgentDID: receiver.WDID(),
 			ClientID: answer.ClientId.Id,
 		},
-		ACK:  true,
+		ACK:  answer.Ack,
 		Info: "welcome from gRPC",
 	})
 
@@ -75,7 +86,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 }
 
 func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer) (err error) {
-	defer Handle(&err, func() {
+	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.AgentStatus{
 			ClientId: &pb.ClientID{Id: clientID.Id},
@@ -120,7 +131,7 @@ loop:
 					clientID.Id, question.ClientID)
 			}
 			agentStatus.ClientId.Id = question.ClientID
-			Check(server.Send(&agentStatus))
+			err2.Check(server.Send(&agentStatus))
 
 		case notify := <-notifyChan:
 			glog.V(3).Infoln("notification", notify.ID, "arrived")
@@ -140,7 +151,7 @@ loop:
 					clientID.Id, notify.ClientID)
 			}
 			agentStatus.ClientId.Id = notify.ClientID
-			Check(server.Send(&agentStatus))
+			err2.Check(server.Send(&agentStatus))
 		case <-ctx.Done():
 			glog.V(1).Infoln("ctx.Done() received, returning")
 			break loop
@@ -153,8 +164,16 @@ type didCommServer struct {
 	pb.UnimplementedDIDCommServer
 }
 
+func (s *didCommServer) Unpause(ctx context.Context, state *pb.ProtocolState) (*pb.ProtocolID, error) {
+	panic("implement me")
+}
+
+func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (*pb.ProtocolState, error) {
+	panic("implement me")
+}
+
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := e2.Task.Try(taskFrom(protocol))
@@ -164,7 +183,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 }
 
 func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := &comm.Task{
@@ -182,7 +201,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
-	defer Handle(&err, func() {
+	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc run error: %s", err)
 		status := &pb.ProtocolState{
 			Info:  err.Error(),
@@ -192,6 +211,8 @@ func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) 
 			glog.Errorln("error sending response:", err)
 		}
 	})
+
+	glog.Infoln("run() call")
 
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
@@ -226,7 +247,7 @@ loop:
 					ProtocolId: &pb.ProtocolID{Id: task.Nonce},
 					State:      pb.ProtocolState_WAIT_ACTION,
 				}
-				Check(server.Send(status))
+				err2.Check(server.Send(status))
 			}
 		}
 	}
@@ -238,13 +259,13 @@ loop:
 		ProtocolId: &pb.ProtocolID{Id: task.Nonce},
 		State:      statusCode,
 	}
-	Check(server.Send(status))
+	err2.Check(server.Send(status))
 
 	return nil
 }
 
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
-	defer Return(&err)
+	defer err2.Return(&err)
 
 	task := &comm.Task{
 		Nonce:   utils.UUID(),
