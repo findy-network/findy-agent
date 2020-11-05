@@ -5,6 +5,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -367,6 +368,21 @@ func Continue(packet comm.Packet, im didcomm.Msg) {
 	}
 
 	go proc.Continuator(packet.Receiver, im)
+}
+
+func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
+	proc, ok := continuators[typeID]
+	if !ok {
+		glog.Error("!!No prot continuator for:", typeID)
+		panic("no protocol continuator")
+	}
+
+	om := mesg.MsgCreator.Create(didcomm.MsgInit{
+		Ready: ack,
+		ID:    protocolID,
+	}).(didcomm.Msg)
+
+	go proc.Continuator(rcvr, om)
 }
 
 func GetStatus(protocol string, key *psm.StateKey) interface{} {

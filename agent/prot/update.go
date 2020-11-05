@@ -1,6 +1,7 @@
 package prot
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -108,6 +109,27 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 		pendingUserAction: machine.PendingUserAction(),
 	})
 
+	return nil
+}
+
+// AddFlagUpdatePSM updates existing PSM by adding a sub-state with state flag:
+//  lastSubState | subState  => adding a new sub state flag to last one
+func AddFlagUpdatePSM(machineKey psm.StateKey, subState psm.SubState) (err error) {
+	defer err2.Annotate("mark archive psm", &err)
+
+	m, _ := psm.GetPSM(machineKey)
+
+	lastSubState := m.LastState().Sub
+	var machine *psm.PSM
+	s := psm.State{Timestamp: time.Now().UnixNano(), Sub: subState | lastSubState}
+	if m != nil { // update existing one
+		m.States = append(m.States, s)
+		machine = m
+	} else {
+		panic(fmt.Errorf("previous PSM (%s) must exist", machineKey))
+	}
+
+	err2.Check(psm.AddPSM(machine))
 	return nil
 }
 

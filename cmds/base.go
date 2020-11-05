@@ -82,6 +82,7 @@ type Result interface {
 type Command interface {
 	Validate() error
 	Exec(w io.Writer) (r Result, err error)
+	RpcExec(w io.Writer) (r Result, err error)
 }
 
 func NewCmd(d []byte) (c *Cmd, err error) {

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path"
 
 	"github.com/findy-network/findy-agent-api/grpc/agency"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
@@ -29,8 +27,10 @@ func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func OpenConn(user, addr string, port int) (conn *grpc.ClientConn, err error) {
-	return OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+func TryOpenConn(user, addr string, port int) *grpc.ClientConn {
+	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+	err2.Check(err)
+	return conn
 }
 
 func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
@@ -39,21 +39,10 @@ func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
 	if Conn != nil {
 		return nil, errors.New("client connection all ready open")
 	}
-	goPath := os.Getenv("GOPATH")
-	tlsPath := path.Join(goPath, "src/github.com/findy-network/findy-grpc/cert")
-	pw := rpc.PKI{
-		Server: rpc.CertFiles{
-			CertFile: path.Join(tlsPath, "server/server.crt"),
-		},
-		Client: rpc.CertFiles{
-			CertFile: path.Join(tlsPath, "client/client.crt"),
-			KeyFile:  path.Join(tlsPath, "client/client.key"),
-		},
-	}
-
+	pki := rpc.LoadPKI()
 	glog.V(5).Infoln("client with user:", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
-		PKI:  pw,
+		PKI:  *pki,
 		JWT:  jwt.BuildJWT(user),
 		Addr: addr,
 		TLS:  true,
@@ -67,6 +56,7 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_ISSUE,
+		Role:         agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
 			CredDefId:      credDefID,
 			AttributesJson: attrsJSON,
@@ -85,6 +75,7 @@ func Connection(ctx context.Context, invitationJSON string) (connID string, ch c
 
 	protocol := &agency.Protocol{
 		TypeId:   agency.Protocol_CONNECT,
+		Role:     agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_InvitationJson{InvitationJson: invitationJSON},
 	}
 	ch, err = doStart(ctx, protocol)
@@ -97,6 +88,7 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_TRUST_PING,
+		Role:         agency.Protocol_INITIATOR,
 	}
 	return doStart(ctx, protocol)
 }
@@ -104,7 +96,8 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 func (pw Pairwise) ReqProof(ctx context.Context, proofAttrs string) (ch chan *agency.ProtocolState, err error) {
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
-		TypeId:       agency.Protocol_REQUEST_PROOF,
+		TypeId:       agency.Protocol_PROOF,
+		Role:         agency.Protocol_INITIATOR,
 		StartMsg:     &agency.Protocol_ProofAttributesJson{ProofAttributesJson: proofAttrs},
 	}
 	return doStart(ctx, protocol)
