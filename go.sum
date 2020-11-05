@@ -28,6 +28,12 @@ github.com/findy-network/findy-grpc v0.0.0-20201104112939-3f13603042b7 h1:S0aFtH
 github.com/findy-network/findy-grpc v0.0.0-20201104112939-3f13603042b7/go.mod h1:/JUBqYtbGP8LJ7wdB17oBK1mAEXdsCj3j/KH7N7HoTE=
 github.com/findy-network/findy-grpc v0.0.0-20201104113838-4c08fa871eef h1:2p/tbWtENjAcwuu/AEi6vnQoLg1YKupK+uMvPWvUFSE=
 github.com/findy-network/findy-grpc v0.0.0-20201104113838-4c08fa871eef/go.mod h1:mwEq+ofANaA4Qb2FMyrWjK8WrDRsMzMi4qCbvsV6r9s=
+github.com/findy-network/findy-grpc v0.0.0-20201104180717-4f44affbcc14 h1:TwuVqlc6kEBYMGXF5uOVYXubxp4q1HVgk4sx6wC6Byk=
+github.com/findy-network/findy-grpc v0.0.0-20201104180717-4f44affbcc14/go.mod h1:mwEq+ofANaA4Qb2FMyrWjK8WrDRsMzMi4qCbvsV6r9s=
+github.com/findy-network/findy-grpc v0.0.0-20201104182458-cff4097a9bf3 h1:O9nGDBvtgHPApMsnACaI72jixPxpyGrMVxU+NXhqMJ0=
+github.com/findy-network/findy-grpc v0.0.0-20201104182458-cff4097a9bf3/go.mod h1:mwEq+ofANaA4Qb2FMyrWjK8WrDRsMzMi4qCbvsV6r9s=
+github.com/findy-network/findy-grpc v0.0.0-20201104182946-05272e3dbf3d h1:1+MkbdtdyDj3c6EvsQGV6PFhxoP4Of2/v9rkY0uhnuU=
+github.com/findy-network/findy-grpc v0.0.0-20201104182946-05272e3dbf3d/go.mod h1:mwEq+ofANaA4Qb2FMyrWjK8WrDRsMzMi4qCbvsV6r9s=
 github.com/findy-network/findy-wrapper-go v0.0.0-20200827084841-e60f74b36fd2 h1:Gz6vTfYTJKgJ5nlBOXAK0W50KeyAr5bH9nvORc8jHkU=
 github.com/findy-network/findy-wrapper-go v0.0.0-20200827084841-e60f74b36fd2/go.mod h1:NZHHzY+NzVa68J3y+Gl9Ihj2+d8qUfQW6CnjaRqmKxI=
 github.com/findy-network/findy-wrapper-go v0.0.0-20201019132306-ec82ba1781cd h1:A6mKGXpQgUVbo+dcLLnr5jj4UTOsnesU5Tgdg/TMurM=
