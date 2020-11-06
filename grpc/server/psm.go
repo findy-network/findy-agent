@@ -59,10 +59,107 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
 
-	return &pb.ProtocolStatus{
-		State:   &pb.ProtocolState{ProtocolId: id},
-		Message: statusJSON,
-	}, nil
+	ps = &pb.ProtocolStatus{
+		State:      &pb.ProtocolState{ProtocolId: id},
+		StatusJson: statusJSON,
+	}
+	switch id.TypeId {
+	case pb.Protocol_CONNECT:
+		ps.Status = tryGetConnectStatus(id, key)
+	case pb.Protocol_ISSUE:
+		ps.Status = tryGetIssueStatus(id, key)
+	case pb.Protocol_PROOF:
+		ps.Status = tryGetProofStatus(id, key)
+	case pb.Protocol_TRUST_PING:
+		ps.Status = tryGetTrustPingStatus(id, key)
+	case pb.Protocol_BASIC_MESSAGE:
+		ps.Status = tryGetBasicMessageStatus(id, key)
+
+	}
+	return ps, nil
+}
+
+func tryGetConnectStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
+	pw, err := psm.GetPairwiseRep(key)
+	err2.Check(err)
+
+	myDID := pw.Callee
+	theirDID := pw.Caller
+	theirEndpoint := pw.Caller.Endp
+
+	if !myDID.My {
+		myDID = pw.Caller
+		theirDID = pw.Callee
+		theirEndpoint = pw.Callee.Endp
+	}
+
+	return &pb.ProtocolStatus_Connection_{Connection: &pb.ProtocolStatus_Connection{
+		Id:            pw.Name,
+		MyDid:         myDID.DID,
+		TheirDid:      theirDID.DID,
+		TheirEndpoint: theirEndpoint,
+		TheirLabel:    pw.TheirLabel,
+	}}
+}
+
+func tryGetIssueStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Issue_ {
+	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
+
+	// TODO: save schema id parsed to db? copied from original implementation
+	var credOfferMap map[string]interface{}
+	dto.FromJSONStr(credRep.CredOffer, &credOfferMap)
+
+	schemaID := credOfferMap["schema_id"].(string)
+
+	attrs := make([]*pb.ProtocolStatus_Issue_CredAttr, 0, len(credRep.Attributes))
+	for _, credAttr := range credRep.Attributes {
+		a := &pb.ProtocolStatus_Issue_CredAttr{
+			Name:  credAttr.Name,
+			Value: credAttr.Value,
+		}
+		attrs = append(attrs, a)
+	}
+	return &pb.ProtocolStatus_Issue_{Issue: &pb.ProtocolStatus_Issue{
+		CredDefId: credRep.CredDefID,
+		SchemaId:  schemaID,
+		Attrs:     attrs,
+	}}
+}
+
+func tryGetProofStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Proof_ {
+	proofRep, err := psm.GetPresentProofRep(key)
+	err2.Check(err)
+	if proofRep == nil {
+		return &pb.ProtocolStatus_Proof_{Proof: &pb.ProtocolStatus_Proof{Attrs: nil}}
+	}
+	attrs := make([]*pb.ProtocolStatus_Proof_Attr, 0, len(proofRep.Attributes))
+
+	for _, attr := range proofRep.Attributes {
+		a := &pb.ProtocolStatus_Proof_Attr{
+			Name:      attr.Name,
+			CredDefId: attr.CredDefID,
+			Predicate: attr.Predicate,
+		}
+		attrs = append(attrs, a)
+	}
+	return &pb.ProtocolStatus_Proof_{Proof: &pb.ProtocolStatus_Proof{Attrs: attrs}}
+}
+
+func tryGetTrustPingStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_TrustPing_ {
+	// todo: add TrustPingRep to DB if we need to track Replied status
+	return &pb.ProtocolStatus_TrustPing_{TrustPing: &pb.ProtocolStatus_TrustPing{Replied: false}}
+}
+
+func tryGetBasicMessageStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_BasicMessage_ {
+	msg, err := psm.GetBasicMessageRep(key)
+	err2.Check(err)
+
+	return &pb.ProtocolStatus_BasicMessage_{BasicMessage: &pb.ProtocolStatus_BasicMessage{
+		Content:       msg.Message,
+		SentByMe:      msg.SentByMe,
+		Delivered:     msg.Delivered,
+		SentTimestamp: msg.SendTimestamp,
+	}}
 }
 
 func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
