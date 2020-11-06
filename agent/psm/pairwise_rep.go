@@ -5,8 +5,8 @@ import (
 )
 
 type PairwiseRep struct {
+	Name       string // In our implementation this is connection id!
 	Key        StateKey
-	Name       string
 	TheirLabel string
 	Caller     DIDRep
 	Callee     DIDRep
