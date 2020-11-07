@@ -43,11 +43,11 @@ type AgentData struct {
 	DID        string
 	Invitation string
 	CredDefID  string
-	ConnID     string
+	ConnID     [3]string
 }
 
 var (
-	agents [2]AgentData
+	agents [4]AgentData
 	lis    = bufconn.Listen(bufSize)
 )
 
@@ -190,7 +190,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"1st",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc1"},
+					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
@@ -203,13 +203,39 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"2nd",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc2"},
+					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
 					},
 				},
 				email: "email2",
+			},
+			nil,
+		},
+		{"third",
+			args{
+				wallet: ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+				email: "email3",
+			},
+			nil,
+		},
+		{"fourth",
+			args{
+				wallet: ssi.Wallet{
+					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Credentials: wallet.Credentials{
+						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
+						KeyDerivationMethod: "RAW",
+					},
+				},
+				email: "email4",
 			},
 			nil,
 		},
@@ -259,7 +285,7 @@ func TestConnection(t *testing.T) {
 			continue
 		}
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(ca.DID, "", 50051,
+			conn := client.TryOpenConn(agents[0].DID, "", 50051,
 				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
 			ctx := context.Background()
@@ -271,10 +297,42 @@ func TestConnection(t *testing.T) {
 				fmt.Printf("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
-			agents[0].ConnID = connID
-			ca.ConnID = connID
+			agents[0].ConnID[i-1] = connID
+			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
 
 			assert.NoError(t, conn.Close())
 		})
 	}
 }
+
+func TestTrustPing(t *testing.T) {
+	for i, ca := range agents {
+		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(ca.DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			r, err := client.Pairwise{
+				ID: ca.ConnID[0],
+			}.Ping(ctx)
+			assert.NoError(t, err)
+			for status := range r {
+				fmt.Printf("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+// new API
+// create schema
+// create cred def for first agent
+
+// issue cred for rest of the agents
+//	- test listening, approval, ...
+// req proof from rest of the agents
+//	- test listening, approval, ...
+
+// chat bot stuff, state machine
