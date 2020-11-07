@@ -39,10 +39,16 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
+type AgentData struct {
+	DID        string
+	Invitation string
+	CredDefID  string
+	ConnID     string
+}
+
 var (
-	credDefID string
-	CADID     [2]string
-	lis     = bufconn.Listen(bufSize)
+	agents [2]AgentData
+	lis    = bufconn.Listen(bufSize)
 )
 
 const bufSize = 1024 * 1024
@@ -219,7 +225,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 			if got := err; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("handshake API = %v, want %v", got, tt.want)
 			}
-			CADID[i] = cadid
+			agents[i].DID = cadid
 			//if i == 1 {
 			//	endpoint2 = endp
 			//}
@@ -228,19 +234,47 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 }
 
 func TestInvitation(t *testing.T) {
-	for _, ca := range CADID {
-		conn := client.TryOpenConn(ca, "", 50051,
-			[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+	for i, ca := range agents {
+		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(ca.DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
-		ctx := context.Background()
-		c := agency2.NewAgentClient(conn)
-		r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{Id: utils.UUID()})
-		assert.NoError(t, err)
+			ctx := context.Background()
+			c := agency2.NewAgentClient(conn)
+			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{Id: utils.UUID()})
+			assert.NoError(t, err)
 
-		assert.NotEmpty(t, r.JsonStr)
-		fmt.Println(r.JsonStr)
+			assert.NotEmpty(t, r.JsonStr)
+			fmt.Println(r.JsonStr)
+			agents[i].Invitation = r.JsonStr
 
-		assert.NoError(t, conn.Close())
-		fmt.Println(ca)
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+func TestConnection(t *testing.T) {
+	for i, ca := range agents {
+		if i == 0 {
+			continue
+		}
+		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(ca.DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			connID, ch, err := client.Connection(ctx, ca.Invitation)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, connID)
+			for status := range ch {
+				fmt.Printf("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			agents[0].ConnID = connID
+			ca.ConnID = connID
+
+			assert.NoError(t, conn.Close())
+		})
 	}
 }
