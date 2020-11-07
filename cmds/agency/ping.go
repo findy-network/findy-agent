@@ -30,7 +30,7 @@ func (c PingCmd) Validate() error {
 func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	conn, err := client.OpenClientConn("findy-root", c.BaseAddr)
+	conn, err := client.OpenClientConn("findy-root", c.BaseAddr, nil)
 	err2.Check(err)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

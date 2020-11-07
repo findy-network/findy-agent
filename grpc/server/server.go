@@ -22,17 +22,21 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-func Serve() {
+var Server *grpc.Server
+
+func Serve(testLis *bufconn.Listener) {
 	pki := rpc.LoadPKI()
 	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
 		pki.Server.CertFile, pki.Server.KeyFile, pki.Client.CertFile)
 
-	rpc.Serve(rpc.ServerCfg{
+	s, lis, err := rpc.PrepareServe(rpc.ServerCfg{
 		Port: 50051,
 		TLS:  true,
 		PKI:  *pki,
+		TestLis: testLis,
 		Register: func(s *grpc.Server) error {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
 			pb.RegisterAgentServer(s, &agentServer{})
@@ -42,6 +46,9 @@ func Serve() {
 			return nil
 		},
 	})
+	err2.Check(err)
+	Server = s
+	err2.Check(s.Serve(lis))
 }
 
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {

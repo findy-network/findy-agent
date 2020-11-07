@@ -14,5 +14,5 @@ type pluginServer struct{}
 var grpcServer pluginServer
 
 func (s pluginServer) Run() {
-	server.Serve()
+	server.Serve(nil)
 }

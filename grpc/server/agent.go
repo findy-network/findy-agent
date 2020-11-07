@@ -6,13 +6,50 @@ import (
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/utils"
+	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
 type agentServer struct {
 	pb.UnimplementedAgentServer
+}
+
+func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
+	defer err2.Annotate("create invitation", &err)
+
+	glog.V(1).Info("Give function start")
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+
+	glog.V(1).Infoln(caDID, "-agent create invitation:", base.Label, base.Id)
+
+	ep := receiver.CAEndp(true)
+	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
+
+	id := base.Id
+	if id == "" {
+		id = utils.UUID()
+	}
+	label := base.Label
+	if base.Label == "" {
+		label = "empty-label"
+	}
+	invitation := didexchange.Invitation{
+		ID:              id,
+		Type:            pltype.AriesConnectionInvitation,
+		ServiceEndpoint: ep.Address(),
+		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
+		Label:           label,
+	}
+
+	jStr := dto.ToJSON(invitation)
+
+	return &pb.Invitation{JsonStr: jStr}, nil
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {

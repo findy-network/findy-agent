@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -27,18 +26,18 @@ func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func TryOpenConn(user, addr string, port int) *grpc.ClientConn {
-	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+func TryOpenConn(user, addr string, port int, opts []grpc.DialOption) *grpc.ClientConn {
+	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port), opts)
 	err2.Check(err)
 	return conn
 }
 
-func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
+func OpenClientConn(user, addr string, opts []grpc.DialOption) (conn *grpc.ClientConn, err error) {
 	defer err2.Return(&err)
 
-	if Conn != nil {
-		return nil, errors.New("client connection all ready open")
-	}
+	//if Conn != nil {
+	//	return nil, errors.New("client connection all ready open")
+	//}
 	pki := rpc.LoadPKI()
 	glog.V(5).Infoln("client with user:", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
@@ -46,6 +45,7 @@ func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
 		JWT:  jwt.BuildJWT(user),
 		Addr: addr,
 		TLS:  true,
+		Opts: opts,
 	})
 	err2.Check(err)
 	Conn = conn

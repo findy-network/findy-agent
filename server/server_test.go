@@ -86,8 +86,8 @@ func setUp() {
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
-	utils.Settings.SetServiceName(testServiceName)
-	utils.Settings.SetServiceName2(testServiceName2)
+	utils.Settings.SetServiceName(TestServiceName)
+	utils.Settings.SetServiceName2(TestServiceName2)
 	utils.Settings.SetHostAddr("http://localhost:8080")
 	utils.Settings.SetVersionInfo("testing testing")
 	utils.Settings.SetTimeout(1 * time.Hour)
