@@ -83,7 +83,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 					}
 				}
 				task.CredentialAttrs = &attributes
-				glog.V(1).Infoln("set cred attrs from attrs")
+				glog.V(1).Infoln("set cred from attrs")
 			} else if credDef.GetAttributesJson() != "" {
 				var credAttrs []didcomm.CredentialAttribute
 				dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
@@ -93,10 +93,24 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		}
 	case pb.Protocol_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			var proofAttrs []didcomm.ProofAttribute
-			dto.FromJSONStr(protocol.GetProofAttributesJson(), &proofAttrs)
-			task.ProofAttrs = &proofAttrs
-			glog.V(1).Infoln("set proof attrs")
+			proofReq := protocol.GetProofReq()
+			if proofReq.GetAttributesJson() != "" {
+				var proofAttrs []didcomm.ProofAttribute
+				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
+				task.ProofAttrs = &proofAttrs
+				glog.V(1).Infoln("set proof attrs from json")
+			} else if proofReq.GetAttrs() != nil {
+				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttrs().GetAttrs()))
+				for i, attribute := range proofReq.GetAttrs().GetAttrs() {
+					attributes[i] = didcomm.ProofAttribute{
+						Name:      attribute.Name,
+						CredDefID: attribute.CredDefId,
+						Predicate: attribute.Predicate,
+					}
+				}
+				task.ProofAttrs = &attributes
+				glog.V(1).Infoln("set proof from attrs")
+			}
 		}
 	}
 	return task, nil

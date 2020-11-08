@@ -121,7 +121,23 @@ func (pw Pairwise) ReqProof(ctx context.Context, proofAttrs string) (ch chan *ag
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_PROOF,
 		Role:         agency.Protocol_INITIATOR,
-		StartMsg:     &agency.Protocol_ProofAttributesJson{ProofAttributesJson: proofAttrs},
+		StartMsg: &agency.Protocol_ProofReq{
+			ProofReq: &agency.Protocol_ProofRequest{
+				AttrFmt: &agency.Protocol_ProofRequest_AttributesJson{
+					AttributesJson: proofAttrs}}},
+	}
+	return doStart(ctx, protocol)
+}
+
+func (pw Pairwise) ReqProofWithAttrs(ctx context.Context, proofAttrs *agency.Protocol_Proof) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_PROOF,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg: &agency.Protocol_ProofReq{
+			ProofReq: &agency.Protocol_ProofRequest{
+				AttrFmt: &agency.Protocol_ProofRequest_Attrs{
+					Attrs: proofAttrs}}},
 	}
 	return doStart(ctx, protocol)
 }

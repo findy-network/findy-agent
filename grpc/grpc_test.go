@@ -467,12 +467,14 @@ func TestSetPermissive(t *testing.T) {
 // as well.
 
 func TestIssue(t *testing.T) {
-	TestSetPermissive(t)
+	if testMode == TestModeRunOne {
+		TestSetPermissive(t)
+	}
 
 	err2.Check(flag.Set("v", "0"))
 
 	for i := 0; i < 3; i++ {
-		t.Run(fmt.Sprintf("conn-id--%d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
 			conn := client.TryOpenConn(agents[0].DID, "", 50051,
 				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
@@ -489,6 +491,39 @@ func TestIssue(t *testing.T) {
 			assert.NoError(t, err)
 			for status := range r {
 				fmt.Printf("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+
+	}
+}
+
+func TestReqProof(t *testing.T) {
+	if testMode == TestModeRunOne {
+		TestIssue(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	for i := 0; i < 3; i++ {
+		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(agents[0].DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			connID := agents[0].ConnID[i]
+			attrs := []*agency2.Protocol_Proof_Attr{{
+				Name:      "email",
+				CredDefId: agents[0].CredDefID,
+			}}
+			r, err := client.Pairwise{
+				ID: connID,
+			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+			assert.NoError(t, err)
+			for status := range r {
+				fmt.Printf("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
