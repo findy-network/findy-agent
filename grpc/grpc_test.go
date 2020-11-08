@@ -467,24 +467,33 @@ func TestSetPermissive(t *testing.T) {
 // as well.
 
 func TestIssue(t *testing.T) {
-	TestSetPermissive(t) // todo: cannot run parallel!!!
-	for i, ca := range agents {
-		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(ca.DID, "", 50051,
+	TestSetPermissive(t)
+
+	err2.Check(flag.Set("v", "0"))
+
+	for i := 0; i < 3; i++ {
+		t.Run(fmt.Sprintf("conn-id--%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(agents[0].DID, "", 50051,
 				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
+			connID := agents[0].ConnID[i]
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
-			}.BasicMessage(ctx, "basic message test string")
+				ID: connID,
+			}.IssueWithAttrs(ctx, agents[0].CredDefID,
+				&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+					Name:  "email",
+					Value: fmt.Sprintf("email_%d", i+1),
+				}}})
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				fmt.Printf("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
 		})
+
 	}
 }
 

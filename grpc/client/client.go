@@ -65,6 +65,19 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 	return doStart(ctx, protocol)
 }
 
+func (pw Pairwise) IssueWithAttrs(ctx context.Context, credDefID string, attrs *agency.Protocol_Attrs) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_ISSUE,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
+			CredDefId: credDefID,
+			Attrs:     &agency.Protocol_Issuing_Attrs_{Attrs_: attrs},
+		}},
+	}
+	return doStart(ctx, protocol)
+}
+
 func Connection(ctx context.Context, invitationJSON string) (connID string, ch chan *agency.ProtocolState, err error) {
 	defer err2.Return(&err)
 

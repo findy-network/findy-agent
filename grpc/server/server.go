@@ -74,12 +74,22 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 			}
 			task.CredDefID = &credDef.CredDefId
 
-			// todo: this is first version using json attrs, write impl for 2nd 'one of'
-			var credAttrs []didcomm.CredentialAttribute
-			dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
-			task.CredentialAttrs = &credAttrs
-
-			glog.V(1).Infoln("set cred attrs")
+			if credDef.GetAttrs() != nil {
+				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttrs_().GetAttrs()))
+				for i, attribute := range credDef.GetAttrs_().GetAttrs() {
+					attributes[i] = didcomm.CredentialAttribute{
+						Name:  attribute.Name,
+						Value: attribute.Value,
+					}
+				}
+				task.CredentialAttrs = &attributes
+				glog.V(1).Infoln("set cred attrs from attrs")
+			} else if credDef.GetAttributesJson() != "" {
+				var credAttrs []didcomm.CredentialAttribute
+				dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
+				task.CredentialAttrs = &credAttrs
+				glog.V(1).Infoln("set cred attrs from json")
+			}
 		}
 	case pb.Protocol_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
