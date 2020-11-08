@@ -39,6 +39,14 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
+type TestMode int
+
+const (
+	TestModeCI TestMode = iota
+	TestModeBuildEnv
+	TestModeRunOne
+)
+
 type AgentData struct {
 	DID        string
 	Invitation string
@@ -46,9 +54,46 @@ type AgentData struct {
 	ConnID     [3]string
 }
 
+func (d AgentData) String() string {
+	return fmt.Sprintf(`{DID: "%s",
+Invitation: "%s",
+CredDefID: "%s",
+ConnID: [3]string{"%s","%s", "%s"},
+},`, d.DID, d.Invitation, d.CredDefID, d.ConnID[0], d.ConnID[1], d.ConnID[2])
+}
+
 var (
-	agents [4]AgentData
-	lis    = bufconn.Listen(bufSize)
+	testMode = TestModeRunOne
+
+	lis            = bufconn.Listen(bufSize)
+	agents         *[4]AgentData
+	emptyAgents    [4]AgentData
+	prebuildAgents = [4]AgentData{
+		// agent number: 0
+		{DID: "32MxmRhhBzLKY297DNu82m",
+			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/32MxmRhhBzLKY297DNu82m/32MxmRhhBzLKY297DNu82m/SnhcjPawVGtdGHc7mkJib3","recipientKeys":["26y2UMUMDipr6NhLjMBc3gRXgPfnqZKt4gh8SrBDMCvG"],"@id":"ed04ace9-903a-43b8-9c77-7107ee55b12b","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
+			CredDefID:  "2Kc7X1ErDwNQC3mDSzcj2r:3:CL:2Kc7X1ErDwNQC3mDSzcj2r:2:NEW_SCHEMA_58906353:1.0:TAG_1",
+			ConnID:     [3]string{"60a5c061-f686-4ed1-9fac-6fda102c0585", "30d6b72b-b812-4781-b564-89a5d885d14c", "9563ab5a-27f8-4842-bbc8-0844d85f5881"},
+		},
+		// agent number: 1
+		{DID: "SDNULvUU932rrYzgXjBgSn",
+			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/SDNULvUU932rrYzgXjBgSn/SDNULvUU932rrYzgXjBgSn/4QbXMoSb6pJbaUwCRfCTwr","recipientKeys":["Ek3QUrUGXCaqujsFK3HgziAR8JcGJs4bwPYacWtpBFMa"],"@id":"60a5c061-f686-4ed1-9fac-6fda102c0585","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
+			CredDefID:  "",
+			ConnID:     [3]string{"60a5c061-f686-4ed1-9fac-6fda102c0585", "", ""},
+		},
+		// agent number: 2
+		{DID: "SjAHWNsaE1HwzdtzocRrhN",
+			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/SjAHWNsaE1HwzdtzocRrhN/SjAHWNsaE1HwzdtzocRrhN/F5aaLV7fyjxt4ph1XXPifo","recipientKeys":["F2H84VhkTb42RUM2YLhTZDTKQdHqN2B3zFJGMDCQKjgJ"],"@id":"30d6b72b-b812-4781-b564-89a5d885d14c","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
+			CredDefID:  "",
+			ConnID:     [3]string{"30d6b72b-b812-4781-b564-89a5d885d14c", "", ""},
+		},
+		// agent number: 3
+		{DID: "Ki6tgbpTsM1tgP7Qoo21dJ",
+			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/Ki6tgbpTsM1tgP7Qoo21dJ/Ki6tgbpTsM1tgP7Qoo21dJ/5vEE67yWoRkY7VCpo71wjm","recipientKeys":["BCRCb7J2RrduLnbPfGauG8iUaTg95zvKPLJYNdcXhv3V"],"@id":"9563ab5a-27f8-4842-bbc8-0844d85f5881","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
+			CredDefID:  "",
+			ConnID:     [3]string{"9563ab5a-27f8-4842-bbc8-0844d85f5881", "", ""},
+		},
+	}
 )
 
 const bufSize = 1024 * 1024
@@ -62,9 +107,13 @@ func TestMain(m *testing.M) {
 	err2.Check(flag.Set("v", "0"))
 	setUp()
 	code := m.Run()
+
+	grpcserver.Server.GracefulStop()
+
 	// IF going to start DEBUGGING ONE TEST run first all of the test with no
 	// tear down. Then check setUp() and use
 	tearDown()
+
 	os.Exit(code)
 }
 
@@ -72,6 +121,12 @@ func setUp() {
 	defer err2.CatchTrace(func(err error) {
 		fmt.Println("error on setup", err)
 	})
+
+	if testMode == TestModeRunOne {
+		agents = &prebuildAgents
+	} else {
+		agents = &emptyAgents
+	}
 
 	// obsolete until all of the logs are on glog
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -101,11 +156,19 @@ func setUp() {
 		log.Panicln(r.Err())
 	}
 
-	// IF DEBUGGING ONE TEST run first
-	err2.Check(agency.ResetRegistered("findy.json"))
-	//hubReady, err := Hub().LoadRegistered("findy.json")
+	// IF DEBUGGING ONE TEST run first, todo: move cleanup to tear down? make it easier
+	if testMode == TestModeRunOne {
+		err2.Check(handshake.LoadRegistered("findy.json"))
+	} else {
+		err2.Check(agency.ResetRegistered("findy.json"))
+	}
 
-	ssi.OpenPool("FINDY_MEM_LEDGER")
+	// IF DEBUGGING ONE TEST use always file ledger
+	if testMode == TestModeCI {
+		ssi.OpenPool("FINDY_MEM_LEDGER")
+	} else {
+		ssi.OpenPool("FINDY_FILE_LEDGER")
+	}
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
@@ -121,17 +184,15 @@ func setUp() {
 
 	err2.Check(psm.Open("Findy.bolt")) // this panics if err..
 
-	// IF DEBUGGING ONE TEST run first without next line, then when using
-	// LoadRegistered() in the beginning the line is needed.
-	//<-hubReady
-
 	go grpcserver.Serve(lis)
 
 	server.StartTestHTTPServer()
 }
 
 func tearDown() {
-	grpcserver.Server.GracefulStop()
+	if testMode != TestModeCI {
+		return
+	}
 
 	home := utils.IndyBaseDir()
 
@@ -177,7 +238,23 @@ func Test_handleAgencyAPI(t *testing.T) {
 	}
 }
 
+// Test_handshakeAgencyAPI is not actual test here. It's used for the build
+// environment for the actual tests. However, it's now used to test that we can
+// use only one wallet for all of the EAs. That's handy for web wallets.
 func Test_handshakeAgencyAPI(t *testing.T) {
+	if testMode != TestModeCI {
+		return
+	}
+
+	ut := time.Now().Unix() - 1545924840
+	schemaName := fmt.Sprintf("NEW_SCHEMA_%v", ut)
+
+	sch := ssi.Schema{
+		Name:    schemaName,
+		Version: "1.0",
+		Attrs:   []string{"email"},
+	}
+
 	type args struct {
 		wallet ssi.Wallet
 		email  string
@@ -252,14 +329,29 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 				t.Errorf("handshake API = %v, want %v", got, tt.want)
 			}
 			agents[i].DID = cadid
-			//if i == 1 {
-			//	endpoint2 = endp
-			//}
+
+			// build schema and cred def for the first agent to use later
+			if i == 0 {
+				sID, err := c.CreateSchema(&sch)
+				if got := err; !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("client.CreateSchema() %v, want %v", got, tt.want)
+				}
+				fmt.Println("==== creating cred def please wait ====")
+				time.Sleep(2 * time.Millisecond) // Legacy: Sleep to let ledger process schema!
+				agents[0].CredDefID, err = c.CreateCredDef(sID, "TAG_1")
+				if got := err; !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("client.CreateCredDef() %v, want %v", got, tt.want)
+				}
+			}
 		})
 	}
 }
 
 func TestInvitation(t *testing.T) {
+	if testMode != TestModeCI {
+		return
+	}
+
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
 			conn := client.TryOpenConn(ca.DID, "", 50051,
@@ -280,6 +372,10 @@ func TestInvitation(t *testing.T) {
 }
 
 func TestConnection(t *testing.T) {
+	if testMode != TestModeCI {
+		return
+	}
+
 	for i, ca := range agents {
 		if i == 0 {
 			continue
@@ -302,6 +398,10 @@ func TestConnection(t *testing.T) {
 
 			assert.NoError(t, conn.Close())
 		})
+	}
+	for i, agent := range agents {
+		fmt.Println("// agent number:", i)
+		fmt.Println(agent.String())
 	}
 }
 
@@ -326,9 +426,33 @@ func TestTrustPing(t *testing.T) {
 	}
 }
 
+func TestBasicMessage(t *testing.T) {
+	for i, ca := range agents {
+		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(ca.DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			r, err := client.Pairwise{
+				ID: ca.ConnID[0],
+			}.BasicMessage(ctx, "basic message test string")
+			assert.NoError(t, err)
+			for status := range r {
+				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+// todo: should we have tests for protocol Start and Status not only Run
+//  try to first write first round of tests and then write rest of them
+
 // new API
-// create schema
-// create cred def for first agent
+// create schema, USE old
+// create cred def for first agent, USE old
 
 // issue cred for rest of the agents
 //	- test listening, approval, ...

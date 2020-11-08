@@ -18,6 +18,70 @@ type didCommServer struct {
 	pb.UnimplementedDIDCommServer
 }
 
+func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
+	defer err2.Handle(&err, func() {
+		glog.Errorf("grpc run error: %s", err)
+		status := &pb.ProtocolState{
+			Info:  err.Error(),
+			State: pb.ProtocolState_ERR,
+		}
+		if err := server.Send(status); err != nil {
+			glog.Errorln("error sending response:", err)
+		}
+	})
+
+	glog.V(3).Infoln("run() call")
+
+	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	task := e2.Task.Try(taskFrom(protocol))
+	glog.V(3).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeId)])
+
+	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
+	statusChan := bus.WantAll.AddListener(key)
+	userActionChan := bus.WantUserActions.AddListener(key)
+
+	prot.FindAndStartTask(receiver, task)
+
+	var statusCode pb.ProtocolState_State
+loop:
+	for {
+		select {
+		case status := <-statusChan:
+			glog.V(1).Infoln("grpc state:", status)
+			switch status {
+			case psm.ReadyACK, psm.ACK:
+				statusCode = pb.ProtocolState_OK
+				break loop
+			case psm.ReadyNACK, psm.NACK, psm.Failure:
+				statusCode = pb.ProtocolState_ERR
+				break loop
+			}
+		case status := <-userActionChan:
+			switch status {
+			case psm.Waiting:
+				glog.V(1).Infoln("waiting arrived")
+				status := &pb.ProtocolState{
+					ProtocolId: &pb.ProtocolID{Id: task.Nonce},
+					State:      pb.ProtocolState_WAIT_ACTION,
+				}
+				err2.Check(server.Send(status))
+			}
+		}
+	}
+	glog.V(1).Infoln("out from grpc state:", statusCode)
+	bus.WantAll.RmListener(key)
+	bus.WantUserActions.RmListener(key)
+
+	status := &pb.ProtocolState{
+		ProtocolId: &pb.ProtocolID{Id: task.Nonce},
+		State:      statusCode,
+	}
+	err2.Check(server.Send(status))
+
+	return nil
+}
+
 func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pid *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
@@ -160,68 +224,4 @@ func tryGetBasicMessageStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolS
 		Delivered:     msg.Delivered,
 		SentTimestamp: msg.SendTimestamp,
 	}}
-}
-
-func (s *didCommServer) Run(protocol *pb.Protocol, server pb.DIDComm_RunServer) (err error) {
-	defer err2.Handle(&err, func() {
-		glog.Errorf("grpc run error: %s", err)
-		status := &pb.ProtocolState{
-			Info:  err.Error(),
-			State: pb.ProtocolState_ERR,
-		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
-	})
-
-	glog.V(3).Infoln("run() call")
-
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	task := e2.Task.Try(taskFrom(protocol))
-	glog.V(3).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeId)])
-
-	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
-	statusChan := bus.WantAll.AddListener(key)
-	userActionChan := bus.WantUserActions.AddListener(key)
-
-	prot.FindAndStartTask(receiver, task)
-
-	var statusCode pb.ProtocolState_State
-loop:
-	for {
-		select {
-		case status := <-statusChan:
-			glog.V(1).Infoln("grpc state:", status)
-			switch status {
-			case psm.ReadyACK, psm.ACK:
-				statusCode = pb.ProtocolState_OK
-				break loop
-			case psm.ReadyNACK, psm.NACK, psm.Failure:
-				statusCode = pb.ProtocolState_ERR
-				break loop
-			}
-		case status := <-userActionChan:
-			switch status {
-			case psm.Waiting:
-				glog.V(1).Infoln("waiting arrived")
-				status := &pb.ProtocolState{
-					ProtocolId: &pb.ProtocolID{Id: task.Nonce},
-					State:      pb.ProtocolState_WAIT_ACTION,
-				}
-				err2.Check(server.Send(status))
-			}
-		}
-	}
-	glog.V(1).Infoln("out from grpc state:", statusCode)
-	bus.WantAll.RmListener(key)
-	bus.WantUserActions.RmListener(key)
-
-	status := &pb.ProtocolState{
-		ProtocolId: &pb.ProtocolID{Id: task.Nonce},
-		State:      statusCode,
-	}
-	err2.Check(server.Send(status))
-
-	return nil
 }

@@ -33,9 +33,9 @@ func Serve(testLis *bufconn.Listener) {
 		pki.Server.CertFile, pki.Server.KeyFile, pki.Client.CertFile)
 
 	s, lis, err := rpc.PrepareServe(rpc.ServerCfg{
-		Port: 50051,
-		TLS:  true,
-		PKI:  *pki,
+		Port:    50051,
+		TLS:     true,
+		PKI:     *pki,
 		TestLis: testLis,
 		Register: func(s *grpc.Server) error {
 			pb.RegisterDIDCommServer(s, &didCommServer{})
@@ -73,9 +73,12 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				panic(errors.New("cred def cannot be nil for issuing protocol"))
 			}
 			task.CredDefID = &credDef.CredDefId
+
+			// todo: this is first version using json attrs, write impl for 2nd 'one of'
 			var credAttrs []didcomm.CredentialAttribute
 			dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
 			task.CredentialAttrs = &credAttrs
+
 			glog.V(1).Infoln("set cred attrs")
 		}
 	case pb.Protocol_PROOF:
@@ -135,11 +138,11 @@ var protocolName = [...]string{
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {
 	caDID = jwt.User(ctx)
 	if !agency.IsHandlerInThisAgency(caDID) {
-		return "", nil, errors.New("handler is not in this agency")
+		return "", nil, fmt.Errorf("handler (%s) is not in this agency", caDID)
 	}
 	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
 	if !ok {
-		return "", nil, errors.New("no ca did")
+		return "", nil, fmt.Errorf("no ca did (%s)", caDID)
 	}
 	glog.V(3).Infoln("caDID:", caDID)
 	return caDID, rcvr, nil

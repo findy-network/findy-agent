@@ -58,8 +58,8 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 		TypeId:       agency.Protocol_ISSUE,
 		Role:         agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
-			CredDefId:      credDefID,
-			AttributesJson: attrsJSON,
+			CredDefId: credDefID,
+			Attrs:     &agency.Protocol_Issuing_AttributesJson{AttributesJson: attrsJSON},
 		}},
 	}
 	return doStart(ctx, protocol)
@@ -89,6 +89,16 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_TRUST_PING,
 		Role:         agency.Protocol_INITIATOR,
+	}
+	return doStart(ctx, protocol)
+}
+
+func (pw Pairwise) BasicMessage(ctx context.Context, content string) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_BASIC_MESSAGE,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg:     &agency.Protocol_BasicMessage{BasicMessage: content},
 	}
 	return doStart(ctx, protocol)
 }
