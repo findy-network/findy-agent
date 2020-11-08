@@ -144,6 +144,6 @@ func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {
 	if !ok {
 		return "", nil, fmt.Errorf("no ca did (%s)", caDID)
 	}
-	glog.V(3).Infoln("caDID:", caDID)
+	glog.V(1).Infoln("grpc call with caDID:", caDID)
 	return caDID, rcvr, nil
 }

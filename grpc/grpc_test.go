@@ -447,6 +447,47 @@ func TestBasicMessage(t *testing.T) {
 	}
 }
 
+func TestSetPermissive(t *testing.T) {
+	for _, ca := range agents {
+		conn := client.TryOpenConn(ca.DID, "", 50051,
+			[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+		ctx := context.Background()
+		c := agency2.NewAgentClient(conn)
+		r, err := c.SetImplId(ctx, &agency2.SAImplementation{Id: "permissive_sa"})
+		assert.NoError(t, err)
+		assert.Equal(t, "permissive_sa", r.Id)
+		assert.NoError(t, conn.Close())
+	}
+	fmt.Println("permissive impl set is done!")
+}
+
+// if we don't use auto accept mechanism, we should have listeners for each of
+// the receiving agent. Those listeners will accept and offer base to NACK tests
+// as well.
+
+func TestIssue(t *testing.T) {
+	TestSetPermissive(t) // todo: cannot run parallel!!!
+	for i, ca := range agents {
+		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			conn := client.TryOpenConn(ca.DID, "", 50051,
+				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			r, err := client.Pairwise{
+				ID: ca.ConnID[0],
+			}.BasicMessage(ctx, "basic message test string")
+			assert.NoError(t, err)
+			for status := range r {
+				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
 // todo: should we have tests for protocol Start and Status not only Run
 //  try to first write first round of tests and then write rest of them
 
