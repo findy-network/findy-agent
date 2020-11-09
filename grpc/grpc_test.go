@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -31,6 +32,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/lainio/err2"
@@ -104,7 +106,9 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 
 func TestMain(m *testing.M) {
 	err2.Check(flag.Set("logtostderr", "true"))
-	err2.Check(flag.Set("v", "1"))
+	err2.Check(flag.Set("v", "0"))
+
+	prepareBuildOneTest()
 	setUp()
 	code := m.Run()
 
@@ -123,6 +127,8 @@ func setUp() {
 	})
 
 	if testMode == TestModeRunOne {
+		gob := err2.Bytes.Try(ioutil.ReadFile("ONEdata.gob"))
+		dto.FromGOB(gob, &prebuildAgents)
 		agents = &prebuildAgents
 	} else {
 		agents = &emptyAgents
@@ -188,6 +194,24 @@ func setUp() {
 	go grpcserver.Serve(lis)
 
 	server.StartTestHTTPServer()
+}
+
+func prepareBuildOneTest() {
+	if testMode != TestModeBuildEnv {
+		return
+	}
+
+	home := utils.IndyBaseDir()
+	fmt.Println("----- cleaning ----")
+	removeFiles(home, "/.indy_client/worker/ONEunit_test_wallet*")
+	removeFiles(home, "/.indy_client/worker/ONEemail*")
+	removeFiles(home, "/.indy_client/worker/ONEenclave.bolt")
+	removeFiles(home, "/.indy_client/wallet/ONEunit_test_wallet*")
+	removeFiles(home, "/.indy_client/wallet/ONEemail*")
+	if os.Getenv("TEST_WORKDIR") != "" {
+		removeFiles(home, "/wallets/*")
+	}
+	//enclave.WipeSealedBox()
 }
 
 func tearDown() {
@@ -268,7 +292,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"1st",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Config: wallet.Config{ID: strLiteral("unit_test_wallet_grpc", "", -1)},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
@@ -281,7 +305,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"2nd",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Config: wallet.Config{ID: strLiteral("unit_test_wallet_grpc", "", -1)},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
@@ -294,7 +318,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"third",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Config: wallet.Config{ID: strLiteral("unit_test_wallet_grpc", "", -1)},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
@@ -307,7 +331,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 		{"fourth",
 			args{
 				wallet: ssi.Wallet{
-					Config: wallet.Config{ID: "unit_test_wallet_grpc"},
+					Config: wallet.Config{ID: strLiteral("unit_test_wallet_grpc", "", -1)},
 					Credentials: wallet.Credentials{
 						Key:                 "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp",
 						KeyDerivationMethod: "RAW",
@@ -400,9 +424,13 @@ func TestConnection(t *testing.T) {
 			assert.NoError(t, conn.Close())
 		})
 	}
+
 	for i, agent := range agents {
 		fmt.Println("// agent number:", i)
 		fmt.Println(agent.String())
+	}
+	if testMode == TestModeBuildEnv {
+		err2.Check(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
 	}
 }
 
@@ -540,14 +568,15 @@ func strLiteral(prefix string, suffix string, i int) string {
 			return prefix + suffix
 		}
 		return fmt.Sprintf("%s%d%s", prefix, i, suffix)
-	default:
-		//	case TestModeBuildEnv, TestModeRunOne:
+	case TestModeBuildEnv, TestModeRunOne:
 		if i == -1 {
-			return prefix + "ONE" + suffix
+			return "ONE" + prefix + suffix
 		}
 		// these are used for email literals and they are used for cloud
 		// wallet names, these need to be different as well
-		return fmt.Sprintf("%s%dONE%s", prefix, i, suffix)
+		return fmt.Sprintf("ONE%s%d%s", prefix, i, suffix)
+	default:
+		panic("not implemented")
 	}
 }
 
