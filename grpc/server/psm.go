@@ -194,19 +194,19 @@ func tryGetProofStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_P
 	proofRep, err := psm.GetPresentProofRep(key)
 	err2.Check(err)
 	if proofRep == nil {
-		return &pb.ProtocolStatus_Proof_{Proof: &pb.ProtocolStatus_Proof{Attrs: nil}}
+		return &pb.ProtocolStatus_Proof_{Proof: &pb.Protocol_Proof{Attrs: nil}}
 	}
-	attrs := make([]*pb.ProtocolStatus_Proof_Attr, 0, len(proofRep.Attributes))
+	attrs := make([]*pb.Protocol_Proof_Attr, 0, len(proofRep.Attributes))
 
 	for _, attr := range proofRep.Attributes {
-		a := &pb.ProtocolStatus_Proof_Attr{
+		a := &pb.Protocol_Proof_Attr{
 			Name:      attr.Name,
 			CredDefId: attr.CredDefID,
 			Predicate: attr.Predicate,
 		}
 		attrs = append(attrs, a)
 	}
-	return &pb.ProtocolStatus_Proof_{Proof: &pb.ProtocolStatus_Proof{Attrs: attrs}}
+	return &pb.ProtocolStatus_Proof_{Proof: &pb.Protocol_Proof{Attrs: attrs}}
 }
 
 func tryGetTrustPingStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_TrustPing_ {
