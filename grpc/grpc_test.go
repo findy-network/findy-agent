@@ -104,7 +104,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 
 func TestMain(m *testing.M) {
 	err2.Check(flag.Set("logtostderr", "true"))
-	err2.Check(flag.Set("v", "0"))
+	err2.Check(flag.Set("v", "1"))
 	setUp()
 	code := m.Run()
 
@@ -136,12 +136,13 @@ func setUp() {
 	sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 
 	exportPath := os.Getenv("TEST_WORKDIR")
+	enclaveFile := strLiteral("enclave", ".bolt", -1)
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
 		exportPath = utils.IndyBaseDir()
-		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/enclave.bolt")
+		sealedBoxPath = filepath.Join(exportPath, ".indy_client/wallet/"+enclaveFile)
 	} else {
-		sealedBoxPath = "enclave.bolt"
+		sealedBoxPath = enclaveFile
 	}
 	err2.Check(enclave.InitSealedBox(sealedBoxPath))
 
@@ -158,9 +159,9 @@ func setUp() {
 
 	// IF DEBUGGING ONE TEST run first, todo: move cleanup to tear down? make it easier
 	if testMode == TestModeRunOne {
-		err2.Check(handshake.LoadRegistered("findy.json"))
+		err2.Check(handshake.LoadRegistered(strLiteral("findy", ".json", -1)))
 	} else {
-		err2.Check(agency.ResetRegistered("findy.json"))
+		err2.Check(agency.ResetRegistered(strLiteral("findy", ".json", -1)))
 	}
 
 	// IF DEBUGGING ONE TEST use always file ledger
@@ -182,7 +183,7 @@ func setUp() {
 	//utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
-	err2.Check(psm.Open("Findy.bolt")) // this panics if err..
+	err2.Check(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
 
 	go grpcserver.Serve(lis)
 
@@ -242,7 +243,7 @@ func Test_handleAgencyAPI(t *testing.T) {
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all of the EAs. That's handy for web wallets.
 func Test_handshakeAgencyAPI(t *testing.T) {
-	if testMode != TestModeCI {
+	if testMode == TestModeRunOne {
 		return
 	}
 
@@ -273,7 +274,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 						KeyDerivationMethod: "RAW",
 					},
 				},
-				email: "email1",
+				email: strLiteral("email", "", 1),
 			},
 			nil,
 		},
@@ -286,7 +287,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 						KeyDerivationMethod: "RAW",
 					},
 				},
-				email: "email2",
+				email: strLiteral("email", "", 2),
 			},
 			nil,
 		},
@@ -299,7 +300,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 						KeyDerivationMethod: "RAW",
 					},
 				},
-				email: "email3",
+				email: strLiteral("email", "", 3),
 			},
 			nil,
 		},
@@ -312,7 +313,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 						KeyDerivationMethod: "RAW",
 					},
 				},
-				email: "email4",
+				email: strLiteral("email", "", 4),
 			},
 			nil,
 		},
@@ -348,7 +349,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 }
 
 func TestInvitation(t *testing.T) {
-	if testMode != TestModeCI {
+	if testMode == TestModeRunOne {
 		return
 	}
 
@@ -372,7 +373,7 @@ func TestInvitation(t *testing.T) {
 }
 
 func TestConnection(t *testing.T) {
-	if testMode != TestModeCI {
+	if testMode == TestModeRunOne {
 		return
 	}
 
@@ -486,7 +487,7 @@ func TestIssue(t *testing.T) {
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
 				&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
 					Name:  "email",
-					Value: fmt.Sprintf("email_%d", i+1),
+					Value: strLiteral("email", "", i+1),
 				}}})
 			assert.NoError(t, err)
 			for status := range r {
@@ -532,6 +533,42 @@ func TestReqProof(t *testing.T) {
 	}
 }
 
+func strLiteral(prefix string, suffix string, i int) string {
+	switch testMode {
+	case TestModeCI:
+		if i == -1 {
+			return prefix + suffix
+		}
+		return fmt.Sprintf("%s%d%s", prefix, i, suffix)
+	default:
+		//	case TestModeBuildEnv, TestModeRunOne:
+		if i == -1 {
+			return prefix + "ONE" + suffix
+		}
+		// these are used for email literals and they are used for cloud
+		// wallet names, these need to be different as well
+		return fmt.Sprintf("%s%dONE%s", prefix, i, suffix)
+	}
+}
+
+// todo: get one test mode as persistent by starting it to take safe to wallets and other files by renaming them!!
+// current directory:
+// -rw------- 1 harri harri 2.3M Nov  9 15:45 Findy.bolt
+// -rw-r--r-- 1 harri harri  290 Nov  8 12:26 findy.json
+// wallet directory:
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email1//
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email2//
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email3//
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email4//
+//        2 -rw------- 1 harri harri  32K Nov  9 15:45 enclave.bolt
+// single EA wallet:
+//       3 drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 unit_test_wallet_grpc/
+
+// worker-dir:
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email4_worker/
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email3_worker/
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email2_worker/
+// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email1_worker/
 // todo: should we have tests for protocol Start and Status not only Run
 //  try to first write first round of tests and then write rest of them
 
