@@ -25,7 +25,6 @@ import (
 )
 
 var Server *grpc.Server
-var conf *rpc.ServerCfg
 
 func Serve(conf *rpc.ServerCfg) {
 	if conf == nil {
