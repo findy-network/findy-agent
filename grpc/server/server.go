@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
-	ops "github.com/findy-network/findy-agent-api/grpc/ops"
+	"github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -22,30 +22,33 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/test/bufconn"
 )
 
 var Server *grpc.Server
+var conf *rpc.ServerCfg
 
-func Serve(testLis *bufconn.Listener) {
-	pki := rpc.LoadPKI()
-	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
-		pki.Server.CertFile, pki.Server.KeyFile, pki.Client.CertFile)
+func Serve(conf *rpc.ServerCfg) {
+	if conf == nil {
+		glog.Infoln("===== initializing grpc server")
+		conf = &rpc.ServerCfg{
+			Port:    50051,
+			PKI:     rpc.LoadPKI(""),
+			TestLis: nil,
+		}
+	}
+	glog.V(0).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
+		conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
 
-	s, lis, err := rpc.PrepareServe(rpc.ServerCfg{
-		Port:    50051,
-		TLS:     true,
-		PKI:     *pki,
-		TestLis: testLis,
-		Register: func(s *grpc.Server) error {
-			pb.RegisterDIDCommServer(s, &didCommServer{})
-			pb.RegisterAgentServer(s, &agentServer{})
-			//pb.RegisterAgencyServer(s, &agencyService{})
-			ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
-			glog.Infoln("GRPC registration IIIIIII OK")
-			return nil
-		},
-	})
+	conf.Register = func(s *grpc.Server) error {
+		pb.RegisterDIDCommServer(s, &didCommServer{})
+		pb.RegisterAgentServer(s, &agentServer{})
+		//pb.RegisterAgencyServer(s, &agencyService{})
+		ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+		glog.Infoln("GRPC registration IIIIIII OK")
+		return nil
+	}
+
+	s, lis, err := rpc.PrepareServe(conf)
 	err2.Check(err)
 	Server = s
 	err2.Check(s.Serve(lis))

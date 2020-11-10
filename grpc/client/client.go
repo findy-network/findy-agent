@@ -16,35 +16,57 @@ import (
 )
 
 var Conn *grpc.ClientConn
+var cfg *rpc.ClientCfg
 
 type Pairwise struct {
 	ID    string
 	Label string
 }
 
+func BuildClientConnBase(tlsPath, addr string, port int, opts []grpc.DialOption) *rpc.ClientCfg {
+	cfg = &rpc.ClientCfg{
+		PKI:  rpc.LoadPKI(tlsPath),
+		JWT:  "",
+		Addr: fmt.Sprintf("%s:%d", addr, port),
+		Opts: opts,
+	}
+	return cfg
+}
+
+func TryOpen(user string, conf *rpc.ClientCfg) *grpc.ClientConn {
+	if conf == nil {
+		conf = cfg
+	}
+	glog.V(1).Infof("client with user \"%s\"", user)
+	conf.JWT = jwt.BuildJWT(user)
+	conn, err := rpc.ClientConn(*conf)
+	err2.Check(err)
+	Conn = conn
+	return conn
+}
+
 func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func TryOpenConn(user, addr string, port int, opts []grpc.DialOption) *grpc.ClientConn {
-	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port), opts)
+func TryOpenConnDeprecated(user, addr string, port int, opts []grpc.DialOption) *grpc.ClientConn {
+	conn, err := OpenClientConnDeprecated(user, fmt.Sprintf("%s:%d", addr, port), opts)
 	err2.Check(err)
 	return conn
 }
 
-func OpenClientConn(user, addr string, opts []grpc.DialOption) (conn *grpc.ClientConn, err error) {
+func OpenClientConnDeprecated(user, addr string, opts []grpc.DialOption) (conn *grpc.ClientConn, err error) {
 	defer err2.Return(&err)
 
 	//if Conn != nil {
 	//	return nil, errors.New("client connection all ready open")
 	//}
-	pki := rpc.LoadPKI()
-	glog.V(5).Infoln("client with user:", user)
+	pki := rpc.LoadPKI("")
+	glog.V(5).Infof("client with user \"%s\"", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
-		PKI:  *pki,
+		PKI:  pki,
 		JWT:  jwt.BuildJWT(user),
 		Addr: addr,
-		TLS:  true,
 		Opts: opts,
 	})
 	err2.Check(err)

@@ -31,6 +31,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
+	"github.com/findy-network/findy-grpc/rpc"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pool"
@@ -70,32 +71,8 @@ var (
 	lis            = bufconn.Listen(bufSize)
 	agents         *[4]AgentData
 	emptyAgents    [4]AgentData
-	prebuildAgents = [4]AgentData{
-		// agent number: 0
-		{DID: "32MxmRhhBzLKY297DNu82m",
-			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/32MxmRhhBzLKY297DNu82m/32MxmRhhBzLKY297DNu82m/SnhcjPawVGtdGHc7mkJib3","recipientKeys":["26y2UMUMDipr6NhLjMBc3gRXgPfnqZKt4gh8SrBDMCvG"],"@id":"ed04ace9-903a-43b8-9c77-7107ee55b12b","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
-			CredDefID:  "2Kc7X1ErDwNQC3mDSzcj2r:3:CL:2Kc7X1ErDwNQC3mDSzcj2r:2:NEW_SCHEMA_58906353:1.0:TAG_1",
-			ConnID:     [3]string{"60a5c061-f686-4ed1-9fac-6fda102c0585", "30d6b72b-b812-4781-b564-89a5d885d14c", "9563ab5a-27f8-4842-bbc8-0844d85f5881"},
-		},
-		// agent number: 1
-		{DID: "SDNULvUU932rrYzgXjBgSn",
-			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/SDNULvUU932rrYzgXjBgSn/SDNULvUU932rrYzgXjBgSn/4QbXMoSb6pJbaUwCRfCTwr","recipientKeys":["Ek3QUrUGXCaqujsFK3HgziAR8JcGJs4bwPYacWtpBFMa"],"@id":"60a5c061-f686-4ed1-9fac-6fda102c0585","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
-			CredDefID:  "",
-			ConnID:     [3]string{"60a5c061-f686-4ed1-9fac-6fda102c0585", "", ""},
-		},
-		// agent number: 2
-		{DID: "SjAHWNsaE1HwzdtzocRrhN",
-			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/SjAHWNsaE1HwzdtzocRrhN/SjAHWNsaE1HwzdtzocRrhN/F5aaLV7fyjxt4ph1XXPifo","recipientKeys":["F2H84VhkTb42RUM2YLhTZDTKQdHqN2B3zFJGMDCQKjgJ"],"@id":"30d6b72b-b812-4781-b564-89a5d885d14c","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
-			CredDefID:  "",
-			ConnID:     [3]string{"30d6b72b-b812-4781-b564-89a5d885d14c", "", ""},
-		},
-		// agent number: 3
-		{DID: "Ki6tgbpTsM1tgP7Qoo21dJ",
-			Invitation: `{"serviceEndpoint":"http://localhost:8080/a2a/Ki6tgbpTsM1tgP7Qoo21dJ/Ki6tgbpTsM1tgP7Qoo21dJ/5vEE67yWoRkY7VCpo71wjm","recipientKeys":["BCRCb7J2RrduLnbPfGauG8iUaTg95zvKPLJYNdcXhv3V"],"@id":"9563ab5a-27f8-4842-bbc8-0844d85f5881","label":"empty-label","@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"}`,
-			CredDefID:  "",
-			ConnID:     [3]string{"9563ab5a-27f8-4842-bbc8-0844d85f5881", "", ""},
-		},
-	}
+	prebuildAgents [4]AgentData
+	baseCfg        *rpc.ClientCfg
 )
 
 const bufSize = 1024 * 1024
@@ -133,6 +110,9 @@ func setUp() {
 	} else {
 		agents = &emptyAgents
 	}
+
+	baseCfg = client.BuildClientConnBase("./cert", "what_ever", 0,
+		[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
 	// obsolete until all of the logs are on glog
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -191,7 +171,11 @@ func setUp() {
 
 	err2.Check(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
 
-	go grpcserver.Serve(lis)
+	go grpcserver.Serve(&rpc.ServerCfg{
+		PKI:     rpc.LoadPKI("./cert"),
+		Port:    0,
+		TestLis: lis,
+	})
 
 	server.StartTestHTTPServer()
 }
@@ -245,19 +229,14 @@ func removeFiles(home, nameFilter string) {
 func Test_handleAgencyAPI(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		t.Run(fmt.Sprintf("ping %d", i), func(t *testing.T) {
-			conn, err := client.OpenClientConn("findy-root", "what_ever",
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
-			assert.NoError(t, err)
-
+			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
-
 			opsClient := pb.NewDevOpsClient(conn)
 			result, err := opsClient.Enter(ctx, &pb.Cmd{
 				Type: pb.Cmd_PING,
 			})
 			assert.NoError(t, err)
 			fmt.Println(i, "result:", result.GetPing())
-
 			assert.NoError(t, conn.Close())
 		})
 	}
@@ -379,8 +358,7 @@ func TestInvitation(t *testing.T) {
 
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(ca.DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
 			c := agency2.NewAgentClient(conn)
@@ -406,8 +384,7 @@ func TestConnection(t *testing.T) {
 			continue
 		}
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(agents[0].DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
@@ -437,8 +414,7 @@ func TestConnection(t *testing.T) {
 func TestTrustPing(t *testing.T) {
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(ca.DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
@@ -458,8 +434,7 @@ func TestTrustPing(t *testing.T) {
 func TestBasicMessage(t *testing.T) {
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(ca.DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
@@ -478,8 +453,7 @@ func TestBasicMessage(t *testing.T) {
 
 func TestSetPermissive(t *testing.T) {
 	for _, ca := range agents {
-		conn := client.TryOpenConn(ca.DID, "", 50051,
-			[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+		conn := client.TryOpen(ca.DID, baseCfg)
 
 		ctx := context.Background()
 		c := agency2.NewAgentClient(conn)
@@ -504,8 +478,7 @@ func TestIssue(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(agents[0].DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
@@ -537,8 +510,7 @@ func TestReqProof(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
-			conn := client.TryOpenConn(agents[0].DID, "", 50051,
-				[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
+			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)

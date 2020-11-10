@@ -55,6 +55,8 @@ type Cmd struct {
 	Salt              string
 	APNSP12CertFile   string
 	AllowRPC          bool
+	GRPCPort          int
+	TlsCertPath       string
 }
 
 func (c *Cmd) Validate() error {
@@ -122,7 +124,7 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
 	if c.AllowRPC {
-		StartGrpcServer()
+		StartGrpcServer(c.GRPCPort, c.TlsCertPath)
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
