@@ -9,6 +9,7 @@ require (
 	github.com/findy-network/findy-wrapper-go v0.0.0-20201026120712-dc9ac6619595
 	github.com/go-test/deep v1.0.7
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golangci/golangci-lint v1.32.2 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/lainio/err2 v0.5.0
 	github.com/sideshow/apns2 v0.20.0
