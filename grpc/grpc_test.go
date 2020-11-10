@@ -65,7 +65,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 }
 
 var (
-	testMode = TestModeRunOne
+	testMode = TestModeCI
 
 	lis            = bufconn.Listen(bufSize)
 	agents         *[4]AgentData
@@ -579,35 +579,3 @@ func strLiteral(prefix string, suffix string, i int) string {
 		panic("not implemented")
 	}
 }
-
-// todo: get one test mode as persistent by starting it to take safe to wallets and other files by renaming them!!
-// current directory:
-// -rw------- 1 harri harri 2.3M Nov  9 15:45 Findy.bolt
-// -rw-r--r-- 1 harri harri  290 Nov  8 12:26 findy.json
-// wallet directory:
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email1//
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email2//
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email3//
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 email4//
-//        2 -rw------- 1 harri harri  32K Nov  9 15:45 enclave.bolt
-// single EA wallet:
-//       3 drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 unit_test_wallet_grpc/
-
-// worker-dir:
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email4_worker/
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email3_worker/
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email2_worker/
-// drwxrwxr-x 2 harri harri 4.0K Nov  8 12:26 ../worker/email1_worker/
-// todo: should we have tests for protocol Start and Status not only Run
-//  try to first write first round of tests and then write rest of them
-
-// new API
-// create schema, USE old
-// create cred def for first agent, USE old
-
-// issue cred for rest of the agents
-//	- test listening, approval, ...
-// req proof from rest of the agents
-//	- test listening, approval, ...
-
-// chat bot stuff, state machine
