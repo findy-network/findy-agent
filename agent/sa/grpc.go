@@ -51,6 +51,9 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 				ProtocolID:       im.Nonce(),
 			},
 		})
+		// todo: add timeout & end preferable we should have a
+		//  signaling mechanism if we cannot reach SA,
+		//  signaling could be just webhook?
 		a := <-ac
 
 		glog.V(1).Infoln("got answer for:", qid)

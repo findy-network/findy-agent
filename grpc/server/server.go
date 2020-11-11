@@ -9,7 +9,7 @@ import (
 	"fmt"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
-	ops "github.com/findy-network/findy-agent-api/grpc/ops"
+	"github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -24,24 +24,33 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Serve() {
-	pki := rpc.LoadPKI()
-	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
-		pki.Server.CertFile, pki.Server.KeyFile, pki.Client.CertFile)
+var Server *grpc.Server
 
-	rpc.Serve(rpc.ServerCfg{
-		Port: 50051,
-		TLS:  true,
-		PKI:  *pki,
-		Register: func(s *grpc.Server) error {
-			pb.RegisterDIDCommServer(s, &didCommServer{})
-			pb.RegisterAgentServer(s, &agentServer{})
-			//pb.RegisterAgencyServer(s, &agencyService{})
-			ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
-			glog.Infoln("GRPC registration IIIIIII OK")
-			return nil
-		},
-	})
+func Serve(conf *rpc.ServerCfg) {
+	if conf == nil {
+		glog.Infoln("===== initializing grpc server")
+		conf = &rpc.ServerCfg{
+			Port:    50051,
+			PKI:     rpc.LoadPKI(""),
+			TestLis: nil,
+		}
+	}
+	glog.V(0).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
+		conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
+
+	conf.Register = func(s *grpc.Server) error {
+		pb.RegisterDIDCommServer(s, &didCommServer{})
+		pb.RegisterAgentServer(s, &agentServer{})
+		//pb.RegisterAgencyServer(s, &agencyService{})
+		ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+		glog.Infoln("GRPC registration IIIIIII OK")
+		return nil
+	}
+
+	s, lis, err := rpc.PrepareServe(conf)
+	err2.Check(err)
+	Server = s
+	err2.Check(s.Serve(lis))
 }
 
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
@@ -66,17 +75,44 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				panic(errors.New("cred def cannot be nil for issuing protocol"))
 			}
 			task.CredDefID = &credDef.CredDefId
-			var credAttrs []didcomm.CredentialAttribute
-			dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
-			task.CredentialAttrs = &credAttrs
-			glog.V(1).Infoln("set cred attrs")
+
+			if credDef.GetAttrs() != nil {
+				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttrs_().GetAttrs()))
+				for i, attribute := range credDef.GetAttrs_().GetAttrs() {
+					attributes[i] = didcomm.CredentialAttribute{
+						Name:  attribute.Name,
+						Value: attribute.Value,
+					}
+				}
+				task.CredentialAttrs = &attributes
+				glog.V(1).Infoln("set cred from attrs")
+			} else if credDef.GetAttributesJson() != "" {
+				var credAttrs []didcomm.CredentialAttribute
+				dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
+				task.CredentialAttrs = &credAttrs
+				glog.V(1).Infoln("set cred attrs from json")
+			}
 		}
 	case pb.Protocol_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			var proofAttrs []didcomm.ProofAttribute
-			dto.FromJSONStr(protocol.GetProofAttributesJson(), &proofAttrs)
-			task.ProofAttrs = &proofAttrs
-			glog.V(1).Infoln("set proof attrs")
+			proofReq := protocol.GetProofReq()
+			if proofReq.GetAttributesJson() != "" {
+				var proofAttrs []didcomm.ProofAttribute
+				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
+				task.ProofAttrs = &proofAttrs
+				glog.V(1).Infoln("set proof attrs from json")
+			} else if proofReq.GetAttrs() != nil {
+				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttrs().GetAttrs()))
+				for i, attribute := range proofReq.GetAttrs().GetAttrs() {
+					attributes[i] = didcomm.ProofAttribute{
+						Name:      attribute.Name,
+						CredDefID: attribute.CredDefId,
+						Predicate: attribute.Predicate,
+					}
+				}
+				task.ProofAttrs = &attributes
+				glog.V(1).Infoln("set proof from attrs")
+			}
 		}
 	}
 	return task, nil
@@ -85,10 +121,10 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 var notificationTypeID = map[string]pb.Notification_Type{
 	pltype.CANotifyStatus:                 pb.Notification_STATUS_UPDATE,
 	pltype.CANotifyUserAction:             pb.Notification_ACTION_NEEDED,
-	pltype.SAPing:                         pb.Notification_ACTION_NEEDED_PING,
-	pltype.SAIssueCredentialAcceptPropose: pb.Notification_ACTION_NEEDED,
-	pltype.SAPresentProofAcceptPropose:    pb.Notification_ACTION_NEEDED,
-	pltype.SAPresentProofAcceptValues:     pb.Notification_ACTION_NEEDED,
+	pltype.SAPing:                         pb.Notification_ANSWER_NEEDED_PING,
+	pltype.SAIssueCredentialAcceptPropose: pb.Notification_ANSWER_NEEDED_ISSUE_PROPOSE,
+	pltype.SAPresentProofAcceptPropose:    pb.Notification_ANSWER_NEEDED_PROOF_PROPOSE,
+	pltype.SAPresentProofAcceptValues:     pb.Notification_ANSWER_NEEDED_PROOF_VERIFY,
 }
 
 func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
@@ -128,12 +164,12 @@ var protocolName = [...]string{
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {
 	caDID = jwt.User(ctx)
 	if !agency.IsHandlerInThisAgency(caDID) {
-		return "", nil, errors.New("handler is not in this agency")
+		return "", nil, fmt.Errorf("handler (%s) is not in this agency", caDID)
 	}
 	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
 	if !ok {
-		return "", nil, errors.New("no ca did")
+		return "", nil, fmt.Errorf("no ca did (%s)", caDID)
 	}
-	glog.V(3).Infoln("caDID:", caDID)
+	glog.V(1).Infoln("grpc call with caDID:", caDID)
 	return caDID, rcvr, nil
 }

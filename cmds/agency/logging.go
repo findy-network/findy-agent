@@ -2,7 +2,6 @@ package agency
 
 import (
 	"context"
-	"errors"
 	"io"
 	"time"
 
@@ -13,13 +12,13 @@ import (
 )
 
 type LoggingCmd struct {
-	BaseAddr string
-	Level    string
+	cmds.GrpcCmd
+	Level string
 }
 
 func (c LoggingCmd) Validate() error {
-	if c.BaseAddr == "" {
-		return errors.New("server url cannot be empty")
+	if err := c.GrpcCmd.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -27,8 +26,9 @@ func (c LoggingCmd) Validate() error {
 func (c LoggingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	conn, err := client.OpenClientConn("findy-root", c.BaseAddr)
-	err2.Check(err)
+	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
+	conn := client.TryOpen("findy-root", baseCfg)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 

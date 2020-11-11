@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -17,35 +16,58 @@ import (
 )
 
 var Conn *grpc.ClientConn
+var cfg *rpc.ClientCfg
 
 type Pairwise struct {
 	ID    string
 	Label string
 }
 
+func BuildClientConnBase(tlsPath, addr string, port int, opts []grpc.DialOption) *rpc.ClientCfg {
+	cfg = &rpc.ClientCfg{
+		PKI:  rpc.LoadPKI(tlsPath),
+		JWT:  "",
+		Addr: fmt.Sprintf("%s:%d", addr, port),
+		Opts: opts,
+	}
+	return cfg
+}
+
+func TryOpen(user string, conf *rpc.ClientCfg) *grpc.ClientConn {
+	if conf == nil {
+		conf = cfg
+	}
+	glog.V(1).Infof("client with user \"%s\"", user)
+	conf.JWT = jwt.BuildJWT(user)
+	conn, err := rpc.ClientConn(*conf)
+	err2.Check(err)
+	Conn = conn
+	return conn
+}
+
 func OkStatus(s *agency.ProtocolState) bool {
 	return s.State == agency.ProtocolState_OK
 }
 
-func TryOpenConn(user, addr string, port int) *grpc.ClientConn {
-	conn, err := OpenClientConn(user, fmt.Sprintf("%s:%d", addr, port))
+func TryOpenConnDeprecated(user, addr string, port int, opts []grpc.DialOption) *grpc.ClientConn {
+	conn, err := OpenClientConnDeprecated(user, fmt.Sprintf("%s:%d", addr, port), opts)
 	err2.Check(err)
 	return conn
 }
 
-func OpenClientConn(user, addr string) (conn *grpc.ClientConn, err error) {
+func OpenClientConnDeprecated(user, addr string, opts []grpc.DialOption) (conn *grpc.ClientConn, err error) {
 	defer err2.Return(&err)
 
-	if Conn != nil {
-		return nil, errors.New("client connection all ready open")
-	}
-	pki := rpc.LoadPKI()
-	glog.V(5).Infoln("client with user:", user)
+	//if Conn != nil {
+	//	return nil, errors.New("client connection all ready open")
+	//}
+	pki := rpc.LoadPKI("")
+	glog.V(5).Infof("client with user \"%s\"", user)
 	conn, err = rpc.ClientConn(rpc.ClientCfg{
-		PKI:  *pki,
+		PKI:  pki,
 		JWT:  jwt.BuildJWT(user),
 		Addr: addr,
-		TLS:  true,
+		Opts: opts,
 	})
 	err2.Check(err)
 	Conn = conn
@@ -58,8 +80,21 @@ func (pw Pairwise) Issue(ctx context.Context, credDefID, attrsJSON string) (ch c
 		TypeId:       agency.Protocol_ISSUE,
 		Role:         agency.Protocol_INITIATOR,
 		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
-			CredDefId:      credDefID,
-			AttributesJson: attrsJSON,
+			CredDefId: credDefID,
+			Attrs:     &agency.Protocol_Issuing_AttributesJson{AttributesJson: attrsJSON},
+		}},
+	}
+	return doStart(ctx, protocol)
+}
+
+func (pw Pairwise) IssueWithAttrs(ctx context.Context, credDefID string, attrs *agency.Protocol_Attrs) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_ISSUE,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg: &agency.Protocol_CredDef{CredDef: &agency.Protocol_Issuing{
+			CredDefId: credDefID,
+			Attrs:     &agency.Protocol_Issuing_Attrs_{Attrs_: attrs},
 		}},
 	}
 	return doStart(ctx, protocol)
@@ -93,12 +128,38 @@ func (pw Pairwise) Ping(ctx context.Context) (ch chan *agency.ProtocolState, err
 	return doStart(ctx, protocol)
 }
 
+func (pw Pairwise) BasicMessage(ctx context.Context, content string) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_BASIC_MESSAGE,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg:     &agency.Protocol_BasicMessage{BasicMessage: content},
+	}
+	return doStart(ctx, protocol)
+}
+
 func (pw Pairwise) ReqProof(ctx context.Context, proofAttrs string) (ch chan *agency.ProtocolState, err error) {
 	protocol := &agency.Protocol{
 		ConnectionId: pw.ID,
 		TypeId:       agency.Protocol_PROOF,
 		Role:         agency.Protocol_INITIATOR,
-		StartMsg:     &agency.Protocol_ProofAttributesJson{ProofAttributesJson: proofAttrs},
+		StartMsg: &agency.Protocol_ProofReq{
+			ProofReq: &agency.Protocol_ProofRequest{
+				AttrFmt: &agency.Protocol_ProofRequest_AttributesJson{
+					AttributesJson: proofAttrs}}},
+	}
+	return doStart(ctx, protocol)
+}
+
+func (pw Pairwise) ReqProofWithAttrs(ctx context.Context, proofAttrs *agency.Protocol_Proof) (ch chan *agency.ProtocolState, err error) {
+	protocol := &agency.Protocol{
+		ConnectionId: pw.ID,
+		TypeId:       agency.Protocol_PROOF,
+		Role:         agency.Protocol_INITIATOR,
+		StartMsg: &agency.Protocol_ProofReq{
+			ProofReq: &agency.Protocol_ProofRequest{
+				AttrFmt: &agency.Protocol_ProofRequest_Attrs{
+					Attrs: proofAttrs}}},
 	}
 	return doStart(ctx, protocol)
 }

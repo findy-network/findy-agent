@@ -17,6 +17,7 @@ import (
 )
 
 type PingCmd struct {
+	cmds.GrpcCmd
 	BaseAddr string
 }
 
@@ -30,8 +31,12 @@ func (c PingCmd) Validate() error {
 func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	conn, err := client.OpenClientConn("findy-root", c.BaseAddr)
-	err2.Check(err)
+	if err = c.GrpcCmd.Validate(); err != nil {
+		return nil, err
+	}
+
+	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
+	conn := client.TryOpen("findy-root", baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
