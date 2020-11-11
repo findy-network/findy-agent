@@ -143,7 +143,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	return ps, nil
 }
 
-func tryGetConnectStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
+func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
 	pw, err := psm.GetPairwiseRep(key)
 	err2.Check(err)
 
@@ -166,7 +166,7 @@ func tryGetConnectStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus
 	}}
 }
 
-func tryGetIssueStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Issue_ {
+func tryGetIssueStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Issue_ {
 	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
 
 	// TODO: save schema id parsed to db? copied from original implementation
@@ -175,9 +175,9 @@ func tryGetIssueStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_I
 
 	schemaID := credOfferMap["schema_id"].(string)
 
-	attrs := make([]*pb.ProtocolStatus_Issue_CredAttr, 0, len(credRep.Attributes))
+	attrs := make([]*pb.Protocol_Attribute, 0, len(credRep.Attributes))
 	for _, credAttr := range credRep.Attributes {
-		a := &pb.ProtocolStatus_Issue_CredAttr{
+		a := &pb.Protocol_Attribute{
 			Name:  credAttr.Name,
 			Value: credAttr.Value,
 		}
@@ -190,11 +190,11 @@ func tryGetIssueStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_I
 	}}
 }
 
-func tryGetProofStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Proof_ {
+func tryGetProofStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Proof {
 	proofRep, err := psm.GetPresentProofRep(key)
 	err2.Check(err)
 	if proofRep == nil {
-		return &pb.ProtocolStatus_Proof_{Proof: &pb.Protocol_Proof{Attrs: nil}}
+		return &pb.ProtocolStatus_Proof{Proof: &pb.Protocol_Proof{Attrs: nil}}
 	}
 	attrs := make([]*pb.Protocol_Proof_Attr, 0, len(proofRep.Attributes))
 
@@ -206,15 +206,15 @@ func tryGetProofStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_P
 		}
 		attrs = append(attrs, a)
 	}
-	return &pb.ProtocolStatus_Proof_{Proof: &pb.Protocol_Proof{Attrs: attrs}}
+	return &pb.ProtocolStatus_Proof{Proof: &pb.Protocol_Proof{Attrs: attrs}}
 }
 
-func tryGetTrustPingStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_TrustPing_ {
+func tryGetTrustPingStatus(_ *pb.ProtocolID, _ psm.StateKey) *pb.ProtocolStatus_TrustPing_ {
 	// todo: add TrustPingRep to DB if we need to track Replied status
 	return &pb.ProtocolStatus_TrustPing_{TrustPing: &pb.ProtocolStatus_TrustPing{Replied: false}}
 }
 
-func tryGetBasicMessageStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_BasicMessage_ {
+func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_BasicMessage_ {
 	msg, err := psm.GetBasicMessageRep(key)
 	err2.Check(err)
 
