@@ -43,7 +43,7 @@ func Serve(conf *rpc.ServerCfg) {
 		pb.RegisterAgentServer(s, &agentServer{})
 		//pb.RegisterAgencyServer(s, &agencyService{})
 		ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
-		glog.Infoln("GRPC registration IIIIIII OK")
+		glog.V(3).Infoln("GRPC OK")
 		return nil
 	}
 
@@ -152,13 +152,21 @@ var typeID = map[int32]string{
 	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_PROOF):            pltype.CAContinuePresentProofProtocol,
 }
 
-// typeID is look up table for
+// to get protocol family
 var protocolName = [...]string{
 	pltype.AriesProtocolConnection, // "CONNECT",
 	pltype.ProtocolIssueCredential, // "ISSUE",
 	pltype.ProtocolPresentProof,    // "PROOF",
 	pltype.ProtocolTrustPing,       // "TRUST_PING",
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
+}
+
+var protocolType = map[string]pb.Protocol_Type{
+	pltype.AriesProtocolConnection: pb.Protocol_CONNECT,
+	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE,
+	pltype.ProtocolPresentProof:    pb.Protocol_PROOF,
+	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
+	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
 }
 
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {

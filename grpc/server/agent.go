@@ -111,6 +111,7 @@ loop:
 					ConnectionId:   question.ConnectionID,
 					ProtocolId:     question.ProtocolID,
 					ProtocolFamily: question.ProtocolFamily,
+					ProtocolType:   protocolType[question.ProtocolFamily],
 					Timestamp:      question.TimestampMs,
 				},
 			}
@@ -131,6 +132,7 @@ loop:
 					ConnectionId:   notify.ConnectionID,
 					ProtocolId:     notify.ProtocolID,
 					ProtocolFamily: notify.ProtocolFamily,
+					ProtocolType:   protocolType[notify.ProtocolFamily],
 					Timestamp:      notify.TimestampMs,
 				},
 			}
