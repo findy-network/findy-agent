@@ -172,10 +172,10 @@ func Listen(ctx context.Context, protocol *agency.ClientID) (ch chan *agency.Age
 
 	stream, err := c.Listen(ctx, protocol)
 	err2.Check(err)
-	glog.V(0).Infoln("successful start of listen id:", protocol.Id)
+	glog.V(1).Infoln("successful start of listen id:", protocol.Id)
 	go func() {
 		defer err2.CatchTrace(func(err error) {
-			glog.Warningln("error when reading response:", err)
+			glog.V(1).Infoln("WARNING: error when reading response:", err)
 			close(statusCh)
 		})
 		for {
