@@ -62,6 +62,9 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		Message: protocol.ConnectionId,
 	}
 	switch protocol.TypeId {
+	case pb.Protocol_BASIC_MESSAGE:
+		task.Info = protocol.GetBasicMessage()
+		glog.V(1).Infoln("basic_message content:", task.Info)
 	case pb.Protocol_CONNECT:
 		var invitation didexchange.Invitation
 		dto.FromJSONStr(protocol.GetInvitationJson(), &invitation)
