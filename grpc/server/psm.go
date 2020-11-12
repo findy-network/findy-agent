@@ -218,6 +218,7 @@ func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolSt
 	msg, err := psm.GetBasicMessageRep(key)
 	err2.Check(err)
 
+	glog.V(1).Infoln("=====", key, msg.SentByMe)
 	return &pb.ProtocolStatus_BasicMessage_{BasicMessage: &pb.ProtocolStatus_BasicMessage{
 		Content:       msg.Message,
 		SentByMe:      msg.SentByMe,
