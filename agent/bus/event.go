@@ -20,7 +20,7 @@ type AgentNotify struct {
 	ConnectionID     string
 	ProtocolID       string
 	ProtocolFamily   string
-	TimestampMs      uint64
+	Timestamp        int64
 }
 
 const (

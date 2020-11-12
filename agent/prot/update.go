@@ -17,48 +17,55 @@ import (
 	"github.com/lainio/err2"
 )
 
+type notifyEdge struct {
+	did       string // worker agent DID
+	plType    string // notification message type id
+	nonce     string // protocol ID (not a Aries message ID but thead ID)
+	timestamp int64  // the timestamp of the PSM
+	pwName    string // connection ID (note!! not a pairwise Label)
+}
+
 // NotifyEdge sends notification to client (previously edge agent). It sends
 // notifications via apns, web socket, and web hook if any of these are
 // available.
-//  did      = worker agent DID
-//  plType   = notification message type id
-//  nonce    = protocol ID (not a Aries message ID but thead ID)
-//  pwName   = connection ID (note!! not a pairwise Label)
-func NotifyEdge(did, plType, nonce, pwName string) {
-	r := comm.ActiveRcvrs.Get(did)
+//func NotifyEdge(did, plType, nonce, pwName string) {
+func NotifyEdge(ne notifyEdge) {
+	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
 		myCA := r.MyCA()
+
+		// todo: we are only testing these might not needed
 		go func() {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
-			apns.Push(did)
+			apns.Push(ne.did)
 
-			taskStatus := StatusForTask(did, nonce)
+			taskStatus := StatusForTask(ne.did, ne.nonce)
 
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
-				AgentKeyType:     bus.AgentKeyType{AgentDID: did},
+				AgentKeyType:     bus.AgentKeyType{AgentDID: ne.did},
 				ID:               utils.UUID(),
-				NotificationType: plType,
-				ProtocolID:       nonce,
+				NotificationType: ne.plType,
+				ProtocolID:       ne.nonce,
 				ProtocolFamily:   taskStatus.Type,
-				ConnectionID:     pwName,
-				TimestampMs:      taskStatus.TimestampMs,
+				ConnectionID:     ne.pwName,
+				Timestamp:        ne.timestamp,
 			})
 
 			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
-				Nonce: nonce,
-				Name:  pwName,
+				Nonce: ne.nonce,
+				Name:  ne.pwName,
 				Body:  taskStatus,
 			}).(didcomm.Msg)
 
 			// Websocket
-			myCA.NotifyEA(plType, msg)
+			myCA.NotifyEA(ne.plType, msg)
 			// Webhook - catch and ignore errors in response parsing
-			_, _ = myCA.CallEA(plType, msg)
+			_, _ = myCA.CallEA(ne.plType, msg)
 		}()
 	} else {
-		glog.Warning("unable to notify edge with did", did)
+		glog.Warning("unable to notify edge with did", ne.did)
 	}
 }
 
@@ -82,7 +89,13 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	m, _ := psm.GetPSM(machineKey)
 
 	var machine *psm.PSM
-	s := psm.State{Timestamp: time.Now().UnixNano(), T: *task, PLInfo: psm.PayloadInfo{Type: opl.Type()}, Sub: subs}
+	timestamp := time.Now().UnixNano()
+	s := psm.State{
+		Timestamp: timestamp,
+		T:         *task,
+		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
+		Sub:       subs,
+	}
 	if m != nil { // update existing one
 		if msgMe != "" {
 			m.InDID = msgMe
@@ -101,6 +114,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 		plType = machine.FirstState().PLInfo.Type
 	}
 	go triggerEnd(endingInfo{
+		timestamp:         timestamp,
 		subState:          subs,
 		nonce:             task.Nonce,
 		meDID:             meDID,
@@ -139,6 +153,7 @@ type endingInfo struct {
 	meDID             string
 	pwName            string
 	plType            string
+	timestamp         int64
 	pendingUserAction bool
 }
 
@@ -160,7 +175,13 @@ func triggerEnd(info endingInfo) {
 			if info.plType == pltype.Nothing {
 				glog.Warning("PL type is empty on Notify")
 			}
-			NotifyEdge(info.meDID, pltype.CANotifyStatus, info.nonce, info.pwName)
+			NotifyEdge(notifyEdge{
+				did:       info.meDID,
+				plType:    pltype.CANotifyStatus,
+				nonce:     info.nonce,
+				timestamp: info.timestamp,
+				pwName:    info.pwName,
+			})
 		}
 		bus.ReadyStation.BroadcastReady(key, ack)
 	case psm.Failure:
@@ -170,7 +191,13 @@ func triggerEnd(info endingInfo) {
 		// Notify also tasks that are waiting for user action
 		if info.pendingUserAction {
 			bus.WantUserActions.Broadcast(key, info.subState)
-			NotifyEdge(info.meDID, pltype.CANotifyUserAction, info.nonce, info.pwName)
+			NotifyEdge(notifyEdge{
+				did:       info.meDID,
+				plType:    pltype.CANotifyUserAction,
+				nonce:     info.nonce,
+				timestamp: info.timestamp,
+				pwName:    info.pwName,
+			})
 		}
 	}
 	// To brave one who wants to know all
