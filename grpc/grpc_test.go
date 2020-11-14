@@ -67,7 +67,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 }
 
 var (
-	testMode = TestModeRunOne
+	testMode = TestModeCI
 
 	lis            = bufconn.Listen(bufSize)
 	agents         *[4]AgentData
@@ -389,7 +389,7 @@ func TestConnection(t *testing.T) {
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
-			connID, ch, err := client.Connection(ctx, ca.Invitation)
+			connID, ch, err := conn.Connection(ctx, ca.Invitation)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
@@ -420,11 +420,12 @@ func TestTrustPing(t *testing.T) {
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
+				ID:   ca.ConnID[0],
+				Conn: conn,
 			}.Ping(ctx)
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				glog.Infof("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -440,11 +441,12 @@ func TestBasicMessage(t *testing.T) {
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
+				ID:   ca.ConnID[0],
+				Conn: conn,
 			}.BasicMessage(ctx, "basic message test string")
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				glog.V(1).Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -485,7 +487,8 @@ func TestIssue(t *testing.T) {
 			agency2.NewDIDCommClient(conn)
 			connID := agents[0].ConnID[i]
 			r, err := client.Pairwise{
-				ID: connID,
+				ID:   connID,
+				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
 				&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
 					Name:  "email",
@@ -493,7 +496,7 @@ func TestIssue(t *testing.T) {
 				}}})
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -521,29 +524,31 @@ func TestReqProof(t *testing.T) {
 				CredDefId: agents[0].CredDefID,
 			}}
 			r, err := client.Pairwise{
-				ID: connID,
+				ID:   connID,
+				Conn: conn,
 			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
 		})
-
 	}
 }
 
 func TestListen(t *testing.T) {
-	//err2.Check(flag.Set("v", "0"))
+	err2.Check(flag.Set("v", "0"))
+	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
+	readyCh := make(chan struct{})
 	// start listeners
 	for i, ca := range agents {
 		if i == 0 {
 			continue
 		}
 		if i == 1 {
-			go doListen(ca.DID, intCh)
+			go doListen(ca.DID, intCh, readyCh, waitCh)
 		}
 	}
 	i := 0
@@ -554,27 +559,41 @@ func TestListen(t *testing.T) {
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
+			<-waitCh
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
+				ID:   ca.ConnID[0],
+				Conn: conn,
 			}.BasicMessage(ctx, fmt.Sprintf("# %d. basic message test string", i))
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				glog.Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 		})
 	}
-	time.Sleep(1 * time.Second)
-	intCh <- struct{}{}
-	glog.Infoln("closing..")
+	<-readyCh           // listener is tested now and it's ready
+	intCh <- struct{}{} // tell it to stop
+
+	glog.Infoln("*** closing..")
+	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
 }
 
-func doListen(caDID string, intCh chan struct{}) {
+func TestListen100(t *testing.T) {
+	err2.Check(flag.Set("v", "0"))
+	for i := 0; i < 10; i++ {
+		TestListen(t)
+	}
+}
+
+func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
 	conn := client.TryOpen(caDID, baseCfg)
 	//defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
-	ch, err := client.Listen(ctx, &agency2.ClientID{Id: utils.UUID()})
+	ch, err := conn.Listen(ctx, &agency2.ClientID{Id: utils.UUID()})
 	err2.Check(err)
+	glog.V(1).Infoln("** start to listen")
+	count := 0
+	wait <- struct{}{}
 loop:
 	for {
 		select {
@@ -591,16 +610,20 @@ loop:
 			switch status.Notification.TypeId {
 			case agency2.Notification_STATUS_UPDATE:
 				handleStatus(conn, status, true)
+				count++ // run two times to test our own sending
+				if count > 1 {
+					readyCh <- struct{}{}
+				}
 			case agency2.Notification_ACTION_NEEDED:
-				resume(conn, status, true)
+				resume(conn.ClientConn, status, true)
 			case agency2.Notification_ANSWER_NEEDED_PING:
-				reply(conn, status, true)
+				reply(conn.ClientConn, status, true)
 			case agency2.Notification_ANSWER_NEEDED_ISSUE_PROPOSE:
-				reply(conn, status, true)
+				reply(conn.ClientConn, status, true)
 			case agency2.Notification_ANSWER_NEEDED_PROOF_PROPOSE:
-				reply(conn, status, true)
+				reply(conn.ClientConn, status, true)
 			case agency2.Notification_ANSWER_NEEDED_PROOF_VERIFY:
-				reply(conn, status, true)
+				reply(conn.ClientConn, status, true)
 			}
 		case <-intCh:
 			cancel()
@@ -609,26 +632,28 @@ loop:
 	}
 }
 
-func handleStatus(conn *grpc.ClientConn, status *agency2.AgentStatus, b bool) {
+func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) {
 	if status.Notification.ProtocolType == agency2.Protocol_BASIC_MESSAGE {
 		ctx := context.Background()
 		didComm := agency2.NewDIDCommClient(conn)
 		statusResult, err := didComm.Status(ctx, &agency2.ProtocolID{
-			TypeId: status.Notification.ProtocolType,
-			Role:   agency2.Protocol_ADDRESSEE,
-			Id:     status.Notification.ProtocolId,
+			TypeId:           status.Notification.ProtocolType,
+			Role:             agency2.Protocol_ADDRESSEE,
+			Id:               status.Notification.ProtocolId,
+			NotificationTime: status.Notification.Timestamp,
 		})
 		err2.Check(err)
 		if statusResult.GetBasicMessage().SentByMe {
-			glog.Infoln("not ours")
+			glog.V(0).Infoln("-- ours, no reply")
 			return
 		}
 		ch, err := client.Pairwise{
-			ID: status.Notification.ConnectionId,
+			ID:   status.Notification.ConnectionId,
+			Conn: conn,
 		}.BasicMessage(context.Background(), statusResult.GetBasicMessage().Content)
 		err2.Check(err)
 		for state := range ch {
-			glog.Infoln("state:", state.State, "|", state.Info)
+			glog.Infoln("BM send state:", state.State, "|", state.Info)
 			//assert.Equal(t, agency2.ProtocolState_OK, state.State)
 		}
 	}
@@ -644,7 +669,7 @@ func reply(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
 		Info:     "testing says hello!",
 	})
 	err2.Check(err)
-	fmt.Printf("Sending the answer (%s) send to client:%s\n", status.Notification.Id, cid.Id)
+	glog.Infof("Sending the answer (%s) send to client:%s\n", status.Notification.Id, cid.Id)
 }
 
 func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
