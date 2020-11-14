@@ -589,6 +589,7 @@ func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait cha
 	conn := client.TryOpen(caDID, baseCfg)
 	//defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	ch, err := conn.Listen(ctx, &agency2.ClientID{Id: utils.UUID()})
 	err2.Check(err)
 	glog.V(1).Infoln("** start to listen")
