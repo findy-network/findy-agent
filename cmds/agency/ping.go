@@ -12,7 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/cmds"
-	"github.com/findy-network/findy-agent/grpc/client"
+	"github.com/findy-network/findy-grpc/agency/client"
 	"github.com/lainio/err2"
 )
 
