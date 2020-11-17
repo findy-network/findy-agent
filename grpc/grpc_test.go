@@ -243,6 +243,25 @@ func Test_handleAgencyAPI(t *testing.T) {
 	}
 }
 
+func Test_NewOnboarding(t *testing.T) {
+	ut := time.Now().Unix() - 1545924840
+	walletName := fmt.Sprintf("email%v", ut)
+	for i := 0; i < 1; i++ {
+		t.Run(fmt.Sprintf("onboard %d", i), func(t *testing.T) {
+			conn := client.TryOpen("findy-root", baseCfg)
+			ctx := context.Background()
+			agencyClient := pb.NewAgencyClient(conn)
+			result, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+				Email: walletName,
+			})
+			if assert.NoError(t, err) {
+				glog.Infoln(i, "result:", result.GetOk(), result.GetResult().CADID)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all of the EAs. That's handy for web wallets.
