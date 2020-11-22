@@ -17,6 +17,7 @@ import (
 	pb "github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	_ "github.com/findy-network/findy-agent/agent/caapi"
+	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
@@ -515,6 +516,42 @@ func TestIssue(t *testing.T) {
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+
+	}
+}
+
+func TestIssueJSON(t *testing.T) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	for i := 0; i < 3; i++ {
+		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[0].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			connID := agents[0].ConnID[i]
+			emailCred := []didcomm.CredentialAttribute{
+				{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				},
+			}
+			attrJSON := dto.ToJSON(emailCred)
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.Issue(ctx, agents[0].CredDefID, attrJSON)
 			assert.NoError(t, err)
 			for status := range r {
 				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
