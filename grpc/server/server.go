@@ -65,6 +65,10 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		Message: protocol.ConnectionId,
 	}
 	switch protocol.TypeId {
+	case pb.Protocol_TRUST_PING:
+		if protocol.ConnectionId == "" {
+			glog.Warningln("pinging first found connection, conn-id was empty")
+		}
 	case pb.Protocol_BASIC_MESSAGE:
 		task.Info = protocol.GetBasicMessage()
 		glog.V(1).Infoln("basic_message content:", task.Info)

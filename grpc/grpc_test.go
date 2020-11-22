@@ -67,7 +67,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 }
 
 var (
-	testMode = TestModeCI
+	testMode = TestModeRunOne
 
 	lis            = bufconn.Listen(bufSize)
 	agents         *[4]AgentData
@@ -480,9 +480,11 @@ func TestSetPermissive(t *testing.T) {
 		ctx := context.Background()
 		c := agency2.NewAgentClient(conn)
 		r, err := c.SetImplId(ctx, &agency2.SAImplementation{Id: "permissive_sa"})
-		assert.NoError(t, err)
-		assert.Equal(t, "permissive_sa", r.Id)
-		assert.NoError(t, conn.Close())
+		if t != nil {
+			assert.NoError(t, err)
+			assert.Equal(t, "permissive_sa", r.Id)
+		}
+		conn.Close()
 	}
 	glog.Infoln("permissive impl set is done!")
 }
@@ -602,6 +604,90 @@ func TestListen100(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		TestListen(t)
 	}
+}
+
+func BenchmarkIssue(b *testing.B) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(nil)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	i := 0
+	conn := client.TryOpen(agents[0].DID, baseCfg)
+	ctx := context.Background()
+	agency2.NewDIDCommClient(conn)
+	connID := agents[0].ConnID[i]
+	// warm up
+	{
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.IssueWithAttrs(ctx, agents[0].CredDefID,
+			&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+				Name:  "email",
+				Value: strLiteral("email", "", i+1),
+			}}})
+		err2.Check(err)
+		for _ = range r {
+		}
+	}
+	for n := 0; n < b.N; n++ {
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.IssueWithAttrs(ctx, agents[0].CredDefID,
+			&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+				Name:  "email",
+				Value: strLiteral("email", "", i+1),
+			}}})
+		err2.Check(err)
+		for _ = range r {
+		}
+	}
+	err2.Check(conn.Close())
+}
+
+func BenchmarkReqProof(b *testing.B) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(nil)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	i := 0
+	conn := client.TryOpen(agents[0].DID, baseCfg)
+	ctx := context.Background()
+	agency2.NewDIDCommClient(conn)
+	connID := agents[0].ConnID[i]
+	// warm up
+	{
+		attrs := []*agency2.Protocol_Proof_Attr{{
+			Name:      "email",
+			CredDefId: agents[0].CredDefID,
+		}}
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+		err2.Check(err)
+		for _ = range r {
+		}
+	}
+	for n := 0; n < b.N; n++ {
+		attrs := []*agency2.Protocol_Proof_Attr{{
+			Name:      "email",
+			CredDefId: agents[0].CredDefID,
+		}}
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+		err2.Check(err)
+		for _ = range r {
+		}
+	}
+	err2.Check(conn.Close())
 }
 
 func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
