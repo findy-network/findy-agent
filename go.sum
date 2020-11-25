@@ -167,6 +167,8 @@ github.com/findy-network/findy-grpc v0.0.0-20201113091436-e47cd902d2c7 h1:zGlnjO
 github.com/findy-network/findy-grpc v0.0.0-20201113091436-e47cd902d2c7/go.mod h1:JIDCAuvF/tejnV1BfS4STPKI3MYGch23XclLeETglIM=
 github.com/findy-network/findy-grpc v0.0.0-20201117160253-6b67c64bfbde h1:2Pb/B2efRGhy2EgmCqhGdkYnQ/+D3lZKb/DOqUAU/kM=
 github.com/findy-network/findy-grpc v0.0.0-20201117160253-6b67c64bfbde/go.mod h1:u7cLiXOaI84nmO/TCeq8A0iE45DdsDF6UWHsuzxh8p4=
+github.com/findy-network/findy-grpc v0.0.0-20201117173249-1ebf5a113c75 h1:CBn5qdoqlolh8rQWRsDpuuJ2mbgzw4EsOnqEE/c4xY4=
+github.com/findy-network/findy-grpc v0.0.0-20201117173249-1ebf5a113c75/go.mod h1:u7cLiXOaI84nmO/TCeq8A0iE45DdsDF6UWHsuzxh8p4=
 github.com/findy-network/findy-wrapper-go v0.0.0-20200827084841-e60f74b36fd2 h1:Gz6vTfYTJKgJ5nlBOXAK0W50KeyAr5bH9nvORc8jHkU=
 github.com/findy-network/findy-wrapper-go v0.0.0-20200827084841-e60f74b36fd2/go.mod h1:NZHHzY+NzVa68J3y+Gl9Ihj2+d8qUfQW6CnjaRqmKxI=
 github.com/findy-network/findy-wrapper-go v0.0.0-20201019132306-ec82ba1781cd h1:A6mKGXpQgUVbo+dcLLnr5jj4UTOsnesU5Tgdg/TMurM=
