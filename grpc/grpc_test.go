@@ -666,7 +666,7 @@ func BenchmarkIssue(b *testing.B) {
 				Value: strLiteral("email", "", i+1),
 			}}})
 		err2.Check(err)
-		for _ = range r {
+		for range r {
 		}
 	}
 	for n := 0; n < b.N; n++ {
@@ -679,7 +679,7 @@ func BenchmarkIssue(b *testing.B) {
 				Value: strLiteral("email", "", i+1),
 			}}})
 		err2.Check(err)
-		for _ = range r {
+		for range r {
 		}
 	}
 	err2.Check(conn.Close())
@@ -708,7 +708,7 @@ func BenchmarkReqProof(b *testing.B) {
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
 		err2.Check(err)
-		for _ = range r {
+		for range r {
 		}
 	}
 	for n := 0; n < b.N; n++ {
@@ -721,7 +721,7 @@ func BenchmarkReqProof(b *testing.B) {
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
 		err2.Check(err)
-		for _ = range r {
+		for range r {
 		}
 	}
 	err2.Check(conn.Close())
