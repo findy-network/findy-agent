@@ -33,7 +33,7 @@ shadow:
 
 check_fmt:
 	$(eval GOFILES = $(shell find . -name '*.go'))
-	@gofmt -l $(GOFILES)
+	@gofmt -s -l $(GOFILES)
 
 #lint:
 #	$(GOPATH)/bin/golint ./... 
