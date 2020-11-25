@@ -111,7 +111,8 @@ loop:
 					ConnectionId:   question.ConnectionID,
 					ProtocolId:     question.ProtocolID,
 					ProtocolFamily: question.ProtocolFamily,
-					Timestamp:      question.TimestampMs,
+					ProtocolType:   protocolType[question.ProtocolFamily],
+					Timestamp:      question.Timestamp,
 				},
 			}
 			if clientID.Id != question.ClientID {
@@ -131,7 +132,8 @@ loop:
 					ConnectionId:   notify.ConnectionID,
 					ProtocolId:     notify.ProtocolID,
 					ProtocolFamily: notify.ProtocolFamily,
-					Timestamp:      notify.TimestampMs,
+					ProtocolType:   protocolType[notify.ProtocolFamily],
+					Timestamp:      notify.Timestamp,
 				},
 			}
 			if clientID.Id != notify.ClientID {

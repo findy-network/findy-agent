@@ -41,9 +41,12 @@ func Serve(conf *rpc.ServerCfg) {
 	conf.Register = func(s *grpc.Server) error {
 		pb.RegisterDIDCommServer(s, &didCommServer{})
 		pb.RegisterAgentServer(s, &agentServer{})
-		//pb.RegisterAgencyServer(s, &agencyService{})
+
+		// todo: root should come from settings, etc.
+		ops.RegisterAgencyServer(s, &agencyService{Root: "findy-root"})
 		ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
-		glog.Infoln("GRPC registration IIIIIII OK")
+
+		glog.V(3).Infoln("GRPC OK")
 		return nil
 	}
 
@@ -62,6 +65,13 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		Message: protocol.ConnectionId,
 	}
 	switch protocol.TypeId {
+	case pb.Protocol_TRUST_PING:
+		if protocol.ConnectionId == "" {
+			glog.Warningln("pinging first found connection, conn-id was empty")
+		}
+	case pb.Protocol_BASIC_MESSAGE:
+		task.Info = protocol.GetBasicMessage()
+		glog.V(1).Infoln("basic_message content:", task.Info)
 	case pb.Protocol_CONNECT:
 		var invitation didexchange.Invitation
 		dto.FromJSONStr(protocol.GetInvitationJson(), &invitation)
@@ -76,7 +86,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 			}
 			task.CredDefID = &credDef.CredDefId
 
-			if credDef.GetAttrs() != nil {
+			if credDef.GetAttrs_() != nil {
 				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttrs_().GetAttrs()))
 				for i, attribute := range credDef.GetAttrs_().GetAttrs() {
 					attributes[i] = didcomm.CredentialAttribute{
@@ -152,13 +162,21 @@ var typeID = map[int32]string{
 	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_PROOF):            pltype.CAContinuePresentProofProtocol,
 }
 
-// typeID is look up table for
+// to get protocol family
 var protocolName = [...]string{
 	pltype.AriesProtocolConnection, // "CONNECT",
 	pltype.ProtocolIssueCredential, // "ISSUE",
 	pltype.ProtocolPresentProof,    // "PROOF",
 	pltype.ProtocolTrustPing,       // "TRUST_PING",
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
+}
+
+var protocolType = map[string]pb.Protocol_Type{
+	pltype.AriesProtocolConnection: pb.Protocol_CONNECT,
+	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE,
+	pltype.ProtocolPresentProof:    pb.Protocol_PROOF,
+	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
+	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
 }
 
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {

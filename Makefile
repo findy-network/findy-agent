@@ -33,13 +33,16 @@ shadow:
 
 check_fmt:
 	$(eval GOFILES = $(shell find . -name '*.go'))
-	@gofmt -l $(GOFILES)
+	@gofmt -s -l $(GOFILES)
 
-lint:
-	$(GOPATH)/bin/golint ./... 
+#lint:
+#	$(GOPATH)/bin/golint ./... 
 
 lint_e:
 	@$(GOPATH)/bin/golint ./... | grep -v export | cat
+
+lint:
+	@golangci-lint run
 
 test:
 	go test -v -p 1 -failfast ./...

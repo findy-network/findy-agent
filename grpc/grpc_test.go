@@ -17,13 +17,13 @@ import (
 	pb "github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	_ "github.com/findy-network/findy-agent/agent/caapi"
+	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	caclient "github.com/findy-network/findy-agent/client"
 	"github.com/findy-network/findy-agent/enclave"
-	"github.com/findy-network/findy-agent/grpc/client"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
 	_ "github.com/findy-network/findy-agent/protocol/connection"
@@ -31,11 +31,13 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
+	"github.com/findy-network/findy-grpc/agency/client"
 	"github.com/findy-network/findy-grpc/rpc"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -186,7 +188,7 @@ func prepareBuildOneTest() {
 	}
 
 	home := utils.IndyBaseDir()
-	fmt.Println("----- cleaning ----")
+	glog.Infoln("----- cleaning ----")
 	removeFiles(home, "/.indy_client/worker/ONEunit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/ONEemail*")
 	removeFiles(home, "/.indy_client/worker/ONEenclave.bolt")
@@ -236,7 +238,26 @@ func Test_handleAgencyAPI(t *testing.T) {
 				Type: pb.Cmd_PING,
 			})
 			assert.NoError(t, err)
-			fmt.Println(i, "result:", result.GetPing())
+			glog.Infoln(i, "result:", result.GetPing())
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+func Test_NewOnboarding(t *testing.T) {
+	ut := time.Now().Unix() - 1545924840
+	walletName := fmt.Sprintf("email%v", ut)
+	for i := 0; i < 1; i++ {
+		t.Run(fmt.Sprintf("onboard %d", i), func(t *testing.T) {
+			conn := client.TryOpen("findy-root", baseCfg)
+			ctx := context.Background()
+			agencyClient := pb.NewAgencyClient(conn)
+			result, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+				Email: walletName,
+			})
+			if assert.NoError(t, err) {
+				glog.Infoln(i, "result:", result.GetOk(), result.GetResult().CADID)
+			}
 			assert.NoError(t, conn.Close())
 		})
 	}
@@ -340,7 +361,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 				if got := err; !reflect.DeepEqual(got, tt.want) {
 					t.Errorf("client.CreateSchema() %v, want %v", got, tt.want)
 				}
-				fmt.Println("==== creating cred def please wait ====")
+				glog.Infoln("==== creating cred def please wait ====")
 				time.Sleep(2 * time.Millisecond) // Legacy: Sleep to let ledger process schema!
 				agents[0].CredDefID, err = c.CreateCredDef(sID, "TAG_1")
 				if got := err; !reflect.DeepEqual(got, tt.want) {
@@ -366,7 +387,7 @@ func TestInvitation(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, r.JsonStr)
-			fmt.Println(r.JsonStr)
+			glog.Infoln(r.JsonStr)
 			agents[i].Invitation = r.JsonStr
 
 			assert.NoError(t, conn.Close())
@@ -388,7 +409,7 @@ func TestConnection(t *testing.T) {
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
-			connID, ch, err := client.Connection(ctx, ca.Invitation)
+			connID, ch, err := conn.Connection(ctx, ca.Invitation)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
@@ -403,8 +424,8 @@ func TestConnection(t *testing.T) {
 	}
 
 	for i, agent := range agents {
-		fmt.Println("// agent number:", i)
-		fmt.Println(agent.String())
+		glog.Infoln("// agent number:", i)
+		glog.Infoln(agent.String())
 	}
 	if testMode == TestModeBuildEnv {
 		err2.Check(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
@@ -419,11 +440,12 @@ func TestTrustPing(t *testing.T) {
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
+				ID:   ca.ConnID[0],
+				Conn: conn,
 			}.Ping(ctx)
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				glog.Infof("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -439,11 +461,12 @@ func TestBasicMessage(t *testing.T) {
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
-				ID: ca.ConnID[0],
+				ID:   ca.ConnID[0],
+				Conn: conn,
 			}.BasicMessage(ctx, "basic message test string")
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				glog.V(1).Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -458,11 +481,13 @@ func TestSetPermissive(t *testing.T) {
 		ctx := context.Background()
 		c := agency2.NewAgentClient(conn)
 		r, err := c.SetImplId(ctx, &agency2.SAImplementation{Id: "permissive_sa"})
-		assert.NoError(t, err)
-		assert.Equal(t, "permissive_sa", r.Id)
-		assert.NoError(t, conn.Close())
+		if t != nil {
+			assert.NoError(t, err)
+			assert.Equal(t, "permissive_sa", r.Id)
+		}
+		conn.Close()
 	}
-	fmt.Println("permissive impl set is done!")
+	glog.Infoln("permissive impl set is done!")
 }
 
 // if we don't use auto accept mechanism, we should have listeners for each of
@@ -484,7 +509,8 @@ func TestIssue(t *testing.T) {
 			agency2.NewDIDCommClient(conn)
 			connID := agents[0].ConnID[i]
 			r, err := client.Pairwise{
-				ID: connID,
+				ID:   connID,
+				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
 				&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
 					Name:  "email",
@@ -492,7 +518,43 @@ func TestIssue(t *testing.T) {
 				}}})
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+
+	}
+}
+
+func TestIssueJSON(t *testing.T) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	for i := 0; i < 3; i++ {
+		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[0].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			connID := agents[0].ConnID[i]
+			emailCred := []didcomm.CredentialAttribute{
+				{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				},
+			}
+			attrJSON := dto.ToJSON(emailCred)
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.Issue(ctx, agents[0].CredDefID, attrJSON)
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
@@ -520,17 +582,256 @@ func TestReqProof(t *testing.T) {
 				CredDefId: agents[0].CredDefID,
 			}}
 			r, err := client.Pairwise{
-				ID: connID,
+				ID:   connID,
+				Conn: conn,
 			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
 			assert.NoError(t, err)
 			for status := range r {
-				fmt.Printf("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())
 		})
-
 	}
+}
+
+func TestListen(t *testing.T) {
+	err2.Check(flag.Set("v", "0"))
+	waitCh := make(chan struct{})
+	intCh := make(chan struct{})
+	readyCh := make(chan struct{})
+	// start listeners
+	for i, ca := range agents {
+		if i == 0 {
+			continue
+		}
+		if i == 1 {
+			go doListen(ca.DID, intCh, readyCh, waitCh)
+		}
+	}
+	i := 0
+	ca := agents[i]
+	/*for i, ca := range agents*/ {
+		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			conn := client.TryOpen(ca.DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			<-waitCh
+			r, err := client.Pairwise{
+				ID:   ca.ConnID[0],
+				Conn: conn,
+			}.BasicMessage(ctx, fmt.Sprintf("# %d. basic message test string", i))
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+		})
+	}
+	<-readyCh           // listener is tested now and it's ready
+	intCh <- struct{}{} // tell it to stop
+
+	glog.Infoln("*** closing..")
+	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
+}
+
+func TestListen100(t *testing.T) {
+	err2.Check(flag.Set("v", "0"))
+	for i := 0; i < 10; i++ {
+		TestListen(t)
+	}
+}
+
+func BenchmarkIssue(b *testing.B) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(nil)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	i := 0
+	conn := client.TryOpen(agents[0].DID, baseCfg)
+	ctx := context.Background()
+	agency2.NewDIDCommClient(conn)
+	connID := agents[0].ConnID[i]
+	// warm up
+	{
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.IssueWithAttrs(ctx, agents[0].CredDefID,
+			&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+				Name:  "email",
+				Value: strLiteral("email", "", i+1),
+			}}})
+		err2.Check(err)
+		for range r {
+		}
+	}
+	for n := 0; n < b.N; n++ {
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.IssueWithAttrs(ctx, agents[0].CredDefID,
+			&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+				Name:  "email",
+				Value: strLiteral("email", "", i+1),
+			}}})
+		err2.Check(err)
+		for range r {
+		}
+	}
+	err2.Check(conn.Close())
+}
+
+func BenchmarkReqProof(b *testing.B) {
+	if testMode == TestModeRunOne {
+		TestSetPermissive(nil)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	i := 0
+	conn := client.TryOpen(agents[0].DID, baseCfg)
+	ctx := context.Background()
+	agency2.NewDIDCommClient(conn)
+	connID := agents[0].ConnID[i]
+	// warm up
+	{
+		attrs := []*agency2.Protocol_Proof_Attr{{
+			Name:      "email",
+			CredDefId: agents[0].CredDefID,
+		}}
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+		err2.Check(err)
+		for range r {
+		}
+	}
+	for n := 0; n < b.N; n++ {
+		attrs := []*agency2.Protocol_Proof_Attr{{
+			Name:      "email",
+			CredDefId: agents[0].CredDefID,
+		}}
+		r, err := client.Pairwise{
+			ID:   connID,
+			Conn: conn,
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+		err2.Check(err)
+		for range r {
+		}
+	}
+	err2.Check(conn.Close())
+}
+
+func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
+	conn := client.TryOpen(caDID, baseCfg)
+	//defer conn.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch, err := conn.Listen(ctx, &agency2.ClientID{Id: utils.UUID()})
+	err2.Check(err)
+	glog.V(1).Infoln("** start to listen")
+	count := 0
+	wait <- struct{}{}
+loop:
+	for {
+		select {
+		case status, ok := <-ch:
+			if !ok {
+				glog.V(1).Infoln("closed from server")
+				break loop
+			}
+			glog.Infoln("\n\t===== listen status:\n\t",
+				status.Notification.ProtocolFamily,
+				status.Notification.TypeId,
+				status.Notification.Id,
+				status.Notification.ProtocolId)
+			switch status.Notification.TypeId {
+			case agency2.Notification_STATUS_UPDATE:
+				handleStatus(conn, status, true)
+				count++ // run two times to test our own sending
+				if count > 1 {
+					readyCh <- struct{}{}
+				}
+			case agency2.Notification_ACTION_NEEDED:
+				resume(conn.ClientConn, status, true)
+			case agency2.Notification_ANSWER_NEEDED_PING:
+				reply(conn.ClientConn, status, true)
+			case agency2.Notification_ANSWER_NEEDED_ISSUE_PROPOSE:
+				reply(conn.ClientConn, status, true)
+			case agency2.Notification_ANSWER_NEEDED_PROOF_PROPOSE:
+				reply(conn.ClientConn, status, true)
+			case agency2.Notification_ANSWER_NEEDED_PROOF_VERIFY:
+				reply(conn.ClientConn, status, true)
+			}
+		case <-intCh:
+			cancel()
+			glog.V(1).Infoln("interrupted by user, cancel() called")
+		}
+	}
+}
+
+func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) {
+	if status.Notification.ProtocolType == agency2.Protocol_BASIC_MESSAGE {
+		ctx := context.Background()
+		didComm := agency2.NewDIDCommClient(conn)
+		statusResult, err := didComm.Status(ctx, &agency2.ProtocolID{
+			TypeId:           status.Notification.ProtocolType,
+			Role:             agency2.Protocol_ADDRESSEE,
+			Id:               status.Notification.ProtocolId,
+			NotificationTime: status.Notification.Timestamp,
+		})
+		err2.Check(err)
+		if statusResult.GetBasicMessage().SentByMe {
+			glog.V(0).Infoln("-- ours, no reply")
+			return
+		}
+		ch, err := client.Pairwise{
+			ID:   status.Notification.ConnectionId,
+			Conn: conn,
+		}.BasicMessage(context.Background(), statusResult.GetBasicMessage().Content)
+		err2.Check(err)
+		for state := range ch {
+			glog.Infoln("BM send state:", state.State, "|", state.Info)
+			//assert.Equal(t, agency2.ProtocolState_OK, state.State)
+		}
+	}
+}
+
+func reply(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
+	ctx := context.Background()
+	c := agency2.NewAgentClient(conn)
+	cid, err := c.Give(ctx, &agency2.Answer{
+		Id:       status.Notification.Id,
+		ClientId: status.ClientId,
+		Ack:      ack,
+		Info:     "testing says hello!",
+	})
+	err2.Check(err)
+	glog.Infof("Sending the answer (%s) send to client:%s\n", status.Notification.Id, cid.Id)
+}
+
+func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
+	ctx := context.Background()
+	didComm := agency2.NewDIDCommClient(conn)
+	stateAck := agency2.ProtocolState_ACK
+	if !ack {
+		stateAck = agency2.ProtocolState_NACK
+	}
+	unpauseResult, err := didComm.Resume(ctx, &agency2.ProtocolState{
+		ProtocolId: &agency2.ProtocolID{
+			TypeId: agency2.Protocol_PROOF,
+			Role:   agency2.Protocol_RESUME,
+			Id:     status.Notification.ProtocolId,
+		},
+		State: stateAck,
+	})
+	err2.Check(err)
+	glog.Infoln("result:", unpauseResult.String())
 }
 
 func strLiteral(prefix string, suffix string, i int) string {
