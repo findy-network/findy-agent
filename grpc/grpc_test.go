@@ -68,7 +68,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 }
 
 var (
-	testMode = TestModeRunOne
+	testMode = TestModeCI
 
 	lis            = bufconn.Listen(bufSize)
 	agents         *[4]AgentData
