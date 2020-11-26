@@ -134,9 +134,10 @@ type State struct {
 }
 
 type PSM struct {
-	Key    StateKey
-	InDID  string
-	States []State
+	Key       StateKey
+	Initiator bool
+	InDID     string
+	States    []State
 }
 
 func NewPSM(d []byte) *PSM {

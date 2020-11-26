@@ -102,7 +102,8 @@ loop:
 		//var notify bus.AgentNotify
 		select {
 		case question := <-questionChan:
-			glog.V(3).Infoln("question arrived", question.ID)
+			glog.V(1).Infoln("QUESTION ARRIVED", question.ID)
+
 			agentStatus := pb.AgentStatus{
 				ClientId: &pb.ClientID{Id: question.AgentDID},
 				Notification: &pb.Notification{
@@ -113,6 +114,7 @@ loop:
 					ProtocolFamily: question.ProtocolFamily,
 					ProtocolType:   protocolType[question.ProtocolFamily],
 					Timestamp:      question.Timestamp,
+					Role:           roleType[question.Initiator],
 				},
 			}
 			if clientID.Id != question.ClientID {
@@ -123,7 +125,7 @@ loop:
 			err2.Check(server.Send(&agentStatus))
 
 		case notify := <-notifyChan:
-			glog.V(3).Infoln("notification", notify.ID, "arrived")
+			glog.V(1).Infoln("notification", notify.ID, "arrived")
 			agentStatus := pb.AgentStatus{
 				ClientId: &pb.ClientID{Id: notify.AgentDID},
 				Notification: &pb.Notification{
@@ -134,6 +136,7 @@ loop:
 					ProtocolFamily: notify.ProtocolFamily,
 					ProtocolType:   protocolType[notify.ProtocolFamily],
 					Timestamp:      notify.Timestamp,
+					Role:           roleType[notify.Initiator],
 				},
 			}
 			if clientID.Id != notify.ClientID {

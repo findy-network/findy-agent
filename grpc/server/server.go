@@ -110,7 +110,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				var proofAttrs []didcomm.ProofAttribute
 				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
 				task.ProofAttrs = &proofAttrs
-				glog.V(1).Infoln("set proof attrs from json")
+				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJson())
 			} else if proofReq.GetAttrs() != nil {
 				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttrs().GetAttrs()))
 				for i, attribute := range proofReq.GetAttrs().GetAttrs() {
@@ -164,6 +164,7 @@ var typeID = map[int32]string{
 
 // to get protocol family
 var protocolName = [...]string{
+	pltype.Nothing,                 // NONE
 	pltype.AriesProtocolConnection, // "CONNECT",
 	pltype.ProtocolIssueCredential, // "ISSUE",
 	pltype.ProtocolPresentProof,    // "PROOF",
@@ -177,6 +178,11 @@ var protocolType = map[string]pb.Protocol_Type{
 	pltype.ProtocolPresentProof:    pb.Protocol_PROOF,
 	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
 	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
+}
+
+var roleType = map[bool]pb.Protocol_Role{
+	true:  pb.Protocol_INITIATOR, // is Initiator
+	false: pb.Protocol_ADDRESSEE, //
 }
 
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {

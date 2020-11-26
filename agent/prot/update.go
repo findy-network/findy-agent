@@ -23,6 +23,7 @@ type notifyEdge struct {
 	nonce     string // protocol ID (not a Aries message ID but thead ID)
 	timestamp int64  // the timestamp of the PSM
 	pwName    string // connection ID (note!! not a pairwise Label)
+	initiator bool   // true if we are to one who started the protocol
 }
 
 // NotifyEdge sends notification to client (previously edge agent). It sends
@@ -34,7 +35,6 @@ func NotifyEdge(ne notifyEdge) {
 	if r != nil {
 		myCA := r.MyCA()
 
-		// todo: we are only testing these might not needed
 		go func() {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
@@ -51,6 +51,7 @@ func NotifyEdge(ne notifyEdge) {
 				ProtocolFamily:   taskStatus.Type,
 				ConnectionID:     ne.pwName,
 				Timestamp:        ne.timestamp,
+				Initiator:        ne.initiator,
 			})
 
 			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
@@ -86,6 +87,10 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	}
 
 	machineKey := psm.StateKey{DID: meDID, Nonce: task.Nonce}
+
+	// NOTE!!! We cannot use error handling with the GetPSM because it reports
+	// not founding as an error. TODO: It must be fixed. Filtering errors by
+	// their values is mistake, it brings more dependencies.
 	m, _ := psm.GetPSM(machineKey)
 
 	var machine *psm.PSM
@@ -105,7 +110,15 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	} else { // create a new one
 		ss := make([]psm.State, 1, 12)
 		ss[0] = s
-		machine = &psm.PSM{Key: machineKey, InDID: msgMe, States: ss}
+		initiator := false
+		if subs&(psm.Sending|psm.Failure) != 0 {
+			glog.V(3).Infof("----- We (%s) are INITIATOR ----", meDID)
+			initiator = true
+		} else {
+			glog.V(3).Infof("----- We (%s) are ADDRESSEE ----", meDID)
+		}
+		machine = &psm.PSM{Key: machineKey, InDID: msgMe,
+			States: ss, Initiator: initiator}
 	}
 	err2.Check(psm.AddPSM(machine))
 
@@ -155,6 +168,7 @@ type endingInfo struct {
 	plType            string
 	timestamp         int64
 	pendingUserAction bool
+	initiator         bool
 }
 
 func triggerEnd(info endingInfo) {
@@ -181,6 +195,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				initiator: info.initiator,
 			})
 		}
 		bus.ReadyStation.BroadcastReady(key, ack)
@@ -197,6 +212,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				initiator: info.initiator,
 			})
 		}
 	}

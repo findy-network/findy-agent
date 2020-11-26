@@ -21,6 +21,7 @@ type AgentNotify struct {
 	ProtocolID       string
 	ProtocolFamily   string
 	Timestamp        int64
+	Initiator        bool
 }
 
 const (

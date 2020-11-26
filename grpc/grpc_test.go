@@ -619,7 +619,7 @@ func TestReqProofJSON(t *testing.T) {
 		TestIssue(t)
 	}
 
-	err2.Check(flag.Set("v", "1"))
+	err2.Check(flag.Set("v", "3"))
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {

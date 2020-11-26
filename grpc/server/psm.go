@@ -48,7 +48,8 @@ loop:
 	for {
 		select {
 		case status := <-statusChan:
-			glog.V(1).Infoln("grpc state:", status)
+			glog.V(1).Infof("grpc %s state in %s",
+				status, task.Nonce)
 			switch status {
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
@@ -122,9 +123,16 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
-
+	m, _ := psm.GetPSM(key)
+	state := &pb.ProtocolState{ProtocolId: id}
+	if m != nil {
+		state.ProtocolId.Role = roleType[m.Initiator]
+	} else {
+		glog.Warningf("cannot get protocol role for %s", key)
+		state.ProtocolId.Role = pb.Protocol_UNKNOWN
+	}
 	ps = &pb.ProtocolStatus{
-		State:      &pb.ProtocolState{ProtocolId: id},
+		State:      state,
 		StatusJson: statusJSON,
 	}
 	switch id.TypeId {
@@ -218,7 +226,7 @@ func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolSt
 	msg, err := psm.GetBasicMessageRep(key)
 	err2.Check(err)
 
-	glog.V(1).Infoln("=====", key, msg.SentByMe)
+	glog.V(1).Infoln("Get BasicMsg for:", key, "sent by me:", msg.SentByMe)
 	return &pb.ProtocolStatus_BasicMessage_{BasicMessage: &pb.ProtocolStatus_BasicMessage{
 		Content:       msg.Message,
 		SentByMe:      msg.SentByMe,
