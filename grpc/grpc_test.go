@@ -285,7 +285,7 @@ func Test_NewOnboarding(t *testing.T) {
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all of the EAs. That's handy for web wallets.
-func Test_handshakeAgencyAPI(t *testing.T) {
+func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -391,7 +391,7 @@ func Test_handshakeAgencyAPI(t *testing.T) {
 	}
 }
 
-func TestInvitation(t *testing.T) {
+func TestInvitation_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -414,7 +414,7 @@ func TestInvitation(t *testing.T) {
 	}
 }
 
-func TestConnection(t *testing.T) {
+func TestConnection_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -619,7 +619,7 @@ func TestReqProofJSON(t *testing.T) {
 		TestIssue(t)
 	}
 
-	err2.Check(flag.Set("v", "3"))
+	err2.Check(flag.Set("v", "0"))
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {

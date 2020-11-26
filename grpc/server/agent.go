@@ -24,7 +24,7 @@ func (a *agentServer) SetImplId(ctx context.Context, implementation *pb.SAImplem
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent set impl:", implementation.Id)
-	receiver.AttachSAImpl(implementation.Id)
+	receiver.AttachSAImpl(implementation.Id, implementation.Persistent)
 	return &pb.SAImplementation{Id: implementation.Id}, nil
 }
 

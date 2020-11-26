@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	GRPCSA = "grpc_sa"
+	GRPCSA = "grpc"
 )
 
 func init() {

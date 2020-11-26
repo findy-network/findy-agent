@@ -3,6 +3,7 @@ package cloud
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -132,7 +133,10 @@ func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 }
 
 // AttachSAImpl sets implementation ID for SA to use for mocks and auto accepts.
-func (a *Agent) AttachSAImpl(implID string) {
+func (a *Agent) AttachSAImpl(implID string, persistent bool) {
+	defer err2.Catch(func(err error) {
+		glog.Errorln("attach sa impl:", err)
+	})
 	glog.V(2).Infof("setting implementation (%s)", implID)
 	a.SAImplID = implID
 	if a.IsCA() {
@@ -141,17 +145,32 @@ func (a *Agent) AttachSAImpl(implID string) {
 			glog.Errorf("type assert, wrong agent type for %s",
 				a.RootDid().Did())
 		}
+		if persistent {
+			implEndp := fmt.Sprintf("%s://localhost", implID)
+			glog.V(0).Infoln("setting impl endp:", implEndp)
+			err2.Check(a.AttachAPIEndp(service.Addr{
+				Endp: implEndp,
+			}))
+		}
 		wa.SAImplID = implID
 	}
 }
 
-// CallableEA tells if we can call EA from here, from Agency. It means that EA
+type callType int
+
+const (
+	callTypeNo callType = 0 + iota
+	callTypeImplID
+	callTypeEndp
+)
+
+// callableEA tells if we can call EA from here, from Agency. It means that EA
 // is offering a callable endpoint and we must have a pairwise do that.
-func (a *Agent) CallableEA() bool {
+func (a *Agent) callableEA() callType {
 	if !a.IsCA() {
 		panic("not a CA")
 	}
-	if a.EAEndp == nil {
+	if a.SAImplID == "" && a.EAEndp == nil {
 		theirDid := a.Tr.PayloadPipe().Out.Did()
 		r := <-did.Meta(a.Wallet(), theirDid)
 		if r.Err() == nil && r.Str1() != "pairwise" && r.Str1() != "" {
@@ -160,8 +179,7 @@ func (a *Agent) CallableEA() bool {
 			glog.V(3).Info("got endpoint from META", r.Str1())
 		}
 	}
-	attached := a.EAEndp != nil
-	return attached
+	return a.checkSAImpl()
 }
 
 // CallEA makes a remove call for real EA and its API (issuer and verifier).
@@ -178,22 +196,22 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		err = nil          // clear error so protocol continues NACK to other end
 	})
 
-	// since gRPC API support we prefer implementation IDs over web hooks
-	if a.SAImplID != "" {
-		glog.V(3).Infof("call SA impl %s", a.SAImplID)
-		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
-	} else if a.CallableEA() { // web hooks (aka indy-endpoints)
+	switch a.callableEA() {
+	case callTypeEndp:
 		glog.V(3).Info("calling EA")
 		return a.callEA(plType, im)
+	case callTypeImplID:
+		glog.V(3).Infof("call SA impl %s", a.SAImplID)
+		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
+	default:
+		// Default answer is definitely NO, we don't have issuer or prover
+		om = im
+		om.SetReady(false)
+		info := "no SA endpoint or implementation ID set"
+		glog.V(3).Info(info)
+		om.SetInfo(info)
+		return om, nil
 	}
-
-	// Default answer is definitely NO, we don't have issuer or prover
-	om = im
-	om.SetReady(false)
-	info := "no SA endpoint or implementation ID set"
-	glog.V(3).Info(info)
-	om.SetInfo(info)
-	return om, nil
 }
 
 // NotifyEA notifies the corresponding EA via web socket. Consider other options
@@ -679,4 +697,31 @@ func (a *Agent) SecPipe(meDID string) sec.Pipe {
 	defer a.pwLock.Unlock()
 
 	return a.pws[meDID]
+}
+
+func (a *Agent) checkSAImpl() callType {
+	defer err2.Catch(func(err error) {
+		glog.Warningf("parsing EA endpoint (%v): error: %v",
+			a.EAEndp.Endp, err)
+	})
+	if a.EAEndp == nil || a.EAEndp.Endp == "" {
+		if a.SAImplID == "" {
+			return callTypeNo
+		}
+		return callTypeImplID
+	}
+
+	u, err := url.Parse(a.EAEndp.Endp)
+	err2.Check(err)
+
+	// todo: check these when EA callback mechanism is finalized.
+	// Previously we had web hooks over old DIDComm which allowed agency to
+	// call SAs when needed. Now we have gRPC streams but triggering is
+	// missing. Had to think is that really needed or what we will use for it.
+	switch u.Scheme {
+	case sa.GRPCSA:
+		a.SAImplID = sa.GRPCSA
+		return callTypeImplID
+	}
+	return callTypeEndp
 }
