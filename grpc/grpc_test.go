@@ -8,8 +8,10 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -105,6 +107,8 @@ func setUp() {
 		fmt.Println("error on setup", err)
 	})
 
+	calcTestMode()
+
 	if testMode == TestModeRunOne {
 		gob := err2.Bytes.Try(ioutil.ReadFile("ONEdata.gob"))
 		dto.FromGOB(gob, &prebuildAgents)
@@ -180,6 +184,21 @@ func setUp() {
 	})
 
 	server.StartTestHTTPServer()
+}
+
+func calcTestMode() {
+	defer err2.Catch(func(err error) {
+		glog.V(20).Infoln(err)
+	})
+
+	currentUser, e := user.Current()
+	err2.Check(e)
+	filename := filepath.Join(currentUser.HomeDir, "/.config/go/env")
+	b := err2.Bytes.Try(ioutil.ReadFile(filename))
+	if strings.Contains(string(b), "GO111MODULE=off") {
+		glog.Infoln("testMode := TestModeRunOne, go modules off")
+		testMode = TestModeRunOne
+	}
 }
 
 func prepareBuildOneTest() {
@@ -585,6 +604,38 @@ func TestReqProof(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+func TestReqProofJSON(t *testing.T) {
+	if testMode == TestModeRunOne {
+		TestIssue(t)
+	}
+
+	err2.Check(flag.Set("v", "1"))
+
+	for i := 0; i < 3; i++ {
+		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[0].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			connID := agents[0].ConnID[i]
+			attrs := []didcomm.ProofAttribute{{
+				Name:      "email",
+				CredDefID: agents[0].CredDefID,
+			}}
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ReqProof(ctx, dto.ToJSON(attrs))
 			assert.NoError(t, err)
 			for status := range r {
 				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
