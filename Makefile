@@ -45,6 +45,9 @@ lint:
 	@golangci-lint run
 
 test:
+	go test -p 1 -failfast ./...
+
+testv:
 	go test -v -p 1 -failfast ./...
 
 test_cov:
