@@ -137,8 +137,8 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("attach sa impl:", err)
 	})
-	glog.V(2).Infof("setting implementation (%s)", implID)
 	a.SAImplID = implID
+	glog.V(3).Infof("setting implementation (%s)", a.SAImplID)
 	if a.IsCA() {
 		wa, ok := a.WorkerEA().(*Agent)
 		if !ok {
@@ -147,7 +147,7 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 		}
 		if persistent {
 			implEndp := fmt.Sprintf("%s://localhost", implID)
-			glog.V(0).Infoln("setting impl endp:", implEndp)
+			glog.V(3).Infoln("setting impl endp:", implEndp)
 			err2.Check(a.AttachAPIEndp(service.Addr{
 				Endp: implEndp,
 			}))
@@ -629,9 +629,9 @@ func (a *Agent) WorkerEA() comm.Receiver {
 
 func (a *Agent) ExportWallet(key string, exportPath string) string {
 	exportFile := exportPath
-	url := exportPath
+	fileLocation := exportPath
 	if exportPath == "" {
-		exportFile, url = utils.Settings.WalletExportPath(a.RootDid().Did())
+		exportFile, fileLocation = utils.Settings.WalletExportPath(a.RootDid().Did())
 	}
 	exportCreds := wallet.Credentials{
 		Path:                exportFile,
@@ -639,7 +639,7 @@ func (a *Agent) ExportWallet(key string, exportPath string) string {
 		KeyDerivationMethod: "RAW",
 	}
 	a.Export.SetChan(wallet.Export(a.Wallet(), exportCreds))
-	return url
+	return fileLocation
 }
 
 func (a *Agent) loadPWMap() {
@@ -704,6 +704,9 @@ func (a *Agent) checkSAImpl() callType {
 		glog.Warningf("parsing EA endpoint (%v): error: %v",
 			a.EAEndp.Endp, err)
 	})
+	if a.SAImplID != "" {
+		return callTypeImplID
+	}
 	if a.EAEndp == nil || a.EAEndp.Endp == "" {
 		if a.SAImplID == "" {
 			return callTypeNo
@@ -721,6 +724,7 @@ func (a *Agent) checkSAImpl() callType {
 	switch u.Scheme {
 	case sa.GRPCSA:
 		a.SAImplID = sa.GRPCSA
+		glog.V(3).Infoln("setting impl id:", a.SAImplID)
 		return callTypeImplID
 	}
 	return callTypeEndp

@@ -196,7 +196,7 @@ func calcTestMode() {
 	filename := filepath.Join(currentUser.HomeDir, "/.config/go/env")
 	b := err2.Bytes.Try(ioutil.ReadFile(filename))
 	if strings.Contains(string(b), "GO111MODULE=off") {
-		glog.Infoln("testMode := TestModeRunOne, go modules off")
+		glog.V(1).Infoln("testMode := TestModeRunOne, go modules off")
 		testMode = TestModeRunOne
 	}
 }
@@ -207,7 +207,7 @@ func prepareBuildOneTest() {
 	}
 
 	home := utils.IndyBaseDir()
-	glog.Infoln("----- cleaning ----")
+	glog.V(1).Infoln("----- cleaning ----")
 	removeFiles(home, "/.indy_client/worker/ONEunit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/ONEemail*")
 	removeFiles(home, "/.indy_client/worker/ONEenclave.bolt")
@@ -493,18 +493,31 @@ func TestBasicMessage(t *testing.T) {
 	}
 }
 
+var allPermissive = true
+
 func TestSetPermissive(t *testing.T) {
-	for _, ca := range agents {
+	for i, ca := range agents {
 		conn := client.TryOpen(ca.DID, baseCfg)
 
 		ctx := context.Background()
 		c := agency2.NewAgentClient(conn)
-		r, err := c.SetImplId(ctx, &agency2.SAImplementation{Id: "permissive_sa"})
+		implID := "permissive_sa"
+		persistent := false
+		if i == 0 && !allPermissive {
+			glog.Infoln("--- Using permissive ---")
+			implID = "grpc"
+			persistent = true
+		}
+		r, err := c.SetImplId(ctx, &agency2.SAImplementation{
+			Id: implID, Persistent: persistent})
 		if t != nil {
 			assert.NoError(t, err)
-			assert.Equal(t, "permissive_sa", r.Id)
+			assert.Equal(t, implID, r.Id)
 		}
-		conn.Close()
+		err = conn.Close()
+		if err != nil && t != nil {
+			assert.NoError(t, err)
+		}
 	}
 	glog.Infoln("permissive impl set is done!")
 }
@@ -514,6 +527,7 @@ func TestSetPermissive(t *testing.T) {
 // as well.
 
 func TestIssue(t *testing.T) {
+	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
 	}
@@ -547,6 +561,7 @@ func TestIssue(t *testing.T) {
 }
 
 func TestIssueJSON(t *testing.T) {
+	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
 	}
@@ -583,6 +598,7 @@ func TestIssueJSON(t *testing.T) {
 }
 
 func TestReqProof(t *testing.T) {
+	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
 	}
@@ -615,6 +631,7 @@ func TestReqProof(t *testing.T) {
 }
 
 func TestReqProofJSON(t *testing.T) {
+	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
 	}
@@ -778,6 +795,54 @@ func BenchmarkReqProof(b *testing.B) {
 	err2.Check(conn.Close())
 }
 
+func TestListenSAGrpcProofReq(t *testing.T) {
+	allPermissive = false
+	TestSetPermissive(t)
+
+	err2.Check(flag.Set("v", "0"))
+	waitCh := make(chan struct{})
+	intCh := make(chan struct{})
+	readyCh := make(chan struct{})
+	// start listeners for grpc SA
+	for i, ca := range agents {
+		if i == 0 {
+			go doListen(ca.DID, intCh, readyCh, waitCh)
+		}
+	}
+	i := 0
+	ca := agents[i]
+	/*for i, ca := range agents*/ {
+		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			conn := client.TryOpen(ca.DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			<-waitCh
+
+			connID := ca.ConnID[i]
+			attrs := []*agency2.Protocol_Proof_Attr{{
+				Name:      "email",
+				CredDefId: ca.CredDefID,
+			}}
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attrs: attrs})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+	<-readyCh           // listener is tested now and it's ready
+	intCh <- struct{}{} // tell it to stop
+
+	glog.Infoln("*** closing..")
+	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
+}
+
 func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
 	conn := client.TryOpen(caDID, baseCfg)
 	//defer conn.Close()
@@ -803,7 +868,10 @@ loop:
 				status.Notification.ProtocolId)
 			switch status.Notification.TypeId {
 			case agency2.Notification_STATUS_UPDATE:
-				handleStatus(conn, status, true)
+				noAction := handleStatus(conn, status, true)
+				if noAction {
+					readyCh <- struct{}{}
+				}
 				count++ // run two times to test our own sending
 				if count > 1 {
 					readyCh <- struct{}{}
@@ -826,7 +894,7 @@ loop:
 	}
 }
 
-func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) {
+func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
 	if status.Notification.ProtocolType == agency2.Protocol_BASIC_MESSAGE {
 		ctx := context.Background()
 		didComm := agency2.NewDIDCommClient(conn)
@@ -838,8 +906,8 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) {
 		})
 		err2.Check(err)
 		if statusResult.GetBasicMessage().SentByMe {
-			glog.V(0).Infoln("-- ours, no reply")
-			return
+			glog.V(1).Infoln("-- ours, no reply")
+			return false
 		}
 		ch, err := client.Pairwise{
 			ID:   status.Notification.ConnectionId,
@@ -850,7 +918,9 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) {
 			glog.Infoln("BM send state:", state.State, "|", state.Info)
 			//assert.Equal(t, agency2.ProtocolState_OK, state.State)
 		}
+		return false
 	}
+	return true
 }
 
 func reply(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
