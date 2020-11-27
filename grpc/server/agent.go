@@ -99,7 +99,6 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer
 
 loop:
 	for {
-		//var notify bus.AgentNotify
 		select {
 		case question := <-questionChan:
 			glog.V(1).Infoln("QUESTION ARRIVED", question.ID)
@@ -108,6 +107,7 @@ loop:
 				ClientId: &pb.ClientID{Id: question.AgentDID},
 				Notification: &pb.Notification{
 					Id:             question.ID,
+					PID:            question.PID,
 					TypeId:         notificationTypeID[question.NotificationType],
 					ConnectionId:   question.ConnectionID,
 					ProtocolId:     question.ProtocolID,
@@ -117,12 +117,39 @@ loop:
 					Role:           roleType[question.Initiator],
 				},
 			}
+			if question.IssuePropose != nil {
+				glog.V(1).Infoln("issue propose handling")
+				agentStatus.Notification.Question = &pb.Notification_IssuePropose_{
+					IssuePropose: &pb.Notification_IssuePropose{
+						CredDefId:  question.IssuePropose.CredDefID,
+						ValuesJson: question.IssuePropose.ValuesJSON,
+					},
+				}
+			}
+			if question.ProofVerify != nil {
+				glog.V(1).Infoln("proof verify handling")
+				attrs := make([]*pb.Notification_ProofVerify_Attr, 0, len(question.ProofVerify.Attrs))
+				for _, attr := range question.Attrs {
+					attrs = append(attrs, &pb.Notification_ProofVerify_Attr{
+						Value:     attr.Value,
+						Name:      attr.Name,
+						CredDefId: attr.CredDefID,
+						Predicate: attr.Predicate,
+					})
+				}
+				agentStatus.Notification.Question = &pb.Notification_ProofVerify_{
+					ProofVerify: &pb.Notification_ProofVerify{
+						Attrs: attrs,
+					},
+				}
+			}
 			if clientID.Id != question.ClientID {
 				glog.Warningf("client id mismatch: c/s: %s/%s",
 					clientID.Id, question.ClientID)
 			}
 			agentStatus.ClientId.Id = question.ClientID
 			err2.Check(server.Send(&agentStatus))
+			glog.V(1).Infoln("send question..")
 
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
