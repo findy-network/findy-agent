@@ -145,7 +145,7 @@ func handleAcceptProof(WDID string, plType string, im didcomm.Msg, om didcomm.Ms
 			PID:              im.SubLevelID(),
 			ProtocolFamily:   pltype.ProtocolPresentProof,
 			NotificationType: plType,
-			ConnectionID:     im.Thread().ID,
+			ConnectionID:     im.Name(),
 			ProtocolID:       im.Nonce(),
 		},
 	})
