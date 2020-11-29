@@ -862,6 +862,7 @@ loop:
 				break loop
 			}
 			glog.Infoln("\n\t===== listen status:\n\t",
+				status.Notification.ConnectionId,
 				status.Notification.ProtocolFamily,
 				status.Notification.TypeId,
 				status.Notification.Id,

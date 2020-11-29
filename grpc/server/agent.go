@@ -101,7 +101,8 @@ loop:
 	for {
 		select {
 		case question := <-questionChan:
-			glog.V(1).Infoln("QUESTION ARRIVED", question.ID,
+			glog.V(1).Infoln("QUESTION in conn-id:", question.ConnectionID,
+				"QID:", question.ID,
 				question.ProtocolFamily,
 				notificationTypeID[question.NotificationType])
 
