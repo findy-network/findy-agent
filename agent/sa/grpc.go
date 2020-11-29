@@ -15,7 +15,13 @@ const (
 	GRPCSA = "grpc"
 
 	// todo: this must change at the production time or put to settings/cfg
-	grpcAnswerTimeout = 10 * time.Second
+	grpcAnswerTimeout = 1 * time.Hour
+
+	// pingSATimeout is different because it is not a actual question i.e. we
+	// don't need to get an answer. If we don't it just means that SA is not
+	// listening and an admin can do something about it. The current might
+	// actually be too long.
+	pingSATimeout = 3 * time.Second
 )
 
 func init() {
@@ -33,7 +39,11 @@ func init() {
 // solution. In the future we can make this fully async like user actions to
 // mobile EAs i.e. implement SA questions as an own states in the PSM.
 func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
-	glog.V(1).Info("grpc SA API call:", plType, im.Info())
+	if glog.V(1) {
+		glog.Info("grpc SA API call:", plType, im.Info())
+		glog.Infof("thread.ID: %v thread.PID: %v, pw.id: %v",
+			im.Nonce(), im.SubLevelID(), im.Name())
+	}
 
 	switch plType {
 	case pltype.CANotifyStatus:
@@ -45,13 +55,13 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		handlePing(WDID, plType, im, om)
 	case pltype.SAIssueCredentialAcceptPropose:
 		om = im
-		handleIssuePropose(WDID, plType, im, om)
+		handleAcceptIssuePropose(WDID, plType, im, om)
 	case pltype.SAPresentProofAcceptPropose:
 		om = im
 		handleAcceptProof(WDID, plType, im, om)
 	case pltype.SAPresentProofAcceptValues:
 		om = im
-		handleProofValues(WDID, plType, im, om)
+		handleAcceptProofValues(WDID, plType, im, om)
 	}
 	return om, nil
 }
@@ -64,6 +74,7 @@ func handlePing(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
 				AgentDID: WDID,
 			},
 			ID:               qid,
+			ProtocolFamily:   pltype.ProtocolTrustPing,
 			NotificationType: plType,
 			ConnectionID:     im.Thread().ID,
 			ProtocolID:       im.Nonce(),
@@ -75,16 +86,16 @@ func handlePing(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
 		om.SetReady(a.ACK)
 		om.SetInfo(a.Info)
 
-	case <-time.After(grpcAnswerTimeout):
+	case <-time.After(pingSATimeout):
 		glog.V(1).Infof("!!!!! no answer in time (%v) for: %v",
-			grpcAnswerTimeout, qid)
+			pingSATimeout, qid)
 		om.SetReady(false)
 		om.SetInfo("timeout")
 
 	}
 }
 
-func handleIssuePropose(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+func handleAcceptIssuePropose(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
 	PID := ""
 	if im.SubMsg() != nil {
 		PID, _ = im.SubMsg()["id"].(string)
@@ -101,6 +112,7 @@ func handleIssuePropose(WDID string, plType string, im didcomm.Msg, om didcomm.M
 			},
 			ID:               qid,
 			PID:              PID,
+			ProtocolFamily:   pltype.ProtocolIssueCredential,
 			IssuePropose:     issue,
 			NotificationType: plType,
 			ConnectionID:     im.Thread().ID,
@@ -131,6 +143,7 @@ func handleAcceptProof(WDID string, plType string, im didcomm.Msg, om didcomm.Ms
 			},
 			ID:               qid,
 			PID:              im.SubLevelID(),
+			ProtocolFamily:   pltype.ProtocolPresentProof,
 			NotificationType: plType,
 			ConnectionID:     im.Thread().ID,
 			ProtocolID:       im.Nonce(),
@@ -147,33 +160,30 @@ func handleAcceptProof(WDID string, plType string, im didcomm.Msg, om didcomm.Ms
 	}
 }
 
-func handleProofValues(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
-	om = im
-	PID := ""
-	if im.SubMsg() != nil {
-		PID, _ = im.SubMsg()["id"].(string)
-	}
+func handleAcceptProofValues(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
 	var proof *bus.ProofVerify
 	if im.ProofValues() != nil {
 		proof = &bus.ProofVerify{Attrs: *im.ProofValues()}
 	}
 	qid := utils.UUID() // every question ID must have unique ID!
 	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
-		AgentNotify: bus.AgentNotify{
+		AgentNotify: bus.AgentNotify{ // todo: initiator is missing
 			AgentKeyType: bus.AgentKeyType{
 				AgentDID: WDID,
 			},
 			ID:               qid,
-			PID:              PID,
+			PID:              im.SubLevelID(),
+			ProtocolFamily:   pltype.ProtocolPresentProof,
 			ProofVerify:      proof,
 			NotificationType: plType,
-			ConnectionID:     im.Thread().ID,
+			ConnectionID:     im.Name(),
 			ProtocolID:       im.Nonce(),
+			//Initiator:
 		},
 	})
 	select {
 	case a := <-ac:
-		glog.V(1).Infoln("got answer for:", qid)
+		glog.V(1).Infof("======= got answer (%v) for: %v", a.ACK, qid)
 		if a.Info != im.Info() {
 			om.SetInfo(a.Info)
 		}

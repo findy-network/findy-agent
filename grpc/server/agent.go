@@ -101,7 +101,9 @@ loop:
 	for {
 		select {
 		case question := <-questionChan:
-			glog.V(1).Infoln("QUESTION ARRIVED", question.ID)
+			glog.V(1).Infoln("QUESTION ARRIVED", question.ID,
+				question.ProtocolFamily,
+				notificationTypeID[question.NotificationType])
 
 			agentStatus := pb.AgentStatus{
 				ClientId: &pb.ClientID{Id: question.AgentDID},

@@ -504,7 +504,7 @@ func TestSetPermissive(t *testing.T) {
 		implID := "permissive_sa"
 		persistent := false
 		if i == 0 && !allPermissive {
-			glog.Infoln("--- Using permissive ---")
+			glog.Infoln("--- Using grpc impl ID for SA ---")
 			implID = "grpc"
 			persistent = true
 		}
@@ -799,7 +799,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	allPermissive = false
 	TestSetPermissive(t)
 
-	err2.Check(flag.Set("v", "0"))
+	err2.Check(flag.Set("v", "3"))
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
