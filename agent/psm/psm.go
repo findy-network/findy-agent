@@ -115,7 +115,7 @@ func NewStateKey(agent comm.Receiver, nonce string) StateKey {
 }
 
 func (key *StateKey) Data() []byte {
-	return []byte(key.DID + key.Nonce)
+	return []byte(key.DID + "|" + key.Nonce)
 }
 
 func (key *StateKey) String() string {
