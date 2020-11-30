@@ -843,6 +843,54 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
 }
 
+func TestListenGrpcIssuingResume(t *testing.T) {
+	allPermissive = false
+	//	TestSetPermissive(t)
+
+	err2.Check(flag.Set("v", "3"))
+	waitCh := make(chan struct{})
+	intCh := make(chan struct{})
+	readyCh := make(chan struct{})
+	// start listener for holder
+	for i, ca := range agents {
+		if i == 1 {
+			go doListen(ca.DID, intCh, readyCh, waitCh)
+		}
+	}
+	i := 0
+	ca := agents[i]
+	/*for i, ca := range agents*/ {
+		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			conn := client.TryOpen(ca.DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewDIDCommClient(conn)
+			<-waitCh
+
+			connID := agents[0].ConnID[i]
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.IssueWithAttrs(ctx, agents[0].CredDefID,
+				&agency2.Protocol_Attrs{Attrs: []*agency2.Protocol_Attribute{{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				}}})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+	<-readyCh           // listener is tested now and it's ready
+	intCh <- struct{}{} // tell it to stop
+
+	glog.Infoln("*** closing..")
+	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
+}
+
 func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
 	conn := client.TryOpen(caDID, baseCfg)
 	//defer conn.Close()
@@ -946,14 +994,14 @@ func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
 	}
 	unpauseResult, err := didComm.Resume(ctx, &agency2.ProtocolState{
 		ProtocolId: &agency2.ProtocolID{
-			TypeId: agency2.Protocol_PROOF,
+			TypeId: status.Notification.ProtocolType,
 			Role:   agency2.Protocol_RESUME,
 			Id:     status.Notification.ProtocolId,
 		},
 		State: stateAck,
 	})
 	err2.Check(err)
-	glog.Infoln("result:", unpauseResult.String())
+	glog.Infoln("======= result:", unpauseResult.String())
 }
 
 func strLiteral(prefix string, suffix string, i int) string {
