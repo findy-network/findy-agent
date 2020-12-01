@@ -73,9 +73,13 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		task.Info = protocol.GetBasicMessage()
 		glog.V(1).Infoln("basic_message content:", task.Info)
 	case pb.Protocol_CONNECT:
+		if protocol.GetConnAttr() == nil {
+			panic(errors.New("connection attrs cannot be nil"))
+		}
 		var invitation didexchange.Invitation
-		dto.FromJSONStr(protocol.GetInvitationJson(), &invitation)
+		dto.FromJSONStr(protocol.GetConnAttr().GetInvitationJson(), &invitation)
 		task.ConnectionInvitation = &invitation
+		task.Info = protocol.GetConnAttr().GetLabel()
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
 	case pb.Protocol_ISSUE:

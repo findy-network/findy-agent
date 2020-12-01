@@ -428,7 +428,11 @@ func TestConnection_NoOneRun(t *testing.T) {
 
 			ctx := context.Background()
 			agency2.NewDIDCommClient(conn)
-			connID, ch, err := conn.Connection(ctx, ca.Invitation)
+			pairwise := &client.Pairwise{
+				Conn:  conn,
+				Label: "TestLabel",
+			}
+			connID, ch, err := pairwise.Connection(ctx, ca.Invitation)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
