@@ -245,7 +245,7 @@ func doPingAPIEndp(packet comm.Packet) didcomm.Payload {
 func doAttachSAImpl(packet comm.Packet) didcomm.Payload {
 	return comm.ProcessMsg(packet, func(im, om didcomm.Msg) (err error) {
 		a := packet.Receiver
-		a.AttachSAImpl(im.SubLevelID())
+		a.AttachSAImpl(im.SubLevelID(), false)
 		return nil
 	})
 }

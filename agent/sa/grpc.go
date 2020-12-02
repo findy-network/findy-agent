@@ -1,19 +1,27 @@
 package sa
 
 import (
+	"time"
+
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
-	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 const (
-	GRPCSA = "grpc_sa"
+	GRPCSA = "grpc"
+
+	// todo: this must change at the production time or put to settings/cfg
+	grpcAnswerTimeout = 1 * time.Hour
+
+	// pingSATimeout is different because it is not a actual question i.e. we
+	// don't need to get an answer. If we don't it just means that SA is not
+	// listening and an admin can do something about it. The current might
+	// actually be too long.
+	pingSATimeout = 3 * time.Second
 )
 
 func init() {
@@ -31,74 +39,158 @@ func init() {
 // solution. In the future we can make this fully async like user actions to
 // mobile EAs i.e. implement SA questions as an own states in the PSM.
 func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
-	glog.V(1).Info("grpc SA API call:", plType, im.Info())
+	if glog.V(1) {
+		glog.Info("grpc SA API call:", plType, im.Info())
+		glog.Infof("thread.ID: %v thread.PID: %v, pw.id: %v",
+			im.Nonce(), im.SubLevelID(), im.Name())
+	}
 
 	switch plType {
 	case pltype.CANotifyStatus:
-
+		// todo: we should get these in any case?
 	case pltype.SAPing:
+		// todo: what this does in really?
 		om = im // this if from legacy impl. will check in future if needed.
 
-		qid := utils.UUID() // every question ID must have unique ID!
-		ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
-			AgentNotify: bus.AgentNotify{
-				AgentKeyType: bus.AgentKeyType{
-					AgentDID: WDID,
-				},
-				ID:               qid,
-				NotificationType: plType,
-				ConnectionID:     im.Thread().ID,
-				ProtocolID:       im.Nonce(),
-			},
-		})
-		// todo: add timeout & end preferable we should have a
-		//  signaling mechanism if we cannot reach SA,
-		//  signaling could be just webhook?
-		a := <-ac
+		handlePing(WDID, plType, im, om)
+	case pltype.SAIssueCredentialAcceptPropose:
+		om = im
+		handleAcceptIssuePropose(WDID, plType, im, om)
+	case pltype.SAPresentProofAcceptPropose:
+		om = im
+		handleAcceptProof(WDID, plType, im, om)
+	case pltype.SAPresentProofAcceptValues:
+		om = im
+		handleAcceptProofValues(WDID, plType, im, om)
+	}
+	return om, nil
+}
 
+func handlePing(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+	qid := utils.UUID() // every question ID must have unique ID!
+	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
+		AgentNotify: bus.AgentNotify{
+			AgentKeyType: bus.AgentKeyType{
+				AgentDID: WDID,
+			},
+			ID:               qid,
+			ProtocolFamily:   pltype.ProtocolTrustPing,
+			NotificationType: plType,
+			ConnectionID:     im.Thread().ID,
+			ProtocolID:       im.Nonce(),
+		},
+	})
+	select {
+	case a := <-ac:
 		glog.V(1).Infoln("got answer for:", qid)
 		om.SetReady(a.ACK)
 		om.SetInfo(a.Info)
 
-	case pltype.SAIssueCredentialAcceptPropose:
-		// todo: add real call to SA
-		om = im
-		// in real case, make sure data matches the credential proposal
-		om.SetReady(true)
+	case <-time.After(pingSATimeout):
+		glog.V(1).Infof("!!!!! no answer in time (%v) for: %v",
+			pingSATimeout, qid)
+		om.SetReady(false)
+		om.SetInfo("timeout")
 
-	case pltype.SAPresentProofAcceptPropose:
-		// todo: add real call to SA
-
-		om = im
-		// todo: this should be get somewhere?
-		attrInfo := anoncreds.AttrInfo{
-			Name: "email",
-		}
-		reqAttrs := map[string]anoncreds.AttrInfo{
-			"attr1_referent": attrInfo,
-		}
-		nonce := utils.NewNonceStr()
-		proofRequest := anoncreds.ProofRequest{
-			Name:                "FirstProofReq",
-			Version:             "0.1",
-			Nonce:               nonce,
-			RequestedAttributes: reqAttrs,
-			RequestedPredicates: map[string]anoncreds.PredicateInfo{},
-		}
-		reqStr := dto.ToJSON(proofRequest)
-		om.SetSubMsg(mesg.SubFromJSON(reqStr))
-		om.SetReady(true)
-	case pltype.SAPresentProofAcceptValues:
-		om = im
-
-		// Sample how SA value verification is written
-		proofJSON := dto.ToJSON(im.SubMsg())
-		var proof anoncreds.Proof
-		dto.FromJSONStr(proofJSON, &proof)
-		emailToVerify := proof.RequestedProof.RevealedAttrs["attr1_referent"].Raw
-		glog.V(1).Info("Testing mock cannot REALLY verify this: ", emailToVerify)
-
-		om.SetReady(true)
 	}
-	return om, nil
+}
+
+func handleAcceptIssuePropose(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+	PID := ""
+	if im.SubMsg() != nil {
+		PID, _ = im.SubMsg()["id"].(string)
+	}
+	issue := &bus.IssuePropose{
+		CredDefID:  im.SubLevelID(),
+		ValuesJSON: im.Info(),
+	}
+	qid := utils.UUID() // every question ID must have unique ID!
+	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
+		AgentNotify: bus.AgentNotify{
+			AgentKeyType: bus.AgentKeyType{
+				AgentDID: WDID,
+			},
+			ID:               qid,
+			PID:              PID,
+			ProtocolFamily:   pltype.ProtocolIssueCredential,
+			IssuePropose:     issue,
+			NotificationType: plType,
+			ConnectionID:     im.Thread().ID,
+			ProtocolID:       im.Nonce(),
+		},
+	})
+	select {
+	case a := <-ac:
+		glog.V(1).Infoln("got answer for:", qid)
+		if a.Info != im.Info() {
+			om.SetInfo(a.Info)
+		}
+		om.SetReady(a.ACK)
+	case <-time.After(grpcAnswerTimeout):
+		glog.V(1).Infof("!!!!! no answer in time (%v) for: %v",
+			grpcAnswerTimeout, qid)
+		om.SetReady(false) // we could play with these in tests?
+		om.SetInfo(im.Info())
+	}
+}
+
+func handleAcceptProof(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+	qid := utils.UUID() // every question ID must have unique ID!
+	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
+		AgentNotify: bus.AgentNotify{
+			AgentKeyType: bus.AgentKeyType{
+				AgentDID: WDID,
+			},
+			ID:               qid,
+			PID:              im.SubLevelID(),
+			ProtocolFamily:   pltype.ProtocolPresentProof,
+			NotificationType: plType,
+			ConnectionID:     im.Name(),
+			ProtocolID:       im.Nonce(),
+		},
+	})
+	select {
+	case a := <-ac:
+		glog.V(1).Infoln("got answer for:", qid)
+		om.SetReady(a.ACK)
+	case <-time.After(grpcAnswerTimeout):
+		glog.V(1).Infof("!!!!! no answer in time (%v) for: %v",
+			grpcAnswerTimeout, qid)
+		om.SetReady(false) // we could play with these in tests?
+	}
+}
+
+func handleAcceptProofValues(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+	var proof *bus.ProofVerify
+	if im.ProofValues() != nil {
+		proof = &bus.ProofVerify{Attrs: *im.ProofValues()}
+	}
+	qid := utils.UUID() // every question ID must have unique ID!
+	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
+		AgentNotify: bus.AgentNotify{ // todo: initiator is missing
+			AgentKeyType: bus.AgentKeyType{
+				AgentDID: WDID,
+			},
+			ID:               qid,
+			PID:              im.SubLevelID(),
+			ProtocolFamily:   pltype.ProtocolPresentProof,
+			ProofVerify:      proof,
+			NotificationType: plType,
+			ConnectionID:     im.Name(),
+			ProtocolID:       im.Nonce(),
+			//Initiator:
+		},
+	})
+	select {
+	case a := <-ac:
+		glog.V(1).Infof("======= got answer (%v) for: %v", a.ACK, qid)
+		if a.Info != im.Info() {
+			om.SetInfo(a.Info)
+		}
+		om.SetReady(a.ACK)
+	case <-time.After(grpcAnswerTimeout):
+		glog.V(1).Infof("!!!!! no answer in time (%v) for: %v",
+			grpcAnswerTimeout, qid)
+		om.SetReady(false) // we could play with these in tests?
+	}
 }

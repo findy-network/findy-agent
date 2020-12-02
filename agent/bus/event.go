@@ -3,6 +3,7 @@ package bus
 import (
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/golang/glog"
 )
 
@@ -16,11 +17,24 @@ type AgentStateChan chan AgentNotify
 type AgentNotify struct {
 	AgentKeyType
 	ID               string
+	PID              string
 	NotificationType string
 	ConnectionID     string
 	ProtocolID       string
 	ProtocolFamily   string
 	Timestamp        int64
+	Initiator        bool
+	*IssuePropose
+	*ProofVerify
+}
+
+type IssuePropose struct {
+	CredDefID  string
+	ValuesJSON string
+}
+
+type ProofVerify struct {
+	Attrs []didcomm.ProofValue
 }
 
 const (

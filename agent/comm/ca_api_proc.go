@@ -35,7 +35,7 @@ func (p *caAPIProcessor) Add(h map[string]PlHandlerFunc) {
 	for k, v := range h {
 		p.handlers[k] = v
 	}
-	glog.Info("handler count: ", len(p.handlers))
+	glog.V(1).Info("handler count: ", len(p.handlers))
 }
 
 // PlHandlerFunc is func type for protocol message handlers. We add them to

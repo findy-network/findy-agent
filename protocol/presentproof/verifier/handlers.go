@@ -30,11 +30,14 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			meDID := agent.Trans().MessagePipe().In.Did()
+			key := psm.StateKey{DID: meDID, Nonce: im.Thread().ID}
 
 			// Let SA EA to check if it's OK to start present proof
+			machine := e2.PSM.Try(psm.GetPSM(key))
 			saMsg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce: im.Thread().ID,
 				ID:    im.Thread().PID,
+				Name:  machine.PairwiseName(),
 			}).(didcomm.Msg)
 
 			ca := agent.MyCA()
@@ -48,7 +51,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 			reqStr := dto.ToJSON(eaAnswer.SubMsg())
 			// Save it ..
 			rep := &psm.PresentProofRep{
-				Key:      psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
+				Key:      key,
 				ProofReq: reqStr,
 			}
 			err2.Check(psm.AddPresentProofRep(rep))
@@ -105,9 +108,11 @@ func HandlePresentation(packet comm.Packet) (err error) {
 			}
 
 			// .. then let SA EA check the values of the proof
+			psm := e2.PSM.Try(psm.GetPSM(repK))
 			saMsg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce:       im.Thread().ID,
 				ID:          im.Thread().PID,
+				Name:        psm.PairwiseName(),
 				ProofValues: &proofValues,
 			}).(didcomm.Msg)
 
