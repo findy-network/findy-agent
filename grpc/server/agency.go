@@ -56,12 +56,12 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServer) (err error) {
 	defer err2.Catch(func(err error) {
 		glog.Errorf("grpc agent listen error: %s", err)
-		//status := &pb.AgentStatus{
-		//	ClientId: &pb.ClientID{Id: clientID.Id},
-		//}
-		//if err := server.Send(status); err != nil {
-		//	glog.Errorln("error sending response:", err)
-		//}
+		status := &ops.AgencyStatus{
+			Id: err.Error(),
+		}
+		if err := server.Send(status); err != nil {
+			glog.Errorln("error sending response:", err)
+		}
 	})
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	user := jwt.User(ctx)
@@ -81,7 +81,6 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServ
 loop:
 	for {
 		select {
-
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
 			pid := &pb.ProtocolID{
@@ -97,25 +96,14 @@ loop:
 			agentStatus := ops.AgencyStatus{
 				Id:             hook.Id,
 				ProtocolStatus: protocolStatus(pid, psmKey),
-				//Notification: &pb.Notification{
-				//	Id:             notify.ID,
-				//	TypeId:         notificationTypeID[notify.NotificationType],
-				//	ConnectionId:   notify.ConnectionID,
-				//	ProtocolId:     notify.ProtocolID,
-				//	ProtocolFamily: notify.ProtocolFamily,
-				//	ProtocolType:   protocolType[notify.ProtocolFamily],
-				//	Timestamp:      notify.Timestamp,
-				//	Role:           roleType[notify.Initiator],
-				//},
 			}
 			if hook.Id != notify.ClientID {
 				glog.Warningf("client id mismatch: c/s: %s/%s",
 					hook.Id, notify.ClientID)
 			}
-			//agentStatus.ClientId.Id = notify.ClientID
 			err2.Check(server.Send(&agentStatus))
 		case <-ctx.Done():
-			glog.V(1).Infoln("ctx.Done() received, returning")
+			glog.V(0).Infoln("ctx.Done() received, returning")
 			break loop
 		}
 	}

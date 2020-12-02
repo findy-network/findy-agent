@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -457,9 +456,11 @@ func TestConnection_NoOneRun(t *testing.T) {
 }
 
 func TestTrustPing(t *testing.T) {
+	intCh := make(chan struct{})
 	if testMode == TestModeRunOne {
-		err2.Check(flag.Set("v", "1"))
-		go runPSMHook()
+		err2.Check(flag.Set("v", "0"))
+
+		go runPSMHook(intCh)
 	}
 
 	for i, ca := range agents {
@@ -467,27 +468,30 @@ func TestTrustPing(t *testing.T) {
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
-			didcommClient := agency2.NewDIDCommClient(conn)
+			commClient := agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
 				ID:   ca.ConnID[0],
 				Conn: conn,
 			}.Ping(ctx)
 			assert.NoError(t, err)
-			var prodocolID *agency2.ProtocolID
+			var protocolID *agency2.ProtocolID
 			for status := range r {
 				glog.Infof("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
-				prodocolID = status.ProtocolId
+				protocolID = status.ProtocolId
 			}
-			pid, err := didcommClient.Release(ctx, prodocolID)
+			pid, err := commClient.Release(ctx, protocolID)
 			assert.NoError(t, err)
 			glog.V(1).Infoln("release:", pid.Id)
 			assert.NoError(t, conn.Close())
 		})
 	}
+	if testMode == TestModeRunOne {
+		intCh <- struct{}{}
+	}
 }
 
-func runPSMHook() {
+func runPSMHook(intCh chan struct{}) {
 	defer err2.CatchTrace(func(err error) {
 		glog.V(1).Infoln("WARNING: error when reading response:", err)
 		//close(statusCh)
@@ -495,21 +499,21 @@ func runPSMHook() {
 	conn := client.TryOpen("findy-root", baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	opsClient := pb.NewAgencyClient(conn)
-	stream, err := opsClient.PSMHook(ctx, &pb.DataHook{
-		Id: utils.UUID(),
-	})
+	ch, err := conn.PSMHook(ctx)
 	err2.Check(err)
-	glog.V(1).Infoln("successful start of listen PSM hook id:")
+loop:
 	for {
-		status, err := stream.Recv()
-		if err == io.EOF {
-			glog.V(3).Infoln("status stream end")
-			//close(statusCh)
-			break
+		select {
+		case status, ok := <-ch:
+			if !ok {
+				glog.V(1).Infoln("closed from server")
+				break loop
+			}
+			glog.Infoln("\n\t===== listen status:\n\t", status.StatusJson)
+		case <-intCh:
+			cancel()
+			glog.V(1).Infoln("interrupted by user, cancel() called")
 		}
-		err2.Check(err)
-		glog.Infoln("PSM HOOK NOTIFICATIONS", status.Id, status.ProtocolStatus.StatusJson)
 	}
 }
 
