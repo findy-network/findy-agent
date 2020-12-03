@@ -134,6 +134,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 		pwName:            machine.PairwiseName(),
 		plType:            plType,
 		pendingUserAction: machine.PendingUserAction(),
+		initiator:         machine.Initiator,
 	})
 
 	return nil
@@ -145,19 +146,54 @@ func AddFlagUpdatePSM(machineKey psm.StateKey, subState psm.SubState) (err error
 	defer err2.Annotate("mark archive psm", &err)
 
 	m, _ := psm.GetPSM(machineKey)
-
 	lastSubState := m.LastState().Sub
 	var machine *psm.PSM
-	s := psm.State{Timestamp: time.Now().UnixNano(), Sub: subState | lastSubState}
+	timestamp := time.Now().UnixNano()
+	s := psm.State{Timestamp: timestamp, Sub: subState | lastSubState}
 	if m != nil { // update existing one
 		m.States = append(m.States, s)
 		machine = m
 	} else {
-		panic(fmt.Errorf("previous PSM (%s) must exist", machineKey))
+		return fmt.Errorf("previous PSM (%s) must exist", machineKey)
+	}
+	err2.Check(psm.AddPSM(machine))
+
+	if subState&psm.Archiving != 0 {
+		go notifyArchiving(machine, endingInfo{
+			timestamp:         timestamp,
+			subState:          subState,
+			nonce:             machineKey.Nonce,
+			meDID:             machineKey.DID,
+			pwName:            machine.PairwiseName(),
+			plType:            machine.FirstState().T.TypeID,
+			pendingUserAction: machine.PendingUserAction(),
+			initiator:         machine.Initiator,
+		})
+	}
+	return nil
+}
+
+func notifyArchiving(machine *psm.PSM, info endingInfo) {
+	key := psm.StateKey{
+		DID:   info.meDID,
+		Nonce: info.nonce,
+	}
+	if info.subState&psm.Archiving != 0 {
+		glog.V(0).Infoln("archiving:", key)
+
+		bus.WantAllAgencyActions.AgentBroadcast(bus.AgentNotify{
+			AgentKeyType:     bus.AgentKeyType{AgentDID: key.DID},
+			ID:               utils.UUID(),
+			NotificationType: info.plType,
+			ProtocolID:       info.nonce,
+			ProtocolFamily:   machine.Protocol(),
+			ConnectionID:     info.pwName,
+			Timestamp:        info.timestamp,
+			Initiator:        info.initiator,
+		})
+
 	}
 
-	err2.Check(psm.AddPSM(machine))
-	return nil
 }
 
 type endingInfo struct {

@@ -456,23 +456,64 @@ func TestConnection_NoOneRun(t *testing.T) {
 }
 
 func TestTrustPing(t *testing.T) {
+	intCh := make(chan struct{})
+	if testMode == TestModeRunOne {
+		err2.Check(flag.Set("v", "0"))
+
+		go runPSMHook(intCh)
+	}
+
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
-			agency2.NewDIDCommClient(conn)
+			commClient := agency2.NewDIDCommClient(conn)
 			r, err := client.Pairwise{
 				ID:   ca.ConnID[0],
 				Conn: conn,
 			}.Ping(ctx)
 			assert.NoError(t, err)
+			var protocolID *agency2.ProtocolID
 			for status := range r {
 				glog.Infof("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				protocolID = status.ProtocolId
 			}
+			pid, err := commClient.Release(ctx, protocolID)
+			assert.NoError(t, err)
+			glog.V(1).Infoln("release:", pid.Id)
 			assert.NoError(t, conn.Close())
 		})
+	}
+	if testMode == TestModeRunOne {
+		intCh <- struct{}{}
+	}
+}
+
+func runPSMHook(intCh chan struct{}) {
+	defer err2.CatchTrace(func(err error) {
+		glog.V(1).Infoln("WARNING: error when reading response:", err)
+		//close(statusCh)
+	})
+	conn := client.TryOpen("findy-root", baseCfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	ch, err := conn.PSMHook(ctx)
+	err2.Check(err)
+loop:
+	for {
+		select {
+		case status, ok := <-ch:
+			if !ok {
+				glog.V(1).Infoln("closed from server")
+				break loop
+			}
+			glog.Infoln("\n\t===== listen status:\n\t", status.StatusJson)
+		case <-intCh:
+			cancel()
+			glog.V(1).Infoln("interrupted by user, cancel() called")
+		}
 	}
 }
 

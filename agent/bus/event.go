@@ -7,6 +7,8 @@ import (
 	"github.com/golang/glog"
 )
 
+const AllAgents = "*"
+
 type AgentKeyType struct {
 	AgentDID string
 	ClientID string
@@ -39,6 +41,7 @@ type ProofVerify struct {
 
 const (
 	agentListen = 0 + iota
+	agencyListen
 )
 
 type agentStationMap map[AgentKeyType]AgentStateChan
@@ -47,9 +50,13 @@ type agentLockMap struct {
 	sync.Mutex
 }
 
-var AgentMaps = [...]agentLockMap{{agentStationMap: make(agentStationMap)}}
+var AgentMaps = [...]agentLockMap{
+	{agentStationMap: make(agentStationMap)},
+	{agentStationMap: make(agentStationMap)},
+}
 
 var WantAllAgentActions mapIndex = agentListen
+var WantAllAgencyActions mapIndex = agencyListen
 
 func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	AgentMaps[m].Lock()
@@ -72,11 +79,14 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
-	key := state.AgentKeyType
-	for k, ch := range AgentMaps[m].agentStationMap {
-		if key.AgentDID == k.AgentDID {
-			glog.V(3).Infoln(key.AgentDID, " agent notify:", k.ClientID)
-			state.AgentKeyType.ClientID = k.ClientID
+	broadcastKey := state.AgentKeyType
+	for listenKey, ch := range AgentMaps[m].agentStationMap {
+		hit := broadcastKey.AgentDID == listenKey.AgentDID ||
+			listenKey.AgentDID == AllAgents
+		if hit {
+			glog.V(3).Infoln(broadcastKey.AgentDID,
+				"agent notify:", listenKey.ClientID)
+			state.AgentKeyType.ClientID = listenKey.ClientID
 			ch <- state
 		}
 	}

@@ -102,6 +102,7 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.Id)
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	err2.Check(prot.AddFlagUpdatePSM(key, psm.Archiving))
+	glog.V(1).Infoln(caDID, "-agent release OK", id.Id)
 
 	return id, nil
 }
@@ -122,6 +123,11 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
+	ps = protocolStatus(id, key)
+	return ps, nil
+}
+
+func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
 	m, _ := psm.GetPSM(key)
 	state := &pb.ProtocolState{ProtocolId: id}
@@ -131,7 +137,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 		glog.Warningf("cannot get protocol role for %s", key)
 		state.ProtocolId.Role = pb.Protocol_UNKNOWN
 	}
-	ps = &pb.ProtocolStatus{
+	ps := &pb.ProtocolStatus{
 		State:      state,
 		StatusJson: statusJSON,
 	}
@@ -148,7 +154,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 		ps.Status = tryGetBasicMessageStatus(id, key)
 
 	}
-	return ps, nil
+	return ps
 }
 
 func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
