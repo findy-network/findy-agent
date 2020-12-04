@@ -130,7 +130,10 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
 	m, _ := psm.GetPSM(key)
-	state := &pb.ProtocolState{ProtocolId: id}
+	state := &pb.ProtocolState{
+		ProtocolId: id,
+		State:      calcProtocolState(m),
+	}
 	if m != nil {
 		state.ProtocolId.Role = roleType[m.Initiator]
 	} else {
@@ -155,6 +158,23 @@ func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 
 	}
 	return ps
+}
+
+func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
+	if m != nil {
+		if m.PendingUserAction() {
+			return pb.ProtocolState_WAIT_ACTION
+		}
+		if last := m.LastState(); last != nil {
+			if last.Sub.Pure() == psm.Failure || last.Sub&psm.NACK != 0 {
+				return pb.ProtocolState_ERR
+			}
+			if last.Sub&psm.ACK != 0 {
+				return pb.ProtocolState_OK
+			}
+		}
+	}
+	return pb.ProtocolState_UNKNOWN
 }
 
 func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
