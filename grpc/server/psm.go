@@ -54,7 +54,10 @@ loop:
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
 				break loop
-			case psm.ReadyNACK, psm.NACK, psm.Failure:
+			case psm.ReadyNACK, psm.NACK:
+				statusCode = pb.ProtocolState_NACK
+				break loop
+			case psm.Failure:
 				statusCode = pb.ProtocolState_ERR
 				break loop
 			}
