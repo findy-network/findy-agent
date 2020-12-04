@@ -166,15 +166,18 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 			return pb.ProtocolState_WAIT_ACTION
 		}
 		if last := m.LastState(); last != nil {
-			if last.Sub.Pure() == psm.Failure || last.Sub&psm.NACK != 0 {
+			switch last.Sub.Pure() {
+			case psm.Ready:
+				if last.Sub&psm.ACK != 0 {
+					return pb.ProtocolState_OK
+				}
+				return pb.ProtocolState_NACK
+			case psm.Failure:
 				return pb.ProtocolState_ERR
-			}
-			if last.Sub&psm.ACK != 0 {
-				return pb.ProtocolState_OK
 			}
 		}
 	}
-	return pb.ProtocolState_UNKNOWN
+	return pb.ProtocolState_RUNNING
 }
 
 func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
