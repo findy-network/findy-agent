@@ -104,7 +104,7 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.Id)
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
-	err2.Check(prot.AddFlagUpdatePSM(key, psm.Archiving))
+	err2.Check(prot.AddAndSetFlagUpdatePSM(key, psm.Archiving, 0))
 	glog.V(1).Infoln(caDID, "-agent release OK", id.Id)
 
 	return id, nil
