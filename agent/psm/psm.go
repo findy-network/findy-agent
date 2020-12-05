@@ -30,9 +30,26 @@ failure -> [*]
 ready --> [*]
 state ready {
 	[*] --> ACK
-	[*] --> NACK
 	ACK --> [*]
+	state ACK {
+		state "Archiving" as ACK_ARCH
+
+		[*] --> ACK_ARCH
+		ACK_ARCH --> [*]
+		[*] --> Archived
+		Archived --> [*]
+	}
+	[*] --> NACK
 	NACK --> [*]
+	state NACK {
+		state "Archived" as NACK_ARCHED
+
+		[*] --> Archiving
+		Archiving --> [*]
+		[*] --> NACK_ARCHED
+		NACK_ARCHED --> [*]
+	}
+
 
 }
 @enduml
@@ -54,6 +71,7 @@ const (
 	Ready
 	Failure
 	Archiving
+	Archived
 )
 
 const (
@@ -85,6 +103,16 @@ func (ss SubState) String() string {
 		return "Failure"
 	case Archiving:
 		return "Archiving"
+	case Archived:
+		return "Archived"
+	case ReadyACK | Archiving:
+		return "ReadyACKArchiving"
+	case ReadyACK | Archived:
+		return "ReadyACKArchived"
+	case ReadyNACK | Archiving:
+		return "ReadyNACKArchiving"
+	case ReadyNACK | Archived:
+		return "ReadyNACKArchived"
 	default:
 		return "Unknown State"
 	}
