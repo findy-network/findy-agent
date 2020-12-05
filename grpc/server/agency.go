@@ -95,7 +95,7 @@ loop:
 			}
 			agentStatus := ops.AgencyStatus{
 				Id:             hook.Id,
-				ProtocolStatus: protocolStatus(pid, psmKey),
+				ProtocolStatus: tryProtocolStatus(pid, psmKey),
 			}
 			if hook.Id != notify.ClientID {
 				glog.Warningf("client id mismatch: c/s: %s/%s",

@@ -126,13 +126,13 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
-	ps = protocolStatus(id, key)
+	ps = tryProtocolStatus(id, key)
 	return ps, nil
 }
 
-func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
+func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
-	m, _ := psm.GetPSM(key)
+	m := e2.PSM.Try(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolId: id,
 		State:      calcProtocolState(m),
