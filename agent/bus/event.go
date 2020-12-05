@@ -42,6 +42,7 @@ type ProofVerify struct {
 const (
 	agentListen = 0 + iota
 	agencyListen
+	psmCleanup
 )
 
 type agentStationMap map[AgentKeyType]AgentStateChan
@@ -50,13 +51,17 @@ type agentLockMap struct {
 	sync.Mutex
 }
 
-var AgentMaps = [...]agentLockMap{
-	{agentStationMap: make(agentStationMap)},
-	{agentStationMap: make(agentStationMap)},
-}
+var (
+	AgentMaps = [...]agentLockMap{
+		{agentStationMap: make(agentStationMap)},
+		{agentStationMap: make(agentStationMap)},
+		{agentStationMap: make(agentStationMap)},
+	}
 
-var WantAllAgentActions mapIndex = agentListen
-var WantAllAgencyActions mapIndex = agencyListen
+	WantAllAgentActions  mapIndex = agentListen
+	WantAllAgencyActions mapIndex = agencyListen
+	WantAllPSMCleanup    mapIndex = psmCleanup
+)
 
 func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	AgentMaps[m].Lock()
