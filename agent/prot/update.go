@@ -90,7 +90,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 
 	// NOTE!!! We cannot use error handling with the GetPSM because it reports
 	// not founding as an error. TODO: It must be fixed. Filtering errors by
-	// their values is mistake, it brings more dependencies.
+	// their values is a mistake, it brings more dependencies.
 	m, _ := psm.GetPSM(machineKey)
 
 	var machine *psm.PSM
@@ -142,14 +142,24 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 
 // AddFlagUpdatePSM updates existing PSM by adding a sub-state with state flag:
 //  lastSubState | subState  => adding a new sub state flag to last one
-func AddFlagUpdatePSM(machineKey psm.StateKey, subState psm.SubState) (err error) {
+// and if needed sub-state can be cleared before adding a new one:
+//  lastSubState = lastSubState ^& unsetSubState
+func AddAndSetFlagUpdatePSM(
+	machineKey psm.StateKey,
+	subState psm.SubState,
+	unsetSubState psm.SubState) (err error) {
+
 	defer err2.Annotate("mark archive psm", &err)
 
+	// NOTE!!! We cannot use error handling with the GetPSM because it reports
+	// not founding as an error. TODO: It must be fixed. Filtering errors by
+	// their values is a mistake, it brings more dependencies.
 	m, _ := psm.GetPSM(machineKey)
-	lastSubState := m.LastState().Sub
+
+	clearedLastSubState := m.LastState().Sub &^ unsetSubState
 	var machine *psm.PSM
 	timestamp := time.Now().UnixNano()
-	s := psm.State{Timestamp: timestamp, Sub: subState | lastSubState}
+	s := psm.State{Timestamp: timestamp, Sub: subState | clearedLastSubState}
 	if m != nil { // update existing one
 		m.States = append(m.States, s)
 		machine = m
@@ -158,7 +168,7 @@ func AddFlagUpdatePSM(machineKey psm.StateKey, subState psm.SubState) (err error
 	}
 	err2.Check(psm.AddPSM(machine))
 
-	if subState&psm.Archiving != 0 {
+	if subState&(psm.Archiving|psm.Archived) != 0 {
 		go notifyArchiving(machine, endingInfo{
 			timestamp:         timestamp,
 			subState:          subState,
@@ -178,20 +188,22 @@ func notifyArchiving(machine *psm.PSM, info endingInfo) {
 		DID:   info.meDID,
 		Nonce: info.nonce,
 	}
+	notify := bus.AgentNotify{
+		AgentKeyType:     bus.AgentKeyType{AgentDID: key.DID},
+		ID:               utils.UUID(),
+		NotificationType: info.plType,
+		ProtocolID:       info.nonce,
+		ProtocolFamily:   machine.Protocol(),
+		ConnectionID:     info.pwName,
+		Timestamp:        info.timestamp,
+		Initiator:        info.initiator,
+	}
 	if info.subState&psm.Archiving != 0 {
-		glog.V(0).Infoln("archiving:", key)
-
-		bus.WantAllAgencyActions.AgentBroadcast(bus.AgentNotify{
-			AgentKeyType:     bus.AgentKeyType{AgentDID: key.DID},
-			ID:               utils.UUID(),
-			NotificationType: info.plType,
-			ProtocolID:       info.nonce,
-			ProtocolFamily:   machine.Protocol(),
-			ConnectionID:     info.pwName,
-			Timestamp:        info.timestamp,
-			Initiator:        info.initiator,
-		})
-
+		glog.V(1).Infoln("archiving:", key)
+		bus.WantAllAgencyActions.AgentBroadcast(notify)
+	} else if info.subState&psm.Archived != 0 {
+		glog.V(1).Infoln("**** ARCHIVED:", key)
+		bus.WantAllPSMCleanup.AgentBroadcast(notify)
 	}
 
 }
