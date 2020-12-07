@@ -196,25 +196,89 @@ func TestNewEndp(t *testing.T) {
 }
 
 func TestNewEndpAddr(t *testing.T) {
-	ea := &Addr{Service: "agency", PlRcvr: "endpoint", MsgRcvr: "transport", RcvrDID: "did", EdgeToken: "token"}
-	ea2 := &Addr{Service: "findyws", PlRcvr: "endpoint", MsgRcvr: "transport", RcvrDID: "did"}
-	ea3 := &Addr{Service: "findy", PlRcvr: "endpoint", MsgRcvr: "transport"}
 	type args struct {
 		s string
 	}
 	tests := []struct {
-		name   string
-		args   args
-		wantEa *Addr
+		name string
+		args args
+		want bool
 	}{
-		{"1st", args{"/agency/endpoint/transport/did/token"}, ea},
-		{"2nd", args{"/findyws/endpoint/transport/did"}, ea2},
-		{"3rd", args{"/findy/endpoint/transport"}, ea3},
+		{"general wrong", args{"/agency/endpoint/transport/did/token"}, false},
+		{"from issue", args{"XXX/api/jsonws/invoke"}, false},
+		{"wrong char in", args{"/a2a/MuYkMsV-jvH4Ryqvfoofre/MuYkMsVBjvH4Ryqvfoofre/6im1AuoExt4rT39XuJS94X"}, false},
+		{"ok aries a2a", args{"/a2a/MuYkMsVBjvH4Ryqvfoofre/MuYkMsVBjvH4Ryqvfoofre/6im1AuoExt4rT39XuJS94X"}, true},
+		{"old api call", args{"/ca-api/9R7bAqCJQaDeq4u6UmBpyv/9R7bAqCJQaDeq4u6UmBpyv/9R7bAqCJQaDeq4u6UmBpyv"}, true},
+		{"agency api call", args{"/api/ping"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotEa := NewServerAddr(tt.args.s); !reflect.DeepEqual(gotEa, tt.wantEa) {
-				t.Errorf("NewServerAddr() = %v, want %v", gotEa, tt.wantEa)
+			if gotEa := NewServerAddr(tt.args.s); gotEa.Valid() != tt.want {
+				t.Errorf("NewServerAddr() = %v, Valid() = %v", gotEa,
+					gotEa.Valid())
+			}
+		})
+	}
+}
+
+func TestAddr_Valid(t *testing.T) {
+	type fields struct {
+		ID        uint64
+		Service   string
+		PlRcvr    string
+		MsgRcvr   string
+		RcvrDID   string
+		EdgeToken string
+		BasePath  string
+		VerKey    string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "1st",
+			fields: fields{
+				PlRcvr:  "MuYkMsVBjvH4Ryqvfoofre",
+				MsgRcvr: "MuYkMsVBjvH4Ryqvfoofre",
+				RcvrDID: "6im1AuoExt4rT39XuJS94X",
+			},
+			want: true,
+		},
+		{
+			name: "2nd too short",
+			fields: fields{
+				PlRcvr:  "MuYkMsVBjvH4Ryqvfoofre",
+				MsgRcvr: "MuYkMsVBjvH4Ryqvfoofre",
+				RcvrDID: "6im1AuoExt4rT39XuJS94",
+			},
+			want: false,
+		},
+		{
+			name: "api/jsonws/invoke",
+			fields: fields{
+				PlRcvr:  "api",
+				MsgRcvr: "jsonws",
+				RcvrDID: "invoke",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := &Addr{
+				ID:        tt.fields.ID,
+				Service:   tt.fields.Service,
+				PlRcvr:    tt.fields.PlRcvr,
+				MsgRcvr:   tt.fields.MsgRcvr,
+				RcvrDID:   tt.fields.RcvrDID,
+				EdgeToken: tt.fields.EdgeToken,
+				BasePath:  tt.fields.BasePath,
+				VerKey:    tt.fields.VerKey,
+			}
+			if got := e.Valid(); got != tt.want {
+				t.Errorf("Valid() = %v, want %v", got, tt.want)
 			}
 		})
 	}
