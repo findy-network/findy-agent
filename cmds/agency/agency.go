@@ -152,7 +152,7 @@ func (c *Cmd) initSealedBox() (err error) {
 		sealedBoxPath = filepath.Join(home, ".indy_client/enclave.bolt")
 	}
 
-	return enclave.InitSealedBox(sealedBoxPath)
+	return enclave.InitSealedBox(sealedBoxPath, nil)
 }
 
 func openStewardWallet(did string, serverCmd *Cmd) *cloud.Agent {
