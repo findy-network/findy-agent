@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	bolt "go.etcd.io/bbolt"
 )
@@ -105,6 +106,7 @@ func (b *DB) get(k StateKey, bucketName string,
 func (b *DB) rm(k StateKey, bucketName string) (err error) {
 	defer err2.Annotate("rm "+bucketName, &err)
 
+	glog.V(1).Infoln("-- rm", bucketName)
 	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
 		defer err2.Annotate("update "+bucketName, &err)
 		b := tx.Bucket(toBytes(bucketName))
