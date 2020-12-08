@@ -80,21 +80,38 @@ func (b *DB) addData(key []byte, value []byte, bucketName string) (err error) {
 	return err
 }
 
-func (b *DB) get(k StateKey, bucketName string) (m []byte, err error) {
+// get executes a read transaction by a key and a bucket. Instead of returning
+// the data, it uses lambda for the result transport to prevent cloning the byte
+// slice.
+func (b *DB) get(k StateKey, bucketName string,
+	use func(d []byte)) (err error) {
+
 	defer err2.Annotate("get "+bucketName, &err)
 	err2.Check(b.db.View(func(tx *bolt.Tx) (err error) {
 		defer err2.Annotate("read "+bucketName, &err)
 		b := tx.Bucket(toBytes(bucketName))
 		got := b.Get(k.Data())
-		// byte slices returned from Bolt are only valid during a transaction,
-		// so copy result slice
-		m = append(got[:0:0], got...)
-		if m == nil {
-			err = errors.New("Object was not found with id " + string(k.Data()))
+		if got == nil {
+			return errors.New("Object was not found with id " + string(k.Data()))
 		}
+		// byte slices returned from Bolt are only valid during a transaction
+		// to prevent the copying it every time we use lambda here
+		use(got)
 		return err
 	}))
-	return m, err
+	return err
+}
+
+func (b *DB) rm(k StateKey, bucketName string) (err error) {
+	defer err2.Annotate("rm "+bucketName, &err)
+
+	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
+		defer err2.Annotate("update "+bucketName, &err)
+		b := tx.Bucket(toBytes(bucketName))
+		err2.Check(b.Delete(k.Data()))
+		return err
+	}))
+	return err
 }
 
 func (b *DB) AddRawPL(addr *endp.Addr, data []byte) (err error) {
@@ -117,10 +134,9 @@ func (b *DB) addPSM(p *PSM) (err error) {
 }
 
 func (b *DB) getPSM(k StateKey) (m *PSM, err error) {
-	data, err := b.get(k, bucketPSM)
-	if data != nil {
-		m = NewPSM(data)
-	}
+	err = b.get(k, bucketPSM, func(d []byte) {
+		m = NewPSM(d)
+	})
 	return m, err
 }
 
@@ -186,10 +202,9 @@ func (b *DB) AddPairwiseRep(p *PairwiseRep) (err error) {
 }
 
 func (b *DB) GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
-	data, err := b.get(k, bucketPairwise)
-	if data != nil {
-		m = NewPairwiseRep(data)
-	}
+	err = b.get(k, bucketPairwise, func(d []byte) {
+		m = NewPairwiseRep(d)
+	})
 	return m, err
 }
 
@@ -225,10 +240,9 @@ func (b *DB) AddBasicMessageRep(p *BasicMessageRep) (err error) {
 }
 
 func (b *DB) GetBasicMessageRep(k StateKey) (m *BasicMessageRep, err error) {
-	data, err := b.get(k, bucketBasicMessage)
-	if data != nil {
-		m = NewBasicMessageRep(data)
-	}
+	err = b.get(k, bucketBasicMessage, func(d []byte) {
+		m = NewBasicMessageRep(d)
+	})
 	return m, err
 }
 
@@ -237,10 +251,9 @@ func (b *DB) AddIssueCredRep(p *IssueCredRep) (err error) {
 }
 
 func (b *DB) GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
-	data, err := b.get(k, bucketIssueCred)
-	if data != nil {
-		m = NewIssueCredRep(data)
-	}
+	err = b.get(k, bucketIssueCred, func(d []byte) {
+		m = NewIssueCredRep(d)
+	})
 	return m, err
 }
 
@@ -249,9 +262,8 @@ func (b *DB) AddPresentProofRep(p *PresentProofRep) (err error) {
 }
 
 func (b *DB) GetPresentProofRep(k StateKey) (m *PresentProofRep, err error) {
-	data, err := b.get(k, bucketPresentProof)
-	if data != nil {
-		m = NewPresentProofRep(data)
-	}
+	err = b.get(k, bucketPresentProof, func(d []byte) {
+		m = NewPresentProofRep(d)
+	})
 	return m, err
 }
