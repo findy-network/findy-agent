@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
@@ -27,6 +28,15 @@ type Addr struct {
 	EdgeToken string // Final communication endpoint like APNS Device Token
 	BasePath  string // The base address of the URL
 	VerKey    string // Associated VerKey, used for sending Payloads to this address
+}
+
+const DIDLength = 22
+
+var r *regexp.Regexp
+
+func init() {
+	expr := fmt.Sprintf("[0-9a-zA-Z]{%d}", DIDLength)
+	r, _ = regexp.Compile(expr)
 }
 
 // NewServerAddr creates and fills new object from string usually got from
@@ -85,6 +95,17 @@ func NewClientAddrWithKey(fullURL, verkey string) *Addr {
 
 func NewAddrFromPublic(ae service.Addr) *Addr {
 	return NewClientAddrWithKey(ae.Endp, ae.Key)
+}
+
+func (e *Addr) Valid() bool {
+	if !IsInEndpoints(e.PlRcvr) {
+		return IsDID(e.PlRcvr) && IsDID(e.MsgRcvr) && IsDID(e.RcvrDID)
+	}
+	return true
+}
+
+func IsDID(DID string) bool {
+	return len(DID) == DIDLength && r.MatchString(DID)
 }
 
 // ReceiverDID returns actual agent PL receiver.
