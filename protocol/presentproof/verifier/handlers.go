@@ -25,7 +25,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 		SendNext:    pltype.PresentProofRequest,
 		WaitingNext: pltype.PresentProofPresentation,
 		SendOnNACK:  pltype.PresentProofNACK,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof propose handler", &err)
 
 			agent := packet.Receiver
@@ -74,7 +74,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 		SendNext:    pltype.PresentProofACK,
 		WaitingNext: pltype.Terminate,
 		SendOnNACK:  pltype.PresentProofNACK,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof presentation handler", &err)
 
 			agent := packet.Receiver

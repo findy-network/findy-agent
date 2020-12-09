@@ -28,7 +28,7 @@ type Transition struct {
 // TransitionHandler is a type for Transition to process PSM state transition.
 // It receivers input msg and produce output msg. Implementor should return
 // false if it wants to NACK otherwise true.
-type InOut func(im, om didcomm.MessageHdr) (ack bool, err error)
+type InOut func(connID string, im, om didcomm.MessageHdr) (ack bool, err error)
 
 // Initial is a PSM starting config. It will init PSM accordingly. What msg send
 // next and what message wait for. It has Save handler where PSM persistence can
@@ -208,7 +208,7 @@ func ExecPSM(ts Transition) (err error) {
 	var ep sec.Pipe
 	if ts.InOut != nil {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
-		outStr, _ := err2.StrStr.Try(ts.Receiver.FindPW(inDID.Did()))
+		outStr, connID := err2.StrStr.Try(ts.Receiver.FindPW(inDID.Did()))
 		outDID := ts.Receiver.LoadDID(outStr)
 		outDID.StartEndp(ts.Receiver.Wallet())
 		ep = sec.Pipe{In: inDID, Out: outDID}
@@ -223,7 +223,7 @@ func ExecPSM(ts Transition) (err error) {
 				Thread: ts.Payload.Thread(), // very important!
 			}).(didcomm.MessageHdr)
 
-		if !err2.Bool.Try(ts.InOut(im, om)) { // if handler says NACK
+		if !err2.Bool.Try(ts.InOut(connID, im, om)) { // if handler says NACK
 			if ts.SendOnNACK != pltype.Nothing {
 				sendBack = true        // set if we'll send NACK
 				plType = ts.SendOnNACK // NACK type to send
