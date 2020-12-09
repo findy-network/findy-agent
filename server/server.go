@@ -98,6 +98,11 @@ func handleAgencyAPI(w http.ResponseWriter, r *http.Request) {
 	})
 
 	ourAddress := logRequestInfo("Agency API", r)
+	if ourAddress == nil {
+		errorResponse(w)
+		return
+	}
+
 	body := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
 	receivedPayload := mesg.PayloadCreator.NewFromData(body)
@@ -115,12 +120,12 @@ func caAPITransport(w http.ResponseWriter, r *http.Request) {
 	})
 
 	ourAddress := logRequestInfo("C/SA API TRANSPORT", r)
-	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
-
-	if !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) {
+	if ourAddress == nil || !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) {
 		errorResponse(w)
 		return
 	}
+
+	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
 	// Get Transport from Agency to 1. decrypt the input, 2. build packet to
 	// process, 3. encrypt the response
@@ -162,7 +167,8 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
-	if !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) || !saveIncoming(ourAddress, data) {
+	if ourAddress == nil || !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) ||
+		!saveIncoming(ourAddress, data) {
 		errorResponse(w)
 		return
 	}
@@ -174,6 +180,9 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 func logRequestInfo(caption string, r *http.Request) *endp.Addr {
 	ourAddress := endp.NewServerAddr(r.URL.Path)
+	if !ourAddress.Valid() {
+		return nil
+	}
 	ourAddress.BasePath = utils.Settings.HostAddr()
 	if glog.V(1) {
 		caption = fmt.Sprintf("===== %s =====", caption)
