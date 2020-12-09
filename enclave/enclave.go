@@ -11,36 +11,65 @@ addon/plugin system for cryptos when first implementation is done.
 package enclave
 
 import (
+	"crypto/md5"
 	"errors"
 	"os"
 
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-grpc/crypto"
+	"github.com/findy-network/findy-grpc/crypto/db"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
-const emailBucket = "email_bucket"
-const didBucket = "did_bucket"
-const masterSecretBucket = "master_secret_bucket"
+const emailB = "email_bucket"
+const didB = "did_bucket"
+const masterSecretB = "master_secret_bucket"
 
-var sealedBoxFilename string
+const emailBucket = 0
+const didBucket = 1
+const masterSecretBucket = 2
+
+// ErrNotExists is an error for key not exist in the enclave.
+var ErrNotExists = errors.New("key not exists")
+
+var (
+	sealedBoxFilename string
+	buckets           = [][]byte{
+		[]byte(emailB),
+		[]byte(didB),
+		[]byte(masterSecretB),
+	}
+
+	theCipher *crypto.Cipher
+)
 
 // InitSealedBox initialize enclave's sealed box. This must be called once
 // during the app life cycle.
-func InitSealedBox(filename string) (err error) {
-	glog.V(1).Info("init enclave", filename)
+func InitSealedBox(filename string, key []byte) (err error) {
+	if key != nil {
+		glog.V(1).Info("init enclave with the key", filename)
+		theCipher = crypto.NewCipher(key)
+	} else {
+		glog.V(1).Info("init enclave without a key", filename)
+	}
 	sealedBoxFilename = filename
-	return open(filename)
+	return db.Open(filename, buckets)
+}
+
+// Close closes the enclave database
+func Close() {
+	if db.DB != nil {
+		db.Close()
+	}
 }
 
 // WipeSealedBox closes and destroys the enclave permanently. This version only
 // removes the sealed box file. In the future we might add sector wiping
 // functionality.
 func WipeSealedBox() {
-	if db != nil {
-		Close()
-	}
+	Close()
 
 	err := os.RemoveAll(sealedBoxFilename)
 	if err != nil {
@@ -52,13 +81,29 @@ func WipeSealedBox() {
 func NewWalletKey(email string) (key string, err error) {
 	defer err2.Return(&err)
 
-	key, err = decrypt(getKeyValueFromBucket(emailBucket, hash(email)))
-	if key != "" {
+	value := &db.Data{Write: decrypt}
+	already, err := db.GetKeyValueFromBucket(buckets[emailBucket],
+		&db.Data{
+			Data: []byte(email),
+			Read: hash,
+		},
+		value)
+	if already {
 		return "", errors.New("key already exists")
 	}
 
 	key = err2.String.Try(generateKey())
-	err2.Check(addKeyValueToBucket(emailBucket, encrypt(key), hash(email)))
+
+	err2.Check(db.AddKeyValueToBucket(buckets[emailBucket],
+		&db.Data{
+			Data: []byte(key),
+			Read: encrypt,
+		},
+		&db.Data{
+			Data: []byte(email),
+			Read: hash,
+		},
+	))
 
 	return key, nil
 }
@@ -66,13 +111,29 @@ func NewWalletKey(email string) (key string, err error) {
 func NewWalletMasterSecret(did string) (sec string, err error) {
 	defer err2.Return(&err)
 
-	sec, err = decrypt(getKeyValueFromBucket(masterSecretBucket, hash(did)))
-	if sec != "" {
+	value := &db.Data{Write: decrypt}
+	already, err := db.GetKeyValueFromBucket(buckets[masterSecretBucket],
+		&db.Data{
+			Data: []byte(did),
+			Read: hash,
+		},
+		value)
+	if already {
 		return "", errors.New("master secret already exists")
 	}
 
 	sec = utils.UUID()
-	err2.Check(addKeyValueToBucket(masterSecretBucket, encrypt(sec), hash(did)))
+
+	err2.Check(db.AddKeyValueToBucket(buckets[masterSecretBucket],
+		&db.Data{
+			Data: []byte(sec),
+			Read: encrypt,
+		},
+		&db.Data{
+			Data: []byte(did),
+			Read: hash,
+		},
+	))
 
 	return sec, nil
 }
@@ -80,30 +141,69 @@ func NewWalletMasterSecret(did string) (sec string, err error) {
 // WalletKeyNotExists returns true if a wallet key is not in the enclave
 // associated by an email.
 func WalletKeyNotExists(email string) bool {
-	k, err := WalletKeyByEmail(hash(email))
+	k, err := WalletKeyByEmail(email)
 	return err == ErrNotExists && k == ""
 }
 
 // WalletKeyByEmail retrieves a wallet key from sealed box by an email
 // associated to it.
 func WalletKeyByEmail(email string) (key string, err error) {
-	return decrypt(getKeyValueFromBucket(emailBucket, hash(email)))
+	value := &db.Data{Write: decrypt}
+	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[emailBucket],
+		&db.Data{
+			Data: []byte(email),
+			Read: hash,
+		},
+		value))
+	if !found {
+		return "", ErrNotExists
+	}
+	return string(value.Data), nil
 }
 
 // WalletKeyByDID retrieves a wallet key by a DID.
 func WalletKeyByDID(DID string) (key string, err error) {
-	return decrypt(getKeyValueFromBucket(didBucket, hash(DID)))
+	value := &db.Data{Write: decrypt}
+	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[didBucket],
+		&db.Data{
+			Data: []byte(DID),
+			Read: hash,
+		},
+		value))
+	if !found {
+		return "", ErrNotExists
+	}
+	return string(value.Data), nil
 }
 
 // WalletMasterSecretByDID retrieves a wallet master secret key by a DID.
 func WalletMasterSecretByDID(DID string) (key string, err error) {
-	return decrypt(getKeyValueFromBucket(masterSecretBucket, hash(DID)))
+	value := &db.Data{Write: decrypt}
+	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[masterSecretBucket],
+		&db.Data{
+			Data: []byte(DID),
+			Read: hash,
+		},
+		value))
+	if !found {
+		return "", ErrNotExists
+	}
+	return string(value.Data), nil
 }
 
 // SetKeysDID is a function to store a wallet key by its DID. We can retrieve a
 // wallet key its DID with WalletKeyByDID.
 func SetKeysDID(key, DID string) (err error) {
-	return addKeyValueToBucket(didBucket, encrypt(key), hash(DID))
+	return db.AddKeyValueToBucket(buckets[didBucket],
+		&db.Data{
+			Data: []byte(key),
+			Read: encrypt,
+		},
+		&db.Data{
+			Data: []byte(DID),
+			Read: hash,
+		},
+	)
 }
 
 func generateKey() (key string, err error) {
@@ -115,23 +215,39 @@ func generateKey() (key string, err error) {
 	return key, nil
 }
 
-// Todo: these dummy functions must be implemented before production.
+// all of the following has same signature. They also panic on error
 
 // hash makes the cryptographic hash of the map key value. This prevents us to
 // store key value index (email, DID) to the DB aka sealed box as plain text.
 // Please use salt when implementing this.
-func hash(mapKeyValue string) (k string) {
-	return mapKeyValue
+func hash(key []byte) (k []byte) {
+	if theCipher != nil {
+		h := md5.Sum(key)
+		return h[:]
+	}
+	return append(key[:0:0], key...)
 }
 
 // encrypt encrypts the actual wallet key value. This is used when data is
 // stored do the DB aka sealed box.
-func encrypt(keyValue string) (k string) {
-	return keyValue
+func encrypt(value []byte) (k []byte) {
+	if theCipher != nil {
+		return theCipher.TryEncrypt(value)
+	}
+	return append(value[:0:0], value...)
 }
 
 // decrypt decrypts the actual wallet key value. This is used when data is
 // retrieved from the DB aka sealed box.
-func decrypt(keyValue string, e error) (k string, err error) {
-	return keyValue, e
+func decrypt(value []byte) (k []byte) {
+	if theCipher != nil {
+		return theCipher.TryDecrypt(value)
+	}
+	return append(value[:0:0], value...)
+}
+
+// noop function if need e.g. tests
+func _(value []byte) (k []byte) {
+	println("noop called!")
+	return value
 }

@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"os"
+	"time"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
@@ -71,6 +73,9 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServ
 
 	glog.V(1).Infoln("*-agent PSM listener:", hook.Id)
 
+	go startPermanentPSMCleanup(ctx)
+	time.Sleep(100 * time.Millisecond)
+
 	listenKey := bus.AgentKeyType{
 		AgentDID: bus.AllAgents,
 		ClientID: hook.Id,
@@ -82,26 +87,8 @@ loop:
 	for {
 		select {
 		case notify := <-notifyChan:
-			glog.V(1).Infoln("notification", notify.ID, "arrived")
-			pid := &pb.ProtocolID{
-				TypeId: protocolType[notify.ProtocolFamily],
-				Role:   roleType[notify.Initiator],
-				Id:     notify.ProtocolID,
-			}
+			handleNotify(hook, server, notify)
 
-			psmKey := psm.StateKey{
-				DID:   notify.AgentKeyType.AgentDID,
-				Nonce: notify.ProtocolID,
-			}
-			agentStatus := ops.AgencyStatus{
-				Id:             hook.Id,
-				ProtocolStatus: protocolStatus(pid, psmKey),
-			}
-			if hook.Id != notify.ClientID {
-				glog.Warningf("client id mismatch: c/s: %s/%s",
-					hook.Id, notify.ClientID)
-			}
-			err2.Check(server.Send(&agentStatus))
 		case <-ctx.Done():
 			glog.V(0).Infoln("ctx.Done() received, returning")
 			break loop
@@ -109,4 +96,77 @@ loop:
 	}
 
 	return nil
+}
+
+//startPermanentPSMCleanup
+func startPermanentPSMCleanup(ctx context.Context) {
+	clientID := utils.UUID()
+	listenKey := bus.AgentKeyType{
+		AgentDID: bus.AllAgents,
+		ClientID: clientID,
+	}
+	notifyChan := bus.WantAllPSMCleanup.AgentAddListener(listenKey)
+	defer bus.WantAllPSMCleanup.AgentRmListener(listenKey)
+
+loop:
+	for {
+		select {
+		case cleanupNotify := <-notifyChan:
+			handleCleanupNotify(cleanupNotify)
+
+		case <-ctx.Done():
+			glog.V(0).Infoln(
+				"startPermanentPSMCleanup ctx.Done() received, returning")
+			break loop
+		}
+	}
+
+}
+
+func handleCleanupNotify(notify bus.AgentNotify) {
+	defer err2.Catch(func(err error) {
+		glog.Error(err)
+	})
+
+	glog.V(1).Infoln("cleanup notification", notify.ID, "arrived")
+
+	psmKey := psm.StateKey{
+		DID:   notify.AgentKeyType.AgentDID,
+		Nonce: notify.ProtocolID,
+	}
+	p := e2.PSM.Try(psm.GetPSM(psmKey))
+	err2.Check(psm.RmPSM(p))
+}
+
+func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bus.AgentNotify) {
+	defer err2.Catch(func(err error) {
+		glog.Error(err)
+	})
+
+	glog.V(1).Infoln("notification", notify.ID, "arrived")
+	pid := &pb.ProtocolID{
+		TypeId: protocolType[notify.ProtocolFamily],
+		Role:   roleType[notify.Initiator],
+		Id:     notify.ProtocolID,
+	}
+
+	psmKey := psm.StateKey{
+		DID:   notify.AgentKeyType.AgentDID,
+		Nonce: notify.ProtocolID,
+	}
+	agentStatus := ops.AgencyStatus{
+		Id:             hook.Id,
+		ProtocolStatus: tryProtocolStatus(pid, psmKey),
+	}
+	if hook.Id != notify.ClientID {
+		glog.Warningf("client id mismatch: c/s: %s/%s",
+			hook.Id, notify.ClientID)
+	}
+	err2.Check(server.Send(&agentStatus))
+
+	// Update PSM state to trigger immediate cleanup
+	err2.Check(prot.AddAndSetFlagUpdatePSM(psmKey,
+		psm.Archived,  // set this
+		psm.Archiving, // clear this
+	))
 }

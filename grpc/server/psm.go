@@ -54,7 +54,10 @@ loop:
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
 				break loop
-			case psm.ReadyNACK, psm.NACK, psm.Failure:
+			case psm.ReadyNACK, psm.NACK:
+				statusCode = pb.ProtocolState_NACK
+				break loop
+			case psm.Failure:
 				statusCode = pb.ProtocolState_ERR
 				break loop
 			}
@@ -101,7 +104,7 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.Id)
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
-	err2.Check(prot.AddFlagUpdatePSM(key, psm.Archiving))
+	err2.Check(prot.AddAndSetFlagUpdatePSM(key, psm.Archiving, 0))
 	glog.V(1).Infoln(caDID, "-agent release OK", id.Id)
 
 	return id, nil
@@ -123,14 +126,17 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
-	ps = protocolStatus(id, key)
+	ps = tryProtocolStatus(id, key)
 	return ps, nil
 }
 
-func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
+func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
-	m, _ := psm.GetPSM(key)
-	state := &pb.ProtocolState{ProtocolId: id}
+	m := e2.PSM.Try(psm.GetPSM(key))
+	state := &pb.ProtocolState{
+		ProtocolId: id,
+		State:      calcProtocolState(m),
+	}
 	if m != nil {
 		state.ProtocolId.Role = roleType[m.Initiator]
 	} else {
@@ -155,6 +161,26 @@ func protocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 
 	}
 	return ps
+}
+
+func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
+	if m != nil {
+		if m.PendingUserAction() {
+			return pb.ProtocolState_WAIT_ACTION
+		}
+		if last := m.LastState(); last != nil {
+			switch last.Sub.Pure() {
+			case psm.Ready:
+				if last.Sub&psm.ACK != 0 {
+					return pb.ProtocolState_OK
+				}
+				return pb.ProtocolState_NACK
+			case psm.Failure:
+				return pb.ProtocolState_ERR
+			}
+		}
+	}
+	return pb.ProtocolState_RUNNING
 }
 
 func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {

@@ -2,6 +2,8 @@ package psm
 
 import (
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/golang/glog"
 )
 
 var (
@@ -26,6 +28,24 @@ func GetPSM(key StateKey) (s *PSM, err error) {
 
 func AddPSM(p *PSM) (err error) {
 	return lmDb.addPSM(p)
+}
+
+func RmPSM(p *PSM) (err error) {
+	glog.V(1).Infoln("--- rm PSM:", p.Key)
+	switch p.Protocol() {
+	case pltype.ProtocolBasicMessage:
+		err = lmDb.rm(p.Key, bucketBasicMessage)
+	case pltype.ProtocolConnection:
+		err = lmDb.rm(p.Key, bucketPairwise)
+	case pltype.ProtocolIssueCredential:
+		err = lmDb.rm(p.Key, bucketIssueCred)
+	case pltype.ProtocolPresentProof:
+		err = lmDb.rm(p.Key, bucketPresentProof)
+	}
+	if err != nil {
+		return err
+	}
+	return lmDb.rm(p.Key, bucketPSM)
 }
 
 func IsPSMReady(key StateKey) (yes bool, err error) {

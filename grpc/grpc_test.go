@@ -136,7 +136,7 @@ func setUp() {
 	} else {
 		sealedBoxPath = enclaveFile
 	}
-	err2.Check(enclave.InitSealedBox(sealedBoxPath))
+	err2.Check(enclave.InitSealedBox(sealedBoxPath, nil))
 
 	exportPath = filepath.Join(exportPath, "wallets")
 
@@ -458,7 +458,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 func TestTrustPing(t *testing.T) {
 	intCh := make(chan struct{})
 	if testMode == TestModeRunOne {
-		err2.Check(flag.Set("v", "0"))
+		err2.Check(flag.Set("v", "1"))
 
 		go runPSMHook(intCh)
 	}

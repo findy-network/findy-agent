@@ -70,7 +70,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 		Info: "welcome from gRPC",
 	})
 
-	return &pb.ClientID{Id: ""}, nil
+	return &pb.ClientID{Id: answer.ClientId.Id}, nil
 }
 
 func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer) (err error) {
