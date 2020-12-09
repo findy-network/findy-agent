@@ -40,7 +40,7 @@ func startProtocol(ca comm.Receiver, t *comm.Task) {
 }
 
 func handleProblemReport(packet comm.Packet) (err error) {
-	tHandler := func(im, om didcomm.MessageHdr) (ack bool, err error) {
+	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Annotate("basic message", &err)
 
 		problemReport := im.FieldObj().(*common.ProblemReport)
