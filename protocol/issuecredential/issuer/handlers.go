@@ -47,6 +47,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 				ID:    prop.CredDefID,
 				Info:  values,
 				Msg:   subMsg,
+				Name:  connID,
 			}).(didcomm.Msg)
 			eaAnswer := e2.M.Try(agent.MyCA().CallEA(
 				pltype.SAIssueCredentialAcceptPropose, saMsg))

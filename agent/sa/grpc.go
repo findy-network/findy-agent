@@ -47,14 +47,17 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 
 	// we don't need clone but reuse the incoming message. In future when we
 	// only have gRPC based API and we don't need old indy-based messages, this
-	// isn't any problem.
+	// isn't any kind of a problem.
 	om = im
 
 	om.SetReady(false) // make sure about default behavior
 
 	switch plType {
 	case pltype.CANotifyStatus:
-		// todo: we should get these in any case?
+		// with gRPC API we don't need this any more. The SA must listen its
+		// CA anyhow so we don't transport these to it from here. Only
+		// questions are transported.
+
 	case pltype.SAPing:
 		handlePing(WDID, plType, im, om)
 	case pltype.SAIssueCredentialAcceptPropose:
