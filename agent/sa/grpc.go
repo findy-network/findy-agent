@@ -59,7 +59,7 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		// questions are transported.
 
 	case pltype.SAPing:
-		handlePing(WDID, plType, im, om)
+		handleSAPing(WDID, plType, im, om)
 	case pltype.SAIssueCredentialAcceptPropose:
 		handleAcceptIssuePropose(WDID, plType, im, om)
 	case pltype.SAPresentProofAcceptPropose:
@@ -70,7 +70,7 @@ func grpcHandler(WDID, plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	return om, nil
 }
 
-func handlePing(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
+func handleSAPing(WDID string, plType string, im didcomm.Msg, om didcomm.Msg) {
 	qid := utils.UUID() // every question ID must have unique ID!
 	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
 		AgentNotify: bus.AgentNotify{
@@ -121,6 +121,9 @@ func handleAcceptIssuePropose(WDID string, plType string, im didcomm.Msg, om did
 			NotificationType: plType,
 			ConnectionID:     im.Thread().ID,
 			ProtocolID:       im.Nonce(),
+
+			//Initiator: // todo: for performance reasons and we are waiting
+			//to replace this interface, we don't transport Initiator _yet_
 		},
 	})
 	select {
@@ -151,6 +154,9 @@ func handleAcceptProof(WDID string, plType string, im didcomm.Msg, om didcomm.Ms
 			NotificationType: plType,
 			ConnectionID:     im.Name(),
 			ProtocolID:       im.Nonce(),
+
+			//Initiator: // todo: for performance reasons and we are waiting
+			//to replace this interface, we don't transport Initiator _yet_
 		},
 	})
 	select {
@@ -171,7 +177,7 @@ func handleAcceptProofValues(WDID string, plType string, im didcomm.Msg, om didc
 	}
 	qid := utils.UUID() // every question ID must have unique ID!
 	ac := bus.WantAllAgentAnswers.AgentSendQuestion(bus.AgentQuestion{
-		AgentNotify: bus.AgentNotify{ // todo: initiator is missing
+		AgentNotify: bus.AgentNotify{
 			AgentKeyType: bus.AgentKeyType{
 				AgentDID: WDID,
 			},
@@ -182,7 +188,9 @@ func handleAcceptProofValues(WDID string, plType string, im didcomm.Msg, om didc
 			NotificationType: plType,
 			ConnectionID:     im.Name(),
 			ProtocolID:       im.Nonce(),
-			//Initiator:
+
+			//Initiator: // todo: for performance reasons and we are waiting
+			//to replace this interface, we don't transport Initiator _yet_
 		},
 	})
 	select {
