@@ -37,7 +37,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 			Packet:      packet,
 			SendNext:    sendNext,
 			WaitingNext: waitingNext,
-			InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+			InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 				defer err2.Annotate("proof req handler", &err)
 
 				agent := packet.Receiver
@@ -69,7 +69,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.PresentProofPresentation,
 		WaitingNext: pltype.PresentProofACK,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof req handler", &err)
 
 			agent := packet.Receiver

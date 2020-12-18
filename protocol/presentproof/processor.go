@@ -175,7 +175,7 @@ func handleProofACK(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof ACK handler", &err)
 			return true, nil
 		},
@@ -191,7 +191,7 @@ func handleProofNACK(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof NACK handler", &err)
 			return false, nil
 		},

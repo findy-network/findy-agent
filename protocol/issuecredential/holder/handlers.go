@@ -42,7 +42,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			Packet:      packet,
 			SendNext:    sendNext,
 			WaitingNext: waitingNext,
-			InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+			InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 				defer err2.Annotate("cred offer ask user", &err)
 
 				offer := im.FieldObj().(*issuecredential.Offer)
@@ -86,7 +86,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialRequest,
 		WaitingNext: pltype.IssueCredentialIssue,
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred offer", &err)
 
 			offer := im.FieldObj().(*issuecredential.Offer)
@@ -129,7 +129,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialACK,
 		WaitingNext: pltype.Terminate, // no next state, we are fine
-		InOut: func(im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred issue", &err)
 
 			issue := im.FieldObj().(*issuecredential.Issue)
