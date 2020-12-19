@@ -155,6 +155,7 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 		Nonce: notify.ProtocolID,
 	}
 	agentStatus := ops.AgencyStatus{
+		DID:            psmKey.DID,
 		Id:             hook.Id,
 		ProtocolStatus: tryProtocolStatus(pid, psmKey),
 	}

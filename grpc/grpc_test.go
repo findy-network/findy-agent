@@ -509,7 +509,8 @@ loop:
 				glog.V(1).Infoln("closed from server")
 				break loop
 			}
-			glog.Infoln("\n\t===== listen status:\n\t", status.StatusJson)
+			glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJson)
+			glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolId.Id, status.DID)
 		case <-intCh:
 			cancel()
 			glog.V(1).Infoln("interrupted by user, cancel() called")
