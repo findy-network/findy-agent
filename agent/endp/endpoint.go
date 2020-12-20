@@ -30,12 +30,16 @@ type Addr struct {
 	VerKey    string // Associated VerKey, used for sending Payloads to this address
 }
 
-const DIDLength = 22
+const DIDLengthMax = 22
+const DIDLengthMin = 21
 
 var r *regexp.Regexp
 
 func init() {
-	expr := fmt.Sprintf("[0-9a-zA-Z]{%d}", DIDLength)
+	// Regexp rule from:
+	// https://sovrin-foundation.github.io/sovrin/spec/did-method-spec-template.html#namespace-specific-identifier-nsi
+	expr := fmt.Sprintf("^[1-9A-HJ-NP-Za-km-z]{%d,%d}", DIDLengthMin, DIDLengthMax)
+
 	r, _ = regexp.Compile(expr)
 }
 
@@ -105,7 +109,9 @@ func (e *Addr) Valid() bool {
 }
 
 func IsDID(DID string) bool {
-	return len(DID) == DIDLength && r.MatchString(DID)
+	l := len(DID)
+	lenOK := DIDLengthMin <= l && l <= DIDLengthMax
+	return lenOK && r.MatchString(DID)
 }
 
 // ReceiverDID returns actual agent PL receiver.

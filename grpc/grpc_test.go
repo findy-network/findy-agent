@@ -419,6 +419,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 		return
 	}
 
+	err2.Check(flag.Set("v", "0"))
 	for i, ca := range agents {
 		if i == 0 {
 			continue
@@ -436,7 +437,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
-				fmt.Printf("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			agents[0].ConnID[i-1] = connID
