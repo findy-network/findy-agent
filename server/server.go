@@ -181,6 +181,7 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 func logRequestInfo(caption string, r *http.Request) *endp.Addr {
 	ourAddress := endp.NewServerAddr(r.URL.Path)
 	if !ourAddress.Valid() {
+		glog.V(3).Infoln("------ address isn't valid:", r.URL.Path)
 		return nil
 	}
 	ourAddress.BasePath = utils.Settings.HostAddr()

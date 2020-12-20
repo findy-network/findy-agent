@@ -210,6 +210,9 @@ func TestNewEndpAddr(t *testing.T) {
 		{"ok aries a2a", args{"/a2a/MuYkMsVBjvH4Ryqvfoofre/MuYkMsVBjvH4Ryqvfoofre/6im1AuoExt4rT39XuJS94X"}, true},
 		{"old api call", args{"/ca-api/9R7bAqCJQaDeq4u6UmBpyv/9R7bAqCJQaDeq4u6UmBpyv/9R7bAqCJQaDeq4u6UmBpyv"}, true},
 		{"agency api call", args{"/api/ping"}, true},
+		{"was wrong because 21", args{"/a2a/2v5RGVnxaXAVDqvVkanB8h/2v5RGVnxaXAVDqvVkanB8h/YJJgYdMHxZYrfPXaFKKbL"}, true},
+		{"was wrong l = 21", args{"/a2a/KexHf68PuUaWhr2KdcfFwW/KexHf68PuUaWhr2KdcfFwW/ktSyAAdJRGnZwKjxjjgSz"}, true},
+		{"wrong l = 20", args{"/a2a/KexHf68PuUaWhr2KdcfFwW/KexHf68PuUaWhr2KdcfFwW/ktSyAAdJRGnZwKjxjjgS"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -251,7 +254,7 @@ func TestAddr_Valid(t *testing.T) {
 			fields: fields{
 				PlRcvr:  "MuYkMsVBjvH4Ryqvfoofre",
 				MsgRcvr: "MuYkMsVBjvH4Ryqvfoofre",
-				RcvrDID: "6im1AuoExt4rT39XuJS94",
+				RcvrDID: "6im1AuoExt4rT3XuJS94",
 			},
 			want: false,
 		},

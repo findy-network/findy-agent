@@ -419,6 +419,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 		return
 	}
 
+	err2.Check(flag.Set("v", "0"))
 	for i, ca := range agents {
 		if i == 0 {
 			continue
@@ -436,7 +437,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
-				fmt.Printf("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
+				glog.Infof("Connection status: %s|%s: %s\n", connID, status.ProtocolId, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			agents[0].ConnID[i-1] = connID
@@ -509,7 +510,8 @@ loop:
 				glog.V(1).Infoln("closed from server")
 				break loop
 			}
-			glog.Infoln("\n\t===== listen status:\n\t", status.StatusJson)
+			glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJson)
+			glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolId.Id, status.DID)
 		case <-intCh:
 			cancel()
 			glog.V(1).Infoln("interrupted by user, cancel() called")
