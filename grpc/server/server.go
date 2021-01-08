@@ -28,12 +28,7 @@ var Server *grpc.Server
 
 func Serve(conf *rpc.ServerCfg) {
 	if conf == nil {
-		glog.V(1).Infoln("===== initializing grpc server")
-		conf = &rpc.ServerCfg{
-			Port:    50051,
-			PKI:     rpc.LoadPKI(""),
-			TestLis: nil,
-		}
+		panic("GRPC server needs configuration")
 	}
 	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
 		conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
