@@ -83,7 +83,7 @@ func (c *Cmd) Validate() error {
 		return errors.New("host port cannot be zero")
 	}
 	if c.HandshakeRegister == "" {
-		return errors.New("wallet identification cannot be empty")
+		return errors.New("handshake register path cannot be empty")
 	}
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
