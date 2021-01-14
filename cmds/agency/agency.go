@@ -57,6 +57,7 @@ type Cmd struct {
 	AllowRPC          bool
 	GRPCPort          int
 	TlsCertPath       string
+	JWTSecret         string
 }
 
 func (c *Cmd) Validate() error {
@@ -82,7 +83,7 @@ func (c *Cmd) Validate() error {
 		return errors.New("host port cannot be zero")
 	}
 	if c.HandshakeRegister == "" {
-		return errors.New("wallet identification cannot be empty")
+		return errors.New("handshake register path cannot be empty")
 	}
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
@@ -93,7 +94,6 @@ func (c *Cmd) Validate() error {
 			return errors.New("apns p12 cert file does not exist")
 		}
 	}
-
 	return nil
 }
 
@@ -124,7 +124,7 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
 	if c.AllowRPC {
-		StartGrpcServer(c.GRPCPort, c.TlsCertPath)
+		StartGrpcServer(c.GRPCPort, c.TlsCertPath, c.JWTSecret)
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 

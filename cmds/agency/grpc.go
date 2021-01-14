@@ -6,10 +6,10 @@ import (
 	"github.com/golang/glog"
 )
 
-func StartGrpcServer(port int, tlsCertPath string) {
+func StartGrpcServer(port int, tlsCertPath, jwtSecret string) {
 	if plugin := plugins.GetPlugin("GRPC"); plugin != nil {
 		p := plugin.(*grpc.PluginServer)
-		p.Init(port, tlsCertPath)
+		p.Init(port, tlsCertPath, jwtSecret)
 		go plugin.Run()
 	} else {
 		glog.Warningf("\n---------\n%s\n---------",
