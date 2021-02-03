@@ -512,6 +512,8 @@ loop:
 			}
 			glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJson)
 			glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolId.Id, status.DID)
+			glog.Infoln("protocol Initiator:", status.ProtocolStatus.State.ProtocolId.Role)
+			glog.Infoln("connection id:", status.ConnectionId)
 		case <-intCh:
 			cancel()
 			glog.V(1).Infoln("interrupted by user, cancel() called")

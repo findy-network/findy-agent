@@ -126,24 +126,25 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.Id)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeId)], protocolName[id.TypeId])
-	ps = tryProtocolStatus(id, key)
+	ps, _ = tryProtocolStatus(id, key)
 	return ps, nil
 }
 
-func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
+func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
 	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeId], &key))
 	m := e2.PSM.Try(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolId: id,
 		State:      calcProtocolState(m),
 	}
+	connID = m.PairwiseName()
 	if m != nil {
 		state.ProtocolId.Role = roleType[m.Initiator]
 	} else {
 		glog.Warningf("cannot get protocol role for %s", key)
 		state.ProtocolId.Role = pb.Protocol_UNKNOWN
 	}
-	ps := &pb.ProtocolStatus{
+	ps = &pb.ProtocolStatus{
 		State:      state,
 		StatusJson: statusJSON,
 	}
@@ -160,7 +161,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus {
 		ps.Status = tryGetBasicMessageStatus(id, key)
 
 	}
-	return ps
+	return ps, connID
 }
 
 func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
