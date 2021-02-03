@@ -154,10 +154,13 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 		DID:   notify.AgentKeyType.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
+	status, connID := tryProtocolStatus(pid, psmKey)
+	glog.Infoln("connID:", connID)
 	agentStatus := ops.AgencyStatus{
 		DID:            psmKey.DID,
 		Id:             hook.Id,
-		ProtocolStatus: tryProtocolStatus(pid, psmKey),
+		ProtocolStatus: status,
+		ConnectionId:   connID,
 	}
 	if hook.Id != notify.ClientID {
 		glog.Warningf("client id mismatch: c/s: %s/%s",

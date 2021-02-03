@@ -4,17 +4,17 @@ go 1.15
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/findy-network/findy-agent-api v0.0.0-20201220164103-15fb6a83ff0a
-	github.com/findy-network/findy-grpc v0.0.0-20210127104251-9687b3532b14
+	github.com/findy-network/findy-agent-api v0.0.0-20210203141241-3272a9f5c37f
+	github.com/findy-network/findy-grpc v0.1.1-0.20210203141715-ccf403a220d6
 	github.com/findy-network/findy-wrapper-go v0.0.0-20201026120712-dc9ac6619595
 	github.com/go-test/deep v1.0.7
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golangci/golangci-lint v1.32.2 // indirect
-	github.com/google/uuid v1.1.5
-	github.com/lainio/err2 v0.5.0
+	github.com/google/uuid v1.2.0
+	github.com/lainio/err2 v0.6.1
 	github.com/sideshow/apns2 v0.20.0
 	github.com/stretchr/testify v1.6.1
 	go.etcd.io/bbolt v1.3.5
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974
+	golang.org/x/net v0.0.0-20210119194325-5f4716e94777
 	google.golang.org/grpc v1.35.0
 )
