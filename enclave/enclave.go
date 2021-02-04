@@ -145,6 +145,12 @@ func WalletKeyNotExists(email string) bool {
 	return err == ErrNotExists && k == ""
 }
 
+// WalletKeyExists returns true if a wallet key is the enclave
+// associated by an email.
+func WalletKeyExists(email string) bool {
+	return !WalletKeyNotExists(email)
+}
+
 // WalletKeyByEmail retrieves a wallet key from sealed box by an email
 // associated to it.
 func WalletKeyByEmail(email string) (key string, err error) {

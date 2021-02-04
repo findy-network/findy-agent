@@ -17,6 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -167,6 +168,9 @@ func (edge Edge) MsgToCA(w io.Writer,
 func Progress(w io.Writer) chan<- struct{} {
 	done := make(chan struct{})
 	go func() {
+		defer err2.CatchTrace(func(err error) {
+			glog.Error(err)
+		})
 		for {
 			select {
 			case <-done:

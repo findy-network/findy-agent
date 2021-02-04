@@ -276,6 +276,6 @@ func (p *Pairwise) saveEndpoint(DID, addr, key string) {
 	//log.Printf("saveEndp(%v, %v)\n", DID, addr)
 	r := <-did.SetEndpoint(p.agent.Wallet(), DID, addr, key)
 	if r.Err() != nil {
-		panic(r.Error())
+		panic(r.Err())
 	}
 }

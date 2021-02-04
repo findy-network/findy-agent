@@ -78,7 +78,7 @@ func (w *Wallet) Create() (exist bool) {
 	if r.Err() != nil {
 		//	already exist, not real error, let it thru
 		if WalletAlreadyExistsError != r.ErrCode() {
-			panic(r.Error())
+			panic(r.Err()) // panic with error type, err2 will catch
 		}
 		return true
 	}

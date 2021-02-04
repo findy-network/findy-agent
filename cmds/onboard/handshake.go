@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -62,6 +63,10 @@ func (c Cmd) Exec(progress io.Writer) (r Result, err error) {
 	aw := edge.Wallet
 	createStarted := make(chan struct{})
 	go func() {
+		defer err2.CatchTrace(func(err error) {
+			glog.Error(err)
+			createStarted <- struct{}{}
+		})
 		aw.Create()
 		edge.Agent.OpenWallet(*aw)
 		createStarted <- struct{}{}

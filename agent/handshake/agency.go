@@ -142,8 +142,8 @@ func (a *Agency) InOutPL(
 			})
 
 			// This IMPORTANT CHECK POINT for security check and redundancy
-			if !payload.Message().ChecksumOK() ||
-				!enclave.WalletKeyNotExists(email) {
+			if !payload.Message().ChecksumOK() || // wrong security
+				enclave.WalletKeyExists(email) { // already registered
 
 				return errorMsg, nonce
 			}

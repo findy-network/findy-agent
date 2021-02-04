@@ -266,17 +266,27 @@ func Test_handleAgencyAPI(t *testing.T) {
 func Test_NewOnboarding(t *testing.T) {
 	ut := time.Now().Unix() - 1545924840
 	walletName := fmt.Sprintf("email%v", ut)
-	for i := 0; i < 1; i++ {
-		t.Run(fmt.Sprintf("onboard %d", i), func(t *testing.T) {
+	tests := []struct {
+		name    string
+		email   string
+		wantErr bool
+	}{
+		{"new email", walletName, false},
+		{"same again", walletName, true},
+		{"totally new", walletName + "2", false},
+	}
+
+	for index := range tests {
+		tt := &tests[index]
+		t.Run(tt.name, func(t *testing.T) {
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyClient(conn)
-			result, err := agencyClient.Onboard(ctx, &pb.Onboarding{
-				Email: walletName,
+			_, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+				Email: tt.email,
 			})
-			if assert.NoError(t, err) {
-				glog.Infoln(i, "result:", result.GetOk(), result.GetResult().CADID)
-			}
+			testOK := (err != nil) == tt.wantErr
+			assert.True(t, testOK, "failing test", tt.email)
 			assert.NoError(t, conn.Close())
 		})
 	}
