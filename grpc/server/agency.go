@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/onboard"
+	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-grpc/jwt"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
@@ -33,6 +34,11 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 	user := jwt.User(ctx)
 	if user != a.Root {
 		return st, errors.New("access right")
+	}
+
+	if enclave.WalletKeyExists(onboarding.Email) {
+		glog.Warningln("user already registered by:", onboarding.Email)
+		return st, errors.New("invalid user")
 	}
 
 	r, err := onboard.Cmd{
