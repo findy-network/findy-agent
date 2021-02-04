@@ -171,12 +171,12 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 		}
 		if last := m.LastState(); last != nil {
 			switch last.Sub.Pure() {
-			case psm.Ready:
+			case psm.Ready, psm.Ready | psm.Archiving:
 				if last.Sub&psm.ACK != 0 {
 					return pb.ProtocolState_OK
 				}
 				return pb.ProtocolState_NACK
-			case psm.Failure:
+			case psm.Failure, psm.Failure | psm.Archiving:
 				return pb.ProtocolState_ERR
 			}
 		}
