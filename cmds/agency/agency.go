@@ -58,6 +58,8 @@ type Cmd struct {
 	GRPCPort          int
 	TlsCertPath       string
 	JWTSecret         string
+	EnclaveKey        string
+	EnclaveBackupName string
 }
 
 func (c *Cmd) Validate() error {
@@ -152,7 +154,8 @@ func (c *Cmd) initSealedBox() (err error) {
 		sealedBoxPath = filepath.Join(home, ".indy_client/enclave.bolt")
 	}
 
-	return enclave.InitSealedBox(sealedBoxPath, nil)
+	return enclave.InitSealedBox(
+		sealedBoxPath, c.EnclaveBackupName, c.EnclaveKey)
 }
 
 func openStewardWallet(did string, serverCmd *Cmd) *cloud.Agent {

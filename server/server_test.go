@@ -65,7 +65,7 @@ func setUp() {
 	} else {
 		sealedBoxPath = "enclave.bolt"
 	}
-	err2.Check(enclave.InitSealedBox(sealedBoxPath, nil))
+	err2.Check(enclave.InitSealedBox(sealedBoxPath, "", ""))
 
 	exportPath = filepath.Join(exportPath, "wallets")
 

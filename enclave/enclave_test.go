@@ -1,7 +1,6 @@
 package enclave
 
 import (
-	"encoding/hex"
 	"os"
 	"testing"
 
@@ -13,7 +12,7 @@ const dbFilename = "enclave.bolt"
 const emailAddress = "test@email.com"
 const emailNotCreated = "not@exists.email"
 
-// todo: key must be set from production environment, SHA-256, 32 bytes
+// key must be set from production environment, SHA-256, 32 bytes
 const hexKey = "15308490f1e4026284594dd08d31291bc8ef2aeac730d0daf6ff87bb92d4336c"
 
 func TestMain(m *testing.M) {
@@ -25,8 +24,7 @@ func TestMain(m *testing.M) {
 
 func setUp() {
 	_ = os.RemoveAll(dbFilename)
-	key, _ := hex.DecodeString(hexKey)
-	_ = InitSealedBox(dbFilename, key)
+	_ = InitSealedBox(dbFilename, "", hexKey)
 }
 
 func tearDown() {

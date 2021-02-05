@@ -12,8 +12,8 @@ package enclave
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"errors"
-	"os"
 
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-grpc/crypto"
@@ -36,7 +36,8 @@ var ErrNotExists = errors.New("key not exists")
 
 var (
 	sealedBoxFilename string
-	buckets           = [][]byte{
+
+	buckets = [][]byte{
 		[]byte(emailB),
 		[]byte(didB),
 		[]byte(masterSecretB),
@@ -47,21 +48,31 @@ var (
 
 // InitSealedBox initialize enclave's sealed box. This must be called once
 // during the app life cycle.
-func InitSealedBox(filename string, key []byte) (err error) {
-	if key != nil {
+func InitSealedBox(filename, backupName, key string) (err error) {
+	if key != "" {
 		glog.V(1).Info("init enclave with the key", filename)
-		theCipher = crypto.NewCipher(key)
+		k, _ := hex.DecodeString(key)
+		theCipher = crypto.NewCipher(k)
 	} else {
-		glog.V(1).Info("init enclave without a key", filename)
+		glog.Warningln("init enclave WITHOUT a key", filename)
 	}
+
 	sealedBoxFilename = filename
-	return db.Open(filename, buckets)
+	if backupName == "" {
+		backupName = "backup-" + sealedBoxFilename
+	}
+	return db.Init(db.Cfg{
+		Filename:   sealedBoxFilename,
+		BackupName: backupName,
+		Buckets:    buckets,
+	})
 }
 
 // Close closes the enclave database
 func Close() {
-	if db.DB != nil {
-		db.Close()
+	err := db.Close()
+	if err != nil {
+		glog.Error(err)
 	}
 }
 
@@ -69,11 +80,9 @@ func Close() {
 // removes the sealed box file. In the future we might add sector wiping
 // functionality.
 func WipeSealedBox() {
-	Close()
-
-	err := os.RemoveAll(sealedBoxFilename)
+	err := db.Wipe()
 	if err != nil {
-		println(err.Error())
+		glog.Error(err.Error())
 	}
 }
 
