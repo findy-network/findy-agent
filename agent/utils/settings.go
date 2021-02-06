@@ -12,7 +12,9 @@ const HTTPReqTimeout = 1 * time.Minute
 var Settings = &Hub{}
 
 type Hub struct {
-	registerName string // name of the persistent register where agents and their wallets are stored
+	registerName           string        // name of the persistent register where agents and their wallets are stored
+	registerBackupName     string        // cloud agent register's (above, json) backup file
+	registerBackupInterval time.Duration // hours between backups
 
 	serviceName   string        // name of the this service which is used in URLs, etc.
 	serviceName2  string        // name of the this service which is used in URLs, etc.
@@ -21,11 +23,26 @@ type Hub struct {
 	wsServiceName string        // web socket service name, mostly for the ws CLI clients to use
 	timeout       time.Duration // timeout setting for http requests and connections
 	exportPath    string        // wallet export path
-	cryptVerbose  bool          // obsolete, replaced by glog V-level system
 
 	localTestMode bool // tells if are running unit tests, will be obsolete
 
 	certFileForAPNS string // APNS certification file in P12
+}
+
+func (h *Hub) RegisterBackupName() string {
+	return h.registerBackupName
+}
+
+func (h *Hub) SetRegisterBackupName(registerBackupName string) {
+	h.registerBackupName = registerBackupName
+}
+
+func (h *Hub) RegisterBackupInterval() time.Duration {
+	return h.registerBackupInterval
+}
+
+func (h *Hub) SetRegisterBackupInterval(interval time.Duration) {
+	h.registerBackupInterval = interval
 }
 
 func (h *Hub) CertFileForAPNS() string {
@@ -50,16 +67,6 @@ func (h *Hub) LocalTestMode() bool {
 
 func (h *Hub) SetLocalTestMode(localTestMode bool) {
 	h.localTestMode = localTestMode
-}
-
-// CryptVerbose returns verbose level of the crypt procedures
-func (h *Hub) CryptVerbose() bool {
-	return h.cryptVerbose
-}
-
-// SetCryptVerbose sets the verbose level of crypt procedures
-func (h *Hub) SetCryptVerbose(cryptVerbose bool) {
-	h.cryptVerbose = cryptVerbose
 }
 
 // SetTimeout sets the default timeout for HTTP and WS requests.
