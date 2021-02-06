@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/apns"
@@ -58,8 +59,12 @@ type Cmd struct {
 	GRPCPort          int
 	TlsCertPath       string
 	JWTSecret         string
+
 	EnclaveKey        string
 	EnclaveBackupName string
+
+	RegisterBackupName     string
+	RegisterBackupInterval time.Duration
 }
 
 func (c *Cmd) Validate() error {
@@ -86,6 +91,16 @@ func (c *Cmd) Validate() error {
 	}
 	if c.HandshakeRegister == "" {
 		return errors.New("handshake register path cannot be empty")
+	}
+	if c.RegisterBackupName == "" {
+		// todo: switch to obligatory after short migration phase
+		glog.Warning("handshake register backup name cannot be empty")
+		//return errors.New("handshake register backup name cannot be empty")
+	}
+	if c.EnclaveBackupName == "" {
+		// todo: switch to obligatory after short migration phase
+		glog.Warning("enclave backup name cannot be empty")
+		//return errors.New("enclave backup name cannot be empty")
 	}
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
