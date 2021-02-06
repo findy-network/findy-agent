@@ -96,8 +96,7 @@ func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
 		return m.openNewWallet(cfg)
 	}
 
-	// we have exceeded max opened count, move the oldest of the opened once to
-	// closed one
+	// we have exceeded max opened count, move the oldest to closed ones
 	return m.closeOldestAndOpen(cfg)
 }
 
