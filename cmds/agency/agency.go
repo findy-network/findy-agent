@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/apns"
 	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
@@ -30,6 +31,7 @@ import (
 	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	"github.com/findy-network/findy-wrapper-go/pool"
+	"github.com/go-co-op/gocron"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -65,7 +67,14 @@ type Cmd struct {
 
 	RegisterBackupName     string
 	RegisterBackupInterval time.Duration
+
+	WalletBackupPath     string
+	WalletBackupInterval time.Duration
 }
+
+var (
+	cron = gocron.NewScheduler(time.UTC)
+)
 
 func (c *Cmd) Validate() error {
 	if c.WalletName == "" || c.WalletPwd == "" {
@@ -101,6 +110,11 @@ func (c *Cmd) Validate() error {
 		// todo: switch to obligatory after short migration phase
 		glog.Warning("enclave backup name cannot be empty")
 		//return errors.New("enclave backup name cannot be empty")
+	}
+	if c.WalletBackupPath == "" {
+		// todo: maybe switch to obligatory after short migration phase
+		glog.Warning("wallet backup path shouldn't be empty")
+		//return errors.New("wallet backup path shouldn't be empty")
 	}
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
@@ -140,12 +154,34 @@ func (c *Cmd) Setup() (err error) {
 func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
+	c.startBackupTasks()
 	if c.AllowRPC {
 		StartGrpcServer(c.GRPCPort, c.TlsCertPath, c.JWTSecret)
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil
+}
+
+func (c *Cmd) startBackupTasks() {
+	if c.WalletBackupPath != "" {
+		_, err := cron.Every(1).Day().At("03:30").Do(accessmgr.StartBackup)
+		if err != nil {
+			glog.Warningln("wallet backup start error:", err)
+		}
+	}
+	if c.EnclaveBackupName != "" {
+		_, err := cron.Every(1).Day().At("05:30").Do(enclave.Backup)
+		if err != nil {
+			glog.Warningln("wallet backup start error:", err)
+		}
+	}
+	_, err := cron.Every(2).Minute().Do(func() {
+		glog.Infoln("cron tester for every second minute")
+	})
+	if err != nil {
+		glog.Warningln("cron tester error:", err)
+	}
 }
 
 func StartAgency(serverCmd *Cmd) (err error) {
@@ -238,6 +274,10 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetServiceName2(c.ServiceName2)
 	utils.Settings.SetHostAddr(c.HostAddr)
 	utils.Settings.SetExportPath(c.ExportPath)
+	utils.Settings.SetWalletBackupPath(c.WalletBackupPath)
+	utils.Settings.SetWalletBackupInterval(c.WalletBackupInterval)
+	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
+	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
 
 	if c.HostPort == 0 {
 		c.HostPort = c.ServerPort
