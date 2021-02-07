@@ -9,6 +9,11 @@ import (
 
 var maxOpened = 100
 
+// Handle implements ManagedWallet interface. These types together offer an API
+// to use SSI wallets conveniently. They hide closing and opening logic which is
+// needed to reserve OS level file handles. Only limited amount of simultaneous
+// wallet handles is kept open (MaxOpen). See more information from API function
+// descriptions.
 type Handle struct {
 	ts  int64        // last access timestamp
 	h   int          // wallet handle
@@ -17,12 +22,16 @@ type Handle struct {
 	l   sync.RWMutex // lock
 }
 
+// Config returns managed wallet's associated indy wallet configuration.
 func (h *Handle) Config() *Wallet {
 	h.l.RLock()
 	defer h.l.RUnlock()
 	return h.cfg
 }
 
+// Close frees the wallet handle to reuse by WalletMgr. Please note that it's
+// NOT important or desired to call this function during the agency process is
+// running.
 func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
@@ -45,6 +54,11 @@ func (h *Handle) timestamp() int64 {
 	return h.ts
 }
 
+// Handle returns the actual indy wallet handle which can be used with indy SDK
+// API calls. The Handle function hides all the needed complexity behind it. For
+// example, if the actual libindy wallet handle is already closed, it will be
+// opened first. Please note that there is no performance penalty i.e. no
+// optimization is needed.
 func (h *Handle) Handle() int {
 	h.l.Lock()
 	if handle := h.h; handle != 0 {
@@ -58,6 +72,9 @@ func (h *Handle) Handle() int {
 	return Wallets.reopen(h)
 }
 
+// Open is deprecated as exported API! It's only for packages internal used. Use
+// ssi.Wallets.Open(ssi.Wallet) when you need to open new wallet cfg. It will
+// return ManagedWallet, which offers Handle to get a libindy wallet handle.
 func (h *Handle) Open() int {
 	h.l.Lock()
 	defer h.l.Unlock()
@@ -70,6 +87,9 @@ func (h *Handle) Open() int {
 	return h.h
 }
 
+// ManagedWallet is a helper interface to packet wallet mgr API. You should
+// always use this type instead of plain old indy SDK wallet handle. You build
+// wallet configurations with ssi.Wallet and open them with ssi.Wallets.Open().
 type ManagedWallet interface {
 	Open() int
 	Close()
@@ -88,6 +108,7 @@ var Wallets = &Mgr{
 	opened: make(WalletMap, maxOpened),
 }
 
+// Open opens a wallet configuration and returns a managed wallet.
 func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
 	m.l.Lock()
 	defer m.l.Unlock()
@@ -158,6 +179,9 @@ func (m *Mgr) findOldest() string {
 	return id
 }
 
+// Reset resets the managed wallet buffer which means that all the current
+// wallet configurations must be registered again with ssi.Wallets.Open. Note!
+// You should not need to use this!
 func (m *Mgr) Reset() {
 	if glog.V(3) {
 		glog.Infof("resetting %d wallets", len(m.opened))
