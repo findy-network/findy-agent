@@ -85,6 +85,10 @@ func (w *Wallet) Create() (exist bool) {
 	return false
 }
 
+func (w *Wallet) SyncOpen() int {
+	return w.Open().Int()
+}
+
 func (w *Wallet) Open() (f *Future) {
 	if glog.V(3) {
 		glog.Info("opening wallet: ", w.Config.ID)
@@ -112,6 +116,10 @@ func (w *Wallet) UniqueID() string {
 	return filepath.Join(path, w.Config.ID)
 }
 
+func (w *Wallet) SyncClose(handle int) (err error) {
+	return w.Close(handle).Result().Err()
+}
+
 func (w *Wallet) Close(handle int) (f *Future) {
 	if glog.V(3) {
 		glog.Infof("closing wallet(%d): %s", handle, w.Config.ID)
@@ -131,4 +139,12 @@ func (w *Wallet) SetKey(key string) {
 
 func (w *Wallet) SetKeyMethod(m string) {
 	w.Credentials.KeyDerivationMethod = m
+}
+
+func (w *Wallet) ID() string {
+	return w.Config.ID
+}
+
+func (w *Wallet) Key() string {
+	return w.Credentials.Key
 }
