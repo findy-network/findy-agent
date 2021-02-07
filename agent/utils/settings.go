@@ -16,6 +16,9 @@ type Hub struct {
 	registerBackupName     string        // cloud agent register's (above, json) backup file
 	registerBackupInterval time.Duration // hours between backups
 
+	walletBackupPath     string
+	walletBackupInterval time.Duration
+
 	serviceName   string        // name of the this service which is used in URLs, etc.
 	serviceName2  string        // name of the this service which is used in URLs, etc.
 	hostAddr      string        // Ip host name of the server's host seen from internet
@@ -29,12 +32,28 @@ type Hub struct {
 	certFileForAPNS string // APNS certification file in P12
 }
 
+func (h *Hub) WalletBackupInterval() time.Duration {
+	return h.walletBackupInterval
+}
+
+func (h *Hub) SetWalletBackupInterval(interval time.Duration) {
+	h.walletBackupInterval = interval
+}
+
+func (h *Hub) WalletBackupPath() string {
+	return h.walletBackupPath
+}
+
+func (h *Hub) SetWalletBackupPath(path string) {
+	h.walletBackupPath = path
+}
+
 func (h *Hub) RegisterBackupName() string {
 	return h.registerBackupName
 }
 
-func (h *Hub) SetRegisterBackupName(registerBackupName string) {
-	h.registerBackupName = registerBackupName
+func (h *Hub) SetRegisterBackupName(name string) {
+	h.registerBackupName = name
 }
 
 func (h *Hub) RegisterBackupInterval() time.Duration {
