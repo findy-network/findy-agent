@@ -121,6 +121,10 @@ func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
 	}
 	m.opened[cfg.UniqueID()] = h
 	h.h = h.f.Int()
+
+	// AccessMgr will handle backups. Let it know the managed wallet is opened
+	accessmgr.Send(h)
+
 	return h
 }
 
