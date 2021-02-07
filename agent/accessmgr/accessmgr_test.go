@@ -1,16 +1,17 @@
-package accessmgr
+package accessmgr_test
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 )
 
 func Test_buildExportCredentials(t *testing.T) {
-	DateTimeInName = false
+	accessmgr.DateTimeInName = false
 	utils.Settings.SetWalletBackupPath("TEST_PATH/EXPORT/")
 	cfgBase := ssi.Wallet{
 		Config: wallet.Config{
@@ -48,7 +49,7 @@ func Test_buildExportCredentials(t *testing.T) {
 			cfg := cfgBase
 			cfg.Config.ID = tt.env.walletName
 			cfg.Credentials.Key = tt.env.walletKey
-			if got := buildExportCredentials(&cfg); !reflect.DeepEqual(got, tt.want) {
+			if got := accessmgr.BuildExportCredentials(&cfg); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("buildExportCredentials() = %v, want %v", got, tt.want)
 			}
 		})
