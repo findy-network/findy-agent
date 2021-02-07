@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/golang/glog"
 )
 
@@ -23,7 +25,7 @@ type Handle struct {
 }
 
 // Config returns managed wallet's associated indy wallet configuration.
-func (h *Handle) Config() *Wallet {
+func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
 	return h.cfg
@@ -72,10 +74,9 @@ func (h *Handle) Handle() int {
 	return Wallets.reopen(h)
 }
 
-// Open is deprecated as exported API! It's only for packages internal used. Use
-// ssi.Wallets.Open(ssi.Wallet) when you need to open new wallet cfg. It will
-// return ManagedWallet, which offers Handle to get a libindy wallet handle.
-func (h *Handle) Open() int {
+// open opens the wallet by its configuration. Open is always called by Wallet
+// Manager because it will keep track of wallet handles and max amount of them.
+func (h *Handle) open() int {
 	h.l.Lock()
 	defer h.l.Unlock()
 	h.f = h.cfg.Open()
@@ -85,16 +86,6 @@ func (h *Handle) Open() int {
 	h.ts = time.Now().UnixNano()
 	h.h = h.f.Int()
 	return h.h
-}
-
-// ManagedWallet is a helper interface to packet wallet mgr API. You should
-// always use this type instead of plain old indy SDK wallet handle. You build
-// wallet configurations with ssi.Wallet and open them with ssi.Wallets.Open().
-type ManagedWallet interface {
-	Open() int
-	Close()
-	Handle() int
-	Config() *Wallet
 }
 
 type WalletMap map[string]*Handle
@@ -109,7 +100,7 @@ var Wallets = &Mgr{
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
-func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
+func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -121,7 +112,7 @@ func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg *Wallet) ManagedWallet {
+func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
 	h := &Handle{
 		ts:  time.Now().UnixNano(),
 		h:   0,
@@ -139,7 +130,7 @@ func (m *Mgr) reopen(h *Handle) int {
 
 	if len(m.opened) < maxOpened {
 		m.opened[h.cfg.UniqueID()] = h
-		return h.Open()
+		return h.open()
 	}
 
 	return m.closeOldestAndReopen(h)
@@ -152,10 +143,10 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	delete(m.opened, oldest)
 	m.opened[h.cfg.UniqueID()] = h
 
-	return h.Open()
+	return h.open()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg *Wallet) ManagedWallet {
+func (m *Mgr) closeOldestAndOpen(cfg *Wallet) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
