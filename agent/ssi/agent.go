@@ -3,6 +3,7 @@ package ssi
 import (
 	"fmt"
 
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go"
@@ -72,7 +73,7 @@ There is DIDAgent.Type where this DIDAgent can be EA only. That type is used for
 test and CLI Go clients.
 */
 type DIDAgent struct {
-	WalletH ManagedWallet
+	WalletH managed.Wallet
 
 	// result future of the wallet export, one time attr, obsolete soon
 	Export Future

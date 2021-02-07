@@ -550,7 +550,8 @@ func (a *Agent) workerAgent(rcvrDID, suffix string) (wa *Agent) {
 			glog.Error("Agent URL doesn't match with Transport")
 			panic("Agent URL doesn't match with Transport")
 		}
-		aWallet := a.WalletH.Config().WorkerWalletBy(suffix)
+		cfg := a.WalletH.Config().(*ssi.Wallet)
+		aWallet := cfg.WorkerWalletBy(suffix)
 
 		// getting wallet credentials
 		// CA and EA wallets have same key, they have same root DID
