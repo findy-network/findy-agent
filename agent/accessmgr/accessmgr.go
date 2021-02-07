@@ -5,15 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
-type chanType chan ssi.ManagedWallet
-type mapType map[string]ssi.ManagedWallet
+type chanType chan managed.Wallet
+type mapType map[string]managed.Wallet
 
 var (
 	input    = make(chanType, 10) // make short performance buffer
@@ -24,12 +25,15 @@ var (
 
 	DateTimeInName = true
 	enabled        = utils.Settings.WalletBackupPath() != ""
+	started        = false
 )
 
 // Send sends the managed wallet to input channel if accessmgr is enabled. It
 // also returns the current Enable status.
-func Send(mw ssi.ManagedWallet) bool {
+func Send(mw managed.Wallet) bool {
 	if enabled {
+		assert.D.True(started, "access manager must be started!")
+
 		input <- mw
 	}
 	return enabled
@@ -38,10 +42,9 @@ func Send(mw ssi.ManagedWallet) bool {
 // Start starts the Access Mgr for the managed wallets if it's enabled. Access
 // Mgr is enabled if WalletBackupPath agency settings is set.
 func Start() {
-	if !enabled {
-		glog.Warning("wallet backup disabled")
-		return
-	}
+	assert.D.True(enabled, "wallet backup path must be set!")
+
+	started = true
 	go func() {
 		defer err2.CatchTrace(func(err error) {
 			glog.Error(err)
@@ -87,20 +90,19 @@ func runBackup(m mapType) {
 	}
 }
 
-func backup(mw ssi.ManagedWallet) (err error) {
+func backup(mw managed.Wallet) (err error) {
 	cfg := mw.Config()
-	exportCredentials := buildExportCredentials(cfg)
-	f := new(ssi.Future)
-	f.SetChan(wallet.Export(mw.Handle(), exportCredentials))
-	return f.Result().Err()
+	exportCredentials := BuildExportCredentials(cfg)
+	r := <-wallet.Export(mw.Handle(), exportCredentials)
+	return r.Err()
 }
 
-func buildExportCredentials(cfg *ssi.Wallet) wallet.Credentials {
+func BuildExportCredentials(cfg managed.WalletCfg) wallet.Credentials {
 	exportFile := utils.Settings.WalletBackupPath()
-	exportFile = filepath.Join(exportFile, backupName(cfg.Config.ID))
+	exportFile = filepath.Join(exportFile, backupName(cfg.ID()))
 	exportCreds := wallet.Credentials{
 		Path:                exportFile,
-		Key:                 cfg.Credentials.Key,
+		Key:                 cfg.Key(),
 		KeyDerivationMethod: "RAW",
 	}
 	return exportCreds
