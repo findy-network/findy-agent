@@ -165,6 +165,8 @@ func (c *Cmd) Run() (err error) {
 
 func (c *Cmd) startBackupTasks() {
 	if c.WalletBackupPath != "" {
+		accessmgr.Start() // start the wallet backup tracker
+
 		_, err := cron.Every(1).Day().At("03:30").Do(accessmgr.StartBackup)
 		if err != nil {
 			glog.Warningln("wallet backup start error:", err)
