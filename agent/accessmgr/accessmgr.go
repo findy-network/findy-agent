@@ -24,7 +24,7 @@ var (
 	}{Map: make(mapType)}
 
 	DateTimeInName = true
-	enabled        = utils.Settings.WalletBackupPath() != ""
+	enabled        = false
 	started        = false
 )
 
@@ -42,6 +42,7 @@ func Send(mw managed.Wallet) bool {
 // Start starts the Access Mgr for the managed wallets if it's enabled. Access
 // Mgr is enabled if WalletBackupPath agency settings is set.
 func Start() {
+	enabled = utils.Settings.WalletBackupPath() != ""
 	assert.D.True(enabled, "wallet backup path must be set!")
 
 	started = true
