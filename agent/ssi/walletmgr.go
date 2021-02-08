@@ -122,8 +122,12 @@ func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
 	m.opened[cfg.UniqueID()] = h
 	h.h = h.f.Int()
 
-	// AccessMgr will handle backups. Let it know the managed wallet is opened
-	accessmgr.Send(h)
+	if h.cfg.worker {
+		// AccessMgr will handle backups. Let it know that the managed WORKER
+		// wallet is opened. Pairwise wallet backup will be handled in
+		// handshake.
+		accessmgr.Send(h)
+	}
 
 	return h
 }
