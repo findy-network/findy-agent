@@ -38,7 +38,7 @@ func SaveRegistered() {
 		// We leave file level sync handling for the OS for performance sake.
 		// We could add lambda to Register.Save function to perform backup in
 		// the same critical section as saving.
-		go backup()
+		go Backup()
 	}
 }
 
@@ -51,7 +51,7 @@ func timeToBackup() bool {
 	return time.Now().Sub(lastBackup) >= interval
 }
 
-func backup() {
+func Backup() {
 	defer err2.CatchTrace(func(err error) {
 		glog.Warning(err)
 	})
