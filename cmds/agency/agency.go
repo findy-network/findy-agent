@@ -64,12 +64,13 @@ type Cmd struct {
 
 	EnclaveKey        string
 	EnclaveBackupName string
+	EnclaveBackupTime string
 
 	RegisterBackupName     string
 	RegisterBackupInterval time.Duration
 
-	WalletBackupPath     string
-	WalletBackupInterval time.Duration
+	WalletBackupPath string
+	WalletBackupTime string
 }
 
 var (
@@ -115,6 +116,16 @@ func (c *Cmd) Validate() error {
 		// todo: maybe switch to obligatory after short migration phase
 		glog.Warning("wallet backup path shouldn't be empty")
 		//return errors.New("wallet backup path shouldn't be empty")
+	}
+	if c.WalletBackupTime != "" {
+		if err := cmds.ValidateTime(c.WalletBackupTime); err != nil {
+			return err
+		}
+	}
+	if c.EnclaveBackupTime != "" {
+		if err := cmds.ValidateTime(c.EnclaveBackupTime); err != nil {
+			return err
+		}
 	}
 	if c.PsmDb == "" {
 		return errors.New("psmd database location must be given")
@@ -167,15 +178,21 @@ func (c *Cmd) startBackupTasks() {
 	if c.WalletBackupPath != "" {
 		accessmgr.Start() // start the wallet backup tracker
 
-		_, err := cron.Every(1).Day().At("03:30").Do(accessmgr.StartBackup)
+		_, err := cron.Every(1).Day().At(c.WalletBackupTime).Do(accessmgr.StartBackup)
 		if err != nil {
 			glog.Warningln("wallet backup start error:", err)
 		}
 	}
 	if c.EnclaveBackupName != "" {
-		_, err := cron.Every(1).Day().At("05:30").Do(enclave.Backup)
+		_, err := cron.Every(1).Day().At(c.EnclaveBackupTime).Do(enclave.Backup)
 		if err != nil {
-			glog.Warningln("wallet backup start error:", err)
+			glog.Warningln("enclave backup start error:", err)
+		}
+	}
+	if c.RegisterBackupName != "" {
+		_, err := cron.Every(1).Day().At("04:30").Do(agency.Backup)
+		if err != nil {
+			glog.Warningln("register backup start error:", err)
 		}
 	}
 	_, err := cron.Every(2).Minute().Do(func() {
@@ -277,7 +294,7 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetHostAddr(c.HostAddr)
 	utils.Settings.SetExportPath(c.ExportPath)
 	utils.Settings.SetWalletBackupPath(c.WalletBackupPath)
-	utils.Settings.SetWalletBackupInterval(c.WalletBackupInterval)
+	utils.Settings.SetWalletBackupTime(c.WalletBackupTime)
 	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
 	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
 
