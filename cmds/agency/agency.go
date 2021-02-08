@@ -45,6 +45,7 @@ type Cmd struct {
 	ServiceName       string
 	ServiceName2      string
 	HostAddr          string
+	HostScheme        string
 	HostPort          uint
 	ServerPort        uint
 	ExportPath        string
@@ -74,7 +75,7 @@ type Cmd struct {
 }
 
 var (
-	cron = gocron.NewScheduler(time.UTC)
+	cron = gocron.NewScheduler(time.Now().Location())
 )
 
 func (c *Cmd) Validate() error {
@@ -178,12 +179,14 @@ func (c *Cmd) startBackupTasks() {
 	if c.WalletBackupPath != "" {
 		accessmgr.Start() // start the wallet backup tracker
 
+		glog.V(1).Infoln("wallet backup time:", c.WalletBackupTime)
 		_, err := cron.Every(1).Day().At(c.WalletBackupTime).Do(accessmgr.StartBackup)
 		if err != nil {
 			glog.Warningln("wallet backup start error:", err)
 		}
 	}
 	if c.EnclaveBackupName != "" {
+		glog.V(1).Infoln("enclave backup time:", c.EnclaveBackupTime)
 		_, err := cron.Every(1).Day().At(c.EnclaveBackupTime).Do(enclave.Backup)
 		if err != nil {
 			glog.Warningln("enclave backup start error:", err)
@@ -195,12 +198,13 @@ func (c *Cmd) startBackupTasks() {
 			glog.Warningln("register backup start error:", err)
 		}
 	}
-	_, err := cron.Every(2).Minute().Do(func() {
+	_, err := cron.Every(5).Minute().Do(func() {
 		glog.Infoln("cron tester for every second minute")
 	})
 	if err != nil {
 		glog.Warningln("cron tester error:", err)
 	}
+	cron.StartAsync()
 }
 
 func StartAgency(serverCmd *Cmd) (err error) {
