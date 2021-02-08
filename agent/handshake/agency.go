@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -106,6 +107,12 @@ func anchorAgent(email string) (agent *cloud.Agent, err error) {
 
 	// Use the anchor DID as a submitter/root DID to Ledger
 	agent.SetRootDid(anchorDid)
+
+	// Add newly created agent's managed wallet to access mgr's backup list.
+	// The backup is taken only once because rest of the agent's wallet data is
+	// in the worker wallet. By this we don't keep taking unnecessary backups
+	// from a pairwise only CA wallet in continuous backup process.
+	accessmgr.Send(agent.WalletH)
 
 	err2.Check(enclave.SetKeysDID(key, anchorDid.Did()))
 
