@@ -137,7 +137,7 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 	glog.V(1).Infoln("cleanup notification", notify.ID, "arrived")
 
 	psmKey := psm.StateKey{
-		DID:   notify.AgentKeyType.AgentDID,
+		DID:   notify.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
 	p := e2.PSM.Try(psm.GetPSM(psmKey))
@@ -157,7 +157,7 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 	}
 
 	psmKey := psm.StateKey{
-		DID:   notify.AgentKeyType.AgentDID,
+		DID:   notify.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
 	status, connID := tryProtocolStatus(pid, psmKey)
