@@ -2,12 +2,11 @@ package agency
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"os"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-grpc/backup"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -57,7 +56,7 @@ func Backup() {
 	})
 
 	name := backupName(utils.Settings.RegisterBackupName())
-	err2.Check(fileCopy(utils.Settings.RegisterName(), name))
+	err2.Check(backup.FileCopy(utils.Settings.RegisterName(), name))
 	glog.V(1).Infoln("CA register backup successful to:", name)
 	lastBackup = time.Now()
 }
@@ -72,22 +71,5 @@ func ResetRegistered(filename string) error {
 
 func backupName(baseName string) string {
 	tsStr := time.Now().Format(time.RFC3339)
-	name := tsStr + "_" + baseName
-	glog.V(3).Infoln("backup name:", name)
-	return name
-}
-
-func fileCopy(src, dst string) (err error) {
-	defer err2.Returnf(&err, "copy %s %s", src, dst)
-
-	r := err2.File.Try(os.Open(src))
-	defer r.Close()
-
-	w := err2.File.Try(os.Create(dst))
-	defer err2.Handle(&err, func() {
-		os.Remove(dst)
-	})
-	defer w.Close()
-	err2.Empty.Try(io.Copy(w, r))
-	return nil
+	return backup.PrefixName(tsStr, baseName)
 }
