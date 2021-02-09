@@ -9,6 +9,7 @@ import (
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/bus"
+	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -20,6 +21,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type agencyService struct {
@@ -146,7 +148,7 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 
 func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bus.AgentNotify) {
 	defer err2.Catch(func(err error) {
-		glog.Error(err)
+		glog.Errorln("ERROR in psm hook notify handler", err)
 	})
 
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
@@ -160,10 +162,11 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 		DID:   notify.AgentKeyType.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
+
 	status, connID := tryProtocolStatus(pid, psmKey)
 	glog.Infoln("connID:", connID)
 	agentStatus := ops.AgencyStatus{
-		DID:            psmKey.DID,
+		DID:            tryCaDID(psmKey),
 		Id:             hook.Id,
 		ProtocolStatus: status,
 		ConnectionId:   connID,
@@ -179,4 +182,13 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 		psm.Archived,  // set this
 		psm.Archiving, // clear this
 	))
+}
+
+func tryCaDID(psmKey psm.StateKey) string {
+	waReceiver := comm.ActiveRcvrs.Get(psmKey.DID)
+	myCA := waReceiver.MyCA()
+	assert.D.True(myCA != nil, "we must have CA for our WA")
+	caDID := myCA.Trans().PayloadPipe().In.Did()
+	assert.D.True(caDID != "", "we must get CA DID for API caller")
+	return caDID
 }
