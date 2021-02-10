@@ -70,7 +70,7 @@ func InitSealedBox(filename, backupName, key string) (err error) {
 
 // Backup backups the enclave.
 func Backup() {
-	if err := db.Backup(); err != nil {
+	if _, err := db.Backup(); err != nil {
 		glog.Errorln("enclave backup error:", err)
 	}
 }
