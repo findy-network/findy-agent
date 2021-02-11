@@ -34,6 +34,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type Cmd struct {
@@ -76,47 +77,66 @@ type Cmd struct {
 
 var (
 	cron = gocron.NewScheduler(time.Now().Location())
+
+	DefaultValues = Cmd{
+		PoolProtocol:           2,
+		PoolName:               "findy-pool",
+		WalletName:             "",
+		WalletPwd:              "",
+		StewardSeed:            "000000000000000000000000Steward1",
+		ServiceName:            "ca-api",
+		ServiceName2:           "a2a",
+		HostAddr:               "localhost",
+		HostScheme:             "http",
+		HostPort:               8080,
+		ServerPort:             8080,
+		ExportPath:             "",
+		EnclavePath:            "",
+		StewardDid:             "",
+		HandshakeRegister:      "findy.json",
+		PsmDb:                  "findy.bolt",
+		ResetData:              false,
+		URL:                    "",
+		VersionInfo:            "",
+		Salt:                   "",
+		APNSP12CertFile:        "",
+		AllowRPC:               true,
+		GRPCPort:               50051,
+		TlsCertPath:            "",
+		JWTSecret:              "",
+		EnclaveKey:             "",
+		EnclaveBackupName:      "",
+		EnclaveBackupTime:      "",
+		RegisterBackupName:     "",
+		RegisterBackupInterval: 0,
+		WalletBackupPath:       "",
+		WalletBackupTime:       "",
+	}
 )
 
-func (c *Cmd) Validate() error {
-	if c.WalletName == "" || c.WalletPwd == "" {
-		return errors.New("wallet identification cannot be empty")
-	}
-	if c.StewardDid == "" && c.StewardSeed == "" {
-		return errors.New("steward identification cannot be empty")
-	}
-	if c.PoolName == "" {
-		return errors.New("pool name cannot be empty")
-	}
-	if c.ServiceName == "" {
-		return errors.New("service name  cannot be empty")
-	}
-	if c.ServiceName2 == "" {
-		return errors.New("service name 2 cannot be empty")
-	}
-	if c.HostAddr == "" {
-		return errors.New("host address cannot be empty")
-	}
-	if c.HostPort == 0 {
-		return errors.New("host port cannot be zero")
-	}
-	if c.HandshakeRegister == "" {
-		return errors.New("handshake register path cannot be empty")
-	}
+func (c *Cmd) Validate() (err error) {
+	defer err2.Return(&err)
+
+	c.SetMustHaveDefaults()
+
+	assert.P.NotEmpty(c.HostScheme, "host scheme cannot be empty")
+	assert.P.True(c.WalletName != "" && c.WalletPwd != "", "wallet identification cannot be empty")
+	assert.P.True(!(c.StewardDid == "" && c.StewardSeed == ""), "steward identification cannot be empty")
+	assert.P.NotEmpty(c.PoolName, "pool name cannot be empty")
+	assert.P.NotEmpty(c.ServiceName, "service name  cannot be empty")
+	assert.P.NotEmpty(c.ServiceName2, "service name 2 cannot be empty")
+	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
+	assert.P.True(c.HostPort != 0, "host port cannot be zero")
+	assert.P.NotEmpty(c.PsmDb, "psmd database location must be given")
+	assert.P.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
 	if c.RegisterBackupName == "" {
-		// todo: switch to obligatory after short migration phase
-		glog.Warning("handshake register backup name cannot be empty")
-		//return errors.New("handshake register backup name cannot be empty")
+		glog.Warning("handshake register backup should be empty in production")
 	}
 	if c.EnclaveBackupName == "" {
-		// todo: switch to obligatory after short migration phase
-		glog.Warning("enclave backup name cannot be empty")
-		//return errors.New("enclave backup name cannot be empty")
+		glog.Warning("enclave backup shouldn't be empty in production")
 	}
 	if c.WalletBackupPath == "" {
-		// todo: maybe switch to obligatory after short migration phase
-		glog.Warning("wallet backup path shouldn't be empty")
-		//return errors.New("wallet backup path shouldn't be empty")
+		glog.Warning("wallet backup path shouldn't be empty in production")
 	}
 	if c.WalletBackupTime != "" {
 		if err := cmds.ValidateTime(c.WalletBackupTime); err != nil {
@@ -127,9 +147,6 @@ func (c *Cmd) Validate() error {
 		if err := cmds.ValidateTime(c.EnclaveBackupTime); err != nil {
 			return err
 		}
-	}
-	if c.PsmDb == "" {
-		return errors.New("psmd database location must be given")
 	}
 	if c.APNSP12CertFile != "" {
 		_, err := os.Stat(c.APNSP12CertFile)
@@ -311,6 +328,13 @@ func (c *Cmd) closeAll() {
 	enclave.Close()
 	// add close psm
 	ssi.ClosePool()
+}
+
+func (c *Cmd) SetMustHaveDefaults() {
+	if c.HostScheme == "" {
+		glog.V(5).Infoln("setting default scheme to HTTP")
+		c.HostScheme = "http"
+	}
 }
 
 func ParseLoggingArgs(s string) {
