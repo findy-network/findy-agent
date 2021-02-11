@@ -154,7 +154,7 @@ func (c *Cmd) Setup() (err error) {
 	ssi.OpenPool(c.PoolName)
 	c.checkSteward()
 	c.setRuntimeSettings()
-	server.BuildHostAddr(c.HostPort)
+	server.BuildHostAddr(c.HostScheme, c.HostPort)
 
 	if c.APNSP12CertFile != "" {
 		utils.Settings.SetCertFileForAPNS(c.APNSP12CertFile)
