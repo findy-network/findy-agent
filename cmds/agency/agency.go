@@ -218,12 +218,7 @@ func (c *Cmd) startBackupTasks() {
 			glog.Warningln("register backup start error:", err)
 		}
 	}
-	_, err := cron.Every(5).Minute().Do(func() {
-		glog.Infoln("cron tester for every second minute")
-	})
-	if err != nil {
-		glog.Warningln("cron tester error:", err)
-	}
+
 	cron.StartAsync()
 }
 
