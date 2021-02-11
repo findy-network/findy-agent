@@ -73,6 +73,8 @@ type Cmd struct {
 
 	WalletBackupPath string
 	WalletBackupTime string
+
+	GRPCAdmin string
 }
 
 var (
@@ -111,6 +113,7 @@ var (
 		RegisterBackupInterval: 0,
 		WalletBackupPath:       "",
 		WalletBackupTime:       "",
+		GRPCAdmin:              "findy-root",
 	}
 )
 
@@ -333,7 +336,11 @@ func (c *Cmd) closeAll() {
 func (c *Cmd) SetMustHaveDefaults() {
 	if c.HostScheme == "" {
 		glog.V(5).Infoln("setting default scheme to HTTP")
-		c.HostScheme = "http"
+		c.HostScheme = DefaultValues.HostScheme
+	}
+	if c.GRPCAdmin == "" {
+		glog.V(5).Infoln("setting default to admin id")
+		c.GRPCAdmin = DefaultValues.GRPCAdmin
 	}
 }
 
