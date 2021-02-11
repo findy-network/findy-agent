@@ -19,6 +19,8 @@ type Hub struct {
 	walletBackupPath string
 	walletBackupTime string
 
+	gRPCAdmin string
+
 	serviceName   string        // name of the this service which is used in URLs, etc.
 	serviceName2  string        // name of the this service which is used in URLs, etc.
 	hostAddr      string        // Ip host name of the server's host seen from internet
@@ -30,6 +32,14 @@ type Hub struct {
 	localTestMode bool // tells if are running unit tests, will be obsolete
 
 	certFileForAPNS string // APNS certification file in P12
+}
+
+func (h *Hub) GRPCAdmin() string {
+	return h.gRPCAdmin
+}
+
+func (h *Hub) SetGRPCAdmin(gRPCAdmin string) {
+	h.gRPCAdmin = gRPCAdmin
 }
 
 func (h *Hub) WalletBackupTime() string {

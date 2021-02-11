@@ -321,6 +321,7 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetWalletBackupTime(c.WalletBackupTime)
 	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
 	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
+	utils.Settings.SetGRPCAdmin(c.GRPCAdmin)
 
 	if c.HostPort == 0 {
 		c.HostPort = c.ServerPort

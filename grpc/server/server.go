@@ -37,9 +37,9 @@ func Serve(conf *rpc.ServerCfg) {
 		pb.RegisterDIDCommServer(s, &didCommServer{})
 		pb.RegisterAgentServer(s, &agentServer{})
 
-		// todo: root should come from settings, etc.
-		ops.RegisterAgencyServer(s, &agencyService{Root: "findy-root"})
-		ops.RegisterDevOpsServer(s, &devOpsServer{Root: "findy-root"})
+		root := utils.Settings.GRPCAdmin()
+		ops.RegisterAgencyServer(s, &agencyService{Root: root})
+		ops.RegisterDevOpsServer(s, &devOpsServer{Root: root})
 
 		glog.V(3).Infoln("GRPC OK")
 		return nil
