@@ -16,7 +16,7 @@ type CountCmd struct {
 	Level string
 }
 
-func (c CountCmd) Validate() error {
+func (c CountCmd) Validate() (err error) {
 	if err := c.GrpcCmd.Validate(); err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (c CountCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
 	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
-	conn := client.TryOpen("findy-root", baseCfg)
+	conn := client.TryOpen(c.AdminID, baseCfg)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
