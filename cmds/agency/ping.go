@@ -36,7 +36,7 @@ func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	}
 
 	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
-	conn := client.TryOpen("findy-root", baseCfg)
+	conn := client.TryOpen(c.AdminID, baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
