@@ -4,11 +4,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/golang/glog"
 )
 
 var maxOpened = 100
 
+// Handle implements ManagedWallet interface. These types together offer an API
+// to use SSI wallets conveniently. They hide closing and opening logic which is
+// needed to reserve OS level file handles. Only limited amount of simultaneous
+// wallet handles is kept open (MaxOpen). See more information from API function
+// descriptions.
 type Handle struct {
 	ts  int64        // last access timestamp
 	h   int          // wallet handle
@@ -17,12 +24,16 @@ type Handle struct {
 	l   sync.RWMutex // lock
 }
 
-func (h *Handle) Config() *Wallet {
+// Config returns managed wallet's associated indy wallet configuration.
+func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
 	return h.cfg
 }
 
+// Close frees the wallet handle to reuse by WalletMgr. Please note that it's
+// NOT important or desired to call this function during the agency process is
+// running.
 func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
@@ -45,6 +56,11 @@ func (h *Handle) timestamp() int64 {
 	return h.ts
 }
 
+// Handle returns the actual indy wallet handle which can be used with indy SDK
+// API calls. The Handle function hides all the needed complexity behind it. For
+// example, if the actual libindy wallet handle is already closed, it will be
+// opened first. Please note that there is no performance penalty i.e. no
+// optimization is needed.
 func (h *Handle) Handle() int {
 	h.l.Lock()
 	if handle := h.h; handle != 0 {
@@ -58,7 +74,9 @@ func (h *Handle) Handle() int {
 	return Wallets.reopen(h)
 }
 
-func (h *Handle) Open() int {
+// open opens the wallet by its configuration. Open is always called by Wallet
+// Manager because it will keep track of wallet handles and max amount of them.
+func (h *Handle) open() int {
 	h.l.Lock()
 	defer h.l.Unlock()
 	h.f = h.cfg.Open()
@@ -68,13 +86,6 @@ func (h *Handle) Open() int {
 	h.ts = time.Now().UnixNano()
 	h.h = h.f.Int()
 	return h.h
-}
-
-type ManagedWallet interface {
-	Open() int
-	Close()
-	Handle() int
-	Config() *Wallet
 }
 
 type WalletMap map[string]*Handle
@@ -88,7 +99,8 @@ var Wallets = &Mgr{
 	opened: make(WalletMap, maxOpened),
 }
 
-func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
+// Open opens a wallet configuration and returns a managed wallet.
+func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -96,12 +108,11 @@ func (m *Mgr) Open(cfg *Wallet) ManagedWallet {
 		return m.openNewWallet(cfg)
 	}
 
-	// we have exceeded max opened count, move the oldest of the opened once to
-	// closed one
+	// we have exceeded max opened count, move the oldest to closed ones
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg *Wallet) ManagedWallet {
+func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
 	h := &Handle{
 		ts:  time.Now().UnixNano(),
 		h:   0,
@@ -110,6 +121,14 @@ func (m *Mgr) openNewWallet(cfg *Wallet) ManagedWallet {
 	}
 	m.opened[cfg.UniqueID()] = h
 	h.h = h.f.Int()
+
+	if h.cfg.worker {
+		// AccessMgr will handle backups. Let it know that the managed WORKER
+		// wallet is opened. Pairwise wallet backup will be handled in
+		// handshake.
+		accessmgr.Send(h)
+	}
+
 	return h
 }
 
@@ -119,7 +138,7 @@ func (m *Mgr) reopen(h *Handle) int {
 
 	if len(m.opened) < maxOpened {
 		m.opened[h.cfg.UniqueID()] = h
-		return h.Open()
+		return h.open()
 	}
 
 	return m.closeOldestAndReopen(h)
@@ -132,10 +151,10 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	delete(m.opened, oldest)
 	m.opened[h.cfg.UniqueID()] = h
 
-	return h.Open()
+	return h.open()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg *Wallet) ManagedWallet {
+func (m *Mgr) closeOldestAndOpen(cfg *Wallet) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
@@ -159,6 +178,9 @@ func (m *Mgr) findOldest() string {
 	return id
 }
 
+// Reset resets the managed wallet buffer which means that all the current
+// wallet configurations must be registered again with ssi.Wallets.Open. Note!
+// You should not need to use this!
 func (m *Mgr) Reset() {
 	if glog.V(3) {
 		glog.Infof("resetting %d wallets", len(m.opened))

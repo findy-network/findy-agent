@@ -76,7 +76,7 @@ func (m mapIndex) AgentSendQuestion(question AgentQuestion) AgentAnswerChan {
 	for k, ch := range questionChannels[m].agentQuestionMap {
 		if key.AgentDID == k.AgentDID {
 			glog.V(3).Infoln(key.AgentDID, " agent QUESTION ID:", question.ID)
-			question.AgentKeyType.ClientID = k.ClientID
+			question.ClientID = k.ClientID
 			question.AgentAnswerChan = make(AgentAnswerChan, 1)
 			askedQuestions[m].Lock()
 			askedQuestions[m].questionMap[question.ID] = question

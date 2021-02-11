@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/cloud"
@@ -62,6 +63,19 @@ func ValidateKey(k string, name string) error {
 			len(k), walletKeyLength)
 	}
 	return nil
+}
+
+func ValidateTime(t string) error {
+	if !r.MatchString(t) {
+		return errors.New("time format mismatch (HH:MM or HH:MM:SS)")
+	}
+	return nil
+}
+
+var r *regexp.Regexp
+
+func init() {
+	r, _ = regexp.Compile("^([0-1]?\\d|2[0-3]):([0-5]?\\d)(?::([0-5]?\\d))?$")
 }
 
 func ValidateSeed(seed string) error {

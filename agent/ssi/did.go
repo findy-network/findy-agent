@@ -3,6 +3,7 @@ package ssi
 import (
 	"fmt"
 
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -30,7 +31,7 @@ type In interface {
 // DID is an application framework level wrapper for findy.DID implementation.
 // Uses Future to async processing of the findy.Channel results.
 type DID struct {
-	wallet ManagedWallet // Wallet handle if available
+	wallet managed.Wallet // Wallet handle if available
 
 	data   *Future // DID data when queried from the wallet or received somewhere
 	stored *Future // result of the StartStore Their DID operation
@@ -40,7 +41,7 @@ type DID struct {
 	endp   *Future // When endpoint is started to fetch it's here
 }
 
-func NewAgentDid(wallet ManagedWallet, f *Future) (ad *DID) {
+func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
 	return &DID{wallet: wallet, data: f}
 }
 
@@ -49,7 +50,7 @@ func NewDid(did, verkey string) (d *DID) {
 	return &DID{data: f}
 }
 
-func NewDidWithKeyFuture(wallet ManagedWallet, did string, verkey *Future) (d *DID) {
+func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
 	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: ""}}, On: Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
 	return d
@@ -82,7 +83,7 @@ func (d *DID) Wallet() int {
 	return d.wallet.Handle()
 }
 
-func (d *DID) SetWallet(w ManagedWallet) {
+func (d *DID) SetWallet(w managed.Wallet) {
 	d.wallet = w
 }
 

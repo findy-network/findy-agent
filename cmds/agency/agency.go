@@ -8,7 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/apns"
 	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
@@ -29,8 +31,10 @@ import (
 	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	"github.com/findy-network/findy-wrapper-go/pool"
+	"github.com/go-co-op/gocron"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type Cmd struct {
@@ -42,6 +46,7 @@ type Cmd struct {
 	ServiceName       string
 	ServiceName2      string
 	HostAddr          string
+	HostScheme        string
 	HostPort          uint
 	ServerPort        uint
 	ExportPath        string
@@ -58,35 +63,93 @@ type Cmd struct {
 	GRPCPort          int
 	TlsCertPath       string
 	JWTSecret         string
+
+	EnclaveKey        string
+	EnclaveBackupName string
+	EnclaveBackupTime string
+
+	RegisterBackupName     string
+	RegisterBackupInterval time.Duration
+
+	WalletBackupPath string
+	WalletBackupTime string
+
+	GRPCAdmin string
 }
 
-func (c *Cmd) Validate() error {
-	if c.WalletName == "" || c.WalletPwd == "" {
-		return errors.New("wallet identification cannot be empty")
+var (
+	cron = gocron.NewScheduler(time.Now().Location())
+
+	DefaultValues = Cmd{
+		PoolProtocol:           2,
+		PoolName:               "findy-pool",
+		WalletName:             "",
+		WalletPwd:              "",
+		StewardSeed:            "000000000000000000000000Steward1",
+		ServiceName:            "ca-api",
+		ServiceName2:           "a2a",
+		HostAddr:               "localhost",
+		HostScheme:             "http",
+		HostPort:               8080,
+		ServerPort:             8080,
+		ExportPath:             "",
+		EnclavePath:            "",
+		StewardDid:             "",
+		HandshakeRegister:      "findy.json",
+		PsmDb:                  "findy.bolt",
+		ResetData:              false,
+		URL:                    "",
+		VersionInfo:            "",
+		Salt:                   "",
+		APNSP12CertFile:        "",
+		AllowRPC:               true,
+		GRPCPort:               50051,
+		TlsCertPath:            "",
+		JWTSecret:              "",
+		EnclaveKey:             "",
+		EnclaveBackupName:      "",
+		EnclaveBackupTime:      "",
+		RegisterBackupName:     "",
+		RegisterBackupInterval: 0,
+		WalletBackupPath:       "",
+		WalletBackupTime:       "",
+		GRPCAdmin:              "findy-root",
 	}
-	if c.StewardDid == "" && c.StewardSeed == "" {
-		return errors.New("steward identification cannot be empty")
+)
+
+func (c *Cmd) Validate() (err error) {
+	defer err2.Return(&err)
+
+	c.SetMustHaveDefaults()
+
+	assert.P.NotEmpty(c.HostScheme, "host scheme cannot be empty")
+	assert.P.True(c.WalletName != "" && c.WalletPwd != "", "wallet identification cannot be empty")
+	assert.P.True(!(c.StewardDid == "" && c.StewardSeed == ""), "steward identification cannot be empty")
+	assert.P.NotEmpty(c.PoolName, "pool name cannot be empty")
+	assert.P.NotEmpty(c.ServiceName, "service name  cannot be empty")
+	assert.P.NotEmpty(c.ServiceName2, "service name 2 cannot be empty")
+	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
+	assert.P.True(c.HostPort != 0, "host port cannot be zero")
+	assert.P.NotEmpty(c.PsmDb, "psmd database location must be given")
+	assert.P.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
+	if c.RegisterBackupName == "" {
+		glog.Warning("handshake register backup should be empty in production")
 	}
-	if c.PoolName == "" {
-		return errors.New("pool name cannot be empty")
+	if c.EnclaveBackupName == "" {
+		glog.Warning("enclave backup shouldn't be empty in production")
 	}
-	if c.ServiceName == "" {
-		return errors.New("service name  cannot be empty")
+	if c.WalletBackupPath == "" {
+		glog.Warning("wallet backup path shouldn't be empty in production")
 	}
-	if c.ServiceName2 == "" {
-		return errors.New("service name 2 cannot be empty")
+	if c.WalletBackupTime != "" {
+		if err := cmds.ValidateTime(c.WalletBackupTime); err != nil {
+			return err
+		}
 	}
-	if c.HostAddr == "" {
-		return errors.New("host address cannot be empty")
-	}
-	if c.HostPort == 0 {
-		return errors.New("host port cannot be zero")
-	}
-	if c.HandshakeRegister == "" {
-		return errors.New("handshake register path cannot be empty")
-	}
-	if c.PsmDb == "" {
-		return errors.New("psmd database location must be given")
+	if c.EnclaveBackupTime != "" {
+		if err := cmds.ValidateTime(c.EnclaveBackupTime); err != nil {
+			return err
+		}
 	}
 	if c.APNSP12CertFile != "" {
 		_, err := os.Stat(c.APNSP12CertFile)
@@ -111,7 +174,7 @@ func (c *Cmd) Setup() (err error) {
 	ssi.OpenPool(c.PoolName)
 	c.checkSteward()
 	c.setRuntimeSettings()
-	server.BuildHostAddr(c.HostPort)
+	server.BuildHostAddr(c.HostScheme, c.HostPort)
 
 	if c.APNSP12CertFile != "" {
 		utils.Settings.SetCertFileForAPNS(c.APNSP12CertFile)
@@ -123,12 +186,40 @@ func (c *Cmd) Setup() (err error) {
 func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
+	c.startBackupTasks()
 	if c.AllowRPC {
 		StartGrpcServer(c.GRPCPort, c.TlsCertPath, c.JWTSecret)
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil
+}
+
+func (c *Cmd) startBackupTasks() {
+	if c.WalletBackupPath != "" {
+		accessmgr.Start() // start the wallet backup tracker
+
+		glog.V(1).Infoln("wallet backup time:", c.WalletBackupTime)
+		_, err := cron.Every(1).Day().At(c.WalletBackupTime).Do(accessmgr.StartBackup)
+		if err != nil {
+			glog.Warningln("wallet backup start error:", err)
+		}
+	}
+	if c.EnclaveBackupName != "" {
+		glog.V(1).Infoln("enclave backup time:", c.EnclaveBackupTime)
+		_, err := cron.Every(1).Day().At(c.EnclaveBackupTime).Do(enclave.Backup)
+		if err != nil {
+			glog.Warningln("enclave backup start error:", err)
+		}
+	}
+	if c.RegisterBackupName != "" {
+		_, err := cron.Every(1).Day().At("04:30").Do(agency.Backup)
+		if err != nil {
+			glog.Warningln("register backup start error:", err)
+		}
+	}
+
+	cron.StartAsync()
 }
 
 func StartAgency(serverCmd *Cmd) (err error) {
@@ -152,7 +243,8 @@ func (c *Cmd) initSealedBox() (err error) {
 		sealedBoxPath = filepath.Join(home, ".indy_client/enclave.bolt")
 	}
 
-	return enclave.InitSealedBox(sealedBoxPath, nil)
+	return enclave.InitSealedBox(
+		sealedBoxPath, c.EnclaveBackupName, c.EnclaveKey)
 }
 
 func openStewardWallet(did string, serverCmd *Cmd) *cloud.Agent {
@@ -220,6 +312,11 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetServiceName2(c.ServiceName2)
 	utils.Settings.SetHostAddr(c.HostAddr)
 	utils.Settings.SetExportPath(c.ExportPath)
+	utils.Settings.SetWalletBackupPath(c.WalletBackupPath)
+	utils.Settings.SetWalletBackupTime(c.WalletBackupTime)
+	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
+	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
+	utils.Settings.SetGRPCAdmin(c.GRPCAdmin)
 
 	if c.HostPort == 0 {
 		c.HostPort = c.ServerPort
@@ -230,6 +327,17 @@ func (c *Cmd) closeAll() {
 	enclave.Close()
 	// add close psm
 	ssi.ClosePool()
+}
+
+func (c *Cmd) SetMustHaveDefaults() {
+	if c.HostScheme == "" {
+		glog.V(5).Infoln("setting default scheme to HTTP")
+		c.HostScheme = DefaultValues.HostScheme
+	}
+	if c.GRPCAdmin == "" {
+		glog.V(5).Infoln("setting default to admin id")
+		c.GRPCAdmin = DefaultValues.GRPCAdmin
+	}
 }
 
 func ParseLoggingArgs(s string) {

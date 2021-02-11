@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/cmds"
+	"github.com/findy-network/findy-grpc/jwt"
 	"github.com/lainio/err2"
 )
 
@@ -14,6 +15,7 @@ type PingCmd struct {
 	cmds.Cmd
 	PingSA  bool
 	DIDOnly bool
+	JWT     bool
 }
 
 func (c PingCmd) Validate() error {
@@ -48,7 +50,11 @@ func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 					ea := endp.NewClientAddr(im.Endpoint)
 					did = ea.ReceiverDID()
 				}
-				cmds.Fprint(w, did)
+				if c.JWT {
+					cmds.Fprint(w, jwt.BuildJWT(did))
+				} else {
+					cmds.Fprint(w, did)
+				}
 			} else {
 				cmds.Fprintln(w, "Endpoint from the server:")
 				cmds.Fprintln(w, im.Endpoint)

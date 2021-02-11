@@ -91,7 +91,7 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 		if hit {
 			glog.V(3).Infoln(broadcastKey.AgentDID,
 				"agent notify:", listenKey.ClientID)
-			state.AgentKeyType.ClientID = listenKey.ClientID
+			state.ClientID = listenKey.ClientID
 			ch <- state
 		}
 	}

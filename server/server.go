@@ -71,13 +71,13 @@ func StartHTTPServer(serviceName string, serverPort uint) error {
 	return server.ListenAndServe()
 }
 
-func BuildHostAddr(hostPort uint) {
+func BuildHostAddr(scheme string, hostPort uint) {
 	// update the real server host name for agents' use, Yeah I know not a perfect!
 	if hostPort != 80 {
-		hostAddr := fmt.Sprintf("http://%s:%v", utils.Settings.HostAddr(), hostPort)
+		hostAddr := fmt.Sprintf("%s://%s:%v", scheme, utils.Settings.HostAddr(), hostPort)
 		utils.Settings.SetHostAddr(hostAddr)
 	} else {
-		hostAddr := fmt.Sprintf("http://%s", utils.Settings.HostAddr())
+		hostAddr := fmt.Sprintf("%s://%s", scheme, utils.Settings.HostAddr())
 		utils.Settings.SetHostAddr(hostAddr)
 	}
 }
