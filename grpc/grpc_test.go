@@ -171,6 +171,7 @@ func setUp() {
 	utils.Settings.SetVersionInfo("testing testing")
 	utils.Settings.SetTimeout(1 * time.Hour)
 	utils.Settings.SetExportPath(exportPath)
+	utils.Settings.SetGRPCAdmin("findy-root")
 
 	//utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
