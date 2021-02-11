@@ -27,7 +27,7 @@ func (c LoggingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
 	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
-	conn := client.TryOpen("findy-root", baseCfg)
+	conn := client.TryOpen(c.AdminID, baseCfg)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
