@@ -4,7 +4,7 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
-    container: optechlab/indy-golang:1.15.0
+    container: optechlab/indy-golang:1.16.0
     steps:
       - uses: actions/checkout@v2
       - name: use token
