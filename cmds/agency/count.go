@@ -7,7 +7,7 @@ import (
 
 	pb "github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/cmds"
-	"github.com/findy-network/findy-grpc/agency/client"
+	"github.com/findy-network/findy-common-go/agency/client"
 	"github.com/lainio/err2"
 )
 

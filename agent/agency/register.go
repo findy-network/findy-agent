@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-grpc/backup"
+	"github.com/findy-network/findy-common-go/backup"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )

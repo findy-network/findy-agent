@@ -7,7 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/cmds"
-	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/lainio/err2"
 )
 

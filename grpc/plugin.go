@@ -3,7 +3,7 @@ package grpc
 import (
 	"github.com/findy-network/findy-agent/grpc/server"
 	"github.com/findy-network/findy-agent/plugins"
-	"github.com/findy-network/findy-grpc/rpc"
+	"github.com/findy-network/findy-common-go/rpc"
 	"github.com/golang/glog"
 )
 

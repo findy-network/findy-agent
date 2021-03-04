@@ -17,7 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/onboard"
 	"github.com/findy-network/findy-agent/enclave"
-	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
