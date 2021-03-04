@@ -9,7 +9,7 @@ import (
 	agency "github.com/findy-network/findy-agent-api/grpc/ops"
 	agencyServer "github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-grpc/jwt"
+	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
