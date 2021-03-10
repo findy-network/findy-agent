@@ -1,5 +1,0 @@
-#!/bin/bash
-
-findy-agent create pool \
--pool "von" \
--txn "genesis.txn"
