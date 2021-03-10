@@ -2,11 +2,35 @@ VERSION=$(shell cat ./VERSION)
 
 API_BRANCH=$(shell ./branch.sh ../findy-agent-api/)
 GRPC_BRANCH=$(shell ./branch.sh ../findy-common-go/)
+WRAP_BRANCH=$(shell ./branch.sh ../findy-wrapper-go/)
+
+drop_wrap:
+	go mod edit -dropreplace github.com/findy-network/findy-wrapper-go
+
+drop_comm:
+	go mod edit -dropreplace github.com/findy-network/findy-common-go
+
+drop_api:
+	go mod edit -dropreplace github.com/findy-network/findy-agent-api
+
+drop_all: drop_api drop_comm drop_wrap
+
+repl_wrap:
+	go mod edit -replace github.com/findy-network/findy-wrapper-go=../fingy-wrapper-go
+
+repl_comm:
+	go mod edit -replace github.com/findy-network/findy-common-go=../fingy-common-go
+
+repl_api:
+	go mod edit -replace github.com/findy-network/findy-agent-api=../fingy-agent-api
+
+repl_all: repl_api repl_comm repl_wrap
 
 modules:
 	@echo Syncing modules for work brances ...
 	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
-	go get github.com/findy-network/findy-grpc@$(GRPC_BRANCH)
+	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
+	go get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
 
 deps:
 	go get -t ./...
