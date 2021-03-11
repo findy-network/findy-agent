@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/lainio/err2"
 	"github.com/spf13/cobra"
@@ -127,7 +128,7 @@ func init() {
 		log.Println(err)
 	})
 
-	aCmd.VersionInfo = "findy-agent-cli v. 0.1"
+	aCmd.VersionInfo = "findy-agent v" + utils.Version
 
 	flags := startAgencyCmd.Flags()
 	flags.StringVar(&aCmd.APNSP12CertFile, "apns-p12-file", "", flagInfo("APNS certificate p12 file", AgencyCmd.Name(), agencyStartEnvs["apns-p12-file"]))
