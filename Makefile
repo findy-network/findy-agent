@@ -38,6 +38,9 @@ deps:
 update-deps:
 	go get -u ./...
 
+cli:
+	go build -o $(GOPATH)/bin/cli
+
 build:
 	go build -v ./...
 
