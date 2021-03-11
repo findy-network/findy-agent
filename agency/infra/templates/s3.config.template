@@ -1,0 +1,51 @@
+Parameters:
+  bucket: 
+    Type: CommaDelimitedList
+    Description: "Name of the Amazon S3 bucket that contains your file"
+    Default: "%BUCKET_NAME"
+  genesisfile: 
+    Type: String
+    Description: "Path to the file in S3"
+    Default: "%BUCKET_URL/genesis_transactions"
+  wallet: 
+    Type: String
+    Description: "Path to the file in S3"
+    Default: "%BUCKET_URL/steward.exported"
+  aps: 
+    Type: String
+    Description: "Path to the file in S3"
+    Default: "%BUCKET_URL/aps.p12"
+  authrole:
+    Type: String
+    Description: "Role with permissions to download the file from Amazon S3"
+    Default: "findy-agency-instance-profile-role"
+
+files:
+  "/tmp/genesis_transactions":
+    mode: "000777"
+    owner: root
+    group: root
+    source: { "Ref" : "genesisfile" }
+    authentication: S3AccessCred
+  "/tmp/steward.exported":
+    mode: "000777"
+    owner: root
+    group: root
+    source: { "Ref" : "wallet" }
+    authentication: S3AccessCred
+  "/tmp/aps.p12":
+    mode: "000777"
+    owner: root
+    group: root
+    source: { "Ref" : "aps" }
+    authentication: S3AccessCred
+
+Resources:
+  AWSEBAutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Metadata:
+      AWS::CloudFormation::Authentication:
+        S3AccessCred:
+          type: "S3"
+          roleName: { "Ref" : "authrole" } 
+          buckets: { "Ref" : "bucket" }

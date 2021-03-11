@@ -1,0 +1,31 @@
+Resources:
+  BucketBeanstalkConfiguration:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - ""
+        - - "findy-agency-beanstalk-configuration-"
+          - !Ref "AWS::AccountId"
+      Tags:
+        - Key: project
+          Value: findy
+  BucketBeanstalkSecrets:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+        - ""
+        - - "findy-agency-secrets-"
+          - !Ref "AWS::AccountId"
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: project
+          Value: findy

@@ -1,0 +1,14 @@
+Parameters:
+  EnvRepositoryLifecyclePolicyText:
+    Type: String
+
+Resources:
+  EnvRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: findy-agency
+      LifecyclePolicy:
+        LifecyclePolicyText: !Ref EnvRepositoryLifecyclePolicyText
+      Tags:
+        - Key: project
+          Value: findy
