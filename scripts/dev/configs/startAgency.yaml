@@ -1,0 +1,8 @@
+pool-name: "findy"
+steward-wallet-name: "sovrin_steward_wallet"
+steward-wallet-key: "9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
+steward-did: "Th7MpTaRZVRYnPiabds81Y"
+steward-seed: "000000000000000000000000Steward1"
+salt: "my_test_salt"
+host-port: 8090
+server-port: 8090
