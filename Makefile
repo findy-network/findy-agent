@@ -86,7 +86,7 @@ install:
 	$(eval VERSION = $(shell cat ./VERSION))
 	@echo "Installing version $(VERSION)"
 	go install \
-		-ldflags "-X './agent/utils.Version=$(VERSION)'" \
+		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
 		./...
 
 image:
