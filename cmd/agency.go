@@ -64,7 +64,7 @@ var startAgencyCmd = &cobra.Command{
 Start command for findy agency server.
 
 Example
-	findy-agent-cli agency start \
+	findy-agent agency start \
 		--pool-name findy \
 		--steward-wallet-name sovrin_steward_wallet \
 		--steward-wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
@@ -99,7 +99,7 @@ Pings agency.
 If agency works fine, ping ok with server's host address is printed.
 
 Example
-	findy-agent-cli agency ping \
+	findy-agent agency ping \
 		--base-address http://localhost:8080
 	`,
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {

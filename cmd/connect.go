@@ -29,13 +29,13 @@ var connectCmd = &cobra.Command{
 Command for creating a2a connection between 2 agents. 
 
 To use invitation file, pass file as command argument.
-E.g. findy-agent-cli user connect path/to/invitationFile
+E.g. findy-agent user connect path/to/invitationFile
 
 You can also read invitation json from standard input.
-E.g. findy-agent-cli user connect - {invitationJson}
+E.g. findy-agent user connect - {invitationJson}
 
 Example
-	findy-agent-cli user connect \
+	findy-agent user connect \
 		--wallet-name MyWallet \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--name my_pairwise_name \

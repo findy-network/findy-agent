@@ -38,7 +38,7 @@ var schCreateCmd = &cobra.Command{
 Command for creating new schema
 
 Example
-	findy-agent-cli sercive schema create \
+	findy-agent sercive schema create \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--name my_schema_name \
@@ -84,7 +84,7 @@ var schReadCmd = &cobra.Command{
 Command for getting schema by id
 
 Example
-	findy-agent-cli sercive schema read \
+	findy-agent sercive schema read \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--id my_schema_id

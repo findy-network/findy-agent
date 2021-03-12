@@ -1,7 +1,7 @@
 #!/bin/bash
 # e2e-test.sh
 
-CLI=$GOPATH/bin/findy-agent-cli
+CLI=$GOPATH/bin/findy-agent
 
 CURRENT_DIR=$(dirname "$BASH_SOURCE")
 

@@ -7,9 +7,9 @@ import (
 // toolsCmd represents the tools command
 var toolsCmd = &cobra.Command{
 	Use:   "tools",
-	Short: "Parent command for all generic findy-agent-cli tools",
+	Short: "Parent command for all generic findy-agent tools",
 	Long: `
-Parent command for all generic findy-agent-cli tools
+Parent command for all generic findy-agent tools
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		SubCmdNeeded(cmd)

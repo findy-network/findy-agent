@@ -25,7 +25,7 @@ Every service subcommand requires --wallet-name & --wallet-key flags to be speci
 --agency-url flag is agency endpoint base address & it has default value of "http://localhost:8080".
 
 Example
-	findy-agent-cli service ping \
+	findy-agent service ping \
 		--wallet-name TestWallet \
 		--wallet-key 6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp
 `,

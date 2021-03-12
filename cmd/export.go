@@ -25,7 +25,7 @@ var exportCmd = &cobra.Command{
 Command for exporting wallet
 
 Example
-	findy-agent-cli tools export \
+	findy-agent tools export \
 		--wallet-name MyWallet \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--key walletExportKey \

@@ -26,7 +26,7 @@ Sends basic message to another agent.
 --from (name of the sender) flag is optional. --connection-id is uuid that is created during agent connection.
 
 Example
-	findy-agent-cli user send \
+	findy-agent user send \
 		--wallet-name TestWallet \
 		--wallet-key 6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp \
 		--connection-id 1868c791-04a7-4160-bdce-646b975c8de1 \

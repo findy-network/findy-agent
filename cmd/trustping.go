@@ -21,7 +21,7 @@ var trustpingCmd = &cobra.Command{
 Command for making trustping to another agent
 
 Example
-	findy-agent-cli user trustping \
+	findy-agent user trustping \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--connection-id my_connection_id

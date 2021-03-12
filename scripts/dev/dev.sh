@@ -1,7 +1,7 @@
 #!/bin/bash
 # dev.sh
 
-CLI=$GOPATH/bin/findy-agent-cli
+CLI=$GOPATH/bin/findy-agent
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

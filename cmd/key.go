@@ -33,7 +33,7 @@ var createKeyCmd = &cobra.Command{
 Command for creating valid wallet keys	
 
 Example	
-	findy-agent-cli tools key create \
+	findy-agent tools key create \
 		--seed 00000000000000000000thisisa_test
 	`,
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {

@@ -28,7 +28,7 @@ If --export-file & --export-key flags are set,
 wallet is exported to that location.
 	
 Example
-	findy-agent-cli user onboard \
+	findy-agent user onboard \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp	\
 		--email myExampleEmail \

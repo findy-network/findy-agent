@@ -14,10 +14,10 @@ var completionCmd = &cobra.Command{
 To load completion run following:
 
 bash:
-	source <(findy-agent-cli completion bash)
+	source <(findy-agent completion bash)
 
 zsh: 
-	source <(findy-agent-cli completion zsh)
+	source <(findy-agent completion zsh)
 
 To configure your shell to load completions for each session add command 
 above to your shell configuration script (e.g. .bash_profile/.zshrc).

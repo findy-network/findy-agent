@@ -21,7 +21,7 @@ var invitationCmd = &cobra.Command{
 Command for creating invitation message for agent	
 
 Example
-	findy-agent-cli user invitation \
+	findy-agent user invitation \
 		--wallet-name MyWallet \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--label invitation_label

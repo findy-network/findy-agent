@@ -1,6 +1,6 @@
 ARG CLI_VERSION=latest
 
-FROM findy-agent-cli:$CLI_VERSION
+FROM findy-agent:$CLI_VERSION
 
 ADD ./start-server.sh /start-server.sh
 

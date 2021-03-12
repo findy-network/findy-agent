@@ -19,7 +19,7 @@ ok it prints the invitation. If the EA is a SA the command pings it as well when
 the --service-endpoint flag is on.
 
 Example
-	findy-agent-cli user ping \
+	findy-agent user ping \
 		--service-endpoint \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp

@@ -34,7 +34,7 @@ var createPoolCmd = &cobra.Command{
 Command for creating creating pool
 
 Example
-	findy-agent-cli ledger pool create \
+	findy-agent ledger pool create \
 		--name findy-pool \
 		--genesis-txn-file my-genesis-txn-file
 	`,
@@ -69,7 +69,7 @@ var pingPoolCmd = &cobra.Command{
 Command for pinging pool
 
 Example
-	findy-agent-cli ledger pool ping \
+	findy-agent ledger pool ping \
 		--name findy-pool
 	`,
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {

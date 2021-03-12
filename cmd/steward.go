@@ -36,7 +36,7 @@ var stewardCreateCmd = &cobra.Command{
 Command for creating steward wallet
 	
 Example
-	findy-agent-cli ledger steward create \
+	findy-agent ledger steward create \
 		--pool-name findy \
 		--seed 000000000000000000000000Steward1 \
 		--wallet-name sovrin_steward_wallet \

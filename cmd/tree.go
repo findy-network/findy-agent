@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var treeDoc = `Prints the findy-agent-cli command structure.
+var treeDoc = `Prints the findy-agent command structure.
 
 The whole command structure is printed if no argument is given.
 If command name is given as argument, only specified command structure is printed.
@@ -16,7 +16,7 @@ If command name is given as argument, only specified command structure is printe
 
 var treeCmd = &cobra.Command{
 	Use:   "tree",
-	Short: "Prints the findy-agent-cli command structure",
+	Short: "Prints the findy-agent command structure",
 	Long:  treeDoc,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

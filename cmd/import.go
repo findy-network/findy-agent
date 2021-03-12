@@ -24,7 +24,7 @@ var importCmd = &cobra.Command{
 Command for importing wallet
 
 Example
-	findy-agent-cli tools import \
+	findy-agent tools import \
 		--wallet-name MyWallet \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--key walletImportKey \

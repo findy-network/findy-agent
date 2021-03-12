@@ -35,7 +35,7 @@ var createCreddefCmd = &cobra.Command{
 Command for creating new credential definition.
 
 Example
-	findy-agent-cli service creddef create \
+	findy-agent service creddef create \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--schema-id my_schema_id \
@@ -75,7 +75,7 @@ var readCreddefCmd = &cobra.Command{
 Command for getting credential definition by id
 
 Example
-	findy-agent-cli service creddef read \
+	findy-agent service creddef read \
 		--wallet-name TheNewWallet4 \
 		--wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp	\
 		--id my_creddef_id

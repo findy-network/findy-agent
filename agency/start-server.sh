@@ -14,9 +14,9 @@ if [ -d "$FOLDER" ]; then
   echo "$FOLDER exists"
 else
   echo "$FOLDER does not exist, importing wallet"
-  ./findy-agent-cli ledger pool create
-  ./findy-agent-cli tools import
+  ./findy-agent ledger pool create
+  ./findy-agent tools import
 fi
 
 cd $1
-./findy-agent-cli agency start --grpc true
+./findy-agent agency start --grpc true
