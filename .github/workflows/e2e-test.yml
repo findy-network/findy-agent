@@ -1,0 +1,22 @@
+name: e2e
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          path: findy-agent
+
+      - name: Ledger
+        run: ./findy-agent/scripts/dev/e2e-test.sh dev_ledger
+
+      - name: Build
+        run: docker build -t e2e:latest -f ./findy-agent/action/e2e/Dockerfile .
+
+      - name: e2e test
+        run: docker run --network="host" e2e:latest ${{ secrets.https_prefix }}
