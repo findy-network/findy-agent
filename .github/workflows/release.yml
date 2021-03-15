@@ -1,0 +1,30 @@
+name: release
+on:  
+  push:
+    tags:
+      - '*'
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      HTTPS_PREFIX: ${{ secrets.https_prefix }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: use token
+        run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "git@github.com:"
+      - name: test
+        run: echo "implement e2e/acceptance tests"
+  merge:
+    needs: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: merge
+        run:  |
+          git fetch --tags origin
+          git merge $GITHUB_REF
+          git push origin master

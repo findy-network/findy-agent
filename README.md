@@ -4,8 +4,7 @@
 ![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
 
 - [findy-agent](#findy-agent)
-  - [About findy-agent](#about-findy-agent)
-        - [Onboard Binding](#onboard-binding)
+  - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
   - [Get Started](#get-started)
   - [Run The Agency](#run-the-agency)
   - [Edge Agent On-boarding](#edge-agent-on-boarding)
@@ -14,7 +13,7 @@
   - [Agency Architecture](#agency-architecture)
   - [Aries Protocol State Machine](#aries-protocol-state-machine)
   - [Missing Features For Production](#missing-features-for-production)
- 
+
 ## About findy-agent
 
 Findy-agent is a Go package and command. It implements a multi-tenant identity
@@ -33,19 +32,19 @@ agency with Aries compatible agent protocols.
 You can use the agency and related Go packages roughly for four purposes:
 
 1. As a service agency for multiple Edge Agents to allocate Cloud Agents.
-Allocated CAs implement [Aries agent-to-agent
-protocols](#aries-protocol-state-machine) and interoperability.
+   Allocated CAs implement [Aries agent-to-agent
+   protocols](#aries-protocol-state-machine) and interoperability.
 
 1. As a [CLI tool](#command-line-interface) for setting up Edge Agent wallets,
-creating schemas and credential definitions into the wallet and writing them to
-the ledger. You don't need to use or install indy CLI.
+   creating schemas and credential definitions into the wallet and writing them to
+   the ledger. You don't need to use or install indy CLI.
 
 1. As an admin tool to monitor and maintain an agency.
 
 1. As a framework to implement Service Agents like issuers and verifiers.
 
+##### Onboard Binding
 
-##### Onboard Binding 
 To be able to onboard, allocate an agent, the client, and the agency must
 share the same `salt`. Please see the `FINDY_AGENT_SALT` environment variable,
 or build your agency with the sources which set the `utils.Salt` variable.
@@ -65,25 +64,25 @@ or build your agency with the sources which set the `utils.Salt` variable.
 6. Install the command line application: `make install`
 7. Verify the installation: `findy-agent -version`
 
-    It should output:
-    `OP Tech Lab - Findy Agency v. X.X`
+   It should output:
+   `OP Tech Lab - Findy Agency v. X.X`
 
-## Run The Agency 
+## Run The Agency
 
 1. [Install and start ledger](https://github.com/bcgov/von-network/blob/master/docs/UsingVONNetwork.md#building-and-starting)
 2. Create a ledger pool with the name `von`
 
-   ```findy-agent create cnx -pool von -txn genesis.txt```
+   `findy-agent create cnx -pool von -txn genesis.txt`
+
 3. Go to `scripts` directory: `cd scripts`
 4. Run the agency tests: `./von-network`
 5. Connect to agency with your client or test it with the agency's client
-command. Please see the helper scripts in the `scripts` directory.
+   command. Please see the helper scripts in the `scripts` directory.
 
 All of that can be done with the `make scratch` as well if the predefined ledger
 and steward wallet names are ok. The previous steps were for educational
 purposes. If you want to start the agency fast e.g., on OSX, the Makefile
 approach is preferable. Please see the scrips in the `tools` dir.
-
 
 ## Edge Agent On-boarding
 
@@ -124,7 +123,7 @@ identity network. The server rack icon illustrates an agency. There are three in
 the picture, but typically there can be as many as needed, and agencies can run
 in a cluster for horizontal scalability.
 
-![big](docs/agency-big.png?raw=true 'big')
+![big](docs/agency-big.png?raw=true "big")
 
 In the middle of the picture is the indy ledger. Depending on the installation
 and the type of the network, it can be a public ledger (permissioned) or just a
@@ -132,7 +131,7 @@ development ledger. All the communication to the ledger goes through the
 agencies. Also, all the Aries agent-to-agent communication goes from agency
 to agency, as you can see in the following drawing.
 
-![big_aries](docs/agency-aries-big.png?raw=true 'big_aries')
+![big_aries](docs/agency-aries-big.png?raw=true "big_aries")
 
 The application logic is inside the edge agents which communicate and control
 their cloud agents with the DIDComm-based protocol as well. The next image
@@ -140,14 +139,14 @@ illustrates when a mobile EA communicates findy-agent, it calls the agency's CA
 API and receives APNS notifications, or WebSocket messages if the connection is
 on.
 
-![mobile](docs/agency-mobile.png?raw=true 'mobile')
+![mobile](docs/agency-mobile.png?raw=true "mobile")
 
 Likewise, when a SA communicates with an agency, it calls the agency's CA API
 and receives webhook calls over DIDComm from the agency. The WebSocket option
 is available as well. The image below shows how CAs communicate with Aries, and
 the agency notifies the SA through indy's version of DIDComm.
 
-![sa](docs/agency-sa.png?raw=true 'sa')
+![sa](docs/agency-sa.png?raw=true "sa")
 
 ## Command-line Interface
 
@@ -160,10 +159,11 @@ illustrate which of them are directly operable by findy-agent or findy-agent.
 ![server.puml](http://www.plantuml.com/plantuml/svg/TL0nRiCm3DprYaCcUt0Ua250qQb0Dx-0aHXLjImP59qqAFBtsatGs2qw4UJTyN0N-QZG30d-JU62iDMGaobTI0C9zHZ8TkIvrKjap30b7zaOife5vFgGfcKUQ1fKXNKSK5XEBBLPhzZkKHqa98yXvuXZY5nZXv1i71sRErQKpoGEPugHzQPQ_zc1FvIJAtyC7boNRSU2KuvZltRvLz9Ir2NJ_CJ5vibpiXSylxwWGVkjtU3J08leceVwruL4vrCbF5bCzVamfRitSKCNOQxB8jc5Xs3xNdAglm00)
 
 As the diagram shows the prerequisites to start the agency are:
- - A steward wallet is available, or you have seed to create steward wallet by
- your self.
- - You have to set up a server environment, like volumes for wallets, and
- databases.
+
+- A steward wallet is available, or you have seed to create steward wallet by
+  your self.
+- You have to set up a server environment, like volumes for wallets, and
+  databases.
 
 During the agency run, you can monitor its logs. Between the starts, you can
 reset the all cloud agent allocations, or you can edit the register JSON. Note,
@@ -268,18 +268,17 @@ four related ways to initiate the protocol state machine for an issuing protocol
 IssuingProtocolRunning-state). The rest of the protocol is quite clear and easy
 to understand from the state machine diagram.
 
-
 ## Missing Features For Production
 
 - [ ] Current tests run only happy paths.
 - [ ] Interoperability testing with Aries testing harness.
 - [ ] Indy wallet implementation with storage plugin like PostgreSQL.
-- [ ] Crypto implementations for different server types, AWS Nitro, ...   
+- [ ] Crypto implementations for different server types, AWS Nitro, ...
 - [ ] Backup system for current docker volumes.
-- [ ] The PSM runner for restarts and non-delivery messages and cleanup old ones. 
+- [ ] The PSM runner for restarts and non-delivery messages and cleanup old ones.
 - [ ] Haven't been able to test with stable ledger.
 - [ ] Check if we have received the message already.
-- [ ] Check incoming order of the messages, same as declared in the PSM. 
+- [ ] Check incoming order of the messages, same as declared in the PSM.
 - [x] libindy under pressure, wallet handles, etc. Done: wallet pool, more tests
       needed
 - [ ] API for browsing connections, credentials etc.
@@ -290,3 +289,13 @@ to understand from the state machine diagram.
 - [ ] Agent permissions. Separation of individuals and services in onboarding ->
       e.g. no credential issuing for individuals (maybe Agency types).
 
+## Publishing new version
+
+Release script will tag the current version and push the tag to remote. This will trigger e2e-tests in CI automatically and if they succeed, the tag is merged to master.
+
+Release script assumes it is triggered from dev branch. It takes one parameter, the next working version. E.g. if current working version is 0.1.0, following will release version 0.1.0 and update working version to 0.2.0.
+
+```bash
+git checkout dev
+./release 0.2.0
+```
