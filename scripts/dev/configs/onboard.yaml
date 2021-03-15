@@ -1,0 +1,6 @@
+wallet-name: "test_wallet2"
+wallet-key: "9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
+agency-url: "http://localhost:8090"
+email: "test_email2"
+export-key: "9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
+salt: "my_test_salt"

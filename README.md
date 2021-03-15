@@ -112,7 +112,7 @@ the client wallet and move it where the final SA will run.
 As you can see, that is a long command, and lots of information is needed. The
 suggestion is to write these commands to owns scripts. With the findy-agent
 repo, there are many scripts where to start. If more convenient CLI would be
-needed, please check the `findy-agent-cli`.
+needed, please check the `findy-agent`.
 
 ## Agency Network
 
@@ -152,10 +152,10 @@ the agency notifies the SA through indy's version of DIDComm.
 ## Command-line Interface
 
 findy-agent offers an extensive set of commands by itself, and more
-user-friendly command set exists in findy-agent-cli. In addition to that, many
+user-friendly command set exists in findy-agent. In addition to that, many
 other tasks have to be taken care of before a full agency setup can work. The
 following use case diagram shows most of the tasks and uses system boundaries to
-illustrate which of them are directly operable by findy-agent or findy-agent-cli.
+illustrate which of them are directly operable by findy-agent or findy-agent.
 
 ![server.puml](http://www.plantuml.com/plantuml/svg/TL0nRiCm3DprYaCcUt0Ua250qQb0Dx-0aHXLjImP59qqAFBtsatGs2qw4UJTyN0N-QZG30d-JU62iDMGaobTI0C9zHZ8TkIvrKjap30b7zaOife5vFgGfcKUQ1fKXNKSK5XEBBLPhzZkKHqa98yXvuXZY5nZXv1i71sRErQKpoGEPugHzQPQ_zc1FvIJAtyC7boNRSU2KuvZltRvLz9Ir2NJ_CJ5vibpiXSylxwWGVkjtU3J08leceVwruL4vrCbF5bCzVamfRitSKCNOQxB8jc5Xs3xNdAglm00)
 
