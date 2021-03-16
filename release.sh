@@ -22,7 +22,10 @@ if [ -z "$(git status --porcelain)" ]; then
 
   VERSION=v$VERSION_NBR
   go mod tidy
-  go test ./...
+  CI_PREV=$CI
+  export CI=true
+  make test
+  export CI=$CI_PREV
 
   set +e
   git commit -a -m "Releasing version $VERSION."
