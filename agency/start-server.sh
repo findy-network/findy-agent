@@ -9,6 +9,11 @@ if [ -f "/tmp/env" ]; then
   cp /tmp/aps.p12 /aps.p12
 fi
 
+if [ -z "$STARTUP_FILE_STORAGE_S3" ]; then
+  aws s3 cp s3://$STARTUP_FILE_STORAGE_S3/agent / --recursive
+fi
+
+
 FOLDER=~/.indy_client/wallet/$FCLI_IMPORT_WALLET_NAME/
 if [ -d "$FOLDER" ]; then
   echo "$FOLDER exists"
