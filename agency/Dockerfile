@@ -1,4 +1,5 @@
 ARG CLI_VERSION=latest
+ARG AWS_VERSION=2.1.30
 
 FROM findy-agent:$CLI_VERSION
 
@@ -33,5 +34,12 @@ ENV FCLI_AGENCY_STEWARD_DID Th7MpTaRZVRYnPiabds81Y
 ENV FCLI_AGENCY_SALT "this is only example"
 
 ENV FCLI_AGENCY_APNS_P12_FILE ""
+
+ARG AWS_VERSION
+
+RUN apt-get update && apt-get install curl unzip -y && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-$AWS_VERSION.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install
 
 ENTRYPOINT [ "/start-server.sh", "/"]
