@@ -17,13 +17,13 @@ drop_api:
 drop_all: drop_api drop_comm drop_wrap
 
 repl_wrap:
-	go mod edit -replace github.com/findy-network/findy-wrapper-go=../fingy-wrapper-go
+	go mod edit -replace github.com/findy-network/findy-wrapper-go=../findy-wrapper-go
 
 repl_comm:
-	go mod edit -replace github.com/findy-network/findy-common-go=../fingy-common-go
+	go mod edit -replace github.com/findy-network/findy-common-go=../findy-common-go
 
 repl_api:
-	go mod edit -replace github.com/findy-network/findy-agent-api=../fingy-agent-api
+	go mod edit -replace github.com/findy-network/findy-agent-api=../findy-agent-api
 
 repl_all: repl_api repl_comm repl_wrap
 
