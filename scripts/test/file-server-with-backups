@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [[ "$1" == "" ]]; then
+	printf "Usage:\t""$0"" <time_1> [time_2]\n"
+	printf "\n\ttime format: HH:MM\n"
+	exit 1
+fi
+
+t1="$1"
+if [[ "$2" == "" ]]; then
+	t2="$1"
+else
+	t2="$2"
+fi
+
+go run ../.. agency start \
+--steward-wallet-name "sovrin_steward_wallet" \
+--steward-wallet-key "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE" \
+--pool-name "FINDY_FILE_LEDGER" \
+--steward-did "Th7MpTaRZVRYnPiabds81Y" \
+--register-file "findy.json" \
+--host-address "localhost" \
+--grpc \
+--host-scheme "http" \
+--enclave-backup "$HOME""/.indy_client/backups/enclave.bolt" \
+--enclave-backup-time "$t1" \
+--register-backup "$HOME""/.indy_client/backups/findy.json.bak" \
+--register-backup-interval "1m" \
+--wallet-backup "$HOME""/.indy_client/backups/" \
+--wallet-backup-time "$t2"
