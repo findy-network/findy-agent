@@ -27,11 +27,19 @@ repl_api:
 
 repl_all: repl_api repl_comm repl_wrap
 
-modules:
-	@echo Syncing modules for work brances ...
-	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
+modules: modules_comm modules_wrap modules_api
+
+modules_comm:
+	@echo Syncing modules: findy-common-api/$(GRPC_BRANCH)
 	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
+
+modules_wrap:
+	@echo Syncing modules: findy-wrapper-go/$(WRAP_BRANCH)
 	go get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
+
+modules_api: 
+	@echo Syncing modules: findy-agent-api/$(API_BRANCH)
+	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
 
 deps:
 	go get -t ./...
