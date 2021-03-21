@@ -425,6 +425,14 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotEmpty(t, r.Id)
 			glog.Infoln(r.Id)
+			schemaID := r.Id
+
+			cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
+				SchemaId: schemaID,
+				Tag:      "TAG_4_TEST",
+			})
+			assert.NoError(t, err)
+			assert.NotEmpty(t, cdResult.Id)
 
 			assert.NoError(t, conn.Close())
 		})
