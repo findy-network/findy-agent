@@ -5,18 +5,127 @@ import (
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
+	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-common-go/jwt"
+	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
 type agentServer struct {
 	pb.UnimplementedAgentServer
+}
+
+func (a *agentServer) Ping(
+	ctx context.Context,
+	pm *pb.PingMsg,
+) (
+	_ *pb.PingMsg,
+	err error,
+) {
+	defer err2.Annotate("agent server ping", &err)
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent ping:", pm.Id)
+
+	saReply := false
+	if pm.PingController {
+		glog.V(3).Info("calling sa ping")
+		om := mesg.MsgCreator.Create(didcomm.MsgInit{}).(didcomm.Msg)
+		ask, err := receiver.CallEA(pltype.SAPing, om)
+		err2.Check(err)
+		saReply = ask.Ready()
+	}
+	return &pb.PingMsg{Id: pm.Id, PingController: saReply}, nil
+}
+
+func (a *agentServer) CreateSchema(
+	ctx context.Context,
+	s *pb.SchemaCreate,
+) (
+	os *pb.Schema,
+	err error,
+) {
+	defer err2.Annotate("create schema", &err)
+
+	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
+
+	sch := &ssi.Schema{
+		Name:    s.Name,
+		Version: s.Version,
+		Attrs:   s.Attrs,
+	}
+	err2.Check(sch.Create(ca.RootDid().Did()))
+	err2.Check(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
+
+	return &pb.Schema{Id: sch.ValidID()}, nil
+}
+
+func (a *agentServer) CreateCredDef(
+	ctx context.Context,
+	cdc *pb.CredDefCreate,
+) (
+	_ *pb.CredDef,
+	err error,
+) {
+	defer err2.Annotate("create creddef", &err)
+
+	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
+		"schema:", cdc.SchemaId)
+
+	sch := &ssi.Schema{ID: cdc.SchemaId}
+	err2.Check(sch.FromLedger(ca.RootDid().Did()))
+	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
+		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
+		cdc.Tag, findy.NullString, findy.NullString)
+	err2.Check(r.Err())
+	cd := r.Str2()
+	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
+	return &pb.CredDef{Id: r.Str1()}, nil
+}
+
+func (a *agentServer) GetSchema(
+	ctx context.Context,
+	s *pb.Schema,
+) (
+	_ *pb.SchemaData,
+	err error,
+) {
+	defer err2.Annotate("get schema", &err)
+
+	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent get schema:", s.Id)
+
+	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.Id)
+	err2.Check(err)
+	return &pb.SchemaData{Id: sID, Data: schema}, nil
+}
+
+func (a *agentServer) GetCredDef(
+	ctx context.Context,
+	cd *pb.CredDef,
+) (
+	_ *pb.CredDefData,
+	err error,
+) {
+	defer err2.Annotate("get creddef", &err)
+
+	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.Id)
+
+	def := err2.String.Try(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.Id))
+	return &pb.CredDefData{Id: cd.Id, Data: def}, nil
 }
 
 func (a *agentServer) SetImplId(ctx context.Context, implementation *pb.SAImplementation) (impl *pb.SAImplementation, err error) {

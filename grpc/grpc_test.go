@@ -187,6 +187,8 @@ func setUp() {
 	server.StartTestHTTPServer()
 }
 
+// calcTestMode calculates current test mode. TODO: the function is deprecated
+// because it used Go modules env variable and it's not used any more in Go.
 func calcTestMode() {
 	defer err2.Catch(func(err error) {
 		glog.V(20).Infoln(err)
@@ -398,6 +400,33 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 					t.Errorf("client.CreateCredDef() %v, want %v", got, tt.want)
 				}
 			}
+		})
+	}
+}
+
+func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+	ut := time.Now().Unix() - 1558884840
+
+	for i, ca := range agents {
+		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			conn := client.TryOpen(ca.DID, baseCfg)
+
+			schemaName := fmt.Sprintf("%d_NEW_SCHEMA_%v", i, ut)
+			ctx := context.Background()
+			c := agency2.NewAgentClient(conn)
+			r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
+				Name:    schemaName,
+				Version: "1.0",
+				Attrs:   []string{"attr1", "attr2", "attr3"},
+			})
+			assert.NoError(t, err)
+			assert.NotEmpty(t, r.Id)
+			glog.Infoln(r.Id)
+
+			assert.NoError(t, conn.Close())
 		})
 	}
 }
