@@ -389,23 +389,42 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 
 			// build schema and cred def for the first agent to use later
 			if i == 0 {
-				sID, err := c.CreateSchema(&sch)
-				if got := err; !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("client.CreateSchema() %v, want %v", got, tt.want)
-				}
+				conn := client.TryOpen(cadid, baseCfg)
+
+				ctx := context.Background()
+				c := agency2.NewAgentClient(conn)
+				glog.Infoln("==== creating schema ====")
+				r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
+					Name:    sch.Name,
+					Version: sch.Version,
+					Attrs:   sch.Attrs,
+				})
+				assert.NoError(t, err)
+				assert.NotEmpty(t, r.Id)
+				glog.Infoln(r.Id)
+				schemaID := r.Id
+
 				glog.Infoln("==== creating cred def please wait ====")
-				time.Sleep(2 * time.Millisecond) // Legacy: Sleep to let ledger process schema!
-				agents[0].CredDefID, err = c.CreateCredDef(sID, "TAG_1")
-				if got := err; !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("client.CreateCredDef() %v, want %v", got, tt.want)
-				}
+				time.Sleep(2 * time.Millisecond)
+				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
+					SchemaId: schemaID,
+					Tag:      "TAG_1",
+				})
+				assert.NoError(t, err)
+				assert.NotEmpty(t, cdResult.Id)
+				agents[0].CredDefID = cdResult.Id
+
+				assert.NoError(t, conn.Close())
 			}
 		})
 	}
 }
 
+// TestCreateSchemaAndCredDef_NoOneRun tests schema and creddef creation with
+// new gRPC API. It's currently run only in one test mode because it takes so
+// long to exec.
 func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
-	if testMode == TestModeRunOne {
+	if testMode != TestModeRunOne {
 		return
 	}
 	ut := time.Now().Unix() - 1558884840
