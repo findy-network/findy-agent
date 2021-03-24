@@ -3,7 +3,7 @@ module github.com/findy-network/findy-agent
 go 1.16
 
 require (
-	github.com/findy-network/findy-agent-api v0.0.0-20210203142917-ee7d471ffd4b
+	github.com/findy-network/findy-agent-api v0.1.1-0.20210321174356-f9643fd00f1f
 	github.com/findy-network/findy-common-go v0.1.2-0.20210304145749-94f700a63abf
 	github.com/findy-network/findy-wrapper-go v0.0.0-20210302063517-bb98c7f07ea4
 	github.com/go-co-op/gocron v0.7.0
