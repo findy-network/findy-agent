@@ -106,18 +106,8 @@ image:
 
 agency: image
 	$(eval VERSION = $(shell cat ./VERSION))
-	docker build -t findy-agency --build-arg CLI_VERSION=$(VERSION) ./agency
+	docker build -t findy-agency --build-arg CLI_VERSION=$(VERSION) ./scripts/deploy
 	docker tag findy-agency:latest findy-agency:$(VERSION)
-
-# Test for agency-image start script:
-#run-agency: agency
-#	echo "{}" > findy.json && \
-#	docker run -it --rm -v $(PWD)/agency/infra/.secrets/steward.exported:/steward.exported \
-#		-e FCLI_AGENCY_SALT="this is only example" \
-#		-p 8080:8080 \
-#		-v $(PWD)/agency/infra/.secrets/aps.p12:/aps.p12 \
-#		-v $(PWD)/scripts/dev/genesis_transactions:/genesis_transactions \
-#		-v $(PWD)/findy.json:/root/findy.json findy-agency
 
 # **** scripts for local agency development:
 # WARNING: this will erase all your local indy wallets
