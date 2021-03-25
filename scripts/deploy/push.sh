@@ -2,11 +2,9 @@
 
 set -e
 
-AWS_CMD="docker run --rm -it \
-    -e AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION \
-    -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-    -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-    amazon/aws-cli"
+AWS_CMD="aws"
+
+$AWS_CMD --version
 
 if [ -z "$ECR_IMAGE_NAME" ]; then
   echo "ERROR: Define env variable ECR_IMAGE_NAME"
