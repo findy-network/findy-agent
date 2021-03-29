@@ -8,10 +8,8 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/user"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -187,19 +185,15 @@ func setUp() {
 	server.StartTestHTTPServer()
 }
 
-// calcTestMode calculates current test mode. TODO: the function is deprecated
-// because it used Go modules env variable and it's not used any more in Go.
+// calcTestMode calculates current test mode
 func calcTestMode() {
 	defer err2.Catch(func(err error) {
 		glog.V(20).Infoln(err)
 	})
 
-	currentUser, e := user.Current()
-	err2.Check(e)
-	filename := filepath.Join(currentUser.HomeDir, "/.config/go/env")
-	b := err2.Bytes.Try(ioutil.ReadFile(filename))
-	if strings.Contains(string(b), "GO111MODULE=off") {
-		glog.V(1).Infoln("testMode := TestModeRunOne, go modules off")
+	_, exists := os.LookupEnv("TEST_MODE_ONE")
+	if exists {
+		glog.V(1).Infoln("testMode := TestModeRunOne")
 		testMode = TestModeRunOne
 	}
 }
