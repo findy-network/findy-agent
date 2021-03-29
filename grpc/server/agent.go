@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
@@ -19,7 +20,10 @@ import (
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
+
+const keepaliveTimer = 50 * time.Second
 
 type agentServer struct {
 	pb.UnimplementedAgentServer
@@ -214,80 +218,93 @@ loop:
 				"QID:", question.ID,
 				question.ProtocolFamily,
 				notificationTypeID[question.NotificationType])
-
-			agentStatus := pb.AgentStatus{
-				ClientId: &pb.ClientID{Id: question.AgentDID},
-				Notification: &pb.Notification{
-					Id:             question.ID,
-					PID:            question.PID,
-					TypeId:         notificationTypeID[question.NotificationType],
-					ConnectionId:   question.ConnectionID,
-					ProtocolId:     question.ProtocolID,
-					ProtocolFamily: question.ProtocolFamily,
-					ProtocolType:   protocolType[question.ProtocolFamily],
-					Timestamp:      question.Timestamp,
-					Role:           roleType[question.Initiator],
-				},
-			}
-			if question.IssuePropose != nil {
-				glog.V(1).Infoln("issue propose handling")
-				agentStatus.Notification.Question = &pb.Notification_IssuePropose_{
-					IssuePropose: &pb.Notification_IssuePropose{
-						CredDefId:  question.IssuePropose.CredDefID,
-						ValuesJson: question.IssuePropose.ValuesJSON,
-					},
-				}
-			}
-			if question.ProofVerify != nil {
-				glog.V(1).Infoln("proof verify handling")
-				attrs := make([]*pb.Notification_ProofVerify_Attr, 0, len(question.ProofVerify.Attrs))
-				for _, attr := range question.Attrs {
-					attrs = append(attrs, &pb.Notification_ProofVerify_Attr{
-						Value:     attr.Value,
-						Name:      attr.Name,
-						CredDefId: attr.CredDefID,
-						Predicate: attr.Predicate,
-					})
-				}
-				agentStatus.Notification.Question = &pb.Notification_ProofVerify_{
-					ProofVerify: &pb.Notification_ProofVerify{
-						Attrs: attrs,
-					},
-				}
-			}
-			if clientID.Id != question.ClientID {
-				glog.Warningf("client id mismatch: c/s: %s/%s",
-					clientID.Id, question.ClientID)
-			}
+			assert.D.True(clientID.Id == question.ClientID)
+			agentStatus := processQuestion(question)
 			agentStatus.ClientId.Id = question.ClientID
-			err2.Check(server.Send(&agentStatus))
+			err2.Check(server.Send(agentStatus))
 			glog.V(1).Infoln("send question..")
 
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
-			agentStatus := pb.AgentStatus{
-				ClientId: &pb.ClientID{Id: notify.AgentDID},
-				Notification: &pb.Notification{
-					Id:             notify.ID,
-					TypeId:         notificationTypeID[notify.NotificationType],
-					ConnectionId:   notify.ConnectionID,
-					ProtocolId:     notify.ProtocolID,
-					ProtocolFamily: notify.ProtocolFamily,
-					ProtocolType:   protocolType[notify.ProtocolFamily],
-					Timestamp:      notify.Timestamp,
-					Role:           roleType[notify.Initiator],
-				},
-			}
-			if clientID.Id != notify.ClientID {
-				glog.Warningf("client id mismatch: c/s: %s/%s",
-					clientID.Id, notify.ClientID)
-			}
+			assert.D.True(clientID.Id == notify.ClientID)
+			agentStatus := processNofity(notify)
 			agentStatus.ClientId.Id = notify.ClientID
-			err2.Check(server.Send(&agentStatus))
+			err2.Check(server.Send(agentStatus))
+
+		case <-time.After(keepaliveTimer):
+			// send keep alive message
+			glog.V(1).Infoln("sending keepalive timer")
+			err2.Check(server.Send(&pb.AgentStatus{
+				ClientId: &pb.ClientID{Id: clientID.Id},
+				Notification: &pb.Notification{
+					TypeId: pb.Notification_KEEPALIVE,
+				}}))
+
 		case <-ctx.Done():
 			glog.V(1).Infoln("ctx.Done() received, returning")
 			break loop
 		}
 	}
 	return nil
+}
+
+func processQuestion(question bus.AgentQuestion) (as *pb.AgentStatus) {
+	agentStatus := pb.AgentStatus{
+		ClientId: &pb.ClientID{Id: question.AgentDID},
+		Notification: &pb.Notification{
+			Id:             question.ID,
+			PID:            question.PID,
+			TypeId:         notificationTypeID[question.NotificationType],
+			ConnectionId:   question.ConnectionID,
+			ProtocolId:     question.ProtocolID,
+			ProtocolFamily: question.ProtocolFamily,
+			ProtocolType:   protocolType[question.ProtocolFamily],
+			Timestamp:      question.Timestamp,
+			Role:           roleType[question.Initiator],
+		},
+	}
+	if question.IssuePropose != nil {
+		glog.V(1).Infoln("issue propose handling")
+		agentStatus.Notification.Question = &pb.Notification_IssuePropose_{
+			IssuePropose: &pb.Notification_IssuePropose{
+				CredDefId:  question.IssuePropose.CredDefID,
+				ValuesJson: question.IssuePropose.ValuesJSON,
+			},
+		}
+	}
+	if question.ProofVerify != nil {
+		glog.V(1).Infoln("proof verify handling")
+		attrs := make([]*pb.Notification_ProofVerify_Attr, 0, len(question.ProofVerify.Attrs))
+		for _, attr := range question.Attrs {
+			attrs = append(attrs, &pb.Notification_ProofVerify_Attr{
+				Value:     attr.Value,
+				Name:      attr.Name,
+				CredDefId: attr.CredDefID,
+				Predicate: attr.Predicate,
+			})
+		}
+		agentStatus.Notification.Question = &pb.Notification_ProofVerify_{
+			ProofVerify: &pb.Notification_ProofVerify{
+				Attrs: attrs,
+			},
+		}
+	}
+	return &agentStatus
+}
+
+func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
+	agentStatus := pb.AgentStatus{
+		ClientId: &pb.ClientID{Id: notify.AgentDID},
+		Notification: &pb.Notification{
+			Id:             notify.ID,
+			TypeId:         notificationTypeID[notify.NotificationType],
+			ConnectionId:   notify.ConnectionID,
+			ProtocolId:     notify.ProtocolID,
+			ProtocolFamily: notify.ProtocolFamily,
+			ProtocolType:   protocolType[notify.ProtocolFamily],
+			Timestamp:      notify.Timestamp,
+			Role:           roleType[notify.Initiator],
+		},
+	}
+	return &agentStatus
 }
