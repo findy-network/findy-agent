@@ -8,6 +8,7 @@ ADD ./start-server.sh /start-server.sh
 RUN echo "{}" > /root/findy.json
 
 EXPOSE 8080
+EXPOSE 50051
 
 # override when running container:
 

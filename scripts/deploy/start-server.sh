@@ -27,4 +27,4 @@ else
 fi
 
 cd $1
-./findy-agent agency start --grpc true --grpc-cert-path /grpc
+./findy-agent agency start --grpc true --grpc-tls false

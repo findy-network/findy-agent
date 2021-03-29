@@ -12,6 +12,7 @@ func init() {
 }
 
 type PluginServer struct {
+	UseTls    bool
 	Port      int
 	TlsPath   string
 	JWTSecret string
@@ -21,16 +22,23 @@ var RpcServer PluginServer
 
 func (s *PluginServer) Run() {
 	glog.V(1).Infoln("===== initializing grpc server")
+
+	var pki *rpc.PKI
+	if s.UseTls {
+		pki = rpc.LoadPKI(s.TlsPath)
+	}
+
 	server.Serve(&rpc.ServerCfg{
 		Port:      s.Port,
-		PKI:       rpc.LoadPKI(s.TlsPath),
+		PKI:       pki,
 		TestLis:   nil,
 		JWTSecret: s.JWTSecret,
 	})
 }
 
-func (s *PluginServer) Init(port int, tlsPath, jwtSecret string) {
+func (s *PluginServer) Init(useTls bool, port int, tlsPath, jwtSecret string) {
 	glog.V(1).Infof("init plugin with port(%d) tls (%s)", port, tlsPath)
+	s.UseTls = useTls
 	s.Port = port
 	s.TlsPath = tlsPath
 	s.JWTSecret = jwtSecret
