@@ -37,7 +37,7 @@ func (s *PluginServer) Run() {
 }
 
 func (s *PluginServer) Init(useTls bool, port int, tlsPath, jwtSecret string) {
-	glog.V(1).Infof("init plugin with port(%d) tls (%s)", port, tlsPath)
+	glog.V(1).Infof("init plugin with port(%d) tls (%v %s)", port, useTls, tlsPath)
 	s.UseTls = useTls
 	s.Port = port
 	s.TlsPath = tlsPath
