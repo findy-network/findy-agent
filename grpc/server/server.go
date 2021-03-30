@@ -30,8 +30,10 @@ func Serve(conf *rpc.ServerCfg) {
 	if conf == nil {
 		panic("GRPC server needs configuration")
 	}
-	glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
-		conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
+	if conf.PKI != nil {
+		glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
+			conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
+	}
 
 	conf.Register = func(s *grpc.Server) error {
 		pb.RegisterDIDCommServer(s, &didCommServer{})

@@ -60,6 +60,7 @@ type Cmd struct {
 	Salt              string
 	APNSP12CertFile   string
 	AllowRPC          bool
+	GRPCTls           bool
 	GRPCPort          int
 	TlsCertPath       string
 	JWTSecret         string
@@ -103,6 +104,7 @@ var (
 		Salt:                   "",
 		APNSP12CertFile:        "",
 		AllowRPC:               true,
+		GRPCTls:                true,
 		GRPCPort:               50051,
 		TlsCertPath:            "",
 		JWTSecret:              "",
@@ -188,7 +190,7 @@ func (c *Cmd) Run() (err error) {
 
 	c.startBackupTasks()
 	if c.AllowRPC {
-		StartGrpcServer(c.GRPCPort, c.TlsCertPath, c.JWTSecret)
+		StartGrpcServer(c.GRPCTls, c.GRPCPort, c.TlsCertPath, c.JWTSecret)
 	}
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
