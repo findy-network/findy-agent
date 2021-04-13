@@ -303,12 +303,12 @@ git checkout dev
 
 ## Running e2e tests
 
-Run end-to-end tests for findy-agent-cli with:
+Run end-to-end tests for findy-agent with:
 
 ```
 make e2e
 ```
 
-This starts test-ledger & runs e2e tests for findy-agent-cli.
+This starts test-ledger & runs e2e tests for findy-agent.
 
 `make e2e_ci` doesn't initialize test-ledger.
