@@ -2,6 +2,7 @@
 
 ![lint](https://github.com/findy-network/findy-agent/workflows/golangci-lint/badge.svg?branch=dev)
 ![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
+![e2e test](https://github.com/findy-network/findy-agent/workflows/e2e%20test/badge.svg)
 
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
@@ -299,3 +300,15 @@ Release script assumes it is triggered from dev branch. It takes one parameter, 
 git checkout dev
 ./release 0.2.0
 ```
+
+## Running e2e tests
+
+Run end-to-end tests for findy-agent with:
+
+```
+make e2e
+```
+
+This starts test-ledger & runs e2e tests for findy-agent.
+
+`make e2e_ci` doesn't initialize test-ledger.
