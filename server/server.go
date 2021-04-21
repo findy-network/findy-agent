@@ -50,9 +50,8 @@ func StartHTTPServer(serviceName string, serverPort uint) error {
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if glog.V(5) {
-			glog.Info("testing the server")
-			glog.Info(r.URL.Path)
+		if glog.V(7) {
+			glog.Infoln("testing the server", r.URL.Path)
 		}
 		_, _ = w.Write([]byte(utils.Version))
 	})
