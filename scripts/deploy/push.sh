@@ -24,7 +24,7 @@ VERSION=$(cat $CURRENT_DIR/../../VERSION)
 echo "Checking if $VERSION is already built..."
 
 set +e
-HAS_IMAGE_VERSION=$($AWS_CMD ecr list-images --repository-name $ECR_IMAGE_NAME --filter '{"tagStatus": "TAGGED"}' | grep $VERSION)
+HAS_IMAGE_VERSION=$($AWS_CMD ecr list-images --repository-name $ECR_IMAGE_NAME --filter '{"tagStatus": "TAGGED"}' | grep -F $VERSION)
 set -e
 
 if [ -z "$HAS_IMAGE_VERSION" ]; then
