@@ -233,7 +233,7 @@ loop:
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
-			glog.V(1).Infoln("sending keepalive timer")
+			glog.V(7).Infoln("sending keepalive timer")
 			err2.Check(server.Send(&pb.AgentStatus{
 				ClientId: &pb.ClientID{Id: clientID.Id},
 				Notification: &pb.Notification{
