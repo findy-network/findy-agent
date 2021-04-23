@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/ops"
+	pb "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"

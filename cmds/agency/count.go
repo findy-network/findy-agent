@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/ops"
+	pb "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-common-go/agency/client"
 	"github.com/lainio/err2"
