@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency"
-	"github.com/findy-network/findy-agent-api/grpc/ops"
+	pb "github.com/findy-network/findy-agent-api/grpc/agency/v1"
+	ops "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -26,7 +26,7 @@ import (
 
 type agencyService struct {
 	Root string
-	ops.UnimplementedAgencyServer
+	ops.UnimplementedAgencyServiceServer
 }
 
 func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) (st *ops.OnboardResult, err error) {
@@ -55,7 +55,7 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 
 	return &ops.OnboardResult{
 		Ok: true,
-		Result: &ops.OnboardResult_OkResult{
+		Result: &ops.OnboardResult_OKResult{
 			JWT:            jwt.BuildJWTWithLabel(r.CADID, onboarding.Email),
 			CADID:          r.CADID,
 			InvitationJson: dto.ToJSON(r.Invitation),
@@ -63,11 +63,11 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 	}, nil
 }
 
-func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServer) (err error) {
+func (a agencyService) PSMHook(hook *ops.DataHook, server ops.AgencyService_PSMHookServer) (err error) {
 	defer err2.Catch(func(err error) {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &ops.AgencyStatus{
-			Id: err.Error(),
+			ID: err.Error(),
 		}
 		if err := server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
@@ -79,14 +79,14 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.Agency_PSMHookServ
 		return errors.New("access right")
 	}
 
-	glog.V(1).Infoln("*-agent PSM listener:", hook.Id)
+	glog.V(1).Infoln("*-agent PSM listener:", hook.ID)
 
 	go startPermanentPSMCleanup(ctx)
 	time.Sleep(100 * time.Millisecond)
 
 	listenKey := bus.AgentKeyType{
 		AgentDID: bus.AllAgents,
-		ClientID: hook.Id,
+		ClientID: hook.ID,
 	}
 	notifyChan := bus.WantAllAgencyActions.AgentAddListener(listenKey)
 	defer bus.WantAllAgencyActions.AgentRmListener(listenKey)
@@ -146,16 +146,16 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 	err2.Check(psm.RmPSM(p))
 }
 
-func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bus.AgentNotify) {
+func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, notify bus.AgentNotify) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("ERROR in psm hook notify handler", err)
 	})
 
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
 	pid := &pb.ProtocolID{
-		TypeId: protocolType[notify.ProtocolFamily],
+		TypeID: protocolType[notify.ProtocolFamily],
 		Role:   roleType[notify.Initiator],
-		Id:     notify.ProtocolID,
+		ID:     notify.ProtocolID,
 	}
 
 	psmKey := psm.StateKey{
@@ -167,13 +167,13 @@ func handleNotify(hook *ops.DataHook, server ops.Agency_PSMHookServer, notify bu
 	glog.Infoln("connID:", connID)
 	agentStatus := ops.AgencyStatus{
 		DID:            tryCaDID(psmKey),
-		Id:             hook.Id,
+		ID:             hook.ID,
 		ProtocolStatus: status,
-		ConnectionId:   connID,
+		ConnectionID:   connID,
 	}
-	if hook.Id != notify.ClientID {
+	if hook.ID != notify.ClientID {
 		glog.Warningf("client id mismatch: c/s: %s/%s",
-			hook.Id, notify.ClientID)
+			hook.ID, notify.ClientID)
 	}
 	err2.Check(server.Send(&agentStatus))
 

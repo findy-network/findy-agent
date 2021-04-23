@@ -8,8 +8,8 @@ import (
 	"errors"
 	"fmt"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency"
-	"github.com/findy-network/findy-agent-api/grpc/ops"
+	pb "github.com/findy-network/findy-agent-api/grpc/agency/v1"
+	ops "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -36,11 +36,11 @@ func Serve(conf *rpc.ServerCfg) {
 	}
 
 	conf.Register = func(s *grpc.Server) error {
-		pb.RegisterDIDCommServer(s, &didCommServer{})
-		pb.RegisterAgentServer(s, &agentServer{})
+		pb.RegisterProtocolServiceServer(s, &didCommServer{})
+		pb.RegisterAgentServiceServer(s, &agentServer{})
 
 		root := utils.Settings.GRPCAdmin()
-		ops.RegisterAgencyServer(s, &agencyService{Root: root})
+		ops.RegisterAgencyServiceServer(s, &agencyService{Root: root})
 		ops.RegisterDevOpsServer(s, &devOpsServer{Root: root})
 
 		glog.V(3).Infoln("GRPC OK")
@@ -58,38 +58,38 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 
 	task := &comm.Task{
 		Nonce:   utils.UUID(),
-		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeId),
-		Message: protocol.ConnectionId,
+		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeID),
+		Message: protocol.ConnectionID,
 	}
-	switch protocol.TypeId {
+	switch protocol.TypeID {
 	case pb.Protocol_TRUST_PING:
-		if protocol.ConnectionId == "" {
+		if protocol.ConnectionID == "" {
 			glog.Warningln("pinging first found connection, conn-id was empty")
 		}
 	case pb.Protocol_BASIC_MESSAGE:
-		task.Info = protocol.GetBasicMessage()
+		task.Info = protocol.GetBasicMessage().Text
 		glog.V(1).Infoln("basic_message content:", task.Info)
-	case pb.Protocol_CONNECT:
-		if protocol.GetConnAttr() == nil {
+	case pb.Protocol_DIDEXCHANGE:
+		if protocol.GetDIDExchange() == nil {
 			panic(errors.New("connection attrs cannot be nil"))
 		}
 		var invitation didexchange.Invitation
-		dto.FromJSONStr(protocol.GetConnAttr().GetInvitationJson(), &invitation)
+		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJson(), &invitation)
 		task.ConnectionInvitation = &invitation
-		task.Info = protocol.GetConnAttr().GetLabel()
+		task.Info = protocol.GetDIDExchange().GetLabel()
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
-	case pb.Protocol_ISSUE:
+	case pb.Protocol_ISSUE_CREDENTIAL:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			credDef := protocol.GetCredDef()
+			credDef := protocol.GetIssueCredential()
 			if credDef == nil {
 				panic(errors.New("cred def cannot be nil for issuing protocol"))
 			}
-			task.CredDefID = &credDef.CredDefId
+			task.CredDefID = &credDef.CredDefID
 
-			if credDef.GetAttrs_() != nil {
-				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttrs_().GetAttrs()))
-				for i, attribute := range credDef.GetAttrs_().GetAttrs() {
+			if credDef.GetAttributes() != nil {
+				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttrs()))
+				for i, attribute := range credDef.GetAttributes().GetAttrs() {
 					attributes[i] = didcomm.CredentialAttribute{
 						Name:  attribute.Name,
 						Value: attribute.Value,
@@ -104,21 +104,21 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				glog.V(1).Infoln("set cred attrs from json")
 			}
 		}
-	case pb.Protocol_PROOF:
+	case pb.Protocol_PRESENT_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			proofReq := protocol.GetProofReq()
+			proofReq := protocol.GetPresentProof()
 			if proofReq.GetAttributesJson() != "" {
 				var proofAttrs []didcomm.ProofAttribute
 				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
 				task.ProofAttrs = &proofAttrs
 				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJson())
-			} else if proofReq.GetAttrs() != nil {
-				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttrs().GetAttrs()))
-				for i, attribute := range proofReq.GetAttrs().GetAttrs() {
+			} else if proofReq.GetAttributes() != nil {
+				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
+				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
 					attributes[i] = didcomm.ProofAttribute{
 						Name:      attribute.Name,
-						CredDefID: attribute.CredDefId,
-						Predicate: attribute.Predicate,
+						CredDefID: attribute.CredDefID,
+						//Predicate: attribute.Predicate,
 					}
 				}
 				task.ProofAttrs = &attributes
@@ -152,15 +152,15 @@ func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 
 // typeID is look up table for
 var typeID = map[int32]string{
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_CONNECT):       pltype.CAPairwiseCreate,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE):         pltype.CACredOffer,
-	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE):         pltype.CACredRequest,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PROOF):         pltype.CAProofRequest,
-	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_PROOF):         pltype.CAProofPropose,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_TRUST_PING):    pltype.CATrustPing,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_BASIC_MESSAGE): pltype.CABasicMessage,
-	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_ISSUE):            pltype.CAContinueIssueCredentialProtocol,
-	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_PROOF):            pltype.CAContinuePresentProofProtocol,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_DIDEXCHANGE):      pltype.CAPairwiseCreate,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredOffer,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredRequest,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PRESENT_PROOF):    pltype.CAProofRequest,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_PRESENT_PROOF):    pltype.CAProofPropose,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_TRUST_PING):       pltype.CATrustPing,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_BASIC_MESSAGE):    pltype.CABasicMessage,
+	int32(10*pb.Protocol_RESUMER) + int32(pb.Protocol_ISSUE_CREDENTIAL):   pltype.CAContinueIssueCredentialProtocol,
+	int32(10*pb.Protocol_RESUMER) + int32(pb.Protocol_PRESENT_PROOF):      pltype.CAContinuePresentProofProtocol,
 }
 
 // to get protocol family
@@ -174,9 +174,9 @@ var protocolName = [...]string{
 }
 
 var protocolType = map[string]pb.Protocol_Type{
-	pltype.AriesProtocolConnection: pb.Protocol_CONNECT,
-	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE,
-	pltype.ProtocolPresentProof:    pb.Protocol_PROOF,
+	pltype.AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
+	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
+	pltype.ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
 	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
 	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
 }
