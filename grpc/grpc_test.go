@@ -1026,31 +1026,38 @@ loop:
 				break loop
 			}
 			glog.Infoln("\n\t===== listen status:\n\t",
-				status.Notification.ConnectionID,
-				status.Notification.ProtocolFamily,
-				status.Notification.TypeID,
-				status.Notification.ID,
-				status.Notification.ProtocolID)
-			switch status.Notification.TypeID {
-			case agency2.Notification_STATUS_UPDATE:
-				noAction := handleStatus(conn, status, true)
-				if noAction {
-					readyCh <- struct{}{}
+				status.Status.Notification.ConnectionID,
+				status.Status.Notification.ProtocolFamily,
+				status.Status.Notification.TypeID,
+				status.Status.Notification.ID,
+				status.Status.Notification.ProtocolID)
+			if status.Status.Notification.TypeID != agency2.Notification_NONE {
+				switch status.Status.Notification.TypeID {
+				case agency2.Notification_STATUS_UPDATE:
+					noAction := handleStatus(conn, status.Status, true)
+					if noAction {
+						readyCh <- struct{}{}
+					}
+					count++ // run two times to test our own sending
+					if count > 1 {
+						readyCh <- struct{}{}
+					}
+				case agency2.Notification_ACTION_NEEDED:
+					resume(conn.ClientConn, status.Status, true)
 				}
-				count++ // run two times to test our own sending
-				if count > 1 {
-					readyCh <- struct{}{}
+			} else if status.TypeID != agency2.Question_NONE {
+				switch status.TypeID {
+				case agency2.Question_ANSWER_NEEDED_PING:
+					reply(conn.ClientConn, status, true)
+				case agency2.Question_ANSWER_NEEDED_ISSUE_PROPOSE:
+					reply(conn.ClientConn, status, true)
+				case agency2.Question_ANSWER_NEEDED_PROOF_PROPOSE:
+					reply(conn.ClientConn, status, true)
+				case agency2.Question_ANSWER_NEEDED_PROOF_VERIFY:
+					reply(conn.ClientConn, status, true)
 				}
-			case agency2.Notification_ACTION_NEEDED:
-				resume(conn.ClientConn, status, true)
-			case agency2.Notification_ANSWER_NEEDED_PING:
-				reply(conn.ClientConn, status, true)
-			case agency2.Notification_ANSWER_NEEDED_ISSUE_PROPOSE:
-				reply(conn.ClientConn, status, true)
-			case agency2.Notification_ANSWER_NEEDED_PROOF_PROPOSE:
-				reply(conn.ClientConn, status, true)
-			case agency2.Notification_ANSWER_NEEDED_PROOF_VERIFY:
-				reply(conn.ClientConn, status, true)
+			} else {
+				glog.Infoln("======= both notification types are None")
 			}
 		case <-intCh:
 			cancel()
@@ -1088,17 +1095,17 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
 	return true
 }
 
-func reply(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
+func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
 	ctx := context.Background()
 	c := agency2.NewAgentServiceClient(conn)
 	cid, err := c.Give(ctx, &agency2.Answer{
-		ID:       status.Notification.ID,
-		ClientID: status.ClientID,
+		ID:       status.Status.Notification.ID,
+		ClientID: status.Status.ClientID,
 		Ack:      ack,
 		Info:     "testing says hello!",
 	})
 	err2.Check(err)
-	glog.Infof("Sending the answer (%s) send to client:%s\n", status.Notification.ID, cid.ID)
+	glog.Infof("Sending the answer (%s) send to client:%s\n", status.Status.Notification.ID, cid.ID)
 }
 
 func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
