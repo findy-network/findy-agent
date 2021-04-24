@@ -130,12 +130,15 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 }
 
 var notificationTypeID = map[string]pb.Notification_Type{
-	pltype.CANotifyStatus:                 pb.Notification_STATUS_UPDATE,
-	pltype.CANotifyUserAction:             pb.Notification_ACTION_NEEDED,
-	pltype.SAPing:                         pb.Notification_ANSWER_NEEDED_PING,
-	pltype.SAIssueCredentialAcceptPropose: pb.Notification_ANSWER_NEEDED_ISSUE_PROPOSE,
-	pltype.SAPresentProofAcceptPropose:    pb.Notification_ANSWER_NEEDED_PROOF_PROPOSE,
-	pltype.SAPresentProofAcceptValues:     pb.Notification_ANSWER_NEEDED_PROOF_VERIFY,
+	pltype.CANotifyStatus:     pb.Notification_STATUS_UPDATE,
+	pltype.CANotifyUserAction: pb.Notification_ACTION_NEEDED,
+}
+
+var questionTypeID = map[string]pb.Question_Type{
+	pltype.SAPing:                         pb.Question_ANSWER_NEEDED_PING,
+	pltype.SAIssueCredentialAcceptPropose: pb.Question_ANSWER_NEEDED_ISSUE_PROPOSE,
+	pltype.SAPresentProofAcceptPropose:    pb.Question_ANSWER_NEEDED_PROOF_PROPOSE,
+	pltype.SAPresentProofAcceptValues:     pb.Question_ANSWER_NEEDED_PROOF_VERIFY,
 }
 
 func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
