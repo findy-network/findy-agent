@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency/v1"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -13,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"

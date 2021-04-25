@@ -3,11 +3,11 @@ package server
 import (
 	"context"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency/v1"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"

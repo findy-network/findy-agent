@@ -6,9 +6,9 @@ import (
 	"flag"
 	"fmt"
 
-	agency "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	agencyServer "github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/utils"
+	agency "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"

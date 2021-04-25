@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency/v1"
-	ops "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -17,6 +15,8 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/cmds/onboard"
 	"github.com/findy-network/findy-agent/enclave"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"

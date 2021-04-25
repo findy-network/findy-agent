@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	agency2 "github.com/findy-network/findy-agent-api/grpc/agency/v1"
-	pb "github.com/findy-network/findy-agent-api/grpc/ops/v1"
 	"github.com/findy-network/findy-agent/agent/agency"
 	_ "github.com/findy-network/findy-agent/agent/caapi"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -32,6 +30,8 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/findy-network/findy-common-go/agency/client"
+	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/rpc"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
 	"github.com/findy-network/findy-wrapper-go/dto"
