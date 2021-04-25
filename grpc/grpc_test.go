@@ -249,7 +249,7 @@ func Test_handleAgencyAPI(t *testing.T) {
 		t.Run(fmt.Sprintf("ping %d", i), func(t *testing.T) {
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
-			opsClient := pb.NewDevOpsClient(conn)
+			opsClient := pb.NewDevOpsServiceClient(conn)
 			result, err := opsClient.Enter(ctx, &pb.Cmd{
 				Type: pb.Cmd_PING,
 			})

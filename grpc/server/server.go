@@ -41,7 +41,7 @@ func Serve(conf *rpc.ServerCfg) {
 
 		root := utils.Settings.GRPCAdmin()
 		ops.RegisterAgencyServiceServer(s, &agencyService{Root: root})
-		ops.RegisterDevOpsServer(s, &devOpsServer{Root: root})
+		ops.RegisterDevOpsServiceServer(s, &devOpsServer{Root: root})
 
 		glog.V(3).Infoln("GRPC OK")
 		return nil

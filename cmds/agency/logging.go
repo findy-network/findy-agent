@@ -32,7 +32,7 @@ func (c LoggingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	opsClient := pb.NewDevOpsClient(conn)
+	opsClient := pb.NewDevOpsServiceClient(conn)
 	err2.Empty.Try(opsClient.Enter(ctx, &pb.Cmd{
 		Type:    pb.Cmd_LOGGING,
 		Request: &pb.Cmd_Logging{Logging: c.Level},

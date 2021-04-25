@@ -15,7 +15,7 @@ import (
 )
 
 type devOpsServer struct {
-	agency.UnimplementedDevOpsServer
+	agency.UnimplementedDevOpsServiceServer
 	Root string
 }
 
