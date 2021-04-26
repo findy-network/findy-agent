@@ -206,7 +206,7 @@ func tryGetConnectStatus(
 		theirEndpoint = pw.Callee.Endp
 	}
 
-	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_Connection{
+	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_DIDExchangeStatus{
 		ID:            pw.Name,
 		MyDid:         myDID.DID,
 		TheirDid:      theirDID.DID,
@@ -237,7 +237,7 @@ func tryGetIssueStatus(
 		attrs = append(attrs, a)
 	}
 	return &pb.ProtocolStatus_IssueCredential{
-		IssueCredential: &pb.ProtocolStatus_Issue{
+		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
 			CredDefID: credRep.CredDefID,
 			SchemaID:  schemaID,
 			Attrs:     attrs,
@@ -275,20 +275,22 @@ func tryGetProofStatus(
 func tryGetTrustPingStatus(
 	_ *pb.ProtocolID,
 	_ psm.StateKey,
-) *pb.ProtocolStatus_TrustPing_ {
+) *pb.ProtocolStatus_TrustPing {
 
 	// TODO: add TrustPingRep to DB if we need to track Replied status
-	return &pb.ProtocolStatus_TrustPing_{
-		TrustPing: &pb.ProtocolStatus_TrustPing{Replied: false},
+	return &pb.ProtocolStatus_TrustPing{
+		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
 	}
 }
 
-func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_BasicMessage_ {
+func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey,
+) *pb.ProtocolStatus_BasicMessage {
+
 	msg, err := psm.GetBasicMessageRep(key)
 	err2.Check(err)
 
 	glog.V(1).Infoln("Get BasicMsg for:", key, "sent by me:", msg.SentByMe)
-	return &pb.ProtocolStatus_BasicMessage_{BasicMessage: &pb.ProtocolStatus_BasicMessage{
+	return &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
 		Content:       msg.Message,
 		SentByMe:      msg.SentByMe,
 		Delivered:     msg.Delivered,
