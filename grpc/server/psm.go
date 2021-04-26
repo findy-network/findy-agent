@@ -184,7 +184,9 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 	return pb.ProtocolState_RUNNING
 }
 
-func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Connection_ {
+func tryGetConnectStatus(
+	_ *pb.ProtocolID,
+	key psm.StateKey) *pb.ProtocolStatus_DIDExchange {
 	pw, err := psm.GetPairwiseRep(key)
 	err2.Check(err)
 
@@ -198,7 +200,7 @@ func tryGetConnectStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_
 		theirEndpoint = pw.Callee.Endp
 	}
 
-	return &pb.ProtocolStatus_Connection_{Connection: &pb.ProtocolStatus_Connection{
+	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_Connection{
 		ID:            pw.Name,
 		MyDid:         myDID.DID,
 		TheirDid:      theirDID.DID,
