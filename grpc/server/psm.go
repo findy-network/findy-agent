@@ -219,6 +219,7 @@ func tryGetIssueStatus(
 	_ *pb.ProtocolID,
 	key psm.StateKey,
 ) *pb.ProtocolStatus_IssueCredential {
+
 	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
 
 	// TODO: save schema id parsed to db? copied from original implementation
@@ -235,18 +236,26 @@ func tryGetIssueStatus(
 		}
 		attrs = append(attrs, a)
 	}
-	return &pb.ProtocolStatus_IssueCredential{IssueCredential: &pb.ProtocolStatus_Issue{
-		CredDefID: credRep.CredDefID,
-		SchemaID:  schemaID,
-		Attrs:     attrs,
-	}}
+	return &pb.ProtocolStatus_IssueCredential{
+		IssueCredential: &pb.ProtocolStatus_Issue{
+			CredDefID: credRep.CredDefID,
+			SchemaID:  schemaID,
+			Attrs:     attrs,
+		},
+	}
 }
 
-func tryGetProofStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Proof {
+func tryGetProofStatus(
+	_ *pb.ProtocolID,
+	key psm.StateKey,
+) *pb.ProtocolStatus_PresentProof {
+
 	proofRep, err := psm.GetPresentProofRep(key)
 	err2.Check(err)
 	if proofRep == nil {
-		return &pb.ProtocolStatus_Proof{Proof: &pb.Protocol_Proof{Attributes: nil}}
+		return &pb.ProtocolStatus_PresentProof{
+			PresentProof: &pb.Protocol_Proof{Attributes: nil},
+		}
 	}
 	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
 
@@ -258,12 +267,20 @@ func tryGetProofStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Pr
 		}
 		attrs = append(attrs, a)
 	}
-	return &pb.ProtocolStatus_Proof{Proof: &pb.Protocol_Proof{Attributes: attrs}}
+	return &pb.ProtocolStatus_PresentProof{
+		PresentProof: &pb.Protocol_Proof{Attributes: attrs},
+	}
 }
 
-func tryGetTrustPingStatus(_ *pb.ProtocolID, _ psm.StateKey) *pb.ProtocolStatus_TrustPing_ {
-	// todo: add TrustPingRep to DB if we need to track Replied status
-	return &pb.ProtocolStatus_TrustPing_{TrustPing: &pb.ProtocolStatus_TrustPing{Replied: false}}
+func tryGetTrustPingStatus(
+	_ *pb.ProtocolID,
+	_ psm.StateKey,
+) *pb.ProtocolStatus_TrustPing_ {
+
+	// TODO: add TrustPingRep to DB if we need to track Replied status
+	return &pb.ProtocolStatus_TrustPing_{
+		TrustPing: &pb.ProtocolStatus_TrustPing{Replied: false},
+	}
 }
 
 func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_BasicMessage_ {
