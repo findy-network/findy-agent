@@ -18,7 +18,12 @@ type didCommServer struct {
 	pb.UnimplementedProtocolServiceServer
 }
 
-func (s *didCommServer) Run(protocol *pb.Protocol, server pb.ProtocolService_RunServer) (err error) {
+func (s *didCommServer) Run(
+	protocol *pb.Protocol,
+	server pb.ProtocolService_RunServer,
+) (
+	err error,
+) {
 	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc run error: %s", err)
 		status := &pb.ProtocolState{
@@ -35,7 +40,8 @@ func (s *didCommServer) Run(protocol *pb.Protocol, server pb.ProtocolService_Run
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := e2.Task.Try(taskFrom(protocol))
-	glog.V(3).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeID)])
+	glog.V(3).Infoln(caDID, "-agent starts protocol:",
+		pb.Protocol_Type_name[int32(protocol.TypeID)])
 
 	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
 	statusChan := bus.WantAll.AddListener(key)
@@ -209,7 +215,10 @@ func tryGetConnectStatus(
 	}}
 }
 
-func tryGetIssueStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Issue_ {
+func tryGetIssueStatus(
+	_ *pb.ProtocolID,
+	key psm.StateKey,
+) *pb.ProtocolStatus_IssueCredential {
 	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
 
 	// TODO: save schema id parsed to db? copied from original implementation
@@ -226,7 +235,7 @@ func tryGetIssueStatus(_ *pb.ProtocolID, key psm.StateKey) *pb.ProtocolStatus_Is
 		}
 		attrs = append(attrs, a)
 	}
-	return &pb.ProtocolStatus_Issue_{Issue: &pb.ProtocolStatus_Issue{
+	return &pb.ProtocolStatus_IssueCredential{IssueCredential: &pb.ProtocolStatus_Issue{
 		CredDefID: credRep.CredDefID,
 		SchemaID:  schemaID,
 		Attrs:     attrs,
