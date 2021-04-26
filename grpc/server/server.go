@@ -88,8 +88,8 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 			task.CredDefID = &credDef.CredDefID
 
 			if credDef.GetAttributes() != nil {
-				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttrs()))
-				for i, attribute := range credDef.GetAttributes().GetAttrs() {
+				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttributes()))
+				for i, attribute := range credDef.GetAttributes().GetAttributes() {
 					attributes[i] = didcomm.CredentialAttribute{
 						Name:  attribute.Name,
 						Value: attribute.Value,

@@ -657,7 +657,7 @@ func TestIssue(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
-				&agency2.Protocol_Attributes{Attrs: []*agency2.Protocol_Attribute{{
+				&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}})
@@ -841,7 +841,7 @@ func BenchmarkIssue(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
-			&agency2.Protocol_Attributes{Attrs: []*agency2.Protocol_Attribute{{
+			&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
 				Name:  "email",
 				Value: strLiteral("email", "", i+1),
 			}}})
@@ -854,7 +854,7 @@ func BenchmarkIssue(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
-			&agency2.Protocol_Attributes{Attrs: []*agency2.Protocol_Attribute{{
+			&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
 				Name:  "email",
 				Value: strLiteral("email", "", i+1),
 			}}})
@@ -988,7 +988,7 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
-				&agency2.Protocol_Attributes{Attrs: []*agency2.Protocol_Attribute{{
+				&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}})
