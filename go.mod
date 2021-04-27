@@ -3,7 +3,7 @@ module github.com/findy-network/findy-agent
 go 1.16
 
 require (
-	github.com/findy-network/findy-common-go v0.1.4-0.20210426130842-e0c80abc84a0
+	github.com/findy-network/findy-common-go v0.1.4-0.20210427145956-ff49535573b2
 	github.com/findy-network/findy-wrapper-go v0.0.0-20210302063517-bb98c7f07ea4
 	github.com/go-co-op/gocron v0.7.0
 	github.com/go-test/deep v1.0.7
@@ -19,5 +19,3 @@ require (
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	google.golang.org/grpc v1.36.0
 )
-
-replace github.com/findy-network/findy-common-go => ../findy-common-go
