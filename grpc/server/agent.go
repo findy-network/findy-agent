@@ -166,7 +166,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	jStr := dto.ToJSON(invitation)
 
-	return &pb.Invitation{JsonStr: jStr}, nil
+	return &pb.Invitation{JSON: jStr}, nil
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
@@ -313,13 +313,14 @@ func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
 		q2send.Question = &pb.Question_IssuePropose{
 			IssuePropose: &pb.Question_IssueProposeMsg{
 				CredDefID:  question.IssuePropose.CredDefID,
-				ValuesJson: question.IssuePropose.ValuesJSON,
+				ValuesJSON: question.IssuePropose.ValuesJSON,
 			},
 		}
 	}
 	if question.ProofVerify != nil {
 		glog.V(1).Infoln("proof verify handling")
-		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0, len(question.ProofVerify.Attrs))
+		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0,
+			len(question.ProofVerify.Attrs))
 		for _, attr := range question.Attrs {
 			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
 				Value:     attr.Value,

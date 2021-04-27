@@ -466,9 +466,9 @@ func TestInvitation_NoOneRun(t *testing.T) {
 			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, r.JsonStr)
-			glog.Infoln(r.JsonStr)
-			agents[i].Invitation = r.JsonStr
+			assert.NotEmpty(t, r.JSON)
+			glog.Infoln(r.JSON)
+			agents[i].Invitation = r.JSON
 
 			assert.NoError(t, conn.Close())
 		})
@@ -571,7 +571,7 @@ loop:
 				glog.V(1).Infoln("closed from server")
 				break loop
 			}
-			glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJson)
+			glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJSON)
 			glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolID.ID, status.DID)
 			glog.Infoln("status DID (CA DID):", status.DID)
 			glog.Infoln("protocol Initiator:", status.ProtocolStatus.State.ProtocolID.Role)
@@ -1042,7 +1042,7 @@ loop:
 					if count > 1 {
 						readyCh <- struct{}{}
 					}
-				case agency2.Notification_ACTION_NEEDED:
+				case agency2.Notification_PROTOCOL_PAUSED:
 					resume(conn.ClientConn, status.Status, true)
 				}
 			} else if status.TypeID != agency2.Question_NONE {

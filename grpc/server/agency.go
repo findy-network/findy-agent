@@ -58,7 +58,7 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 		Result: &ops.OnboardResult_OKResult{
 			JWT:            jwt.BuildJWTWithLabel(r.CADID, onboarding.Email),
 			CADID:          r.CADID,
-			InvitationJson: dto.ToJSON(r.Invitation),
+			InvitationJSON: dto.ToJSON(r.Invitation),
 		},
 	}, nil
 }

@@ -152,7 +152,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 	}
 	ps = &pb.ProtocolStatus{
 		State:      state,
-		StatusJson: statusJSON,
+		StatusJSON: statusJSON,
 	}
 	switch id.TypeID {
 	case pb.Protocol_DIDEXCHANGE:

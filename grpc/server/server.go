@@ -74,7 +74,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 			panic(errors.New("connection attrs cannot be nil"))
 		}
 		var invitation didexchange.Invitation
-		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJson(), &invitation)
+		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
 		task.ConnectionInvitation = &invitation
 		task.Info = protocol.GetDIDExchange().GetLabel()
 		task.Nonce = invitation.ID // Important!! we must use same id!
@@ -97,9 +97,9 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				}
 				task.CredentialAttrs = &attributes
 				glog.V(1).Infoln("set cred from attrs")
-			} else if credDef.GetAttributesJson() != "" {
+			} else if credDef.GetAttributesJSON() != "" {
 				var credAttrs []didcomm.CredentialAttribute
-				dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
+				dto.FromJSONStr(credDef.GetAttributesJSON(), &credAttrs)
 				task.CredentialAttrs = &credAttrs
 				glog.V(1).Infoln("set cred attrs from json")
 			}
@@ -107,11 +107,11 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 	case pb.Protocol_PRESENT_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
 			proofReq := protocol.GetPresentProof()
-			if proofReq.GetAttributesJson() != "" {
+			if proofReq.GetAttributesJSON() != "" {
 				var proofAttrs []didcomm.ProofAttribute
-				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
+				dto.FromJSONStr(proofReq.GetAttributesJSON(), &proofAttrs)
 				task.ProofAttrs = &proofAttrs
-				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJson())
+				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJSON())
 			} else if proofReq.GetAttributes() != nil {
 				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
 				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
@@ -131,7 +131,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 
 var notificationTypeID = map[string]pb.Notification_Type{
 	pltype.CANotifyStatus:     pb.Notification_STATUS_UPDATE,
-	pltype.CANotifyUserAction: pb.Notification_ACTION_NEEDED,
+	pltype.CANotifyUserAction: pb.Notification_PROTOCOL_PAUSED,
 }
 
 var questionTypeID = map[string]pb.Question_Type{
