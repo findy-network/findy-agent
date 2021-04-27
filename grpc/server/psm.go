@@ -241,7 +241,7 @@ func tryGetIssueStatus(
 		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
 			CredDefID: credRep.CredDefID,
 			SchemaID:  schemaID,
-			Attrs: &pb.Protocol_IssuingAttributes{
+			Attributes: &pb.Protocol_IssuingAttributes{
 				Attributes: attrs,
 			},
 		},
