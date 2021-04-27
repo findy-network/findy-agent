@@ -254,7 +254,11 @@ func tryGetProofStatus(
 	err2.Check(err)
 	if proofRep == nil {
 		return &pb.ProtocolStatus_PresentProof{
-			PresentProof: &pb.Protocol_Proof{Attributes: nil},
+			PresentProof: &pb.ProtocolStatus_PresentProofStatus{
+				Proof: &pb.Protocol_Proof{
+					Attributes: nil,
+				},
+			},
 		}
 	}
 	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
@@ -268,7 +272,11 @@ func tryGetProofStatus(
 		attrs = append(attrs, a)
 	}
 	return &pb.ProtocolStatus_PresentProof{
-		PresentProof: &pb.Protocol_Proof{Attributes: attrs},
+		PresentProof: &pb.ProtocolStatus_PresentProofStatus{
+			Proof: &pb.Protocol_Proof{
+				Attributes: attrs,
+			},
+		},
 	}
 }
 
