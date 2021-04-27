@@ -1047,13 +1047,13 @@ loop:
 				}
 			} else if status.TypeID != agency2.Question_NONE {
 				switch status.TypeID {
-				case agency2.Question_ANSWER_NEEDED_PING:
+				case agency2.Question_PING_WAITS:
 					reply(conn.ClientConn, status, true)
-				case agency2.Question_ANSWER_NEEDED_ISSUE_PROPOSE:
+				case agency2.Question_ISSUE_PROPOSE_WAITS:
 					reply(conn.ClientConn, status, true)
-				case agency2.Question_ANSWER_NEEDED_PROOF_PROPOSE:
+				case agency2.Question_PROOF_PROPOSE_WAITS:
 					reply(conn.ClientConn, status, true)
-				case agency2.Question_ANSWER_NEEDED_PROOF_VERIFY:
+				case agency2.Question_PROOF_VERIFY_WAITS:
 					reply(conn.ClientConn, status, true)
 				}
 			} else {

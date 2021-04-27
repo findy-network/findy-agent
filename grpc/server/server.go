@@ -135,10 +135,10 @@ var notificationTypeID = map[string]pb.Notification_Type{
 }
 
 var questionTypeID = map[string]pb.Question_Type{
-	pltype.SAPing:                         pb.Question_ANSWER_NEEDED_PING,
-	pltype.SAIssueCredentialAcceptPropose: pb.Question_ANSWER_NEEDED_ISSUE_PROPOSE,
-	pltype.SAPresentProofAcceptPropose:    pb.Question_ANSWER_NEEDED_PROOF_PROPOSE,
-	pltype.SAPresentProofAcceptValues:     pb.Question_ANSWER_NEEDED_PROOF_VERIFY,
+	pltype.SAPing:                         pb.Question_PING_WAITS,
+	pltype.SAIssueCredentialAcceptPropose: pb.Question_ISSUE_PROPOSE_WAITS,
+	pltype.SAPresentProofAcceptPropose:    pb.Question_PROOF_PROPOSE_WAITS,
+	pltype.SAPresentProofAcceptValues:     pb.Question_PROOF_VERIFY_WAITS,
 }
 
 func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
