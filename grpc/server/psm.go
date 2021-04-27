@@ -228,9 +228,10 @@ func tryGetIssueStatus(
 
 	schemaID := credOfferMap["schema_id"].(string)
 
-	attrs := make([]*pb.Protocol_Attribute, 0, len(credRep.Attributes))
+	attrs := make([]*pb.Protocol_IssuingAttributes_Attribute,
+		0, len(credRep.Attributes))
 	for _, credAttr := range credRep.Attributes {
-		a := &pb.Protocol_Attribute{
+		a := &pb.Protocol_IssuingAttributes_Attribute{
 			Name:  credAttr.Name,
 			Value: credAttr.Value,
 		}
@@ -240,7 +241,9 @@ func tryGetIssueStatus(
 		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
 			CredDefID: credRep.CredDefID,
 			SchemaID:  schemaID,
-			Attrs:     attrs,
+			Attrs: &pb.Protocol_IssuingAttributes{
+				Attributes: attrs,
+			},
 		},
 	}
 }

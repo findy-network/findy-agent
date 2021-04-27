@@ -657,10 +657,11 @@ func TestIssue(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
-				&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
-					Name:  "email",
-					Value: strLiteral("email", "", i+1),
-				}}})
+				&agency2.Protocol_IssuingAttributes{
+					Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+						Name:  "email",
+						Value: strLiteral("email", "", i+1),
+					}}})
 			assert.NoError(t, err)
 			for status := range r {
 				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
@@ -841,10 +842,11 @@ func BenchmarkIssue(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
-			&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
-				Name:  "email",
-				Value: strLiteral("email", "", i+1),
-			}}})
+			&agency2.Protocol_IssuingAttributes{
+				Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				}}})
 		err2.Check(err)
 		for range r {
 		}
@@ -854,10 +856,11 @@ func BenchmarkIssue(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
-			&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
-				Name:  "email",
-				Value: strLiteral("email", "", i+1),
-			}}})
+			&agency2.Protocol_IssuingAttributes{
+				Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				}}})
 		err2.Check(err)
 		for range r {
 		}
@@ -988,10 +991,11 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.IssueWithAttrs(ctx, agents[0].CredDefID,
-				&agency2.Protocol_AttributesMsg{Attributes: []*agency2.Protocol_Attribute{{
-					Name:  "email",
-					Value: strLiteral("email", "", i+1),
-				}}})
+				&agency2.Protocol_IssuingAttributes{
+					Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+						Name:  "email",
+						Value: strLiteral("email", "", i+1),
+					}}})
 			assert.NoError(t, err)
 			for status := range r {
 				glog.Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
