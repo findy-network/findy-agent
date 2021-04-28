@@ -208,8 +208,8 @@ func tryGetConnectStatus(
 
 	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_DIDExchangeStatus{
 		ID:            pw.Name,
-		MyDid:         myDID.DID,
-		TheirDid:      theirDID.DID,
+		MyDID:         myDID.DID,
+		TheirDID:      theirDID.DID,
 		TheirEndpoint: theirEndpoint,
 		TheirLabel:    pw.TheirLabel,
 	}}
