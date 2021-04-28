@@ -8,14 +8,14 @@ import (
 	"errors"
 	"fmt"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency"
-	"github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-common-go/rpc"
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -36,12 +36,12 @@ func Serve(conf *rpc.ServerCfg) {
 	}
 
 	conf.Register = func(s *grpc.Server) error {
-		pb.RegisterDIDCommServer(s, &didCommServer{})
-		pb.RegisterAgentServer(s, &agentServer{})
+		pb.RegisterProtocolServiceServer(s, &didCommServer{})
+		pb.RegisterAgentServiceServer(s, &agentServer{})
 
 		root := utils.Settings.GRPCAdmin()
-		ops.RegisterAgencyServer(s, &agencyService{Root: root})
-		ops.RegisterDevOpsServer(s, &devOpsServer{Root: root})
+		ops.RegisterAgencyServiceServer(s, &agencyService{Root: root})
+		ops.RegisterDevOpsServiceServer(s, &devOpsServer{Root: root})
 
 		glog.V(3).Infoln("GRPC OK")
 		return nil
@@ -58,38 +58,38 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 
 	task := &comm.Task{
 		Nonce:   utils.UUID(),
-		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeId),
-		Message: protocol.ConnectionId,
+		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeID),
+		Message: protocol.ConnectionID,
 	}
-	switch protocol.TypeId {
+	switch protocol.TypeID {
 	case pb.Protocol_TRUST_PING:
-		if protocol.ConnectionId == "" {
+		if protocol.ConnectionID == "" {
 			glog.Warningln("pinging first found connection, conn-id was empty")
 		}
 	case pb.Protocol_BASIC_MESSAGE:
-		task.Info = protocol.GetBasicMessage()
+		task.Info = protocol.GetBasicMessage().Content
 		glog.V(1).Infoln("basic_message content:", task.Info)
-	case pb.Protocol_CONNECT:
-		if protocol.GetConnAttr() == nil {
+	case pb.Protocol_DIDEXCHANGE:
+		if protocol.GetDIDExchange() == nil {
 			panic(errors.New("connection attrs cannot be nil"))
 		}
 		var invitation didexchange.Invitation
-		dto.FromJSONStr(protocol.GetConnAttr().GetInvitationJson(), &invitation)
+		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
 		task.ConnectionInvitation = &invitation
-		task.Info = protocol.GetConnAttr().GetLabel()
+		task.Info = protocol.GetDIDExchange().GetLabel()
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
-	case pb.Protocol_ISSUE:
+	case pb.Protocol_ISSUE_CREDENTIAL:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			credDef := protocol.GetCredDef()
+			credDef := protocol.GetIssueCredential()
 			if credDef == nil {
 				panic(errors.New("cred def cannot be nil for issuing protocol"))
 			}
-			task.CredDefID = &credDef.CredDefId
+			task.CredDefID = &credDef.CredDefID
 
-			if credDef.GetAttrs_() != nil {
-				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttrs_().GetAttrs()))
-				for i, attribute := range credDef.GetAttrs_().GetAttrs() {
+			if credDef.GetAttributes() != nil {
+				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttributes()))
+				for i, attribute := range credDef.GetAttributes().GetAttributes() {
 					attributes[i] = didcomm.CredentialAttribute{
 						Name:  attribute.Name,
 						Value: attribute.Value,
@@ -97,28 +97,28 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				}
 				task.CredentialAttrs = &attributes
 				glog.V(1).Infoln("set cred from attrs")
-			} else if credDef.GetAttributesJson() != "" {
+			} else if credDef.GetAttributesJSON() != "" {
 				var credAttrs []didcomm.CredentialAttribute
-				dto.FromJSONStr(credDef.GetAttributesJson(), &credAttrs)
+				dto.FromJSONStr(credDef.GetAttributesJSON(), &credAttrs)
 				task.CredentialAttrs = &credAttrs
 				glog.V(1).Infoln("set cred attrs from json")
 			}
 		}
-	case pb.Protocol_PROOF:
+	case pb.Protocol_PRESENT_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR {
-			proofReq := protocol.GetProofReq()
-			if proofReq.GetAttributesJson() != "" {
+			proofReq := protocol.GetPresentProof()
+			if proofReq.GetAttributesJSON() != "" {
 				var proofAttrs []didcomm.ProofAttribute
-				dto.FromJSONStr(proofReq.GetAttributesJson(), &proofAttrs)
+				dto.FromJSONStr(proofReq.GetAttributesJSON(), &proofAttrs)
 				task.ProofAttrs = &proofAttrs
-				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJson())
-			} else if proofReq.GetAttrs() != nil {
-				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttrs().GetAttrs()))
-				for i, attribute := range proofReq.GetAttrs().GetAttrs() {
+				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJSON())
+			} else if proofReq.GetAttributes() != nil {
+				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
+				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
 					attributes[i] = didcomm.ProofAttribute{
 						Name:      attribute.Name,
-						CredDefID: attribute.CredDefId,
-						Predicate: attribute.Predicate,
+						CredDefID: attribute.CredDefID,
+						//Predicate: attribute.Predicate,
 					}
 				}
 				task.ProofAttrs = &attributes
@@ -130,12 +130,15 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 }
 
 var notificationTypeID = map[string]pb.Notification_Type{
-	pltype.CANotifyStatus:                 pb.Notification_STATUS_UPDATE,
-	pltype.CANotifyUserAction:             pb.Notification_ACTION_NEEDED,
-	pltype.SAPing:                         pb.Notification_ANSWER_NEEDED_PING,
-	pltype.SAIssueCredentialAcceptPropose: pb.Notification_ANSWER_NEEDED_ISSUE_PROPOSE,
-	pltype.SAPresentProofAcceptPropose:    pb.Notification_ANSWER_NEEDED_PROOF_PROPOSE,
-	pltype.SAPresentProofAcceptValues:     pb.Notification_ANSWER_NEEDED_PROOF_VERIFY,
+	pltype.CANotifyStatus:     pb.Notification_STATUS_UPDATE,
+	pltype.CANotifyUserAction: pb.Notification_PROTOCOL_PAUSED,
+}
+
+var questionTypeID = map[string]pb.Question_Type{
+	pltype.SAPing:                         pb.Question_PING_WAITS,
+	pltype.SAIssueCredentialAcceptPropose: pb.Question_ISSUE_PROPOSE_WAITS,
+	pltype.SAPresentProofAcceptPropose:    pb.Question_PROOF_PROPOSE_WAITS,
+	pltype.SAPresentProofAcceptValues:     pb.Question_PROOF_VERIFY_WAITS,
 }
 
 func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
@@ -152,15 +155,15 @@ func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 
 // typeID is look up table for
 var typeID = map[int32]string{
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_CONNECT):       pltype.CAPairwiseCreate,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE):         pltype.CACredOffer,
-	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE):         pltype.CACredRequest,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PROOF):         pltype.CAProofRequest,
-	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_PROOF):         pltype.CAProofPropose,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_TRUST_PING):    pltype.CATrustPing,
-	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_BASIC_MESSAGE): pltype.CABasicMessage,
-	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_ISSUE):            pltype.CAContinueIssueCredentialProtocol,
-	int32(10*pb.Protocol_RESUME) + int32(pb.Protocol_PROOF):            pltype.CAContinuePresentProofProtocol,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_DIDEXCHANGE):      pltype.CAPairwiseCreate,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredOffer,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredRequest,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PRESENT_PROOF):    pltype.CAProofRequest,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_PRESENT_PROOF):    pltype.CAProofPropose,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_TRUST_PING):       pltype.CATrustPing,
+	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_BASIC_MESSAGE):    pltype.CABasicMessage,
+	int32(10*pb.Protocol_RESUMER) + int32(pb.Protocol_ISSUE_CREDENTIAL):   pltype.CAContinueIssueCredentialProtocol,
+	int32(10*pb.Protocol_RESUMER) + int32(pb.Protocol_PRESENT_PROOF):      pltype.CAContinuePresentProofProtocol,
 }
 
 // to get protocol family
@@ -174,9 +177,9 @@ var protocolName = [...]string{
 }
 
 var protocolType = map[string]pb.Protocol_Type{
-	pltype.AriesProtocolConnection: pb.Protocol_CONNECT,
-	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE,
-	pltype.ProtocolPresentProof:    pb.Protocol_PROOF,
+	pltype.AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
+	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
+	pltype.ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
 	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
 	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
 }

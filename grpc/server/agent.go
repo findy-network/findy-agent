@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
@@ -13,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
@@ -26,7 +26,7 @@ import (
 const keepaliveTimer = 50 * time.Second
 
 type agentServer struct {
-	pb.UnimplementedAgentServer
+	pb.UnimplementedAgentServiceServer
 }
 
 func (a *agentServer) Ping(
@@ -39,7 +39,7 @@ func (a *agentServer) Ping(
 	defer err2.Annotate("agent server ping", &err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent ping:", pm.Id)
+	glog.V(1).Infoln(caDID, "-agent ping:", pm.ID)
 
 	saReply := false
 	if pm.PingController {
@@ -49,7 +49,7 @@ func (a *agentServer) Ping(
 		err2.Check(err)
 		saReply = ask.Ready()
 	}
-	return &pb.PingMsg{Id: pm.Id, PingController: saReply}, nil
+	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
 }
 
 func (a *agentServer) CreateSchema(
@@ -67,12 +67,12 @@ func (a *agentServer) CreateSchema(
 	sch := &ssi.Schema{
 		Name:    s.Name,
 		Version: s.Version,
-		Attrs:   s.Attrs,
+		Attrs:   s.Attributes,
 	}
 	err2.Check(sch.Create(ca.RootDid().Did()))
 	err2.Check(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
-	return &pb.Schema{Id: sch.ValidID()}, nil
+	return &pb.Schema{ID: sch.ValidID()}, nil
 }
 
 func (a *agentServer) CreateCredDef(
@@ -86,9 +86,9 @@ func (a *agentServer) CreateCredDef(
 
 	caDID, ca := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
-		"schema:", cdc.SchemaId)
+		"schema:", cdc.SchemaID)
 
-	sch := &ssi.Schema{ID: cdc.SchemaId}
+	sch := &ssi.Schema{ID: cdc.SchemaID}
 	err2.Check(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
@@ -96,7 +96,7 @@ func (a *agentServer) CreateCredDef(
 	err2.Check(r.Err())
 	cd := r.Str2()
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
-	return &pb.CredDef{Id: r.Str1()}, nil
+	return &pb.CredDef{ID: r.Str1()}, nil
 }
 
 func (a *agentServer) GetSchema(
@@ -109,11 +109,11 @@ func (a *agentServer) GetSchema(
 	defer err2.Annotate("get schema", &err)
 
 	caDID, ca := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent get schema:", s.Id)
+	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
 
-	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.Id)
+	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID)
 	err2.Check(err)
-	return &pb.SchemaData{Id: sID, Data: schema}, nil
+	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
 func (a *agentServer) GetCredDef(
@@ -126,19 +126,19 @@ func (a *agentServer) GetCredDef(
 	defer err2.Annotate("get creddef", &err)
 
 	caDID, ca := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.Id)
+	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
 
-	def := err2.String.Try(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.Id))
-	return &pb.CredDefData{Id: cd.Id, Data: def}, nil
+	def := err2.String.Try(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
+	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 
 func (a *agentServer) SetImplId(ctx context.Context, implementation *pb.SAImplementation) (impl *pb.SAImplementation, err error) {
 	defer err2.Annotate("set impl", &err)
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent set impl:", implementation.Id)
-	receiver.AttachSAImpl(implementation.Id, implementation.Persistent)
-	return &pb.SAImplementation{Id: implementation.Id}, nil
+	glog.V(1).Infoln(caDID, "-agent set impl:", implementation.ID)
+	receiver.AttachSAImpl(implementation.ID, implementation.Persistent)
+	return &pb.SAImplementation{ID: implementation.ID}, nil
 }
 
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
@@ -148,7 +148,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 	ep := receiver.CAEndp(true)
 	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
 
-	id := base.Id
+	id := base.ID
 	if id == "" {
 		id = utils.UUID()
 	}
@@ -166,7 +166,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	jStr := dto.ToJSON(invitation)
 
-	return &pb.Invitation{JsonStr: jStr}, nil
+	return &pb.Invitation{JSON: jStr}, nil
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
@@ -174,23 +174,23 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
 	bus.WantAllAgentAnswers.AgentSendAnswer(bus.AgentAnswer{
-		ID: answer.Id,
+		ID: answer.ID,
 		AgentKeyType: bus.AgentKeyType{
 			AgentDID: receiver.WDID(),
-			ClientID: answer.ClientId.Id,
+			ClientID: answer.ClientID.ID,
 		},
 		ACK:  answer.Ack,
 		Info: "welcome from gRPC",
 	})
 
-	return &pb.ClientID{Id: answer.ClientId.Id}, nil
+	return &pb.ClientID{ID: answer.ClientID.ID}, nil
 }
 
-func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer) (err error) {
+func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_ListenServer) (err error) {
 	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.AgentStatus{
-			ClientId: &pb.ClientID{Id: clientID.Id},
+			ClientID: &pb.ClientID{ID: clientID.ID},
 		}
 		if err := server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
@@ -199,45 +199,32 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.Agent_ListenServer
 
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.Id)
+	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
 	listenKey := bus.AgentKeyType{
 		AgentDID: receiver.WDID(),
-		ClientID: clientID.Id,
+		ClientID: clientID.ID,
 	}
 	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
 	defer bus.WantAllAgentActions.AgentRmListener(listenKey)
-	questionChan := bus.WantAllAgentAnswers.AgentAddAnswerer(listenKey)
-	defer bus.WantAllAgentAnswers.AgentRmAnswerer(listenKey)
 
 loop:
 	for {
 		select {
-		case question := <-questionChan:
-			glog.V(1).Infoln("QUESTION in conn-id:", question.ConnectionID,
-				"QID:", question.ID,
-				question.ProtocolFamily,
-				notificationTypeID[question.NotificationType])
-			assert.D.True(clientID.Id == question.ClientID)
-			agentStatus := processQuestion(question)
-			agentStatus.ClientId.Id = question.ClientID
-			err2.Check(server.Send(agentStatus))
-			glog.V(1).Infoln("send question..")
-
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
-			assert.D.True(clientID.Id == notify.ClientID)
+			assert.D.True(clientID.ID == notify.ClientID)
 			agentStatus := processNofity(notify)
-			agentStatus.ClientId.Id = notify.ClientID
+			agentStatus.ClientID.ID = notify.ClientID
 			err2.Check(server.Send(agentStatus))
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
 			glog.V(7).Infoln("sending keepalive timer")
 			err2.Check(server.Send(&pb.AgentStatus{
-				ClientId: &pb.ClientID{Id: clientID.Id},
+				ClientID: &pb.ClientID{ID: clientID.ID},
 				Notification: &pb.Notification{
-					TypeId: pb.Notification_KEEPALIVE,
+					TypeID: pb.Notification_KEEPALIVE,
 				}}))
 
 		case <-ctx.Done():
@@ -248,58 +235,117 @@ loop:
 	return nil
 }
 
-func processQuestion(question bus.AgentQuestion) (as *pb.AgentStatus) {
-	agentStatus := pb.AgentStatus{
-		ClientId: &pb.ClientID{Id: question.AgentDID},
-		Notification: &pb.Notification{
-			Id:             question.ID,
-			PID:            question.PID,
-			TypeId:         notificationTypeID[question.NotificationType],
-			ConnectionId:   question.ConnectionID,
-			ProtocolId:     question.ProtocolID,
-			ProtocolFamily: question.ProtocolFamily,
-			ProtocolType:   protocolType[question.ProtocolFamily],
-			Timestamp:      question.Timestamp,
-			Role:           roleType[question.Initiator],
+func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitServer) (err error) {
+	defer err2.Handle(&err, func() {
+		glog.Errorf("grpc agent listen error: %s", err)
+		status := &pb.Question{
+			Status: &pb.AgentStatus{
+				ClientID: &pb.ClientID{ID: clientID.ID},
+			},
+		}
+		if err := server.Send(status); err != nil {
+			glog.Errorln("error sending response:", err)
+		}
+	})
+
+	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent starts Wait():", clientID.ID)
+
+	listenKey := bus.AgentKeyType{
+		AgentDID: receiver.WDID(),
+		ClientID: clientID.ID,
+	}
+	questionChan := bus.WantAllAgentAnswers.AgentAddAnswerer(listenKey)
+	defer bus.WantAllAgentAnswers.AgentRmAnswerer(listenKey)
+
+loop:
+	for {
+		select {
+		case question := <-questionChan:
+			glog.V(1).Infoln("QUESTION in conn-id:", question.ConnectionID,
+				"QID:", question.ID,
+				question.ProtocolFamily,
+				questionTypeID[question.NotificationType])
+			assert.D.True(clientID.ID == question.ClientID)
+			q2send := processQuestion(question)
+			q2send.Status.ClientID.ID = question.ClientID
+			err2.Check(server.Send(q2send))
+			glog.V(1).Infoln("send question..")
+
+		case <-time.After(keepaliveTimer):
+			// send keep alive message
+			glog.V(7).Infoln("sending keepalive timer")
+			err2.Check(server.Send(&pb.Question{
+				Status: &pb.AgentStatus{
+					ClientID: &pb.ClientID{ID: clientID.ID},
+				},
+				TypeID: pb.Question_KEEPALIVE,
+			}))
+
+		case <-ctx.Done():
+			glog.V(1).Infoln("ctx.Done() received, returning")
+			break loop
+		}
+	}
+	return nil
+}
+
+func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
+	q2send := pb.Question{
+		TypeID: questionTypeID[question.NotificationType],
+		Status: &pb.AgentStatus{
+			ClientID: &pb.ClientID{ID: question.AgentDID},
+			Notification: &pb.Notification{
+				ID:             question.ID,
+				PID:            question.PID,
+				ConnectionID:   question.ConnectionID,
+				ProtocolID:     question.ProtocolID,
+				ProtocolFamily: question.ProtocolFamily,
+				ProtocolType:   protocolType[question.ProtocolFamily],
+				Timestamp:      question.Timestamp,
+				Role:           roleType[question.Initiator],
+			},
 		},
 	}
 	if question.IssuePropose != nil {
 		glog.V(1).Infoln("issue propose handling")
-		agentStatus.Notification.Question = &pb.Notification_IssuePropose_{
-			IssuePropose: &pb.Notification_IssuePropose{
-				CredDefId:  question.IssuePropose.CredDefID,
-				ValuesJson: question.IssuePropose.ValuesJSON,
+		q2send.Question = &pb.Question_IssuePropose{
+			IssuePropose: &pb.Question_IssueProposeMsg{
+				CredDefID:  question.IssuePropose.CredDefID,
+				ValuesJSON: question.IssuePropose.ValuesJSON,
 			},
 		}
 	}
 	if question.ProofVerify != nil {
 		glog.V(1).Infoln("proof verify handling")
-		attrs := make([]*pb.Notification_ProofVerify_Attr, 0, len(question.ProofVerify.Attrs))
+		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0,
+			len(question.ProofVerify.Attrs))
 		for _, attr := range question.Attrs {
-			attrs = append(attrs, &pb.Notification_ProofVerify_Attr{
+			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
 				Value:     attr.Value,
 				Name:      attr.Name,
-				CredDefId: attr.CredDefID,
-				Predicate: attr.Predicate,
+				CredDefID: attr.CredDefID,
+				//Predicate: attr.Predicate,
 			})
 		}
-		agentStatus.Notification.Question = &pb.Notification_ProofVerify_{
-			ProofVerify: &pb.Notification_ProofVerify{
-				Attrs: attrs,
+		q2send.Question = &pb.Question_ProofVerify{
+			ProofVerify: &pb.Question_ProofVerifyMsg{
+				Attributes: attrs,
 			},
 		}
 	}
-	return &agentStatus
+	return &q2send
 }
 
 func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
 	agentStatus := pb.AgentStatus{
-		ClientId: &pb.ClientID{Id: notify.AgentDID},
+		ClientID: &pb.ClientID{ID: notify.AgentDID},
 		Notification: &pb.Notification{
-			Id:             notify.ID,
-			TypeId:         notificationTypeID[notify.NotificationType],
-			ConnectionId:   notify.ConnectionID,
-			ProtocolId:     notify.ProtocolID,
+			ID:             notify.ID,
+			TypeID:         notificationTypeID[notify.NotificationType],
+			ConnectionID:   notify.ConnectionID,
+			ProtocolID:     notify.ProtocolID,
 			ProtocolFamily: notify.ProtocolFamily,
 			ProtocolType:   protocolType[notify.ProtocolFamily],
 			Timestamp:      notify.Timestamp,

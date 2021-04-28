@@ -5,9 +5,9 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/findy-network/findy-agent-api/grpc/ops"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-common-go/agency/client"
+	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/lainio/err2"
 )
 
@@ -32,7 +32,7 @@ func (c CountCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	opsClient := pb.NewDevOpsClient(conn)
+	opsClient := pb.NewDevOpsServiceClient(conn)
 	result, err := opsClient.Enter(ctx, &pb.Cmd{
 		Type: pb.Cmd_COUNT,
 	})
