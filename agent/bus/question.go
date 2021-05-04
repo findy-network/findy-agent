@@ -68,13 +68,14 @@ func (m mapIndex) AgentRmAnswerer(key AgentKeyType) {
 // AgentSendQuestion sends to question to first found answerer and returns a
 // channel for the answer. If answerer doesn't exist it returns nil.
 func (m mapIndex) AgentSendQuestion(question AgentQuestion) AgentAnswerChan {
-	questionChannels[m].Lock()
-	defer questionChannels[m].Unlock()
+	questionChannels[m].Lock() // cannot use defer for unlocking, see below
 
 	key := question.AgentKeyType
 	// send question to first answerer
 	for k, ch := range questionChannels[m].agentQuestionMap {
 		if key.AgentDID == k.AgentDID {
+			questionChannels[m].Unlock() // first safe opportunity
+
 			glog.V(3).Infoln(key.AgentDID, " agent QUESTION ID:", question.ID)
 			question.ClientID = k.ClientID
 			question.AgentAnswerChan = make(AgentAnswerChan, 1)
@@ -85,20 +86,23 @@ func (m mapIndex) AgentSendQuestion(question AgentQuestion) AgentAnswerChan {
 			return question.AgentAnswerChan
 		}
 	}
+	questionChannels[m].Unlock() // second exit point
 	return nil
 }
 
 // AgentSendAnswer is the function where answer to a question can be send by
 // clientID which must be registered AgentAddAnswerer
 func (m mapIndex) AgentSendAnswer(answer AgentAnswer) {
-	askedQuestions[m].Lock()
-	defer askedQuestions[m].Unlock()
+	askedQuestions[m].Lock() // cannot use defer unlocking, see below
 
 	if q, ok := askedQuestions[m].questionMap[answer.ID]; ok {
-		glog.V(3).Infoln(q.AgentDID, " agent ANSWER for QID:", answer.ID)
-		q.AgentAnswerChan <- answer
+		c := q.AgentAnswerChan
 		delete(askedQuestions[m].questionMap, answer.ID)
+		askedQuestions[m].Unlock()
+		glog.V(3).Infoln(q.AgentDID, " agent ANSWER for QID:", answer.ID)
+		c <- answer
 	} else {
+		askedQuestions[m].Unlock()
 		glog.Warningf("couldn't find question channel for %s", answer.ID)
 	}
 }
