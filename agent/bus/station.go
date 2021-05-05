@@ -57,28 +57,32 @@ func (m mapIndex) RmListener(key KeyType) {
 }
 
 func (m mapIndex) Broadcast(key KeyType, state psm.SubState) {
+	// We need to unlock as soon as possible that we don't keep lock when
+	// blocking channel send at the end.
 	Maps[m].Lock()
-	defer Maps[m].Unlock()
 
 	c, ok := Maps[m].stationMap[key]
 	if !ok {
+		Maps[m].Unlock() // Manual unlock needed, see below
 		return
 	}
+	Maps[m].Unlock() // Important! Leve lock before writing channel
 
 	c <- state
 }
 
 func (s *Station) BroadcastReady(key KeyType, ok bool) {
 	s.lk.Lock()
-	defer s.lk.Unlock()
 
 	c, found := s.channels[key]
 	if !found {
+		s.lk.Unlock()
 		return
 	}
-
 	// we broadcast the ready-info only once
 	delete(s.channels, key)
+	s.lk.Unlock()
+
 	c <- ok
 }
 

@@ -790,26 +790,27 @@ func TestListen(t *testing.T) {
 			go doListen(ca.DID, intCh, readyCh, waitCh)
 		}
 	}
+
+	// first CA sends messages to listeners
 	i := 0
 	ca := agents[i]
-	/*for i, ca := range agents*/ {
-		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
-			conn := client.TryOpen(ca.DID, baseCfg)
+	{
+		conn := client.TryOpen(ca.DID, baseCfg)
 
-			ctx := context.Background()
-			agency2.NewProtocolServiceClient(conn)
-			<-waitCh
-			r, err := client.Pairwise{
-				ID:   ca.ConnID[0],
-				Conn: conn,
-			}.BasicMessage(ctx, fmt.Sprintf("# %d. basic message test string", i))
-			assert.NoError(t, err)
-			for status := range r {
-				glog.Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
-			}
-		})
+		ctx := context.Background()
+		agency2.NewProtocolServiceClient(conn)
+		<-waitCh
+		r, err := client.Pairwise{
+			ID:   ca.ConnID[0],
+			Conn: conn,
+		}.BasicMessage(ctx, fmt.Sprintf("# %d. basic message test string", i))
+		assert.NoError(t, err)
+		for status := range r {
+			glog.Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolID, status.State)
+			assert.Equal(t, agency2.ProtocolState_OK, status.State)
+		}
 	}
+	glog.Infoln("*** breaking out..")
 	<-readyCh           // listener is tested now and it's ready
 	intCh <- struct{}{} // tell it to stop
 
@@ -1004,6 +1005,7 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 			assert.NoError(t, conn.Close())
 		})
 	}
+	glog.Infoln("*** waiting readyCh..")
 	<-readyCh           // listener is tested now and it's ready
 	intCh <- struct{}{} // tell it to stop
 
@@ -1026,7 +1028,7 @@ loop:
 		select {
 		case status, ok := <-ch:
 			if !ok {
-				glog.V(1).Infoln("closed from server")
+				glog.V(0).Infoln("closed from server")
 				break loop
 			}
 			glog.Infoln("\n\t===== listen status:\n\t",
@@ -1065,7 +1067,11 @@ loop:
 			}
 		case <-intCh:
 			cancel()
-			glog.V(1).Infoln("interrupted by user, cancel() called")
+			glog.V(0).Infoln("interrupted by user, cancel() called")
+		case <-time.After(time.Second):
+			readyCh <- struct{}{}
+			glog.V(0).Infoln("--- TIMEOUT in Listen with readyCh")
+			break loop
 		}
 	}
 }
@@ -1082,9 +1088,10 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
 		})
 		err2.Check(err)
 		if statusResult.GetBasicMessage().SentByMe {
-			glog.V(1).Infoln("-- ours, no reply")
+			glog.V(0).Infoln("-- ours, no reply")
 			return false
 		}
+		glog.Infoln("sending BM")
 		ch, err := client.Pairwise{
 			ID:   status.Notification.ConnectionID,
 			Conn: conn,

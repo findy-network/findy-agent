@@ -3,7 +3,6 @@ package cloud
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -156,10 +155,14 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	}
 }
 
+// callType and related constants will be deprecated when old Agency API is
+// removed. In them meanwhile we use the to allow old API based tests to work.
+// Please be noted that callTypeImplID is now the default not previous
+// callTypeNone.
 type callType int
 
 const (
-	callTypeNo callType = 0 + iota
+	_ callType = 0 + iota // was callTypeNone but not needed anymore
 	callTypeImplID
 	callTypeEndp
 )
@@ -197,12 +200,20 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	})
 
 	switch a.callableEA() {
+	// this was old API web hook based SA endopoint system, but it's not used
+	// even we haven't refactored all of the code.
 	case callTypeEndp:
 		glog.V(3).Info("calling EA")
 		return a.callEA(plType, im)
+
+	// for the current implementation this is only type used. We use
+	// callTypeImplID for verything, and most importantly for grpc SAs.
+	// other types are for old tests.
 	case callTypeImplID:
 		glog.V(3).Infof("call SA impl %s", a.SAImplID)
 		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
+
+	// we should not be here never.
 	default:
 		// Default answer is definitely NO, we don't have issuer or prover
 		om = im
@@ -701,32 +712,13 @@ func (a *Agent) SecPipe(meDID string) sec.Pipe {
 }
 
 func (a *Agent) checkSAImpl() callType {
-	defer err2.Catch(func(err error) {
-		glog.Warningf("parsing EA endpoint (%v): error: %v",
-			a.EAEndp.Endp, err)
-	})
 	if a.SAImplID != "" {
 		return callTypeImplID
 	}
-	if a.EAEndp == nil || a.EAEndp.Endp == "" {
-		if a.SAImplID == "" {
-			return callTypeNo
-		}
-		return callTypeImplID
-	}
 
-	u, err := url.Parse(a.EAEndp.Endp)
-	err2.Check(err)
-
-	// todo: check these when EA callback mechanism is finalized.
-	// Previously we had web hooks over old DIDComm which allowed agency to
-	// call SAs when needed. Now we have gRPC streams but triggering is
-	// missing. Had to think is that really needed or what we will use for it.
-	switch u.Scheme {
-	case sa.GRPCSA:
-		a.SAImplID = sa.GRPCSA
-		glog.V(3).Infoln("setting impl id:", a.SAImplID)
-		return callTypeImplID
-	}
-	return callTypeEndp
+	// We are in the middle of releasing gRPC API v1 and old SA endpoints
+	// aren't supported any more.
+	a.SAImplID = sa.GRPCSA
+	glog.V(3).Infoln("=== using default impl id:", a.SAImplID)
+	return callTypeImplID
 }
