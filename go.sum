@@ -81,6 +81,8 @@ github.com/findy-network/findy-common-go v0.1.4-0.20210427145956-ff49535573b2 h1
 github.com/findy-network/findy-common-go v0.1.4-0.20210427145956-ff49535573b2/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
 github.com/findy-network/findy-common-go v0.1.4-0.20210428082552-973c31e8acbc h1:selKBM5v1iOnfcjz+Ta4DLOnS+NIdlb/cfnkuCiZ/oM=
 github.com/findy-network/findy-common-go v0.1.4-0.20210428082552-973c31e8acbc/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
+github.com/findy-network/findy-common-go v0.1.5-0.20210505102956-7de6af035691 h1:EKkHv8QFOUiJf/EhhPVmlZ8QZ34EKH+ggkffIu3VjXQ=
+github.com/findy-network/findy-common-go v0.1.5-0.20210505102956-7de6af035691/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
 github.com/findy-network/findy-wrapper-go v0.0.0-20210302063517-bb98c7f07ea4 h1:I1GolGhxwsZJVFIL//mpYKC2bFtQP8wXqaSpUgywjTk=
 github.com/findy-network/findy-wrapper-go v0.0.0-20210302063517-bb98c7f07ea4/go.mod h1:Zx69TCN3TCkMJubsmwodYRbLUZK8v7JbEvSQMq+xb+k=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible h1:TcekIExNqud5crz4xD2pavyTgWiPvpYe4Xau31I0PRk=

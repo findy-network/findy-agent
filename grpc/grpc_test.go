@@ -790,7 +790,7 @@ func TestListen(t *testing.T) {
 			go doListen(ca.DID, intCh, readyCh, waitCh)
 		}
 	}
-	
+
 	// first CA sends messages to listeners
 	i := 0
 	ca := agents[i]
