@@ -613,18 +613,25 @@ func TestSetPermissive(t *testing.T) {
 
 		ctx := context.Background()
 		c := agency2.NewAgentServiceClient(conn)
-		implID := "permissive_sa"
-		persistent := false
+		implID := agency2.ModeCmd_AcceptModeCmd_AUTO_ACCEPT
+		//persistent := false
 		if i == 0 && !allPermissive {
 			glog.Infoln("--- Using grpc impl ID for SA ---")
-			implID = "grpc"
-			persistent = true
+			implID = agency2.ModeCmd_AcceptModeCmd_GRPC_CONTROL
+			//persistent = true
 		}
-		r, err := c.SetImplId(ctx, &agency2.SAImplementation{
-			ID: implID, Persistent: persistent})
+		r, err := c.Enter(ctx, &agency2.ModeCmd{
+			TypeID:  agency2.ModeCmd_ACCEPT_MODE,
+			IsInput: true,
+			ControlCmd: &agency2.ModeCmd_AcceptMode{
+				AcceptMode: &agency2.ModeCmd_AcceptModeCmd{
+					Mode: implID,
+				},
+			},
+		})
 		if t != nil {
 			assert.NoError(t, err)
-			assert.Equal(t, implID, r.ID)
+			assert.Equal(t, implID, r.GetAcceptMode().Mode)
 		}
 		err = conn.Close()
 		if err != nil && t != nil {
