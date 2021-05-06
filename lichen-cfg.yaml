@@ -1,0 +1,7 @@
+# This is a placeholder for lichen (license scanner) configuration.
+# Fortunately for now, there's no need for exceptional license handling per
+# used module; all dependencies are currently fine.
+#
+# For more information of lichen configuration format can be found:
+# https://github.com/uw-labs/lichen#config
+#
