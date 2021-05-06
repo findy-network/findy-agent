@@ -1,5 +1,7 @@
 name: test
 on: push
+env:
+  GOPRIVATE: "github.com/findy-network/*"
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,6 +17,9 @@ jobs:
         run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "https://github.com/"
       - name: test
         run: make test
+      - name: scan
+        run: make scan
         env:
           TEST_WORKDIR: /github/home/.test/
           CI: true
+
