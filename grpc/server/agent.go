@@ -29,6 +29,61 @@ type agentServer struct {
 	pb.UnimplementedAgentServiceServer
 }
 
+func (a *agentServer) Enter(
+	ctx context.Context,
+	mode *pb.ModeCmd,
+) (
+	rm *pb.ModeCmd,
+	err error,
+) {
+	defer err2.Annotate("agent server enter mode cmd", &err)
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent enter mode:", mode.TypeID, mode.IsInput)
+
+	retMode := pb.ModeCmd_AcceptModeCmd_DEFAULT
+
+	setModeFn := func(m pb.ModeCmd_AcceptModeCmd_Mode) *pb.ModeCmd {
+		glog.V(3).Infoln("setModeFn:", m)
+		return &pb.ModeCmd{
+			TypeID: pb.ModeCmd_ACCEPT_MODE,
+			ControlCmd: &pb.ModeCmd_AcceptMode{
+				AcceptMode: &pb.ModeCmd_AcceptModeCmd{
+					Mode: m,
+				},
+			},
+		}
+	}
+	rm = setModeFn(retMode)
+
+	if mode.IsInput {
+		switch mode.TypeID {
+		case pb.ModeCmd_ACCEPT_MODE:
+			switch mode.GetAcceptMode().GetMode() {
+			case pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT:
+				glog.V(3).Infoln("--- Setting auto accept mode")
+				receiver.AttachSAImpl("permissive_sa", false)
+				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT)
+			case pb.ModeCmd_AcceptModeCmd_GRPC_CONTROL:
+				glog.V(3).Infoln("--- Setting default mode")
+				receiver.AttachSAImpl("grpc", false)
+				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_GRPC_CONTROL)
+			default:
+				glog.V(3).Infoln("--- Setting default mode")
+				receiver.AttachSAImpl("grpc", false)
+			}
+		}
+	} else {
+		if mode.TypeID == pb.ModeCmd_ACCEPT_MODE {
+			if receiver.AutoPermission() {
+				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT)
+			}
+		}
+	}
+
+	return rm, nil
+}
+
 func (a *agentServer) Ping(
 	ctx context.Context,
 	pm *pb.PingMsg,
@@ -130,15 +185,6 @@ func (a *agentServer) GetCredDef(
 
 	def := err2.String.Try(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
-}
-
-func (a *agentServer) SetImplId(ctx context.Context, implementation *pb.SAImplementation) (impl *pb.SAImplementation, err error) {
-	defer err2.Annotate("set impl", &err)
-
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent set impl:", implementation.ID)
-	receiver.AttachSAImpl(implementation.ID, implementation.Persistent)
-	return &pb.SAImplementation{ID: implementation.ID}, nil
 }
 
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
