@@ -75,8 +75,6 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.mod h1:cXg6YxExXjJnVBQHBLXeUAgxn2UodCpnH306RInaBQk=
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
-github.com/findy-network/findy-common-go v0.1.5-0.20210505102956-7de6af035691 h1:EKkHv8QFOUiJf/EhhPVmlZ8QZ34EKH+ggkffIu3VjXQ=
-github.com/findy-network/findy-common-go v0.1.5-0.20210505102956-7de6af035691/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
 github.com/findy-network/findy-common-go v0.1.5-0.20210505145950-9d262e1a53bd h1:nBl2CRlyJ6H4u94hF052ep0G5Rc4OsRHfHuUMWBGZrg=
 github.com/findy-network/findy-common-go v0.1.5-0.20210505145950-9d262e1a53bd/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
 github.com/findy-network/findy-wrapper-go v0.0.0-20210302063517-bb98c7f07ea4 h1:I1GolGhxwsZJVFIL//mpYKC2bFtQP8wXqaSpUgywjTk=
