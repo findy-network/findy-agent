@@ -9,11 +9,21 @@ then
 	go get github.com/uw-labs/lichen
 fi
 
-# debugging lines for ready to play with
-#lichen --template="" $1
-#lichen --template="{{range .Modules}}{{range .Module.Licenses}}{{.Name | printf \"%s\n\"}}{{end}}{{end}}" $1
+case "$2" in
+	c)
+		lichen \
+			-c lichen-cfg.yaml \
+			--template="{{range .Modules}}{{range .Module.Licenses}}{{.Name | printf \"%s\n\"}}{{end}}{{end}}" \
+			"$1" | sort | uniq -c | sort -nr
+		;;
+	v)
+		lichen -c lichen-cfg.yaml "$1"
+		;;
+	*)
+		lichen -c lichen-cfg.yaml --template="" $1
+		;;
+esac
 
-lichen -c lichen-cfg.yaml --template="" $1
 result=$?
 
 rm "$1"
