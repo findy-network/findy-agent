@@ -6,7 +6,7 @@ GRPC_BRANCH=$(shell ./branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell ./branch.sh ../findy-wrapper-go/)
 
 scan:
-	@./scan.sh
+	@./scan.sh $(ARGS)
 
 drop_wrap:
 	go mod edit -dropreplace github.com/findy-network/findy-wrapper-go
