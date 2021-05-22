@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/findy-network/findy-agent/agent/utils"
 
@@ -63,45 +64,50 @@ func TestMgr_NewOpen(t *testing.T) {
 		{"open size 3", 3},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			maxOpened = tt.count
+		Wallets.l.Lock()
+		maxOpened = tt.count
+		Wallets.l.Unlock()
 
-			cfg := NewRawWalletCfg(walletName1, key)
-			w := Wallets.Open(cfg)
-			glog.V(3).Info("read handle 1")
-			assert.Greater(t, w.Handle(), 0)
+		cfg := NewRawWalletCfg(walletName1, key)
+		w := Wallets.Open(cfg)
+		glog.V(3).Info("read handle 1")
+		assert.Greater(t, w.Handle(), 0)
 
-			w.Handle()
-			w.Handle()
-			w.Handle()
-			w.Handle()
+		w.Handle()
+		w.Handle()
+		w.Handle()
+		w.Handle()
 
-			cfg = NewRawWalletCfg(walletName2, key)
-			w2 := Wallets.Open(cfg)
-			glog.V(3).Info("read handle 2")
-			assert.Greater(t, w2.Handle(), 0)
+		cfg = NewRawWalletCfg(walletName2, key)
+		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
-			w2.Handle()
-			w2.Handle()
-			w2.Handle()
+		w2 := Wallets.Open(cfg)
+		glog.V(3).Info("read handle 2")
+		assert.Greater(t, w2.Handle(), 0)
 
-			glog.V(3).Info("read handle 1")
-			assert.Greater(t, w.Handle(), 0)
-			w.Handle()
-			w.Handle()
-			w.Handle()
+		w2.Handle()
+		w2.Handle()
+		w2.Handle()
 
-			cfg = NewRawWalletCfg(walletName3, key)
-			w3 := Wallets.Open(cfg)
-			glog.V(3).Info("read handle 3")
-			assert.Greater(t, w3.Handle(), 0)
+		glog.V(3).Info("read handle 1")
+		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
-			glog.V(3).Info("read handle 2")
-			assert.Greater(t, w2.Handle(), 0)
-			w2.Handle()
-			w2.Handle()
+		assert.Greater(t, w.Handle(), 0)
+		w.Handle()
+		w.Handle()
+		w.Handle()
 
-			Wallets.Reset()
-		})
+		cfg = NewRawWalletCfg(walletName3, key)
+		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
+		w3 := Wallets.Open(cfg)
+		glog.V(3).Info("read handle 3")
+		assert.Greater(t, w3.Handle(), 0)
+
+		glog.V(3).Info("read handle 2")
+		assert.Greater(t, w2.Handle(), 0)
+		w2.Handle()
+		w2.Handle()
+
+		Wallets.Reset()
 	}
 }
