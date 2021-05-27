@@ -51,7 +51,8 @@ update-deps:
 	go get -u ./...
 
 cli:
-	go build -o $(GOPATH)/bin/cli
+	@echo "building new CLI by name: fa"
+	@go build -o $(GOPATH)/bin/fa
 
 build:
 	go build -v ./...
