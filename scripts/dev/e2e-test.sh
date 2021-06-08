@@ -90,15 +90,6 @@ rm_wallets() {
   set -e
 }
 
-dev_ledger() {
-  echo -e "${BLUE}*** dev - start dev ledger ***${NC}"
-  docker run -itd -p 9701-9708:9701-9708 \
-    -p 9000:9000 \
-    -v sandbox:/var/lib/indy/sandbox/ \
-    --name findy-pool \
-    optechlab/indy-pool-browser:latest
-}
-
 unset_envs(){
   unset "${!FCLI@}"
 }
@@ -423,7 +414,7 @@ agency_flag() {
 
   echo -e "${BLUE}*** flag - create steward ***${NC}"
   $CLI ledger steward create \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --seed=000000000000000000000000Steward1 \
     --wallet-name=sovrin_steward_wallet \
     --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
@@ -431,7 +422,7 @@ agency_flag() {
   # run agency
   echo -e "${BLUE}*** flag - run agency ***${NC}"
   $CLI agency start \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=sovrin_steward_wallet \
     --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
@@ -467,7 +458,7 @@ other_cases() {
   # run agency
   echo -e "${BLUE}*** other - run agency ***${NC}"
   $CLI agency start \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=steward \
     --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
