@@ -4,9 +4,10 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
-    container: optechlab/indy-golang:1.16.0
     steps:
       - uses: actions/checkout@v2
+      - name: install indy
+        run: make indy_to_debian
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
