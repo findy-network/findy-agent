@@ -108,7 +108,6 @@ image:
 	docker build \
 		-t findy-agency \
 		--build-arg HTTPS_PREFIX=$(HTTPS_PREFIX) \
-		--build-arg CLI_VERSION=$(VERSION) \
 		-f scripts/deploy/Dockerfile .
 	docker tag findy-agency:latest findy-agency:$(VERSION)
 
