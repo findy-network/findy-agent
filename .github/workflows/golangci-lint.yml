@@ -4,10 +4,9 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
-      - name: install indy
-        run: make indy_to_debian
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:

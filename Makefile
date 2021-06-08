@@ -94,9 +94,6 @@ e2e_ci: install
 
 check: check_fmt vet shadow
 
-indy_to_debian:
-	./scripts/debian-libindy/install-indy.sh
-
 install:
 	$(eval VERSION = $(shell cat ./VERSION))
 	@echo "Installing version $(VERSION)"
