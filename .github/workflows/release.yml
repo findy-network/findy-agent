@@ -6,13 +6,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    env:
-      HTTPS_PREFIX: ${{ secrets.https_prefix }}
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: use token
-        run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "git@github.com:"
       - name: test
         run: echo "implement e2e/acceptance tests"
   merge:

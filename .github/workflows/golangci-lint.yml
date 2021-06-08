@@ -7,8 +7,6 @@ jobs:
     container: optechlab/indy-golang:1.16.0
     steps:
       - uses: actions/checkout@v2
-      - name: use token
-        run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "https://github.com/"
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:

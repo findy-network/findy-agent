@@ -8,7 +8,6 @@ mv /findy-agent /go/src/github.com/findy-network
 
 cd /go/src/github.com/findy-network/findy-agent
 
-git config --global url."https://$1github.com/".insteadOf "https://github.com/"
 echo "Install deps"
 go get -t ./...
 

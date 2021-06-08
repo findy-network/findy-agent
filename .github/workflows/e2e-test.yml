@@ -19,4 +19,4 @@ jobs:
         run: docker build -t e2e:latest -f ./findy-agent/action/e2e/Dockerfile .
 
       - name: e2e test
-        run: docker run --network="host" e2e:latest ${{ secrets.https_prefix }}
+        run: docker run --network="host" e2e:latest

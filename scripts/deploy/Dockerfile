@@ -15,12 +15,6 @@ RUN apt-get install -y libindy-dev="$INDY_LIB_VERSION-xenial" \
 
 WORKDIR /work
 
-ARG HTTPS_PREFIX
-
-ENV GOPRIVATE=github.com/findy-network
-
-RUN git config --global url."https://"${HTTPS_PREFIX}"github.com/".insteadOf "https://github.com/"
-
 COPY go.* ./
 RUN go mod download
 
@@ -65,8 +59,8 @@ ENV FCLI_AGENCY_SALT "this is only example"
 ENV FCLI_AGENCY_APNS_P12_FILE ""
 
 RUN echo '/s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
-    echo '/s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' > /start.sh && \
-    echo './import-wallet.sh' > /start.sh && \
+    echo '/s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' >> /start.sh && \
+    echo './import-wallet.sh' >> /start.sh && \
     echo '/findy-agent agency start --grpc=true --grpc-tls=false' >> /start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/sh", "-c", "/start.sh"]
