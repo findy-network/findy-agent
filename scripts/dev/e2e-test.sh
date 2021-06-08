@@ -93,15 +93,15 @@ unset_envs(){
 }
 
 set_envs() {
-    export FCLI_POOL_NAME="findy"
+    export FCLI_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_POOL_GENESIS_TXN_FILE="${CURRENT_DIR}/genesis_transactions"
 
-    export FCLI_STEWARD_POOL_NAME="findy"
+    export FCLI_STEWARD_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_STEWARD_SEED="000000000000000000000000Steward1"
     export FCLI_STEWARD_WALLET_NAME="sovrin_steward_wallet"
     export FCLI_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
 
-    export FCLI_AGENCY_POOL_NAME="findy"
+    export FCLI_AGENCY_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_AGENCY_STEWARD_WALLET_NAME="sovrin_steward_wallet"
     export FCLI_AGENCY_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
     export FCLI_AGENCY_STEWARD_DID="Th7MpTaRZVRYnPiabds81Y"
