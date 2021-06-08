@@ -17,107 +17,174 @@
 
 ## About findy-agent
 
-Findy-agent is a Go package and command. It implements a multi-tenant identity
-agency for Aries protocols. However, it's not an Aries mediator; even it's very
-similar because all of its communication protocols are DIDComm-based. It offers
-a way to allocate Cloud Agent for any Edge Agent who is [bound](#onboard-binding)
-to the same ecosystem.
+Findy agency is a high-performant, multi-tenant identity agency for Aries
+protocols. It offers a way to allocate Cloud Agents and control them thru gRPC
+interfaces. You can think it like a database service, or SMTP service, but it's
+a SSI service. With help of it you can run your DID agents where ever you have
+installed the Findy Agency. Preferred installation place for it is a host with
+static internet presence.
 
-_Please be noted that the whole Findy Agency is still under construction, and
-there are many [missing features](#missing-features-for-production) for full
-production use._ However, it's currently tested for an extended period of pilot
-and development use, where it's proven to be stable and scalable. The current
-focus of the project is to offer an efficient and straightforward multi-tenant
-agency with Aries compatible agent protocols.
+The root of trust for each CAs is in FIDO2 authenticators. WebAuth server
+onboards new agents and JWT is used for the authorization.
 
-You can use the agency and related Go packages roughly for four purposes:
+You can use Findy Agency roughly for these purposes:
 
-1. As a service agency for multiple Edge Agents to allocate Cloud Agents.
-   Allocated CAs implement [Aries agent-to-agent
-   protocols](#aries-protocol-state-machine) and interoperability.
+1. As a multitenant service for allocating multiple Cloud Agents which
+   implement [Aries agent-to-agent protocols](#aries-protocol-state-machine)
+   and offer SSI interoperability.
 
-1. As a [CLI tool](#command-line-interface) for setting up Edge Agent wallets,
-   creating schemas and credential definitions into the wallet and writing them to
-   the ledger. You don't need to use or install indy CLI.
+2. As a [CLI tool](#command-line-interface) to setup an agency and maintain it.
+   You can create steward DID and wallet; or you can import steward from
+   existing wallet. For command line use it offers all the same features as
+   `indy cli`.
 
-1. As an admin tool to monitor and maintain an agency.
+3. As a high-performant SDK to implement all types SSI Agents like *holders*,
+   *issuers* and *verifiers* with any programming language you chose which is
+   supported by gRPC.
 
-1. As a framework to implement Service Agents like issuers and verifiers.
-
-##### Onboard Binding
-
-To be able to onboard, allocate an agent, the client, and the agency must
-share the same `salt`. Please see the `FINDY_AGENT_SALT` environment variable,
-or build your agency with the sources which set the `utils.Salt` variable.
+The Findy Agency is very fast and it is extremely resource efficient; and of
+course it's Aries compatible.
 
 ## Get Started
 
+Easiest way to run Findy Agency is from docker container. You can communicate
+with your agency by gRPC and it offers a [CLI
+tool](https://github.com/findy-network/findy-agent-cli) as well.
+
+### Running From Docker Container
+
+**TODO: store public image to github and make link and guides here**
+
+Ubuntu 20.04 is preferred development environment but macOS is also an option.
+Please make sure that Go and git are both installed and working properly.
+
+*Note!* Go modules must be on.
+
+### Linux and Ubuntu
+
+We recommend that you first install `findy-wrapper-go` and follow its guides to
+setup environment and especially install `libindy`.
+
 1. [Install](https://github.com/hyperledger/indy-sdk/#installing-the-sdk) libindy-dev.
-2. Install Go. Make sure environment variable `GOPATH`is defined.
-3. Create parent folder for findy-agent-project in your [\$GOPATH](https://github.com/golang/go/wiki/SettingGOPATH):
+2. Clone [findy-agent](https://github.com/findy-network/findy-agent) (this repo)
+3. Install needed Go packages: `make deps`.
+4. Install the command line application: `make install`
+5. Verify the installation: `findy-agent -version`
 
+   It should output similar to:
+   `findy-agent version 0.xx.xx`
+
+### macOS (from [`findy-wrapper-go`](https://github.com/findy-network/findy-wrapper-go))
+
+Because indy SDK won't offer proper distribution for OSX, we have written a
+helper Bash script to perform installation. Follow these steps **in
+`findy-wrapper-go` repo**:
+
+0. Install [Homebrew](https://brew.sh) if it insn't already on your machine.
+1. Clone the repo: `git clone https://github.com/findy-network/findy-wrapper-go`
+2. Go to directory `findy-wrapper-go/scripts/mac-libindy`:
    ```
-   $GOPATH/src/github.com/findy-network
+   $ cd scripts/mac-libindy
    ```
+3. Execute the installation script. 
+   ```
+   $ ./install.sh
+   ```
+   **Or**, if you want to change the default installation location, enter it as
+   a first argument for the script.
+   ```
+   $ ./install.sh /my/own/location
+   ```
+4. Follow the instructions of the `install.sh` i.e. **source the env.sh** which
+is generated to installation directory and is in your clipboard after successful
+installation.
+   ```
+   $ source /usr/local/opt/libindy/env.sh
+   ```
+5. Run the tests to see everything is OK with Go wrapper and `libindy`:
+   ```
+   make test
+   ```
+6. Then follow instructions from previous section *Linux and Ubuntu* from step
+   2 to complete `findy-agent` repo's setup.
 
-4. Clone [findy-agent](https://github.com/findy-network/findy-agent) (or move) repository to the newly created parent folder.
-5. Install needed Go packages: `make deps`. This installs _findy-wrapper-go_ which is mandatory.
-6. Install the command line application: `make install`
-7. Verify the installation: `findy-agent -version`
-
-   It should output:
-   `OP Tech Lab - Findy Agency v. X.X`
+The problem solving tip: `source env.sh` in your dev session. 
 
 ## Run The Agency
+
+As said earlier the most convenient way to run Findy Agency is from docker
+container. Still, it's at least as easy to run from standalone binary if you
+have proper environment for it to run i.e. `libindy` installed.
+
+The following chapters describe how to start an agency with different type of
+ledgers. Before running the agency you must create steward DID and wallet for
+your test network.
+
+### Create Test Steward
+
+To create new steward DID and wallet run the following commands:
+```
+$ cd scripts/test
+$ findy-agent ledger steward create --config create-steward-to-mem-ledger.yaml
+```
+
+The `create-steward-to-mem-ledger.yaml` includes following data.
+```
+pool-name: "FINDY_MEM_LEDGER"
+seed: "000000000000000000000000Steward1"
+wallet-name: "sovrin_steward_wallet"
+wallet-key: "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
+```
+You can edit it for your purpose. Please note to use same `wallet-key` in it and
+the start script like `mem-server` script in the same directory.
+
+### Run with Memory Ledger 
+
+Memory ledger is available as long as the agency is running but after that data
+is lost. It's very good for tests and short demos.
+
+1. `cd scripts/test`
+2. `./mem-server`
+
+### Run with File Ledger 
+
+File ledger is a test ledger where ledger data is presistently stored into a
+JSON file. It's convenient for cases where you don't want to run all ledger
+nodes on your machine like development.
+
+1. `cd scripts/test`
+2. `./file-server`
+
+### Run with Real Ledger
 
 1. [Install and start ledger](https://github.com/bcgov/von-network/blob/master/docs/UsingVONNetwork.md#building-and-starting)
 2. Create a ledger pool with the name `von`
 
-   `findy-agent create cnx -pool von -txn genesis.txt`
+   `findy-agent ledger pool create --name="von" --genesis-txn-file="genesis.file"`
 
-3. Go to `scripts` directory: `cd scripts`
-4. Run the agency tests: `./von-network`
-5. Connect to agency with your client or test it with the agency's client
-   command. Please see the helper scripts in the `scripts` directory.
+3. Go to `scripts/test` directory: `cd scripts/test`
+4. Run the agency tests: `./von-network-server`
+5. Connect to agency with your client or test it with the agency's ping command.
+   Please see the helper scripts in the `scripts` directory.
 
 All of that can be done with the `make scratch` as well if the predefined ledger
 and steward wallet names are ok. The previous steps were for educational
 purposes. If you want to start the agency fast e.g., on OSX, the Makefile
 approach is preferable. Please see the scrips in the `tools` dir.
 
-## Edge Agent On-boarding
+## Agent On-boarding
 
-Findy-agent serves all types of edge agents (EA) by implementing a corresponding
-cloud agent (CA) for them. An EA communicates with its CA with Aries's
-predecessor of DIDComm, which means that the communication between EA and CA
-needs indy SKD's wallet and crypto functions. The same mechanism is used when
-the agency calls a service agent (SA), a particular type of an EA which performs
-as an issuer or verifier or both.
+Findy-agent serves all types of cloud agents (CA) like *holder*, *issuer* and
+*verifier*. Cloud agents must be allocated before they can be used. CA
+allocation is called on-boarding. In most cases it's done thru `WebAuthn` server
+like `findy-agent-auth` but you can allocate them directly from the agency.
 
-The agency offers an API to make a handshake, aka onboarding, where a new CA is
-allocated and bound to an EA. findy-agent can call that same API by itself as a
-client, a temporary EA. That is an easy way to onboard SAs to the agency. The
-following command is an example of calling an API to make a handshake and export
-the client wallet and move it where the final SA will run.
-
-```shell script
-  findy-agent client handshakeAndExport \
-    -wallet ${EXPORT_NAME}_client \
-    -email ${EXPORT_NAME}_server \
-    -pwd ${EXPORT_KEY} \
-    -url http://localhost:8080 \
-    -exportpath ${EXPORT_DIR}/${EXPORT_NAME}.export
-```
-
-As you can see, that is a long command, and lots of information is needed. The
-suggestion is to write these commands to owns scripts. With the findy-agent
-repo, there are many scripts where to start. If more convenient CLI would be
-needed, please check the `findy-agent`.
+TODO: direct CA on-boarding.
 
 ## Agency Network
 
 findy-agent is a multi-tenant identity agency that is capable serve thousands of
-edge agents with one installation, and which can scale horizontally.
+agents with one installation, and which can scale horizontally.
 
 The following diagram shows all the components of a typical DID/SSI-based
 identity network. The server rack icon illustrates an agency. There are three in
@@ -134,28 +201,25 @@ to agency, as you can see in the following drawing.
 
 ![big_aries](docs/agency-aries-big.png?raw=true "big_aries")
 
-The application logic is inside the edge agents which communicate and control
-their cloud agents with the DIDComm-based protocol as well. The next image
-illustrates when a mobile EA communicates findy-agent, it calls the agency's CA
-API and receives APNS notifications, or WebSocket messages if the connection is
-on.
+The application logic is inside the agent controllers. The next image
+illustrates when a mobile controller communicates findy-agent, it calls the
+agency's CA API and receives notifications.
 
 ![mobile](docs/agency-mobile.png?raw=true "mobile")
 
 Likewise, when a SA communicates with an agency, it calls the agency's CA API
-and receives webhook calls over DIDComm from the agency. The WebSocket option
-is available as well. The image below shows how CAs communicate with Aries, and
-the agency notifies the SA through indy's version of DIDComm.
+and receives notifications and questions from the agency.
+The image below shows how CAs communicate with Aries.
 
 ![sa](docs/agency-sa.png?raw=true "sa")
 
 ## Command-line Interface
 
-findy-agent offers an extensive set of commands by itself, and more
-user-friendly command set exists in findy-agent. In addition to that, many
-other tasks have to be taken care of before a full agency setup can work. The
-following use case diagram shows most of the tasks and uses system boundaries to
-illustrate which of them are directly operable by findy-agent or findy-agent.
+Findy agency offers an extensive set of commands by itself, and other command
+set exists in `findy-agent-cli`. In addition to that, many other tasks have to
+be taken care of before a full agency setup can work. The following use case
+diagram shows most of the tasks and uses system boundaries to illustrate which
+of them are directly operable by findy-agent or findy-agent.
 
 ![server.puml](http://www.plantuml.com/plantuml/svg/TL0nRiCm3DprYaCcUt0Ua250qQb0Dx-0aHXLjImP59qqAFBtsatGs2qw4UJTyN0N-QZG30d-JU62iDMGaobTI0C9zHZ8TkIvrKjap30b7zaOife5vFgGfcKUQ1fKXNKSK5XEBBLPhzZkKHqa98yXvuXZY5nZXv1i71sRErQKpoGEPugHzQPQ_zc1FvIJAtyC7boNRSU2KuvZltRvLz9Ir2NJ_CJ5vibpiXSylxwWGVkjtU3J08leceVwruL4vrCbF5bCzVamfRitSKCNOQxB8jc5Xs3xNdAglm00)
 
@@ -185,30 +249,22 @@ command line.
 
 ## Agency Architecture
 
-findy-agent is a service that implements an Aries compatible identity agent.
-What makes it an agency is that it's multitenant. It can serve thousands of edge
-agents with one installation and with quite modest hardware.
+Findy agency is a service that implements an Aries compatible identity agents.
+What makes it an agency is that it's multitenant. It can easily serve thousands of edge
+agents with one installation and with modest hardware.
 
-Each EA gets a corresponding cloud agent as its service. The following
-deployment diagram illustrates the main components of the system where
+Each CA controller gets a corresponding cloud agent as its service. The following
+deployment diagram illustrates the main components of the typical system where
 findy-agent is installed on a single node, and a wallet application is running
-on a mobile device. The picture includes an external agent that is running on
+as PWA in the browser. The picture includes an external agent that is running on
 another node (grey).
 
-![main-components](http://www.plantuml.com/plantuml/svg/TLB1Yjim43rRNp5a3psjFo0i2swIBO7D4cYXb923R4ziiOh6I4fTK_BldP6TD87TGsBBR-RDUs_ag4QORQWq5c69lqs5C_YhiavNxxfXwCMuUlYfhSMOwwvBO5Rhg4iT65uKC88pW8TNqxInj2TCHTcEmKuRtvk0U_vmvjzEw4BzBkVTgjZ38-ZE1SNWMIcNr1GDkcg0DpwaSJVJB9tgJmSot-syystdwsRvTTI-stxVZEYzHv2nSQpn628hOmD9PxyQdmlH-_WCrmzRJv4giloiC0JougVm1iFwxJFSuY4AnyZzNo5pNfqz_49hgPzYh3pMOGpmIvOvYWWbnKX7e0DSK4QooB9Htj3L87KNyI03BpJi_2DXJycPX3E7Re8XH2qizqbzeob9Qqevx--sj_eJOTmW-x2oeCRhGHh6P2JN5FLUUj8To9z14fz3iLr3nHa49PS2dl8yvJGNC-PWAXqDyMLHKyHZmKJsaQUScLEjYEFOlCX9gTrVpGKTZoStyKE9iKTqm0lH7EIYK9a9q91n3SJMd_WFWMmDo_LIEdFuqUAWCbvAoucHHwamNl00aK13dnQhihurLGkziLOiGKKkQkDup03SZ5vbgOSyB6HRkRfkyXy0)
+![main-components](http://www.plantuml.com/plantuml/svg/TLJDRjf043xRJp4YXvxWq6CKHJ4_ZP182hLKL24VrlR4M5syrkuu55MyUsTinxA9UuBzVcPdlbbuSgGiLIVj-uL94IOXslSyGGWoB0XU6Pl0NzzB5QbOEHOiZegMyngy-juX32B_-c6UMtDsQCTiX8uwqtRVT_rKbUvTLQhajyeO_vONwQKcPweiQwuhsBgMSvX2kDjC0EusUNQaM5SeGhd6UxQgJ7SRbXns5ThBrfe4dJCsOl8MOjMIYs-hK-cpk-jkZt5GqR40IGRjM9_hvVUlBTrqAOZSsc3HeEzLaMZrZetmEhXACaykew5hKwMmLreZVPhrsbTkNjhbSChXIoJiJQBDQXjDzcExa4ONGHt9UTLyyX6cqqVe08w9J6Bq8Ax0vkZMh__ZDRwHr93Q_G2uPZV9tI_Ksfob5wwIM4nTLCVonVCAGmYn8J8dC6_Gii9uyfXGlc6HWkW-cWUvi1LobT767cIoEfnxA5iQ72d2swIUJPkapcCvHuDjhVuGD1lZERGi9BFg8eOc6SbLU8h4y-cvFSncZo3vtqEmNKF2YJZVRpCLjdEF3I5cqR95VaqDS6WVVDJ7v2r6h0e7GEyiFR30V-8mvO_W7m00)
 
-The wallet app and the agency they both include a wallet for pairwise (blue).
-These wallets are used only for a pairwise between EA and CA. That makes it
-possible to use DIDComm for EA/CA communication. In the future, there might be
-other ways to access CA from outside of the agency. As the diagram shows, the
-main wallet of each agent is on the server, our we could say it is in the cloud.
-That simplifies things a lot. We can have cloud backups, recovery, and most
-importantly, it makes it possible to 24/7 presence in the cloud for each agent.
-
-The next image shows an almost identical setup, but the mobile agent is replaced
-with the service agent. It's below the agency in the picture.
-
-![sa-components](http://www.plantuml.com/plantuml/svg/TLFHQkim37sElqAahri-e8n1IBjBu386VIYNKePhAssOQnVRMM-vzD-lv6Hf0zjJefmZwUX8iKuZvCk_4SezsfZ3pBJxGznxUO5_8eFIjnZW4JO9tegh43QbSAmky4f1pamjezp9G4XbNATXBOt1iTxETCYiRBCiuIHRVsu3RaLs5Tb9gW-vfxoNrkeB_79vJpJjZZzyIngqCizZYAolAhUSzUPTTCePUYeCmVajWMc8-lKdt60J7v-74jVxKSwaTXpa3nhZphquvL4li0bzWdKHWQk0Q-26mMnzQ2CIVwKEU9GWhQQW6d1wbHwXjH0FJ1eSPNiBffLKhK7FlFAjXiPvM9OKH0VKGgR2b7aaCbeDBEAsdZg43Zsiq7-Ypq46g5SiVJIIaLRXlPKRzZRe3xRCzCAdattX16HLvprb6XACg563i-R2GAyJI6LrMpKFD8fCLy1DLkKxJKRntV7S32VDLRc6sU_90MMRQd91xF-LvqurY-8P-2Bct9nTKrGi25vjmlgESmXf8G_9I1qU0ACgnEGsuOdvasPpMDIBoXsFuoSXXjCYjdPdMup_oNU7LdGdAfaon7y0)
+As the diagram shows, the main wallet of each agent is on the server, our we
+could say it is in the cloud.  That simplifies things a lot. We can have cloud
+backups, recovery, and most importantly, it makes it possible to 24/7 presence
+in the cloud for each agent.
 
 The issuer server could run on the same node as the agency, but the most common
 case is where it runs on its own. Typical SA includes application logic, and the
@@ -269,46 +325,26 @@ four related ways to initiate the protocol state machine for an issuing protocol
 IssuingProtocolRunning-state). The rest of the protocol is quite clear and easy
 to understand from the state machine diagram.
 
-## Missing Features For Production
+## Upcoming Features
 
-- [ ] Current tests run only happy paths.
+- [ ] Tests for fail cases.
 - [ ] Interoperability testing with Aries testing harness.
-- [ ] Indy wallet implementation with storage plugin like PostgreSQL.
-- [ ] Crypto implementations for different server types, AWS Nitro, ...
-- [ ] Backup system for current docker volumes.
-- [ ] The PSM runner for restarts and non-delivery messages and cleanup old ones.
+- [x] Indy wallet implementation with storage plugin like PostgreSQL. Done: we
+      have wallet pool.
+- [x] Crypto implementations for different server types, AWS Nitro, ...
+- [x] Backup system for current docker volumes.
+- [ ] The PSM runner for restarts and non-delivery messages and cleanup old
+      ones. Partially done, we have data pump and archiving now.
 - [ ] Haven't been able to test with stable ledger.
 - [ ] Check if we have received the message already.
 - [ ] Check incoming order of the messages, same as declared in the PSM.
 - [x] libindy under pressure, wallet handles, etc. Done: wallet pool, more tests
       needed
-- [ ] API for browsing connections, credentials etc.
-- [ ] PSM archive logic, dedicated storage for persistent client data (see the
+- [x] API for browsing connections, credentials etc. Done: we have `vault`
+- [x] PSM archive logic, dedicated storage for persistent client data (see the
       PSM runner).
 - [ ] Credential revocation, if wanted to use (check upcoming anoncreds 2.0)
-- [ ] Skipping DID-writes to ledger for individuals.
+- [ ] Skipping DID-writes to ledger for individuals: moving to full `peer did`.
+- [ ] Real `peer did` implementation.
 - [ ] Agent permissions. Separation of individuals and services in onboarding ->
       e.g. no credential issuing for individuals (maybe Agency types).
-
-## Publishing new version
-
-Release script will tag the current version and push the tag to remote. This will trigger e2e-tests in CI automatically and if they succeed, the tag is merged to master.
-
-Release script assumes it is triggered from dev branch. It takes one parameter, the next working version. E.g. if current working version is 0.1.0, following will release version 0.1.0 and update working version to 0.2.0.
-
-```bash
-git checkout dev
-./release 0.2.0
-```
-
-## Running e2e tests
-
-Run end-to-end tests for findy-agent with:
-
-```
-make e2e
-```
-
-This starts test-ledger & runs e2e tests for findy-agent.
-
-`make e2e_ci` doesn't initialize test-ledger.
