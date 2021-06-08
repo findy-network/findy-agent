@@ -408,7 +408,7 @@ agency_flag() {
     --genesis-txn-file=${CURRENT_DIR}/genesis_transactions
 
   echo -e "${BLUE}*** flag - ping pool ***${NC}"
-  $CLI ledger pool ping --name=findy
+  $CLI ledger pool ping --name=FINDY_FILE_LEDGER
 
   echo -e "${BLUE}*** flag - create steward ***${NC}"
   $CLI ledger steward create \
@@ -444,7 +444,7 @@ other_cases() {
     --genesis-txn-file=${CURRENT_DIR}/genesis_transactions
 
   echo -e "${BLUE}*** other - ping pool ***${NC}"
-  $CLI ledger pool ping --name=findy
+  $CLI ledger pool ping --name=FINDY_FILE_LEDGER
 
   echo -e "${BLUE}*** other - import wallet ***${NC}"
   $CLI tools import \
