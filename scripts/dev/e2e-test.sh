@@ -59,8 +59,6 @@ init_agency(){
 init_ledger() {
   # remove and reset all stored data
   clean
-  # start dev ledger
-  dev_ledger
 }
 
 rm_wallets() {

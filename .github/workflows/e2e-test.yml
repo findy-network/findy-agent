@@ -11,7 +11,7 @@ jobs:
           path: findy-agent
 
       - name: Ledger
-        run: ./findy-agent/scripts/dev/e2e-test.sh dev_ledger
+        run: ./findy-agent/scripts/dev/e2e-test.sh
 
       - name: Build
         run: docker build -t e2e:latest -f ./findy-agent/action/e2e/Dockerfile .
