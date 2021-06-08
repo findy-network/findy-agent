@@ -1,9 +1,37 @@
-ARG CLI_VERSION=latest
-ARG AWS_VERSION=2.1.30
+FROM golang:1.16-buster
 
-FROM findy-agent:$CLI_VERSION
+ENV INDY_LIB_VERSION="1.16.0"
+ENV UBUNTU_VERSION="bionic"
 
-ADD ./start-server.sh /start-server.sh
+RUN apt-get update && \
+    apt-get install -y software-properties-common apt-transport-https && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && \
+    add-apt-repository "deb https://repo.sovrin.org/sdk/deb $UBUNTU_VERSION stable" && \
+    add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial stable" && \
+    apt-get update
+
+RUN apt-get install -y libindy-dev="$INDY_LIB_VERSION-xenial" \
+    libindy="$INDY_LIB_VERSION-$UBUNTU_VERSION"
+
+WORKDIR /work
+
+ARG HTTPS_PREFIX
+
+ENV GOPRIVATE=github.com/findy-network
+
+RUN git config --global url."https://"${HTTPS_PREFIX}"github.com/".insteadOf "https://github.com/"
+
+COPY go.* ./
+RUN go mod download
+
+COPY . ./
+
+RUN make install
+
+FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+
+COPY --from=0 /go/bin/findy-agent /findy-agent
+ADD ./scripts/deploy/import-wallet.sh .
 
 RUN echo "{}" > /root/findy.json
 
@@ -36,11 +64,9 @@ ENV FCLI_AGENCY_SALT "this is only example"
 
 ENV FCLI_AGENCY_APNS_P12_FILE ""
 
-ARG AWS_VERSION
+RUN echo '/s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
+    echo '/s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' > /start.sh && \
+    echo './import-wallet.sh' > /start.sh && \
+    echo '/findy-agent agency start --grpc=true --grpc-tls=false' >> /start.sh && chmod a+x /start.sh
 
-RUN apt-get update && apt-get install curl unzip -y && \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-$AWS_VERSION.zip" -o "awscliv2.zip" && \
-    unzip awscliv2.zip && \
-    ./aws/install
-
-ENTRYPOINT [ "/start-server.sh", "/"]
+ENTRYPOINT ["/bin/sh", "-c", "/start.sh"]

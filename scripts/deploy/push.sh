@@ -37,7 +37,7 @@ fi
 echo "Releasing findy-agent version $VERSION"
 
 cd $CURRENT_DIR/../..
-make agency
+make image
 
 $AWS_CMD ecr get-login-password \
     --region $AWS_DEFAULT_REGION \
