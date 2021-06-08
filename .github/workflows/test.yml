@@ -1,6 +1,18 @@
 name: test
 on: push
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    steps:
+      - name: Install make
+        run: apt-get install -y build-essential
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.39
+          args: --timeout=5m
   test:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
