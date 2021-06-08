@@ -115,7 +115,7 @@ func setUp() {
 		agents = &emptyAgents
 	}
 
-	baseCfg = client.BuildClientConnBase("./cert", "what_ever", 0,
+	baseCfg = client.BuildClientConnBase("./cert", "localhost", 0,
 		[]grpc.DialOption{grpc.WithContextDialer(bufDialer)})
 
 	// obsolete until all of the logs are on glog
