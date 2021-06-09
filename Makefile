@@ -84,6 +84,10 @@ testv:
 test_cov:
 	go test -v -p 1 -failfast -coverprofile=c.out ./... && go tool cover -html=c.out
 
+misspell:
+	@go get github.com/client9/misspell 
+	@find . -name '*.md' -o -name '*.go' -o -name '*.puml' | xargs misspell -error
+
 e2e: install
 	./scripts/dev/e2e-test.sh init_ledger
 	./scripts/dev/e2e-test.sh e2e
