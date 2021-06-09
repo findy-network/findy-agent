@@ -1,25 +1,42 @@
 @startuml
 
+node "Service Agent Node" {
+	database "ChatDB" {
+	}
+	[SA]
+}
 
-node "Mobile Device" {
-	package "FindyWallet.app" {
-		database "CA Wallet"  #Lightblue {
-			[CA pairwise]
+node "Browser Node" {
+	database "test" {
+	}
+	[PWA]
+}
+
+node "Vault Node" {
+	package "FindyVault.app" {
+		database "VaultDB - SQL"  #Lightblue {
 		}
-		[indysdk]
-		[EA] - apns
+		GrapdQL - [QueryProcessor]
+		[QueryProcessor] - DataPump
+	}
+}
+
+node "WebAuthn Server Node" {
+	package "FIDO2 Server" {
+		FIDO - [Server]
+		database "Enclave" {
+		}
 	}
 }
 
 node "Agency Node" {
 	database "Cloud Wallet"  #Lightblue {
-		[EA pairwise]
 	}
 	database "LMDB" {
 		[PSM]
 	}
 	package "Findy Agent" {
-		rest - [CA]
+		gRPC - [CA]
 		[wEA]
 		[CA] --> [wEA]
 		[ProtocolProcessor] - AriesIN
@@ -42,18 +59,16 @@ node "Ext Agency" #lightgray {
 	 Aries - [Agent]
 }
 
-[EA] .> rest: API calls
-apns <.. [CA]: notifications
+[QueryProcessor] <..> gRPC: API calls
 
 AriesIN <.. [Agent]
 [ProtocolProcessor] ..> Aries
 
-note right of [CA pairwise]
-	Communication between EA and CA
-	is going thru the old DIDComm. They
-	both store their DIDs to a wallet
-	which will not contain any other
-	DIDs or Creds.
-end note
+[PWA] ..> [GrapdQL]
+[PWA] ..> [FIDO]
+
+[SA] ..> [FIDO]
+[SA] ..> [gRPC]
+
 
 @enduml
