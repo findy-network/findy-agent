@@ -12,15 +12,15 @@ fi
 case "$2" in
 	c)
 		lichen \
-			-c lichen-cfg.yaml \
+			-c scripts/lichen-cfg.yaml \
 			--template="{{range .Modules}}{{range .Module.Licenses}}{{.Name | printf \"%s\n\"}}{{end}}{{end}}" \
 			"$1" | sort | uniq -c | sort -nr
 		;;
 	v)
-		lichen -c lichen-cfg.yaml "$1"
+		lichen -c scripts/lichen-cfg.yaml "$1"
 		;;
 	*)
-		lichen -c lichen-cfg.yaml --template="" $1
+		lichen -c scripts/lichen-cfg.yaml --template="" $1
 		;;
 esac
 

@@ -6,10 +6,14 @@ Other packages comm, didcomm, endp, sec, etc. offer specific services for the
 cloud.Agent to be able to perform its duties like serve the connected Edge
 Agent.
 
+Legacy API:
 The Edge Agents allocate the cloud agent from the agency. Every CA has at least
 one EA connected to it. The current version is not implemented for multiple EAs.
 In the future, we will support multiple wallet applications per individual DID
 holder.
+
+gRPC API:
+The are no EAs any more. The root of trusts for CAs are FIDO2 authenticators.
 
 The agent package is empty itself. All the functionality is inside sub-packages.
 In the future, we might split the package into two parts. One for internal

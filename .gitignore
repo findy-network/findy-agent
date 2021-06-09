@@ -1,23 +1,12 @@
 .DS_Store
 .idea
-pool_transactions_genesis
-*.swp
 findy*.json
-findy-agent
-mywc
 deploy/.indy_client
 agent/utils/salt.go
 *.bolt
-memo
-.memo.swo
-*.bak
-turva
-tmp*.json
-testlogfile
 ONEfindy.bak.json
 ONEfindy.json
 ONEdata.gob
-Session.vim
 
 # Binaries for programs and plugins
 *.exe

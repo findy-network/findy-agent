@@ -1,12 +1,12 @@
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
 
-API_BRANCH=$(shell ./branch.sh ../findy-agent-api/)
-GRPC_BRANCH=$(shell ./branch.sh ../findy-common-go/)
-WRAP_BRANCH=$(shell ./branch.sh ../findy-wrapper-go/)
+API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
+GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
+WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
 
 scan:
-	@./scan.sh $(ARGS)
+	@scripts/scan.sh $(ARGS)
 
 drop_wrap:
 	go mod edit -dropreplace github.com/findy-network/findy-wrapper-go

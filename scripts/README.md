@@ -11,8 +11,9 @@ the next working version. E.g. if current working version is 0.1.0, following
 will release version 0.1.0 and update working version to 0.2.0.
 
 ```bash
+# cd to root dir of the repo
 git checkout dev
-./release 0.2.0
+scripts/release.sh 0.2.0
 ```
 
 ## Running e2e tests

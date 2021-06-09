@@ -1,12 +1,6 @@
 /*
 Package enclave is a server-side Secure Enclave. It offers a secure and sealed
 storage to store indy wallet keys on the Agency server.
-
-Urgent! This version does not implement internal hash(), encrypt, and decrypt()
-functions. We must implement these three functions before production. We will
-offer implementations of them when the server-side crypto solution and the Key
-Storage is selected. Possible candidates are AWS Nitro, etc. We also bring
-addon/plugin system for cryptos when first implementation is done.
 */
 package enclave
 
