@@ -55,7 +55,7 @@ scratch() {
       -p 9000:9000 \
       -v sandbox:/var/lib/indy/sandbox/ \
       --name findy-pool \
-      optechlab/indy-pool-browser:latest
+      ghcr.io/findy-network/test-pool:latest
   fi
 
   echo -e "${GREEN}*** dev - create pool ***${NC}"

@@ -102,12 +102,9 @@ install:
 		./...
 
 image:
-	# https prefix for go build process to be able to clone private modules
-	@[ "${HTTPS_PREFIX}" ] || ( echo "ERROR: HTTPS_PREFIX <{githubUser}:{githubToken}@> is not set"; exit 1 )
 	$(eval VERSION = $(shell cat ./VERSION))
 	docker build \
 		-t findy-agency \
-		--build-arg HTTPS_PREFIX=$(HTTPS_PREFIX) \
 		-f scripts/deploy/Dockerfile .
 	docker tag findy-agency:latest findy-agency:$(VERSION)
 

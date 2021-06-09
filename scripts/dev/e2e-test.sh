@@ -59,8 +59,6 @@ init_agency(){
 init_ledger() {
   # remove and reset all stored data
   clean
-  # start dev ledger
-  dev_ledger
 }
 
 rm_wallets() {
@@ -90,29 +88,20 @@ rm_wallets() {
   set -e
 }
 
-dev_ledger() {
-  echo -e "${BLUE}*** dev - start dev ledger ***${NC}"
-  docker run -itd -p 9701-9708:9701-9708 \
-    -p 9000:9000 \
-    -v sandbox:/var/lib/indy/sandbox/ \
-    --name findy-pool \
-    optechlab/indy-pool-browser:latest
-}
-
 unset_envs(){
   unset "${!FCLI@}"
 }
 
 set_envs() {
-    export FCLI_POOL_NAME="findy"
+    export FCLI_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_POOL_GENESIS_TXN_FILE="${CURRENT_DIR}/genesis_transactions"
 
-    export FCLI_STEWARD_POOL_NAME="findy"
+    export FCLI_STEWARD_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_STEWARD_SEED="000000000000000000000000Steward1"
     export FCLI_STEWARD_WALLET_NAME="sovrin_steward_wallet"
     export FCLI_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
 
-    export FCLI_AGENCY_POOL_NAME="findy"
+    export FCLI_AGENCY_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_AGENCY_STEWARD_WALLET_NAME="sovrin_steward_wallet"
     export FCLI_AGENCY_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
     export FCLI_AGENCY_STEWARD_DID="Th7MpTaRZVRYnPiabds81Y"
@@ -419,11 +408,11 @@ agency_flag() {
     --genesis-txn-file=${CURRENT_DIR}/genesis_transactions
 
   echo -e "${BLUE}*** flag - ping pool ***${NC}"
-  $CLI ledger pool ping --name=findy
+  $CLI ledger pool ping --name=FINDY_FILE_LEDGER
 
   echo -e "${BLUE}*** flag - create steward ***${NC}"
   $CLI ledger steward create \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --seed=000000000000000000000000Steward1 \
     --wallet-name=sovrin_steward_wallet \
     --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
@@ -431,7 +420,7 @@ agency_flag() {
   # run agency
   echo -e "${BLUE}*** flag - run agency ***${NC}"
   $CLI agency start \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=sovrin_steward_wallet \
     --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
@@ -455,7 +444,7 @@ other_cases() {
     --genesis-txn-file=${CURRENT_DIR}/genesis_transactions
 
   echo -e "${BLUE}*** other - ping pool ***${NC}"
-  $CLI ledger pool ping --name=findy
+  $CLI ledger pool ping --name=FINDY_FILE_LEDGER
 
   echo -e "${BLUE}*** other - import wallet ***${NC}"
   $CLI tools import \
@@ -467,7 +456,7 @@ other_cases() {
   # run agency
   echo -e "${BLUE}*** other - run agency ***${NC}"
   $CLI agency start \
-    --pool-name=findy \
+    --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=steward \
     --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \

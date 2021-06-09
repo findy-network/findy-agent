@@ -1,20 +1,30 @@
 name: test
 on: push
-env:
-  GOPRIVATE: "github.com/findy-network/*"
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    steps:
+      - name: Install make
+        run: apt-get install -y build-essential
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.39
+          args: --timeout=5m
   test:
     runs-on: ubuntu-latest
-    container: optechlab/indy-golang:1.16.0
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
+      - name: Install make
+        run: apt-get install -y build-essential
       - name: setup
         uses: actions/setup-go@v2
         with:
           go-version: 1.16.x
       - name: checkout
         uses: actions/checkout@v2
-      - name: use token
-        run: git config --global url."https://"${{ secrets.https_prefix }}"github.com/".insteadOf "https://github.com/"
       - name: test
         run: make test
         env:
@@ -22,4 +32,20 @@ jobs:
           CI: true
       - name: scan
         run: make scan
+  e2e:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    steps:
+      - name: Install make
+        run: apt-get install -y build-essential
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        run: make e2e_ci
+        env:
+          GOPATH: /go
 
