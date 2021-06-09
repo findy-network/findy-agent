@@ -15,7 +15,7 @@
 
 ## About findy-agent
 
-Findy agency is a high-performant, multi-tenant identity agency for Aries
+Findy agency is a high-performing, multi-tenant identity agency for Aries
 protocols. It offers a way to allocate Cloud Agents and control them thru gRPC
 interfaces. You can think it like a database service, or SMTP service, but it's
 a SSI service. With help of it you can run your DID agents where ever you have
@@ -23,11 +23,11 @@ installed the Findy Agency. Preferred installation place for it is a host with
 static internet presence.
 
 The root of trust for each CAs is in FIDO2 authenticators. WebAuth server
-onboards new agents and JWT is used for the authorization.
+on-boards new agents and JWT is used for the authorization.
 
 You can use Findy Agency roughly for these purposes:
 
-1. As a multitenant service for allocating multiple Cloud Agents which
+1. As a multi-tenant service for allocating multiple Cloud Agents which
    implement [Aries agent-to-agent protocols](#aries-protocol-state-machine)
    and offer SSI interoperability.
 
@@ -36,7 +36,7 @@ You can use Findy Agency roughly for these purposes:
    existing wallet. For command line use it offers all the same features as
    `indy cli`.
 
-3. As a high-performant SDK to implement all types SSI Agents like *holders*,
+3. As a high-performing SDK to implement all types SSI Agents like *holders*,
    *issuers* and *verifiers* with any programming language you chose which is
    supported by gRPC.
 
@@ -78,7 +78,7 @@ Because indy SDK won't offer proper distribution for OSX, we have written a
 helper Bash script to perform installation. Follow these steps **in
 `findy-wrapper-go` repo**:
 
-0. Install [Homebrew](https://brew.sh) if it insn't already on your machine.
+0. Install [Homebrew](https://brew.sh) if it isn't already on your machine.
 1. Clone the repo: `git clone https://github.com/findy-network/findy-wrapper-go`
 2. Go to directory `findy-wrapper-go/scripts/mac-libindy`:
    ```
@@ -146,7 +146,7 @@ is lost. It's very good for tests and short demos.
 
 ### Run with File Ledger 
 
-File ledger is a test ledger where ledger data is presistently stored into a
+File ledger is a test ledger where ledger data is persistently stored into a
 JSON file. It's convenient for cases where you don't want to run all ledger
 nodes on your machine like development.
 
@@ -166,9 +166,9 @@ nodes on your machine like development.
    Please see the helper scripts in the `scripts` directory.
 
 All of that can be done with the `make scratch` as well if the predefined ledger
-and steward wallet names are ok. The previous steps were for educational
+and steward wallet names are OK. The previous steps were for educational
 purposes. If you want to start the agency fast e.g., on OSX, the Makefile
-approach is preferable. Please see the scrips in the `tools` dir.
+approach is preferable. Please see the scrips in the `tools` directory.
 
 ## Agent On-boarding
 
@@ -192,10 +192,10 @@ in a cluster for horizontal scalability.
 ![big](docs/agency-big.png?raw=true "big")
 
 In the middle of the picture is the indy ledger. Depending on the installation
-and the type of the network, it can be a public ledger (permissioned) or just a
-development ledger. All the communication to the ledger goes through the
-agencies. Also, all the Aries agent-to-agent communication goes from agency
-to agency, as you can see in the following drawing.
+and the type of the network, it can be a public ledger or just a development
+ledger. All the communication to the ledger goes through the agencies. Also, all
+the Aries agent-to-agent communication goes from agency to agency, as you can
+see in the following drawing.
 
 ![big_aries](docs/agency-aries-big.png?raw=true "big_aries")
 
@@ -248,7 +248,7 @@ command line.
 ## Agency Architecture
 
 Findy agency is a service that implements an Aries compatible identity agents.
-What makes it an agency is that it's multitenant. It can easily serve thousands of edge
+What makes it an agency is that it's multi-tenant. It can easily serve thousands of edge
 agents with one installation and with modest hardware.
 
 Each CA controller gets a corresponding cloud agent as its service. The following
@@ -327,7 +327,7 @@ to understand from the state machine diagram.
 
 - [ ] Tests for fail cases.
 - [ ] Interoperability testing with Aries testing harness.
-- [x] Indy wallet implementation with storage plugin like PostgreSQL. Done: we
+- [x] Indy wallet implementation with storage plug-in like PostgreSQL. Done: we
       have wallet pool.
 - [x] Crypto implementations for different server types, AWS Nitro, ...
 - [x] Backup system for current docker volumes.
@@ -344,5 +344,5 @@ to understand from the state machine diagram.
 - [ ] Credential revocation, if wanted to use (check upcoming anoncreds 2.0)
 - [ ] Skipping DID-writes to ledger for individuals: moving to full `peer did`.
 - [ ] Real `peer did` implementation.
-- [ ] Agent permissions. Separation of individuals and services in onboarding ->
-      e.g. no credential issuing for individuals (maybe Agency types).
+- [ ] Agent permissions. Separation of individuals and services in on-boarding
+      -> e.g. no credential issuing for individuals (maybe Agency types).
