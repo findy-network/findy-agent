@@ -1,8 +1,6 @@
 # findy-agent
 
-![lint](https://github.com/findy-network/findy-agent/workflows/golangci-lint/badge.svg?branch=dev)
 ![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
-![e2e test](https://github.com/findy-network/findy-agent/workflows/e2e%20test/badge.svg)
 
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
