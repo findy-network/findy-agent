@@ -108,9 +108,9 @@ install:
 image:
 	$(eval VERSION = $(shell cat ./VERSION))
 	docker build \
-		-t findy-agency \
+		-t findy-agent \
 		-f scripts/deploy/Dockerfile .
-	docker tag findy-agency:latest findy-agency:$(VERSION)
+	docker tag findy-agent:latest findy-agent:$(VERSION)
 
 run-agency: 
 	echo "{}" > findy.json && \
@@ -120,7 +120,7 @@ run-agency:
 		-p 50052:50051 \
 		-v $(PWD)/scripts/dev/genesis_transactions:/genesis_transactions \
 		-v $(PWD)/scripts/dev/steward.exported:/steward.exported \
-		-v $(PWD)/findy.json:/root/findy.json findy-agency
+		-v $(PWD)/findy.json:/root/findy.json findy-agent
 
 # **** scripts for local agency development:
 # WARNING: this will erase all your local indy wallets
