@@ -26,6 +26,9 @@ FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
 
 LABEL org.opencontainers.image.source https://github.com/findy-network/findy-agent
 
+# healthcheck utility
+RUN apt-get update && apt-get install -y curl
+
 COPY --from=0 /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 
