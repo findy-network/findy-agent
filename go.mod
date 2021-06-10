@@ -3,7 +3,6 @@ module github.com/findy-network/findy-agent
 go 1.16
 
 require (
-	github.com/client9/misspell v0.3.4 // indirect
 	github.com/findy-network/findy-common-go v0.1.14
 	github.com/findy-network/findy-wrapper-go v0.3.2
 	github.com/go-co-op/gocron v0.7.0
