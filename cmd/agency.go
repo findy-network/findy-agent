@@ -42,6 +42,7 @@ var agencyStartEnvs = map[string]string{
 	"salt":                     "SALT",
 	"admin-id":                 "ADMIN_ID",
 	"grpc":                     "GRPC",
+	"grpc-tls":                 "GRPC_TLS",
 	"grpc-port":                "GRPC_PORT",
 	"grpc-cert-path":           "GRPC_CERT_PATH",
 	"grpc-jwt-secret":          "GRPC_JWT_SECRET",

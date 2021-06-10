@@ -5,7 +5,7 @@ if [ -d "$FOLDER" ]; then
   echo "$FOLDER exists"
 else
   echo "$FOLDER does not exist, importing wallet"
-  ./findy-agent ledger pool create
+  [[ ! -z "$FCLI_POOL_GENESIS_TXN_FILE" ]] && ./findy-agent ledger pool create
   ./findy-agent tools import
   echo "{}" > /root/findy.json
 fi
