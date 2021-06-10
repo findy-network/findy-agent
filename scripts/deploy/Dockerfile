@@ -26,6 +26,9 @@ FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
 
 LABEL org.opencontainers.image.source https://github.com/findy-network/findy-agent
 
+# healthcheck utility
+RUN apt-get update && apt-get install -y curl
+
 COPY --from=0 /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 
@@ -57,12 +60,13 @@ ENV FCLI_AGENCY_STEWARD_WALLET_NAME ${FCLI_IMPORT_WALLET_NAME}
 ENV FCLI_AGENCY_STEWARD_WALLET_KEY ${FCLI_IMPORT_WALLET_KEY}
 ENV FCLI_AGENCY_STEWARD_DID Th7MpTaRZVRYnPiabds81Y
 ENV FCLI_AGENCY_SALT "this is only example"
+ENV FCLI_AGENCY_GRPC_TLS false
 
 ENV FCLI_AGENCY_APNS_P12_FILE ""
 
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
     echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' >> /start.sh && \
     echo './import-wallet.sh' >> /start.sh && \
-    echo '/findy-agent agency start --grpc=true --grpc-tls=false' >> /start.sh && chmod a+x /start.sh
+    echo '/findy-agent agency start --grpc=true' >> /start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "/start.sh"]
