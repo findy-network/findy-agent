@@ -51,8 +51,21 @@ tool](https://github.com/findy-network/findy-agent-cli) as well.
 
 ### Running From Docker Container
 
-**TODO: store public image to github and make link and guides here**
+To setup running Findy Agency and all of it fellow services like
+[Findy WebAuthn](https://github.com/findy-network/findy-agent-auth) and
+[Findy Vault](https://github.com/findy-network/findy-agent-vault) can be done
+just entering one command:
+```shell
+docker compose up
+```
+Please follow the
+[documentation](https://github.com/findy-network/findy-agent-cli#running-full-stack-agency)
+and samples from
+[`findy-agent-cli`](https://github.com/findy-network/findy-agent-cli). There's
+detailed examples how to allocate new agents and their wallets, make connection
+between agents and execute Aries protocols for them.
 
+## Development
 Ubuntu 20.04 is preferred development environment but macOS is also an option.
 Please make sure that Go and git are both installed and working properly.
 
@@ -177,7 +190,10 @@ Findy-agent serves all types of cloud agents (CA) like *holder*, *issuer* and
 allocation is called on-boarding. In most cases it's done thru `WebAuthn` server
 like `findy-agent-auth` but you can allocate them directly from the agency.
 
-TODO: direct CA on-boarding.
+Currently only `findy-agent-auth` on-boards agents to Findy Agency. Since gRPC
+API you should run both Findy Agency and Findy WebAuthn Service where later is
+only used for authentication: register and login. The JWT token is used to
+access allocated CA. Please see more [information].
 
 ## Agency Network
 
@@ -189,7 +205,7 @@ identity network. The server rack icon illustrates an agency. There are three in
 the picture, but typically there can be as many as needed, and agencies can run
 in a cluster for horizontal scalability.
 
-![big](docs/agency-big.png?raw=true "big")
+![big](https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/agency-big.png?raw=true "big")
 
 In the middle of the picture is the indy ledger. Depending on the installation
 and the type of the network, it can be a public ledger or just a development
@@ -197,19 +213,19 @@ ledger. All the communication to the ledger goes through the agencies. Also, all
 the Aries agent-to-agent communication goes from agency to agency, as you can
 see in the following drawing.
 
-![big_aries](docs/agency-aries-big.png?raw=true "big_aries")
+![big_aries](https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/agency-aries-big.png?raw=true "big_aries")
 
 The application logic is inside the agent controllers. The next image
 illustrates when a mobile controller communicates findy-agent, it calls the
 agency's CA API and receives notifications.
 
-![mobile](docs/agency-mobile.png?raw=true "mobile")
+![mobile](https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/agency-mobile.png?raw=true "mobile")
 
 Likewise, when a SA communicates with an agency, it calls the agency's CA API
 and receives notifications and questions from the agency.
 The image below shows how CAs communicate with Aries.
 
-![sa](docs/agency-sa.png?raw=true "sa")
+![sa](https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/agency-sa.png?raw=true "sa")
 
 ## Command-line Interface
 
@@ -219,7 +235,7 @@ be taken care of before a full agency setup can work. The following use case
 diagram shows most of the tasks and uses system boundaries to illustrate which
 of them are directly operable by findy-agent or findy-agent.
 
-![server.puml](http://www.plantuml.com/plantuml/svg/TL0nRiCm3DprYaCcUt0Ua250qQb0Dx-0aHXLjImP59qqAFBtsatGs2qw4UJTyN0N-QZG30d-JU62iDMGaobTI0C9zHZ8TkIvrKjap30b7zaOife5vFgGfcKUQ1fKXNKSK5XEBBLPhzZkKHqa98yXvuXZY5nZXv1i71sRErQKpoGEPugHzQPQ_zc1FvIJAtyC7boNRSU2KuvZltRvLz9Ir2NJ_CJ5vibpiXSylxwWGVkjtU3J08leceVwruL4vrCbF5bCzVamfRitSKCNOQxB8jc5Xs3xNdAglm00)
+![server.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/use_case/server.puml)
 
 As the diagram shows the prerequisites to start the agency are:
 
@@ -237,13 +253,13 @@ When an agency is running, you can operate with it findy-agent executable when
 you use it as a client mode. The following use case diagram shows the essential
 commands after the agency started.
 
-![client.puml](http://www.plantuml.com/plantuml/svg/VOr12i8m44NtESN7bLqKpo2w4Tnv01cIQJAqJKioeaMykv6Ag8YRuVFc_PcE6uKEIEA3mabYgp94ark98oNgCP9joVD1fuxnM5Fq7Hj3LeS4Sht4PvQSJvoECp8l5OkrvsWdRFOxrB2TSDG5hWPp6tMDPQ3eSg2MgmyyIlHVX2IT9VDgkzk2BxOKVIaLv_tzvqsKKDnnI5hz4crYKcGRkAS_GfaEZflAtEu0)
+![client.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/use_case/client.puml)
 
 The use case diagram is a summary of the creation commands available. With these
 commands, you can create all that is needed in the identity network from the
 command line.
 
-![create.puml](http://www.plantuml.com/plantuml/svg/VOv12i8m44NtESMdAxieda7ifk3E0yYGJDDWceHqH8fuTsihOa6wck6zFyFtt0ea8ZlR2OpBhCN5e8Qh2uaozKYahsJvBADdl3K5wrafqX8poFGkV7Ot33VEbmMfRnJ5mNBG8uwd1XLqPX8ky51Ohb5Ls2qKW_2Tia7TrEK_dsBqQv5Si3FUUpQMSwac_TjazLvtt5EvaPY6WU5sApENUxu0)
+![create.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/use_case/create.puml)
 
 ## Agency Architecture
 
@@ -257,7 +273,7 @@ findy-agent is installed on a single node, and a wallet application is running
 as PWA in the browser. The picture includes an external agent that is running on
 another node (grey).
 
-![main-components](http://www.plantuml.com/plantuml/svg/TLJDRjf043xRJp4YXvxWq6CKHJ4_ZP182hLKL24VrlR4M5syrkuu55MyUsTinxA9UuBzVcPdlbbuSgGiLIVj-uL94IOXslSyGGWoB0XU6Pl0NzzB5QbOEHOiZegMyngy-juX32B_-c6UMtDsQCTiX8uwqtRVT_rKbUvTLQhajyeO_vONwQKcPweiQwuhsBgMSvX2kDjC0EusUNQaM5SeGhd6UxQgJ7SRbXns5ThBrfe4dJCsOl8MOjMIYs-hK-cpk-jkZt5GqR40IGRjM9_hvVUlBTrqAOZSsc3HeEzLaMZrZetmEhXACaykew5hKwMmLreZVPhrsbTkNjhbSChXIoJiJQBDQXjDzcExa4ONGHt9UTLyyX6cqqVe08w9J6Bq8Ax0vkZMh__ZDRwHr93Q_G2uPZV9tI_Ksfob5wwIM4nTLCVonVCAGmYn8J8dC6_Gii9uyfXGlc6HWkW-cWUvi1LobT767cIoEfnxA5iQ72d2swIUJPkapcCvHuDjhVuGD1lZERGi9BFg8eOc6SbLU8h4y-cvFSncZo3vtqEmNKF2YJZVRpCLjdEF3I5cqR95VaqDS6WVVDJ7v2r6h0e7GEyiFR30V-8mvO_W7m00)
+![main-components](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/architecture/main_components.puml)
 
 As the diagram shows, the main wallet of each agent is on the server, our we
 could say it is in the cloud.  That simplifies things a lot. We can have cloud
@@ -278,7 +294,7 @@ Receiving the message is done by first saving the incoming message to the
 database and after that returning OK. If the receiver cannot save the incoming
 message, it returns an error code.
 
-![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/svg/XP71IiGm48RlUOevMfRKRVMqBCBQzU2bhbO4JqjCWmPAKjAn-_ecSQjD6jXB8Fbcvl_8l4hi15GxGEtE0vFc90S1rr1ffGH7gHKSZ4RDTKV8dY7xO9RVwmuBqAOL1ehrclJCeEIoPmhjd8cK2rAUoOqbmR09t5f0cCqT6JgnWln6RIbrjmqCR1HNWr2jL9_7wgckZu_rMqPSABtp2QiLR81RVKU8Uw6M-91pkn5ydFKQWTz6mHTYxvLJYIScyI_nvU4v8wq8DFCyJsO5ghvnrbPwxotzzvxAGWbOYFj9iNYG3sdp9Z8llNaoBL9lid0nyPTFPMcDkNgJfMlaOE5k_tvX9SloQ1Va1m00)
+![connection-protocol-save-state.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/protocols/connection-protocol-save-state.puml)
 
 The next UML diagram implements the connection protocol as a finite state
 machine, which has two top-level states: Waiting Start Cmd/Msg, and
@@ -294,7 +310,7 @@ connection response back and finalizes its state machine. The agent who started
 the connection protocol receives the connection response message and finalizes
 its state machine.
 
-![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/svg/TP4nQyCm48LdwrSSMGg5uD1HGvTC7GmX7ZgK3iQ-9WBtb4Zdjj3ql_TqbetRaCdIUtVllfFPSO-m2vvzwtkekM64gccFZj2OgDVLS-FOqI6vWM7xtfLLFAoWYV0PasJCo_qhh1-dw_Y1jIYxkhBmH1zEafmdwRrojvveZsU9d0Sc2TlKC97j1o91qA7I1T_65BcuHkeINSxHaXZmF1TC-6D1F8taGKuISgVeFRwnyAIs_xY55jmmPOQeQciWM3Wodyg7pMQqB7I-Z4880x7h5wufjCC2VZak0_8GI6r8TdOrMG3i3A_FTBdSMZzl5_Ds2_OqQldKHTQk-J90_0ima_yOa_v0Diml)
+![connection-psm-invitee.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/protocols/connection-psm-invitee.puml)
 
 The previously seen ConnectionProtocolRunning state divides two separate state
 machines. The left sub-state machine is on when the agent is an inviter, and the
@@ -305,7 +321,7 @@ prover/verifier. However, most of the Aries protocols are more complicated
 because both of the roles can initiate the protocol, and depending on the
 message it sends, the role it gets for the protocol.
 
-![issue.puml](http://www.plantuml.com/plantuml/svg/VLJ1Ri8m33qtNs5nd8IATknXqiHbEw0XEEmmxL2r1YAw198K9etz-nmdfIsqEu7zulTiFuEJha9ujRQMQWlBzK88wtA7C7dFfVEvjSkDW_bNcIxiTWAvXRFrAI4-7ZvX-jI4uGEcb26Q3EO6oxVD1WsL3e9Bem_Q8h7-1uzLCxMlRVgDCr2PquMkLhLI57B3L0G_8eaFrwXAFzYLXTzOgKxo-gOPthzPuR56wyBe1e-3H5uT0v51UnWaUYxsWIGlza8al3uQYPLlzjK7uMvXIImgTMgf2wYLanNid3kaZxEPY3Wp-9Q9e8FvJ0RuBLrgqDL6CGWj69Jz72oyZHi8mY4zBkpn84nZTdGJ7pD0isNDGfXJQLgLaTkTo_WKqOHBJ0B5RQT1wN8PD28kALXne63GYjRti_PV1wcwnjkkyLscrlXpp_WkKMEylJ7UjtTtx2tCDlLlFU4Q_jLntztzHhfHPqB567NI40vls_jwREw93Eu9CzkuRhYOyNkBzsBPx1M5Mba4QWeC5YXFI4i9u8W6e-rfjNa-h0etT5SlkYff-ZMxiyYBdLGeVeKG_iyXbee_)
+![issue.puml](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/protocols/issue.puml)
 
 The issuing protocol state machine is waiting for a command to initiate the
 protocol or incoming message to connect already started protocol (Waiting Start
