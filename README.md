@@ -51,19 +51,25 @@ tool](https://github.com/findy-network/findy-agent-cli) as well.
 
 ### Running From Docker Container
 
-To setup running Findy Agency and all of it fellow services like
+To setup running Findy Agency and all of its fellow services like
 [Findy WebAuthn](https://github.com/findy-network/findy-agent-auth) and
 [Findy Vault](https://github.com/findy-network/findy-agent-vault) can be done
-just entering one command:
-```shell
+just entering *one* command after downloading the proper docker compose file and
+setting up few folders for docker volumes. Please enter these commands in the
+dedicated directory of your selection to run the whole stack:
+```console
+curl -s -o "./docker-compose.yaml" \
+ https://raw.githubusercontent.com/findy-network/findy-agent-cli/master/scripts/fullstack/docker-compose.yml
+mkdir -p .data/agent .data/auth .data/vault
 docker compose up
 ```
 Please follow the
 [documentation](https://github.com/findy-network/findy-agent-cli#running-full-stack-agency)
 and samples from
-[`findy-agent-cli`](https://github.com/findy-network/findy-agent-cli). There's
-detailed examples how to allocate new agents and their wallets, make connection
-between agents and execute Aries protocols for them.
+[`findy-agent-cli`](https://github.com/findy-network/findy-agent-cli) which is
+the source for the previous compose file. The CLI repo includes detailed
+examples how to allocate new agents and their wallets, make connection between
+agents and execute Aries protocols for them.
 
 ## Development
 Ubuntu 20.04 is preferred development environment but macOS is also an option.
