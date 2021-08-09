@@ -1,20 +1,10 @@
-name: release
-on:  
-  push:
-    tags:
-      - '*'
-jobs:
-
-  e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - name: test
-        run: echo "implement e2e/acceptance tests"
-
+name: push-image
+ on:  
+   push:
+     branches:
+       - multi-platform # TODO: move to release workflow
+ jobs:
   push-image:
-    needs: e2e
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -50,16 +40,3 @@ jobs:
           cache-to: type=inline
           file: ./scripts/deploy/Dockerfile
 
-  merge:
-    needs: push-image
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-        with:
-          ref: master
-      - name: merge
-        run:  |
-          git fetch --tags origin
-          git merge $GITHUB_REF
-          git push origin master
