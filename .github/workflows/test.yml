@@ -6,7 +6,7 @@ jobs:
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make
-        run: apt-get install -y build-essential
+        run: apt-get update && apt-get install -y build-essential
       - uses: actions/checkout@v2
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
@@ -18,7 +18,7 @@ jobs:
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make
-        run: apt-get install -y build-essential
+        run: apt-get update && apt-get install -y build-essential
       - name: setup
         uses: actions/setup-go@v2
         with:
@@ -37,7 +37,7 @@ jobs:
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make
-        run: apt-get install -y build-essential
+        run: apt-get update && apt-get install -y build-essential
       - name: setup
         uses: actions/setup-go@v2
         with:
