@@ -43,9 +43,9 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          tags:
-            - ghcr.io/${{ github.repository_owner }}/findy-agent:${{ env.version }}
-            - ghcr.io/${{ github.repository_owner }}/findy-agent:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/findy-agent:${{ env.version }}
+            ghcr.io/${{ github.repository_owner }}/findy-agent:latest
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/findy-agent:latest
           cache-to: type=inline
           file: ./scripts/deploy/Dockerfile
