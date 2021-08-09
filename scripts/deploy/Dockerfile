@@ -1,6 +1,6 @@
 FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04 AS indy-base
 
-FROM golang:1.16-buster
+FROM golang:1.16-buster AS agent-builder
 
 ENV INDY_LIB_VERSION="1.16.0"
 
@@ -26,7 +26,7 @@ LABEL org.opencontainers.image.source https://github.com/findy-network/findy-age
 # healthcheck utility
 RUN apt-get update && apt-get install -y curl
 
-COPY --from=0 /go/bin/findy-agent /findy-agent
+COPY --from=agent-builder /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 
 RUN echo "{}" > /root/findy.json
