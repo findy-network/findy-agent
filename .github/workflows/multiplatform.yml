@@ -1,9 +1,9 @@
 name: push-image
- on:  
-   push:
-     branches:
-       - multi-platform # TODO: move to release workflow
- jobs:
+on:  
+  push:
+    branches:
+      - multi-platform # TODO: move to release workflow
+jobs:
   push-image:
     runs-on: ubuntu-latest
     permissions:
