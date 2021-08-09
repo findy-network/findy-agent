@@ -6,9 +6,9 @@ ENV INDY_LIB_VERSION="1.16.0"
 
 # install indy deps and files from base
 RUN apt-get update && apt-get install -y libsodium23 libssl1.1 libzmq5
-COPY --from=indy-base /indy-sdk-${INDY_LIB_VERSION}/libindy/include /usr/include/indy
-COPY --from=indy-base /indy-sdk-${INDY_LIB_VERSION}/libindy/target/release/libindy.a /usr/lib/libindy.a
-COPY --from=indy-base /indy-sdk-${INDY_LIB_VERSION}/libindy/target/release/libindy.so /usr/lib/libindy.so
+COPY --from=indy-base /usr/include/indy /usr/include/indy
+COPY --from=indy-base /usr/lib/libindy.a /usr/lib/libindy.a
+COPY --from=indy-base /usr/lib/libindy.so /usr/lib/libindy.so
 
 WORKDIR /work
 
