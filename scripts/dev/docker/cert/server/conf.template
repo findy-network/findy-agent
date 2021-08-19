@@ -1,0 +1,25 @@
+[ req ]
+default_bits = 4096 
+prompt = no
+default_md = sha256
+req_extensions = req_ext
+distinguished_name = dn
+ 
+[ dn ]
+C = UK
+ST = London
+L = London
+O = Inanzzz Ltd.
+OU = Information Technologies
+emailAddress = email@email.com
+CN = <IP_ADDRESS>
+ 
+[ req_ext ]
+subjectAltName = @alt_names
+ 
+[ alt_names ]
+DNS.1 = core
+DNS.2 = localhost
+DNS.3 = www.inanzzz.com
+IP.1 = <IP_ADDRESS>
+
