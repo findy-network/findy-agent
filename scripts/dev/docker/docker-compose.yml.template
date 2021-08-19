@@ -1,0 +1,35 @@
+version: '3.9'
+services:
+  core:
+    build:
+      dockerfile: ./scripts/deploy/Dockerfile
+      context: ../../..
+    volumes:
+      - ./conf/genesis.txt:/genesis.txt
+      - ./conf/steward.exported:/steward.exported
+      - ./cert:/grpc
+    environment:
+      FCLI_POOL_GENESIS_TXN_FILE: '/genesis.txt'
+      FCLI_POOL_NAME: 'iop'
+      FCLI_AGENCY_POOL_NAME: 'iop'
+      FCLI_AGENCY_GRPC_TLS: 'true'
+      FCLI_AGENCY_GRPC_CERT_PATH: '/grpc'
+      FCLI_AGENCY_HOST_ADDRESS: <IP_ADDRESS>
+      FCLI_AGENCY_HOST_PORT: 8088
+      FCLI_AGENCY_SERVER_PORT: 8088
+    ports:
+      - '8088:8088'
+      - '50051:50051'
+  auth:
+    image: ghcr.io/findy-network/findy-agent-auth:latest
+    volumes:
+      - ./cert:/grpc
+      - .data:/data
+    depends_on:
+      - core
+    environment:
+      FAA_PORT: '8888'
+      FAA_ORIGIN: 'localhost:8888'
+      FAA_AGENCY_ADDR: 'core'
+    ports:
+      - '8888:8888'
