@@ -7,7 +7,14 @@ This script will
 1. build findy-agent image
 1. launch built findy-agent together with auth service and connect it to von-network
 
-Onboarding example to launched agency using findy-agent-cli:
+Launch services:
+
+```
+make up
+```
+
+Open new terminal to onboard agents using findy-agent-cli.
+Onboarding example:
 
 ```
 findy-agent-cli authn register --url "http://localhost:8888" \
