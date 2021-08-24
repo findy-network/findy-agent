@@ -27,3 +27,13 @@ ONEdata.gob
 .vscode
 
 __debug_bin
+
+scripts/dev/docker/conf/genesis.txt
+scripts/dev/docker/cert/client/cert.conf
+scripts/dev/docker/cert/client/client.crt
+scripts/dev/docker/cert/client/client.key
+scripts/dev/docker/cert/server/cert.conf
+scripts/dev/docker/cert/server/server.crt
+scripts/dev/docker/cert/server/server.key
+scripts/dev/docker/docker-compose.yml
+scripts/dev/docker/*.log

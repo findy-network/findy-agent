@@ -1,17 +1,14 @@
-FROM golang:1.16-buster
+FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04 AS indy-base
+
+FROM golang:1.16-buster AS agent-builder
 
 ENV INDY_LIB_VERSION="1.16.0"
-ENV UBUNTU_VERSION="bionic"
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common apt-transport-https && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 68DB5E88 && \
-    add-apt-repository "deb https://repo.sovrin.org/sdk/deb $UBUNTU_VERSION stable" && \
-    add-apt-repository "deb https://repo.sovrin.org/sdk/deb xenial stable" && \
-    apt-get update
-
-RUN apt-get install -y libindy-dev="$INDY_LIB_VERSION-xenial" \
-    libindy="$INDY_LIB_VERSION-$UBUNTU_VERSION"
+# install indy deps and files from base
+RUN apt-get update && apt-get install -y libsodium23 libssl1.1 libzmq5
+COPY --from=indy-base /usr/include/indy /usr/include/indy
+COPY --from=indy-base /usr/lib/libindy.a /usr/lib/libindy.a
+COPY --from=indy-base /usr/lib/libindy.so /usr/lib/libindy.so
 
 WORKDIR /work
 
@@ -29,7 +26,7 @@ LABEL org.opencontainers.image.source https://github.com/findy-network/findy-age
 # healthcheck utility
 RUN apt-get update && apt-get install -y curl
 
-COPY --from=0 /go/bin/findy-agent /findy-agent
+COPY --from=agent-builder /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 
 RUN echo "{}" > /root/findy.json
