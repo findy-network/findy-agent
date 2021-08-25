@@ -18,6 +18,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type Cmd struct {
@@ -46,6 +47,107 @@ func (c Cmd) Validate() error {
 		return errors.New("agency url cannot be empty")
 	}
 	return nil
+}
+
+func (c Cmd) InitWebExec() *cloud.Agent {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	edge := struct {
+		*ssi.Wallet
+		*cloud.Agent
+	}{
+		Wallet: ssi.NewRawWalletCfg(c.WalletName, c.WalletKey),
+		Agent:  cloud.NewEA(),
+	}
+	aw := edge.Wallet
+
+	aw.Create()
+	edge.Agent.OpenWallet(*aw)
+	glog.V(3).Info("init web edge ok. Host:", c.AgencyAddr)
+	return edge.Agent
+}
+
+// WebExec is identical with Exec BUT the edgeAgent is given to it because the
+// web wallets use the same web wallet for all of them. Only pairwise is
+// actually used at the moment.
+func (c Cmd) WebExec(edgeAgent *cloud.Agent, progress io.Writer) (r Result, err error) {
+	assert.D.True(edgeAgent != nil)
+
+	defer err2.Annotate("web wallet on-boarding", &err)
+
+	cmds.Fprintln(progress, "Web wallet handshake starting...")
+
+	msg := mesg.NewHandshake(c.Email, pltype.HandshakePairwiseName)
+
+	endpointAdd := &endp.Addr{
+		BasePath: c.AgencyAddr,
+		Service:  agency.APIPath,
+		PlRcvr:   handshake.HandlerEndpoint,
+	}
+
+	cmds.Fprintln(progress, "Requesting server:", endpointAdd)
+
+	glog.V(2).Infoln("-- send handshake to address", endpointAdd)
+	payload, e := cmds.SendHandshake(msg, endpointAdd)
+	err2.Check(e)
+
+	cmds.Fprintln(progress, "\nBuilding result to server...")
+	responsePayload, _ := edgeAgent.ProcessPL(mesg.NewPayloadImpl(payload))
+
+	ns := responsePayload.ID()
+	nonce := utils.ParseNonce(ns)
+
+	// In all cases we must build the endpoint, server cannot give it us int
+	// phase of the handshake.
+	endpointAddress := &endp.Addr{
+		BasePath: c.AgencyAddr, // the base address of the receiving server
+		Service:  agency.APIPath,
+		PlRcvr:   handshake.HandlerEndpoint, // we keep the message type in payload same during the whole sequence
+		MsgRcvr:  payload.Message.Did,       // The inner message is ENCRYPTED according the payload's DID
+	}
+
+	// 3. we send our results and get CONN_ACK back
+	cmds.Fprintln(progress, "Sending handshake results to server.")
+	finalPl, err := cmds.SendAndWaitDIDComPayload(responsePayload, endpointAddress, nonce)
+	err2.Check(err)
+
+	// get our connection/invite endpoint to print and return it in eaEnp
+	respMesg := finalPl.Message().FieldObj().(*mesg.Msg)
+	invit := didexchange.Invitation{
+		ID:              utils.UUID(),
+		Type:            pltype.AriesConnectionInvitation,
+		ServiceEndpoint: respMesg.RcvrEndp,
+		RecipientKeys:   []string{respMesg.RcvrKey},
+		Label:           c.Email,
+	}
+	cmds.Fprintln(progress, "----- invitation JSON begin -----")
+	invitJSON := dto.ToJSON(&invit)
+	cmds.Fprintln(progress, invitJSON)
+	cmds.Fprintln(progress, "----- invitation JSON end -----")
+
+	eaEnp := service.Addr{
+		Endp: respMesg.RcvrEndp,
+		Key:  respMesg.RcvrKey,
+	}
+
+	// When connection request is started by other end they reset the nonce
+	if finalPl.Type() == pltype.ConnectionAck {
+		n := utils.NonceToStr(nonce)
+		if n != finalPl.Message().Nonce() && finalPl.ID() != ns {
+			cmds.Fprintln(progress, "CA send ERROR, nonce mismatch")
+		}
+	}
+
+	// let's process this as well, so that endpoint will be stored, etc.
+	responsePayload, _ = edgeAgent.ProcessPL(finalPl)
+
+	return Result{
+		CADID:       edgeAgent.Pw().YouDID(),
+		ServiceAddr: eaEnp,
+		Invitation:  invit,
+	}, nil
 }
 
 func (c Cmd) Exec(progress io.Writer) (r Result, err error) {

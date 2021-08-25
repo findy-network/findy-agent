@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
+	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -29,6 +31,35 @@ type agencyService struct {
 	ops.UnimplementedAgencyServiceServer
 }
 
+// webAgent is variable for shared web wallet edge agent which is used for all
+// of the allocated agents. We use this struct to lock the edge agent preventing
+// not need wallet reopenings and closings
+var webAgent = struct {
+	sync.Mutex
+	*cloud.Agent
+}{}
+
+var cmd onboard.Cmd
+
+func webEdgeAgent() *cloud.Agent {
+	webAgent.Lock()
+	defer webAgent.Unlock()
+	if webAgent.Agent == nil {
+		// late init to allow utils.Settings be ready
+		cmd = onboard.Cmd{
+			Cmd: cmds.Cmd{
+				WalletName: utils.Settings.WebOnboardWalletName(),
+				WalletKey:  utils.Settings.WebOnboardWalletKey(),
+			},
+			AgencyAddr: utils.Settings.HostAddr(),
+		}
+
+		webAgent.Agent = cmd.InitWebExec()
+	}
+	glog.V(1).Infoln("return web edge wallet")
+	return webAgent.Agent
+}
+
 func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) (st *ops.OnboardResult, err error) {
 	defer err2.Return(&err)
 	st = &ops.OnboardResult{Ok: false}
@@ -43,16 +74,16 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 		return st, errors.New("invalid user")
 	}
 
-	r, err := onboard.Cmd{
-		Cmd: cmds.Cmd{
-			WalletName: utils.Settings.WebOnboardWalletName(),
-			WalletKey:  utils.Settings.WebOnboardWalletKey(),
-		},
-		Email:      onboarding.Email,
-		AgencyAddr: utils.Settings.HostAddr(),
-	}.Exec(os.Stdout)
+	// edgeAgent is singleton, let it init before cloning
+	edgeAgent := webEdgeAgent()
+	// make a clone be cause we use ui Cmd for service side
+	c := cmd
+	c.Email = onboarding.Email
+
+	r, err := c.WebExec(edgeAgent, os.Stdout)
 	err2.Check(err)
 
+	glog.V(1).Infoln("build onboarding grpc result")
 	return &ops.OnboardResult{
 		Ok: true,
 		Result: &ops.OnboardResult_OKResult{
