@@ -65,7 +65,7 @@ func (c Cmd) InitWebExec() *cloud.Agent {
 
 	aw.Create()
 	edge.Agent.OpenWallet(*aw)
-	glog.V(1).Info("init web edge ok")
+	glog.V(3).Info("init web edge ok. Host:", c.AgencyAddr)
 	return edge.Agent
 }
 
@@ -87,9 +87,9 @@ func (c Cmd) WebExec(edgeAgent *cloud.Agent, progress io.Writer) (r Result, err 
 		PlRcvr:   handshake.HandlerEndpoint,
 	}
 
-	cmds.Fprintln(progress, "Requesting server.")
+	cmds.Fprintln(progress, "Requesting server:", endpointAdd)
 
-	glog.V(1).Infoln("send handshake", endpointAdd)
+	glog.V(2).Infoln("-- send handshake to address", endpointAdd)
 	payload, e := cmds.SendHandshake(msg, endpointAdd)
 	err2.Check(e)
 

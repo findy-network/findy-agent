@@ -74,10 +74,13 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 		return st, errors.New("invalid user")
 	}
 
+	// edgeAgent is singleton, let it init before cloning
+	edgeAgent := webEdgeAgent()
+	// make a clone be cause we use ui Cmd for service side
 	c := cmd
 	c.Email = onboarding.Email
 
-	r, err := c.WebExec(webEdgeAgent(), os.Stdout)
+	r, err := c.WebExec(edgeAgent, os.Stdout)
 	err2.Check(err)
 
 	glog.V(1).Infoln("build onboarding grpc result")

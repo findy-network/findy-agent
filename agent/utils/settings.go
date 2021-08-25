@@ -133,6 +133,7 @@ func (h *Hub) SetVersionInfo(info string) {
 // SetHostAddr sets current host name of this service agency. The host name is
 // used in the URLs and endpoints.
 func (h *Hub) SetHostAddr(ipName string) {
+	glog.V(4).Infoln("setting host addr:", ipName)
 	h.hostAddr = ipName
 }
 
