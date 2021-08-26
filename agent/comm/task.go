@@ -49,9 +49,11 @@ func NewTaskFromRequest(ipl didcomm.Payload, req *didexchange.Request) (t *Task)
 		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
 	}
 	return &Task{
+		// We take nonce from connection ID which is tranferred with ThreadID
 		Nonce:      ipl.ThreadID(),
 		TypeID:     ipl.Type(),
 		SenderEndp: senderEP,
+		// We use same connection ID for pairwise naming
 		Message:    ipl.ThreadID(),
 	}
 }
