@@ -74,6 +74,8 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 			DID:    caller.Did(),
 			DIDDoc: diddoc.NewDoc(caller, pubEndp.AE()),
 		},
+		// when out-of-bound and did-exchange protocols are supported we
+		// should start to save connection_id to Thread.PID
 		Thread: &decorator.Thread{ID: task.ConnectionInvitation.ID},
 	})
 	// add to the cache until all lazy fetches are called
@@ -196,6 +198,10 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	task.SwitchDirection()
 
+	if cnxAddr.EdgeToken != "" {
+		glog.V(1).Infoln("=== using URL nonce", cnxAddr.EdgeToken)
+		ipl.MsgHdr().Thread().ID = cnxAddr.EdgeToken
+	}
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, a.(ssi.Agent), ipl.MsgHdr().(didcomm.PwMsg))
 
