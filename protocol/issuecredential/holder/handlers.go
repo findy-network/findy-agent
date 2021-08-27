@@ -35,77 +35,47 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			Key: key,
 		}
 		err2.Check(psm.AddIssueCredRep(rep))
-
-		sendNext, waitingNext := checkAutoPermission(packet)
-
-		return prot.ExecPSM(prot.Transition{
-			Packet:      packet,
-			SendNext:    sendNext,
-			WaitingNext: waitingNext,
-			InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-				defer err2.Annotate("cred offer ask user", &err)
-
-				offer := im.FieldObj().(*issuecredential.Offer)
-				values := issuecredential.PreviewCredentialToValues(
-					offer.CredentialPreview)
-
-				agent := packet.Receiver
-				repK := psm.NewStateKey(agent, im.Thread().ID)
-				rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
-
-				attach := err2.Bytes.Try(issuecredential.OfferAttach(offer))
-				rep.CredOffer = string(attach)
-
-				// we need to parse the cred_def_id from credOffer
-				var subMsg map[string]interface{}
-				dto.FromJSON(attach, &subMsg)
-				if credDefID, ok := subMsg["cred_def_id"]; ok {
-					rep.CredDefID = credDefID.(string)
-				}
-				rep.Values = values
-				preview.StoreCredPreview(&offer.CredentialPreview, rep)
-
-				req, autoAccept := om.FieldObj().(*issuecredential.Request)
-				if autoAccept {
-					credRq := err2.String.Try(rep.BuildCredRequest(packet))
-					req.RequestsAttach =
-						issuecredential.NewRequestAttach([]byte(credRq))
-				}
-
-				// Save the rep with the offer and with the request if
-				// auto accept
-				err2.Check(psm.AddIssueCredRep(rep))
-
-				return true, nil
-			},
-		})
 	}
 
-	// So, user has started the proof protocol herself, she can just continue
+	sendNext, waitingNext := checkAutoPermission(packet)
+
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
-		SendNext:    pltype.IssueCredentialRequest,
-		WaitingNext: pltype.IssueCredentialIssue,
+		SendNext:    sendNext,
+		WaitingNext: waitingNext,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred offer", &err)
+			defer err2.Annotate("cred offer ask user", &err)
 
 			offer := im.FieldObj().(*issuecredential.Offer)
+			values := issuecredential.PreviewCredentialToValues(
+				offer.CredentialPreview)
+
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-
 			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+
 			attach := err2.Bytes.Try(issuecredential.OfferAttach(offer))
 			rep.CredOffer = string(attach)
-			rep.Values = issuecredential.PreviewCredentialToValues(
-				offer.CredentialPreview)
+
+			// we need to parse the cred_def_id from credOffer
+			var subMsg map[string]interface{}
+			dto.FromJSON(attach, &subMsg)
+			if credDefID, ok := subMsg["cred_def_id"]; ok {
+				rep.CredDefID = credDefID.(string)
+			}
+			rep.Values = values
 			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 
-			credRq := err2.String.Try(rep.BuildCredRequest(packet))
-			err2.Check(psm.AddIssueCredRep(rep))
+			req, autoAccept := om.FieldObj().(*issuecredential.Request)
+			if autoAccept {
+				credRq := err2.String.Try(rep.BuildCredRequest(packet))
+				req.RequestsAttach =
+					issuecredential.NewRequestAttach([]byte(credRq))
+			}
 
-			req := om.FieldObj().(*issuecredential.Request)
-			req.RequestsAttach =
-				issuecredential.NewRequestAttach([]byte(credRq))
+			// Save the rep with the offer and with the request if
+			// auto accept
+			err2.Check(psm.AddIssueCredRep(rep))
 
 			return true, nil
 		},

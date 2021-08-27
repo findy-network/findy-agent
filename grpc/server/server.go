@@ -80,7 +80,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
 	case pb.Protocol_ISSUE_CREDENTIAL:
-		if protocol.Role == pb.Protocol_INITIATOR {
+		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
 			credDef := protocol.GetIssueCredential()
 			if credDef == nil {
 				panic(errors.New("cred def cannot be nil for issuing protocol"))
