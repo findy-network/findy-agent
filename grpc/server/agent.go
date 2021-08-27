@@ -203,7 +203,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		label = "empty-label"
 	}
 	invitation := didexchange.Invitation{
-		ID:              id,
+		ID:              utils.UUID(), // TODO: this version uses only edge token
 		Type:            pltype.AriesConnectionInvitation,
 		ServiceEndpoint: ep.Address(),
 		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
