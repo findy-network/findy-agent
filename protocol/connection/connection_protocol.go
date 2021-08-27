@@ -190,6 +190,11 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	cnxAddr := packet.Address
 	a := packet.Receiver
 
+	if cnxAddr.EdgeToken != "" {
+		glog.V(1).Infoln("=== using URL nonce", cnxAddr.EdgeToken)
+		ipl.MsgHdr().Thread().ID = cnxAddr.EdgeToken
+	}
+
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
 	task := comm.NewTaskFromRequest(ipl, req)
 	task.ReceiverEndp = cnxAddr.AE()
@@ -198,10 +203,6 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	task.SwitchDirection()
 
-	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("=== using URL nonce", cnxAddr.EdgeToken)
-		ipl.MsgHdr().Thread().ID = cnxAddr.EdgeToken
-	}
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, a.(ssi.Agent), ipl.MsgHdr().(didcomm.PwMsg))
 
