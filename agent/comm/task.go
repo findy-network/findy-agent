@@ -54,7 +54,7 @@ func NewTaskFromRequest(ipl didcomm.Payload, req *didexchange.Request) (t *Task)
 		TypeID:     ipl.Type(),
 		SenderEndp: senderEP,
 		// We use same connection ID for pairwise naming
-		Message:    ipl.ThreadID(),
+		Message: ipl.ThreadID(),
 	}
 }
 
