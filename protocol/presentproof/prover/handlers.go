@@ -20,7 +20,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
 	rep, _ := psm.GetPresentProofRep(key) // ignore not found error
 
-	if rep == nil  {
+	if rep == nil {
 		rep := &psm.PresentProofRep{
 			Key:        key,
 			WeProposed: false,
@@ -28,38 +28,38 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		err2.Check(psm.AddPresentProofRep(rep))
 	}
 
-		sendNext, waitingNext := checkAutoPermission(packet)
+	sendNext, waitingNext := checkAutoPermission(packet)
 
-		return prot.ExecPSM(prot.Transition{
-			Packet:      packet,
-			SendNext:    sendNext,
-			WaitingNext: waitingNext,
-			InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-				defer err2.Annotate("proof req handler", &err)
+	return prot.ExecPSM(prot.Transition{
+		Packet:      packet,
+		SendNext:    sendNext,
+		WaitingNext: waitingNext,
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("proof req handler", &err)
 
-				agent := packet.Receiver
-				repK := psm.NewStateKey(agent, im.Thread().ID)
-				rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+			agent := packet.Receiver
+			repK := psm.NewStateKey(agent, im.Thread().ID)
+			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
 
-				req := im.FieldObj().(*presentproof.Request)
-				data := err2.Bytes.Try(presentproof.ProofReqData(req))
-				rep.ProofReq = string(data)
+			req := im.FieldObj().(*presentproof.Request)
+			data := err2.Bytes.Try(presentproof.ProofReqData(req))
+			rep.ProofReq = string(data)
 
-				preview.StoreProofData(data, rep)
+			preview.StoreProofData(data, rep)
 
-				pres, autoAccept := om.FieldObj().(*presentproof.Presentation)
-				if autoAccept {
-					err2.Check(rep.CreateProof(packet, repK.DID))
-					pres.PresentationAttaches = presentproof.NewPresentationAttach(
-						pltype.LibindyPresentationID, []byte(rep.Proof))
-				}
+			pres, autoAccept := om.FieldObj().(*presentproof.Presentation)
+			if autoAccept {
+				err2.Check(rep.CreateProof(packet, repK.DID))
+				pres.PresentationAttaches = presentproof.NewPresentationAttach(
+					pltype.LibindyPresentationID, []byte(rep.Proof))
+			}
 
-				// Save the proof request to the Proof Rep
-				err2.Check(psm.AddPresentProofRep(rep))
+			// Save the proof request to the Proof Rep
+			err2.Check(psm.AddPresentProofRep(rep))
 
-				return true, nil
-			},
-		})
+			return true, nil
+		},
+	})
 }
 
 func checkAutoPermission(packet comm.Packet) (next string, wait string) {
