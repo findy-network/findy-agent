@@ -839,7 +839,7 @@ func TestClient_PwAndCredReqAutoPermissionOn(t *testing.T) {
 	}
 }
 
-func TestClient_ProofProp(t *testing.T) {
+func TestClient_ProofPropAutoPermissionOn(t *testing.T) {
 	type args struct {
 		wallet  ssi.Wallet
 		myEndp  string
@@ -873,6 +873,10 @@ func TestClient_ProofProp(t *testing.T) {
 				BaseAddress: "http://localhost:8080",
 				Wallet:      &tt.args.wallet,
 			}
+			err := client.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+			}
 			tID, err := client.ProofProp(tt.args.name, tt.args.emailCr)
 			if got := err; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("client.ProofProp() %v, want %v", got, tt.want)
@@ -884,6 +888,10 @@ func TestClient_ProofProp(t *testing.T) {
 					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
 				}
 				if ready {
+					err := client.SetSAImpl("") // remove auto accept
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+					}
 					break
 				}
 			}
@@ -1046,7 +1054,7 @@ func TestClient_ProofRequestAutoPermissionOn(t *testing.T) {
 	}
 }
 
-func TestClient_PwAndProofProp(t *testing.T) {
+func TestClient_PwAndProofPropAutoPermissionOn(t *testing.T) {
 	type args struct {
 		wallet  ssi.Wallet
 		myEndp  string
@@ -1080,6 +1088,10 @@ func TestClient_PwAndProofProp(t *testing.T) {
 				BaseAddress: "http://localhost:8080",
 				Wallet:      &tt.args.wallet,
 			}
+			err := client.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+			}
 			tID, err := client.PwAndProofProp(
 				endpoint2.Endp, endpoint2.Key, tt.args.name, credDefID, tt.args.emailCr)
 			if got := err; !reflect.DeepEqual(got, tt.want) {
@@ -1093,6 +1105,10 @@ func TestClient_PwAndProofProp(t *testing.T) {
 					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
 				}
 				if ready {
+					err := client.SetSAImpl("")
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+					}
 					break
 				}
 			}
