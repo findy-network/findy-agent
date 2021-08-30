@@ -86,6 +86,15 @@ func NewPreview(values []string, credDefID string) *Preview {
 	return prev
 }
 
+func NewPreviewWithAttributes(attrs []Attribute) *Preview {
+	prev := &Preview{
+		Type:       pltype.PresentationPreviewObj,
+		Attributes: attrs,
+		Predicates: make([]Predicate, 0),
+	}
+	return prev
+}
+
 func (p *ProposeImpl) ID() string {
 	return p.Propose.ID
 }

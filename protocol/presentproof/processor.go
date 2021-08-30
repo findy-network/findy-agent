@@ -82,6 +82,19 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 				// Note!! StartPSM() sends certain Task fields to other end
 				// as PL.Message like msg.ID, .SubMsg, .Info
 
+				attrs := make([]presentproof.Attribute, len(*t.ProofAttrs))
+				for i, attr := range *t.ProofAttrs {
+					attrs[i] = presentproof.Attribute{
+						Name:      attr.Name,
+						CredDefID: attr.CredDefID,
+					}
+				}
+				pp := presentproof.NewPreviewWithAttributes(attrs)
+
+				propose := msg.FieldObj().(*presentproof.Propose)
+				propose.PresentationProposal = pp
+				propose.Comment = t.Info // todo: for legacy tests
+
 				rep := &psm.PresentProofRep{
 					Key:        key,
 					Values:     t.Info,

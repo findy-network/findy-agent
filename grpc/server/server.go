@@ -105,7 +105,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 			}
 		}
 	case pb.Protocol_PRESENT_PROOF:
-		if protocol.Role == pb.Protocol_INITIATOR {
+		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
 			proofReq := protocol.GetPresentProof()
 			if proofReq.GetAttributesJSON() != "" {
 				var proofAttrs []didcomm.ProofAttribute
