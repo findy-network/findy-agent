@@ -487,7 +487,7 @@ func Test_SetSAImpl(t *testing.T) {
 	}
 }
 
-func TestClient_CredReq(t *testing.T) {
+func TestClient_CredReqAutoPermissionOn(t *testing.T) {
 	type args struct {
 		wallet  ssi.Wallet
 		myEndp  string
@@ -523,6 +523,10 @@ func TestClient_CredReq(t *testing.T) {
 				BaseAddress: "http://localhost:8080",
 				Wallet:      &tt.args.wallet,
 			}
+			err := client.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+			}
 			tID, err := client.CredReq(tt.args.name, credDefID, tt.args.emailCr, tt.args.veriID)
 			if got := err; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("client.CredReq() %v, want %v", got, tt.want)
@@ -534,6 +538,10 @@ func TestClient_CredReq(t *testing.T) {
 					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
 				}
 				if ready {
+					err := client.SetSAImpl("") // remove auto accept
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+					}
 					break
 				}
 			}
@@ -748,7 +756,7 @@ func TestClient_PwAndTrustPing(t *testing.T) {
 			tID, err := client.PwAndTrustPing(
 				endpoint2.Endp, endpoint2.Key, tt.args.name)
 			if got := err; !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("client.PwAndCredReq() %v, want %v", got, tt.want)
+				t.Errorf("client.PwAndTrustPing() %v, want %v", got, tt.want)
 			}
 			for {
 				time.Sleep(1000 * time.Millisecond)
@@ -765,7 +773,7 @@ func TestClient_PwAndTrustPing(t *testing.T) {
 	}
 }
 
-func TestClient_PwAndCredReq(t *testing.T) {
+func TestClient_PwAndCredReqAutoPermissionOn(t *testing.T) {
 	type args struct {
 		wallet  ssi.Wallet
 		myEndp  string
@@ -801,6 +809,10 @@ func TestClient_PwAndCredReq(t *testing.T) {
 				BaseAddress: "http://localhost:8080",
 				Wallet:      &tt.args.wallet,
 			}
+			err := client.SetSAImpl("permissive_sa")
+			if got := err; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+			}
 			tID, err := client.PwAndCredReq(
 				endpoint2.Endp, endpoint2.Key, tt.args.name, credDefID,
 				tt.args.emailCr, tt.args.veriID)
@@ -815,6 +827,10 @@ func TestClient_PwAndCredReq(t *testing.T) {
 					t.Errorf("client.TaskReady() %v, want %v", got, tt.want)
 				}
 				if ready {
+					err := client.SetSAImpl("") // remove auto accept
+					if got := err; !reflect.DeepEqual(got, tt.want) {
+						t.Errorf("client.SetSAImpl() %v, want %v", got, tt.want)
+					}
 					break
 				}
 			}
