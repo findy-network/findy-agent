@@ -190,10 +190,19 @@ func (a *agentServer) GetCredDef(
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
 	defer err2.Annotate("create invitation", &err)
 
-	id := base.ID
+	// in the future we might have generatedConnID as argument in the API
+	id, generatedConnID := base.ID, base.ID
+	// if connection is not given from the caller we generate a new one and use
+	// it for both one
 	if id == "" {
 		id = utils.UUID()
+		generatedConnID = id
+		glog.V(4).Infoln("generating connection id:", id)
+	} else {
+		generatedConnID = utils.UUID()
+		glog.V(4).Infoln("generating sub connection id:", generatedConnID)
 	}
+
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
 	ep := receiver.CAEndp(true)
 	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
@@ -203,7 +212,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		label = "empty-label"
 	}
 	invitation := didexchange.Invitation{
-		ID:              utils.UUID(), // TODO: this version uses only edge token
+		ID:              generatedConnID,
 		Type:            pltype.AriesConnectionInvitation,
 		ServiceEndpoint: ep.Address(),
 		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
