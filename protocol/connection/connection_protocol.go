@@ -119,14 +119,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	a := packet.Receiver
 
 	nonce := ipl.ThreadID()
-	glog.V(1).Infoln("current thread ID:", nonce)
-	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("****** using URL for nonce in RESPONSE", cnxAddr.EdgeToken)
-		nonce = cnxAddr.EdgeToken
-	}
-
 	response := ipl.MsgHdr().FieldObj().(*didexchange.Response)
-
 	if !err2.Bool.Try(response.Verify()) {
 		glog.Error("cannot verify Connection Response signature --> send NACK")
 		return errors.New("cannot verify connection response signature")
@@ -289,13 +282,14 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 func getPairwiseStatus(workerDID string, taskID string) interface{} {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set connection status: ", err)
+		glog.Error("Failed to get connection status: ", err)
 	})
 
 	key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
+	glog.V(4).Infoln("status for:", key)
 
 	pw, err := psm.GetPairwiseRep(*key)
 	err2.Check(err)
