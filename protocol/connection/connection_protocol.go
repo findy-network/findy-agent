@@ -67,7 +67,7 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID
 
-	// build a connection message to send to an other agent
+	// build a connection message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: task.Info,
 		Connection: &didexchange.Connection{
@@ -119,6 +119,11 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	a := packet.Receiver
 
 	nonce := ipl.ThreadID()
+	glog.V(1).Infoln("current thread ID:", nonce)
+	if cnxAddr.EdgeToken != "" {
+		glog.V(1).Infoln("****** using URL for nonce in RESPONSE", cnxAddr.EdgeToken)
+		nonce = cnxAddr.EdgeToken
+	}
 
 	response := ipl.MsgHdr().FieldObj().(*didexchange.Response)
 
@@ -190,18 +195,24 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	cnxAddr := packet.Address
 	a := packet.Receiver
 
+	safeThreadID := ipl.ThreadID()
+	connectionID := safeThreadID
 	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("=== using URL nonce", cnxAddr.EdgeToken)
-		ipl.MsgHdr().Thread().ID = cnxAddr.EdgeToken
+		glog.V(1).Infoln("=== using URL edge, safe is", cnxAddr.EdgeToken, safeThreadID)
+		connectionID = cnxAddr.EdgeToken
 	}
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
-	task := comm.NewTaskFromRequest(ipl, req)
+	task := comm.NewTaskFromRequest(ipl, req, safeThreadID)
 	task.ReceiverEndp = cnxAddr.AE()
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
 
 	task.SwitchDirection()
+
+	// MARK: we must switch the Nonce for pairwise construction. We will return
+	//  it back after we are done. This is because AcaPy compatibility
+	ipl.MsgHdr().Thread().ID = connectionID
 
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, a.(ssi.Agent), ipl.MsgHdr().(didcomm.PwMsg))
@@ -221,13 +232,20 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	})
 	err2.Check(err)
 
+	// MARK: we must switch the Nonce for pairwise construction back. NOW we
+	//  return it back after we are done. This is because AcaPy compatibility
+	ipl.MsgHdr().Thread().ID = safeThreadID
+	// MARK: very very important to rollback this as well
+	glog.V(1).Infoln("=== msg.Thread.ID", msg.Thread().ID, safeThreadID)
+	msg.Thread().ID = safeThreadID
+
 	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
 	caller := calleePw.Caller                     // the other end, we'r here the callee
 	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
 	callerAddress := callerEndp.Address()
 	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: meDID, Nonce: task.Nonce},
-		Name:       task.Nonce,
+		Key:        psm.StateKey{DID: meDID, Nonce: connectionID},
+		Name:       connectionID,
 		TheirLabel: req.Label,
 		Callee:     psm.DIDRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
 		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
@@ -254,7 +272,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	err2.Check(res.Sign(pipe)) // we must sign the Response before send it
 
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
-	a.AddToPWMap(calleePw.Callee, caller, task.Nonce) // to access PW later, map it
+	a.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
