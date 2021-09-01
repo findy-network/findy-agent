@@ -44,7 +44,7 @@ agency: ledger-ready
 agency-d: ledger-ready
 	docker-compose up --build -d
 
-down:
+down: clone
 	docker-compose down
 	cd .docker/von-network && ./manage stop
 
