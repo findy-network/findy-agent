@@ -11,7 +11,7 @@ test: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test
 
-test-check: prep-check
+test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test-check
 
