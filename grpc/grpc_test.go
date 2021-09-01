@@ -717,6 +717,79 @@ func TestIssueJSON(t *testing.T) {
 	}
 }
 
+func TestProposeIssue(t *testing.T) {
+	allPermissive = true
+	if testMode == TestModeRunOne {
+		TestSetPermissive(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	// agent with 0 index is issuer -> rest are holders
+	for i := 1; i < len(agents); i++ {
+		t.Run(fmt.Sprintf("PROPOSE ISSUE-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[i].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewProtocolServiceClient(conn)
+			connID := agents[i].ConnID[0]
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ProposeIssueWithAttrs(ctx, agents[0].CredDefID,
+				&agency2.Protocol_IssuingAttributes{
+					Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+						Name:  "email",
+						Value: strLiteral("email", "", i+1),
+					}}})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("propose issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+
+	}
+}
+
+func TestProposeIssueJSON(t *testing.T) {
+	allPermissive = true
+	if testMode == TestModeRunOne {
+		TestSetPermissive(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	// agent with 0 index is issuer -> rest are holders
+	for i := 1; i < len(agents); i++ {
+		t.Run(fmt.Sprintf("PROPOSE ISSUE-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[i].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewProtocolServiceClient(conn)
+			connID := agents[i].ConnID[0]
+			emailCred := []didcomm.CredentialAttribute{
+				{
+					Name:  "email",
+					Value: strLiteral("email", "", i+1),
+				},
+			}
+			attrJSON := dto.ToJSON(emailCred)
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ProposeIssue(ctx, agents[0].CredDefID, attrJSON)
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("propose issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+
+	}
+}
 func TestReqProof(t *testing.T) {
 	allPermissive = true
 	if testMode == TestModeRunOne {
@@ -783,6 +856,73 @@ func TestReqProofJSON(t *testing.T) {
 	}
 }
 
+func TestProposeProof(t *testing.T) {
+	allPermissive = true
+	if testMode == TestModeRunOne {
+		TestIssue(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	// agent with 0 index is verifier -> rest are provers
+	for i := 1; i < len(agents); i++ {
+		t.Run(fmt.Sprintf("PROPOSE PROOF-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[i].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewProtocolServiceClient(conn)
+			connID := agents[i].ConnID[0]
+			attrs := []*agency2.Protocol_Proof_Attribute{{
+				Name:      "email",
+				CredDefID: agents[0].CredDefID,
+			}}
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ProposeProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("propose proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
+
+func TestProposeProofJSON(t *testing.T) {
+	allPermissive = true
+	if testMode == TestModeRunOne {
+		TestIssue(t)
+	}
+
+	err2.Check(flag.Set("v", "0"))
+
+	// agent with 0 index is verifier -> rest are provers
+	for i := 1; i < len(agents); i++ {
+		t.Run(fmt.Sprintf("PROPOSE PROOF-%d", i), func(t *testing.T) {
+			conn := client.TryOpen(agents[i].DID, baseCfg)
+
+			ctx := context.Background()
+			agency2.NewProtocolServiceClient(conn)
+			connID := agents[i].ConnID[0]
+			attrs := []didcomm.ProofAttribute{{
+				Name:      "email",
+				CredDefID: agents[0].CredDefID,
+			}}
+			r, err := client.Pairwise{
+				ID:   connID,
+				Conn: conn,
+			}.ProposeProof(ctx, dto.ToJSON(attrs))
+			assert.NoError(t, err)
+			for status := range r {
+				glog.Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			}
+			assert.NoError(t, conn.Close())
+		})
+	}
+}
 func TestListen(t *testing.T) {
 	err2.Check(flag.Set("v", "0"))
 	waitCh := make(chan struct{})

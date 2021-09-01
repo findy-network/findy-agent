@@ -487,7 +487,7 @@ func (edge *Client) PwAndProofProp(
 			RecipientKeys:   []string{endpKey},
 			Label:           edgePw,
 		},
-		CredDefID: &credDefID,
+		ProofAttrs: &[]didcomm.ProofAttribute{{Name: "email", CredDefID: ""}},
 	}
 	im := e2.Msg.Try(edge.MsgToCA(pltype.CAPairwiseAndProofProp, om))
 	log.Println("============== Task #: ", im.ID)
@@ -520,8 +520,8 @@ func (edge *Client) PwAndTrustPing(
 func (edge *Client) ProofProp(edgePw, email string) (tID string, err error) {
 	defer err2.Annotate("proof prop", &err)
 	om := &mesg.Msg{
-		Name: edgePw,
-		Info: email, // this is Values field in PresentProofRep
+		Name:       edgePw,
+		ProofAttrs: &[]didcomm.ProofAttribute{{Name: "email", CredDefID: ""}},
 	}
 	im := e2.Msg.Try(edge.MsgToCA(pltype.CAProofPropose, om))
 	log.Println("============== Task #: ", im.ID)
