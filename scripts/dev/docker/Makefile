@@ -32,11 +32,17 @@ gen-cert:
 	cd ./cert && ./gen.sh server
 
 up:  gen-yml down von-up gen-cert agency
+up-d:  gen-yml down von-up gen-cert agency-d
 
-agency:
+ledger-ready:
 	./wait-for-ledger.sh
 	curl http://localhost:9000/genesis > conf/genesis.txt
+
+agency: ledger-ready
 	docker-compose up --build
+
+agency-d: ledger-ready
+	docker-compose up --build -d
 
 down:
 	docker-compose down

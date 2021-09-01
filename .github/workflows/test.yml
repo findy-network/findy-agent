@@ -49,3 +49,13 @@ jobs:
         env:
           GOPATH: /go
 
+  iop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        run: cd ./scripts/aath && make run-check
+        env:
+          NO_TTY: "1"
+
