@@ -42,19 +42,25 @@ func NewTaskRawPayload(ipl didcomm.Payload) (t *Task) {
 	}
 }
 
-// NewTaskRawPayload creates a new task from raw PL
-func NewTaskFromRequest(ipl didcomm.Payload, req *didexchange.Request) (t *Task) {
+// NewTaskFromRequest creates a new task from raw PL
+func NewTaskFromRequest(
+	ipl didcomm.Payload,
+	req *didexchange.Request,
+	connectionID string,
+) (
+	t *Task,
+) {
 	senderEP := service.Addr{
 		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
 		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
 	}
 	return &Task{
-		// We take nonce from connection ID which is tranferred with ThreadID
+		// We take nonce from connection ID which is transferred with ThreadID
 		Nonce:      ipl.ThreadID(),
 		TypeID:     ipl.Type(),
 		SenderEndp: senderEP,
 		// We use same connection ID for pairwise naming
-		Message: ipl.ThreadID(),
+		Message: connectionID,
 	}
 }
 
