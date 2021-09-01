@@ -29,3 +29,5 @@ tag:
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:findy-bc-latest findy-agent-backchannel:latest
 	docker pull ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest acapy-agent-backchannel:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel:aath-latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel:aath-latest aries-agent-test-harness:latest
