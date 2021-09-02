@@ -1,7 +1,14 @@
 run: clone agency-up tag test
 run-check: clone agency-up tag test-check
 
-prep:
+record-logs:
+	mkdir -p .logs
+	nohup ./record_logs.sh acme_agent &
+	nohup ./record_logs.sh bob_agent &
+	nohup ./record_logs.sh faber_agent &
+	nohup ./record_logs.sh mallory_agent &
+
+prep: record-logs
 	rm -rf .docker/findy-agent-backchannel/env/cert/* && \
 		cp -R ../dev/docker/cert/ .docker/findy-agent-backchannel/env/cert && \
 		cd .docker/findy-agent-backchannel/env && \
@@ -10,10 +17,12 @@ prep:
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+	docker logs docker_core_1 > .logs/docker_core_1-$(shell date +%s).log 2>&1 &
 
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test-check INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+	docker logs docker_core_1 > .logs/docker_core_1-$(shell date +%s).log 2>&1 &
 
 # test always with latest findy-AATH-bundle from master
 clone:

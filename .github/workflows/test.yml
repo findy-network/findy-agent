@@ -58,4 +58,9 @@ jobs:
         run: cd ./scripts/aath && make run-check
         env:
           NO_TTY: "1"
+      - name: Archive logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: iop-logs
+          path: scripts/aath/.logs
 
