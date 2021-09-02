@@ -1,3 +1,6 @@
+AGENT_DEFAULT?=acapy
+AGENT_BOB?=findy
+
 run: clone agency-up tag test
 run-check: clone agency-up tag test-check
 
@@ -18,12 +21,17 @@ prep: record-logs
 # by default tags are defined in findy-agent-backchannel
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+		make aath-test \
+			AGENT_DEFAULT=$(AGENT_DEFAULT) \
+			AGENT_BOB=$(AGENT_BOB) \
+			INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
 
 # check returns failure exit code, suitable for CI
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test-check
+		make aath-test-check \
+			AGENT_DEFAULT=$(AGENT_DEFAULT) \
+			AGENT_BOB=$(AGENT_BOB)
 
 # test always with latest findy-AATH-bundle from master
 clone:

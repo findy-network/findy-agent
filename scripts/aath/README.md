@@ -2,11 +2,6 @@
 
 This folder contains scripts to test findy-agent interoperability with other Aries agents.
 
-Run the default test set by executing:
-```
-make run-check
-```
-
 The script will pull/build and launch several containers:
 - von-network ledger with each node in separate container
 - agency auth container based on latest auth image
@@ -15,7 +10,29 @@ The script will pull/build and launch several containers:
 - acapy backchannel
 - test harness
 
-TODO:
-- which agents play which role
-- test tags setting
-- describe CI pipeline and artifacts
+
+Run the default test set by executing:
+```
+make run
+```
+
+By default findy is playing the role of Bob and acapy handles rest of the roles.
+You can change this using the AGENT_DEFAULT and AGENT_BOB settings:
+
+```
+make run AGENT_DEFAULT=findy AGENT_BOB=acapy
+```
+
+If you wish to run only specific tests, you can set the tags with INCLUDED_TAGS setting:
+
+```
+make aath-test \
+    AGENT_DEFAULT=$(AGENT_DEFAULT) \
+    AGENT_BOB=$(AGENT_BOB) \
+    INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+```
+
+## CI
+
+Interoperability tests are run each time PRs are merged to dev.
+Logs are recorded from each agent and core agency. Those can be downloaded through GitHub UI.
