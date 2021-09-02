@@ -59,6 +59,7 @@ jobs:
         env:
           NO_TTY: "1"
       - name: Archive logs
+        if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: iop-logs
