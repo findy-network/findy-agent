@@ -196,7 +196,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
-	task := comm.NewTaskFromRequest(ipl, req, safeThreadID)
+	task := comm.NewTaskFromRequest(ipl, req, connectionID)
 	task.ReceiverEndp = cnxAddr.AE()
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
