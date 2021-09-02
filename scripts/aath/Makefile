@@ -10,7 +10,7 @@ record-logs:
 
 prep: record-logs
 	rm -rf .docker/findy-agent-backchannel/env/cert/* && \
-		cp -R ../dev/docker/cert/ .docker/findy-agent-backchannel/env/cert && \
+		cp -a ../dev/docker/cert/. .docker/findy-agent-backchannel/env/cert/ && \
 		cd .docker/findy-agent-backchannel/env && \
 		make clone
 
