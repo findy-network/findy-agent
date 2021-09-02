@@ -17,12 +17,10 @@ prep: record-logs
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
-	docker logs docker_core_1 > .logs/docker_core_1-$(shell date +%s).log 2>&1 &
 
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test-check INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
-	docker logs docker_core_1 > .logs/docker_core_1-$(shell date +%s).log 2>&1 &
 
 # test always with latest findy-AATH-bundle from master
 clone:
