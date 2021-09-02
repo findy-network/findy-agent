@@ -18,3 +18,4 @@ The script will pull/build and launch several containers:
 TODO:
 - which agents play which role
 - test tags setting
+- describe CI pipeline and artifacts
