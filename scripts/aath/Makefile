@@ -14,20 +14,22 @@ prep: record-logs
 		cd .docker/findy-agent-backchannel/env && \
 		make clone
 
+# included tags can be defined with INCLUDE_TAGS
+# by default tags are defined in findy-agent-backchannel
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
 		make aath-test INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
 
+# check returns failure exit code, suitable for CI
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test-check INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+		make aath-test-check
 
 # test always with latest findy-AATH-bundle from master
 clone:
 	-rm -rf .docker/findy-agent-backchannel
 	mkdir -p .docker
-	-git clone https://github.com/findy-network/findy-agent-backchannel.git .docker/findy-agent-backchannel && \
-		cd .docker/findy-agent-backchannel && git checkout build-images
+	-git clone https://github.com/findy-network/findy-agent-backchannel.git .docker/findy-agent-backchannel
 
 agency-up:
 	cd ../dev/docker && \
