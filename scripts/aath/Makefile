@@ -9,13 +9,15 @@ prep:
 
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test
+		make aath-test INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
 
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test-check
+		make aath-test-check INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
 
+# test always with latest findy-AATH-bundle from master
 clone:
+	-rm -rf .docker/findy-agent-backchannel
 	mkdir -p .docker
 	-git clone https://github.com/findy-network/findy-agent-backchannel.git .docker/findy-agent-backchannel && \
 		cd .docker/findy-agent-backchannel && git checkout build-images
