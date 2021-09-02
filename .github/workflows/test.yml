@@ -60,7 +60,13 @@ jobs:
           NO_TTY: "1"
       - name: store agency logs
         if: ${{ always() }}
-        run: 	docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
+        run: 	|
+          docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
+          ls -la scripts/dev/docker/cert
+          ls -la scripts/aath/.docker/findy-agent-backchannel/env/cert
+          ls -la scripts/aath/.docker/findy-agent-backchannel/env/.docker/aries-agent-test-harness/aries-backchannels/findy/.build
+          ls -la scripts/aath/.docker/findy-agent-backchannel/env/.docker/aries-agent-test-harness/aries-backchannels/findy/.build/findy.data
+
       - name: archive logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
