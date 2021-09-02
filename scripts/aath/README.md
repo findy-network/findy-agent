@@ -23,13 +23,13 @@ You can change this using the AGENT_DEFAULT and AGENT_BOB settings:
 make run AGENT_DEFAULT=findy AGENT_BOB=acapy
 ```
 
-If you wish to run only specific tests, you can set the tags with INCLUDED_TAGS setting:
+If you wish to run only specific tests, you can set the tags with INCLUDE_TAGS setting:
 
 ```
-make aath-test \
-    AGENT_DEFAULT=$(AGENT_DEFAULT) \
-    AGENT_BOB=$(AGENT_BOB) \
-    INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+make run \
+    AGENT_DEFAULT=findy \
+    AGENT_BOB=acapy \
+    INCLUDE_TAGS='@T001-RFC0160'
 ```
 
 ## CI
