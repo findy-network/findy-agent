@@ -1,5 +1,6 @@
 AGENT_DEFAULT?=acapy
 AGENT_BOB?=findy
+INCLUDE_TAGS?='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
 
 run: clone agency-up tag test
 run-check: clone agency-up tag test-check
@@ -24,7 +25,7 @@ test: prep
 		make aath-test \
 			AGENT_DEFAULT=$(AGENT_DEFAULT) \
 			AGENT_BOB=$(AGENT_BOB) \
-			INCLUDE_TAGS='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+			INCLUDE_TAGS=$(INCLUDE_TAGS)
 
 # check returns failure exit code, suitable for CI
 test-check: prep
