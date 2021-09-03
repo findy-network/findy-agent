@@ -1,8 +1,11 @@
 name: interop
+
 on:  
   push:
     branches:
       - 'dev'
+
+jobs:
 
   iop:
     runs-on: ubuntu-latest

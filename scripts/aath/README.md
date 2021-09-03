@@ -26,10 +26,7 @@ make run AGENT_DEFAULT=findy AGENT_BOB=acapy
 If you wish to run only specific tests, you can set the tags with INCLUDE_TAGS setting:
 
 ```
-make run \
-    AGENT_DEFAULT=findy \
-    AGENT_BOB=acapy \
-    INCLUDE_TAGS='@T001-RFC0160'
+make run AGENT_DEFAULT=findy AGENT_BOB=acapy INCLUDE_TAGS='@T001-RFC0160'
 ```
 
 ## CI

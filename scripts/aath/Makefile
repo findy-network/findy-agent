@@ -50,3 +50,7 @@ tag:
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest acapy-agent-backchannel:latest
 	docker pull ghcr.io/findy-network/findy-agent-backchannel:aath-latest
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:aath-latest aries-test-harness:latest
+
+down:
+	cd ../dev/docker && \
+		make down
