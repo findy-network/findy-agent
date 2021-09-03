@@ -1,0 +1,29 @@
+name: interop
+
+on:  
+  push:
+    branches:
+      - 'dev'
+
+jobs:
+
+  iop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: test
+        run: cd ./scripts/aath && make run-check
+        env:
+          NO_TTY: "1"
+      - name: store agency logs
+        if: ${{ always() }}
+        run: 	|
+          docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
+      - name: archive logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: iop-logs
+          path: scripts/aath/.logs
+
