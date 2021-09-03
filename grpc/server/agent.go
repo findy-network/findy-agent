@@ -221,6 +221,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	jStr := dto.ToJSON(invitation)
 
+	// TODO: add connection id to return struct as well, gRPC API Change
 	return &pb.Invitation{JSON: jStr}, nil
 }
 
