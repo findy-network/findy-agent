@@ -237,7 +237,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
 	callerAddress := callerEndp.Address()
 	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: meDID, Nonce: connectionID},
+		Key:        psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
 		Name:       connectionID,
 		TheirLabel: req.Label,
 		Callee:     psm.DIDRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
