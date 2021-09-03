@@ -28,6 +28,14 @@ func TestNewEndpointAddress(t *testing.T) {
 				RcvrDID:   "2H6KuFvaeZxPtuqMoSa6ri",
 				EdgeToken: "token"},
 		},
+		{"long edge token", args{"/agency/6PpcwtwDJ5TJYnianLgYbn/RHLDsziT56McTZVFXKV5Pk/2H6KuFvaeZxPtuqMoSa6ri/670bc804-2c06-453c-aee6-48d3c929b488"},
+			&Addr{
+				Service:   "agency",
+				PlRcvr:    "6PpcwtwDJ5TJYnianLgYbn",
+				MsgRcvr:   "RHLDsziT56McTZVFXKV5Pk",
+				RcvrDID:   "2H6KuFvaeZxPtuqMoSa6ri",
+				EdgeToken: "670bc804-2c06-453c-aee6-48d3c929b488"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -266,6 +274,16 @@ func TestAddr_Valid(t *testing.T) {
 				RcvrDID: "invoke",
 			},
 			want: false,
+		},
+		{
+			name: "valid edge token",
+			fields: fields{
+				PlRcvr:    "MuYkMsVBjvH4Ryqvfoofre",
+				MsgRcvr:   "MuYkMsVBjvH4Ryqvfoofre",
+				RcvrDID:   "6im1AuoExt4rT39XuJS94X",
+				EdgeToken: "670bc804-2c06-453c-aee6-48d3c929b488",
+			},
+			want: true,
 		},
 	}
 	for _, tt := range tests {

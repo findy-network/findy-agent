@@ -190,20 +190,29 @@ func (a *agentServer) GetCredDef(
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
 	defer err2.Annotate("create invitation", &err)
 
+	// in the future we might have generatedConnID as argument in the API
+	id, generatedConnID := base.ID, base.ID
+	// if connection is not given from the caller we generate a new one and use
+	// it for both one
+	if id == "" {
+		id = utils.UUID()
+		generatedConnID = id
+		glog.V(4).Infoln("generating connection id:", id)
+	} else {
+		generatedConnID = utils.UUID()
+		glog.V(4).Infoln("generating sub connection id:", generatedConnID)
+	}
+
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
 	ep := receiver.CAEndp(true)
 	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
-
-	id := base.ID
-	if id == "" {
-		id = utils.UUID()
-	}
+	ep.EdgeToken = id
 	label := base.Label
 	if base.Label == "" {
 		label = "empty-label"
 	}
 	invitation := didexchange.Invitation{
-		ID:              id,
+		ID:              generatedConnID,
 		Type:            pltype.AriesConnectionInvitation,
 		ServiceEndpoint: ep.Address(),
 		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
@@ -212,6 +221,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	jStr := dto.ToJSON(invitation)
 
+	// TODO: add connection id to return struct as well, gRPC API Change
 	return &pb.Invitation{JSON: jStr}, nil
 }
 
