@@ -236,7 +236,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 			ClientID: answer.ClientID.ID,
 		},
 		ACK:  answer.Ack,
-		Info: "welcome from gRPC",
+		Info: answer.Info,
 	})
 
 	return &pb.ClientID{ID: answer.ClientID.ID}, nil
