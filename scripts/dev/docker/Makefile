@@ -14,8 +14,8 @@ gen-yml:
 
 clone:
 	mkdir -p .docker
-	-git clone https://github.com/bcgov/von-network .docker/von-network && \
-		cd .docker/von-network && git checkout $(VON_NETWORK_VERSION)
+	-git clone https://github.com/bcgov/von-network .docker/von-network
+	cd .docker/von-network && git reset --hard $(VON_NETWORK_VERSION)
 
 von-up: clone
 	cd .docker/von-network && ./manage build && ./manage start
