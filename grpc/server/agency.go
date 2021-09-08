@@ -40,6 +40,7 @@ var webAgent = struct {
 }{}
 
 var cmd onboard.Cmd
+var onboardLock sync.Mutex
 
 func webEdgeAgent() *cloud.Agent {
 	webAgent.Lock()
@@ -76,10 +77,15 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 
 	// edgeAgent is singleton, let it init before cloning
 	edgeAgent := webEdgeAgent()
-	// make a clone be cause we use ui Cmd for service side
+	// make a clone because we use ui Cmd for service side
 	c := cmd
 	c.Email = onboarding.Email
 
+	// because we use same EA (one wallet) for agents and handshake pairwise
+	// is not thread safe we must protect the cmd execution.
+	// TODO: when legacy API is removed handshake must be rewritten
+	onboardLock.Lock()
+	defer onboardLock.Unlock()
 	r, err := c.WebExec(edgeAgent, os.Stdout)
 	err2.Check(err)
 
