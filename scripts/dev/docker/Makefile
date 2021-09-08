@@ -54,7 +54,20 @@ onboard:
 		-u $(AGENT_NAME) \
 		--key $(AUTH_KEY) \
 		--origin $(AUTH_ORIGIN) > $(AGENT_NAME).log &
+	sleep 1
 	$(eval AGENT_NAME="agent-$(shell date +%s)-2")
+	nohup $(FCLI) authn register --url $(AUTH_URL) \
+		-u "$(AGENT_NAME)" \
+		--key $(AUTH_KEY) \
+		--origin $(AUTH_ORIGIN) > $(AGENT_NAME).log &
+	sleep 1
+	$(eval AGENT_NAME="agent-$(shell date +%s)-3")
+	nohup $(FCLI) authn register --url $(AUTH_URL) \
+		-u "$(AGENT_NAME)" \
+		--key $(AUTH_KEY) \
+		--origin $(AUTH_ORIGIN) > $(AGENT_NAME).log &
+	sleep 1
+	$(eval AGENT_NAME="agent-$(shell date +%s)-4")
 	nohup $(FCLI) authn register --url $(AUTH_URL) \
 		-u "$(AGENT_NAME)" \
 		--key $(AUTH_KEY) \

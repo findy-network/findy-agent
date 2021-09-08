@@ -1,6 +1,7 @@
 # findy-agent
 
 ![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
+![interop](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml/badge.svg?branch=dev)
 
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
