@@ -167,6 +167,14 @@ type ProofAttribute struct {
 	Predicate string `json:"predicate,omitempty"`
 }
 
+// ProofPredicate for proof request predicates
+type ProofPredicate struct {
+	ID     string `json:"-"`
+	Name   string `json:"name,omitempty"`
+	PType  string `json:"p_type,omitempty"`
+	PValue int64  `json:"p_value,omitempty"`
+}
+
 // ProofValue for proof values
 type ProofValue struct {
 	Name      string `json:"name,omitempty"`

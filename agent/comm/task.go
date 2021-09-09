@@ -24,7 +24,8 @@ type Task struct {
 	CredDefID       *string
 
 	// Present proof
-	ProofAttrs *[]didcomm.ProofAttribute
+	ProofAttrs      *[]didcomm.ProofAttribute
+	ProofPredicates *[]didcomm.ProofPredicate
 }
 
 // SwitchDirection changes SenderEndp and ReceiverEndp data

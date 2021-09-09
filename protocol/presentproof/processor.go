@@ -52,9 +52,26 @@ func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
 		if attr.CredDefID != "" {
 			restrictions = append(restrictions, anoncreds.Filter{CredDefID: attr.CredDefID})
 		}
-		reqAttrs["attr"+strconv.Itoa(index+1)+"_referent"] = anoncreds.AttrInfo{
+		id := "attr_referent_" + strconv.Itoa(index+1)
+		if attr.ID != "" {
+			id = attr.ID
+		}
+		reqAttrs[id] = anoncreds.AttrInfo{
 			Name:         attr.Name,
 			Restrictions: restrictions,
+		}
+	}
+	reqPredicates := make(map[string]anoncreds.PredicateInfo)
+	for index, predicate := range *t.ProofPredicates {
+		// TODO: restrictions
+		id := "predicate_" + strconv.Itoa(index+1)
+		if predicate.ID != "" {
+			id = predicate.ID
+		}
+		reqPredicates[id] = anoncreds.PredicateInfo{
+			Name:   predicate.Name,
+			PType:  predicate.PType,
+			PValue: int(predicate.PValue),
 		}
 	}
 	return &anoncreds.ProofRequest{
@@ -62,7 +79,7 @@ func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
 		Version:             "0.1",
 		Nonce:               utils.NewNonceStr(),
 		RequestedAttributes: reqAttrs,
-		RequestedPredicates: map[string]anoncreds.PredicateInfo{}, // TODO
+		RequestedPredicates: reqPredicates,
 	}
 }
 
