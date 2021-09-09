@@ -122,11 +122,10 @@ func HandlePresentation(packet comm.Packet) (err error) {
 				return false, nil
 			}
 
-			// .. and send to a verifier
+			// All checks done, let's send ACK
 			ackMsg := om.FieldObj().(*common.Ack)
 			ackMsg.Status = "OK"
 
-			// All checks done, let's send ACK
 			return true, nil
 		},
 	})
