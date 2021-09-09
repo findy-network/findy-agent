@@ -12,8 +12,16 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: test
-        run: cd ./scripts/aath && make run-check
+      - name: test findy as Bob
+        run: |
+          cd ./scripts/aath
+          make run-check AGENT_DEFAULT=acapy AGENT_BOB=findy
+        env:
+          NO_TTY: "1"
+      - name: test findy as default agent
+        run: |
+          cd ./scripts/aath
+          make test-check AGENT_DEFAULT=findy AGENT_BOB=acapy
         env:
           NO_TTY: "1"
       - name: store agency logs
