@@ -62,16 +62,18 @@ func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
 		}
 	}
 	reqPredicates := make(map[string]anoncreds.PredicateInfo)
-	for index, predicate := range *t.ProofPredicates {
-		// TODO: restrictions
-		id := "predicate_" + strconv.Itoa(index+1)
-		if predicate.ID != "" {
-			id = predicate.ID
-		}
-		reqPredicates[id] = anoncreds.PredicateInfo{
-			Name:   predicate.Name,
-			PType:  predicate.PType,
-			PValue: int(predicate.PValue),
+	if t.ProofPredicates != nil {
+		for index, predicate := range *t.ProofPredicates {
+			// TODO: restrictions
+			id := "predicate_" + strconv.Itoa(index+1)
+			if predicate.ID != "" {
+				id = predicate.ID
+			}
+			reqPredicates[id] = anoncreds.PredicateInfo{
+				Name:   predicate.Name,
+				PType:  predicate.PType,
+				PValue: int(predicate.PValue),
+			}
 		}
 	}
 	return &anoncreds.ProofRequest{
