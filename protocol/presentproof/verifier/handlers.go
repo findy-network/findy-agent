@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -120,7 +121,11 @@ func HandlePresentation(packet comm.Packet) (err error) {
 				glog.Warning("EA rejects API call: ", eaAnswer.Error())
 				return false, nil
 			}
+
 			// All checks done, let's send ACK
+			ackMsg := om.FieldObj().(*common.Ack)
+			ackMsg.Status = "OK"
+
 			return true, nil
 		},
 	})
