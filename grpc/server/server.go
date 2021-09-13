@@ -107,6 +107,8 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 	case pb.Protocol_PRESENT_PROOF:
 		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
 			proofReq := protocol.GetPresentProof()
+
+			// Attributes
 			if proofReq.GetAttributesJSON() != "" {
 				var proofAttrs []didcomm.ProofAttribute
 				dto.FromJSONStr(proofReq.GetAttributesJSON(), &proofAttrs)
@@ -116,6 +118,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
 				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
 					attributes[i] = didcomm.ProofAttribute{
+						ID:        attribute.ID,
 						Name:      attribute.Name,
 						CredDefID: attribute.CredDefID,
 						//Predicate: attribute.Predicate,
@@ -123,6 +126,26 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 				}
 				task.ProofAttrs = &attributes
 				glog.V(1).Infoln("set proof from attrs")
+			}
+
+			// Predicates
+			if proofReq.GetPredicatesJSON() != "" {
+				var proofPredicates []didcomm.ProofPredicate
+				dto.FromJSONStr(proofReq.GetPredicatesJSON(), &proofPredicates)
+				task.ProofPredicates = &proofPredicates
+				glog.V(1).Infoln("set proof predicates from json:", proofReq.GetPredicatesJSON())
+			} else if proofReq.GetPredicates() != nil {
+				predicates := make([]didcomm.ProofPredicate, len(proofReq.GetPredicates().GetPredicates()))
+				for i, predicate := range proofReq.GetPredicates().GetPredicates() {
+					predicates[i] = didcomm.ProofPredicate{
+						ID:     predicate.ID,
+						Name:   predicate.Name,
+						PType:  predicate.PType,
+						PValue: predicate.PValue,
+					}
+				}
+				task.ProofPredicates = &predicates
+				glog.V(1).Infoln("set proof from predicates")
 			}
 		}
 	}
