@@ -92,6 +92,7 @@ func HandlerCount() int {
 	return len(handlers.m)
 }
 
+// TODO LAPI: endpoint type and name of the argument is misleading
 func Handler(endpoint Endpoint) (handler comm.Handler) {
 	if endp.IsInEndpoints(endpoint) {
 		return nil

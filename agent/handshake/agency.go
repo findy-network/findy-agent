@@ -72,6 +72,9 @@ Please see server.go for more information about service endpoints.
 */
 type Agency struct{}
 
+// TODO FAPI: we should redesign what we will need from here with new API
+//  in the function below. That's the key function for the redesign
+
 // Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
@@ -92,6 +95,9 @@ func anchorAgent(email string) (agent *cloud.Agent, err error) {
 	agent.OpenWallet(*aw)
 
 	// Bind pairwise Steward <-> New Agent
+	// TODO FAPI: it seems that we don't need protocol here, only execute
+	// correct ledger transactions bo make the 'pairwise' between steward and
+	// new agent.
 	rootDid := steward.RootDid()
 	caller := pairwise.NewCallerPairwise(mesg.MsgCreator, steward, rootDid,
 		pltype.ConnectionTrustAgent)
@@ -136,6 +142,8 @@ func (a *Agency) InOutPL(
 			},
 		}), nonce
 
+	// TODO FAPI: we will remove this API from the agency. This is legacy
+	// API.
 	case HandlerEndpoint:
 		if payload.Type() == pltype.ConnectionHandshake {
 			email := payload.Message().Endpoint().Endp
