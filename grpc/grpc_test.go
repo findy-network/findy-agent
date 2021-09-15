@@ -464,7 +464,9 @@ func TestInvitation_NoOneRun(t *testing.T) {
 			ctx := context.Background()
 			c := agency2.NewAgentServiceClient(conn)
 			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				t.Fatal("ERROR: ", err)
+			}
 
 			assert.NotEmpty(t, r.JSON)
 			glog.Infoln(r.JSON)
