@@ -284,6 +284,8 @@ func (a *Agent) Pw() pairwise.Saver {
 	return nil
 }
 
+// TODO LAPI: function below is not needed anymore. it's for legacy handshake.
+
 // InOutPL handles messages of handshake protocol at the moment. Future will
 // show if it stays or even expands. The messages processed here are the CA's.
 // The EA end is handled by clients.
