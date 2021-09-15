@@ -75,10 +75,10 @@ type Agency struct{}
 // TODO FAPI: we should redesign what we will need from here with new API
 //  in the function below. That's the key function for the redesign
 
-// Builds new trust anchor agent and its wallet. This is quite slow process. In
+// AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
-func anchorAgent(email string) (agent *cloud.Agent, err error) {
+func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	defer err2.Annotate("create archor", &err)
 
 	key := err2.String.Try(enclave.NewWalletKey(email))
@@ -163,7 +163,7 @@ func (a *Agency) InOutPL(
 				return errorMsg, nonce
 			}
 
-			agentHandler, err := anchorAgent(email)
+			agentHandler, err := AnchorAgent(email)
 			if err != nil {
 				return errorMsg, nonce
 			}
