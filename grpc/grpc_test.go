@@ -20,7 +20,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
-	caclient "github.com/findy-network/findy-agent/client"
 	"github.com/findy-network/findy-agent/enclave"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
@@ -370,15 +369,16 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := caclient.Client{
-				Email:       tt.args.email,
-				BaseAddress: "http://localhost:8080",
-				Wallet:      &tt.args.wallet,
-			}
-			cadid, _, _, err := c.Handshake()
+			conn := client.TryOpen("findy-root", baseCfg)
+			ctx := context.Background()
+			agencyClient := pb.NewAgencyServiceClient(conn)
+			oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+				Email: tt.args.email,
+			})
 			if got := err; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("handshake API = %v, want %v", got, tt.want)
 			}
+			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
 
 			// build schema and cred def for the first agent to use later
