@@ -25,6 +25,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 var Hub *Agency
@@ -72,9 +73,6 @@ Please see server.go for more information about service endpoints.
 */
 type Agency struct{}
 
-// TODO FAPI: we should redesign what we will need from here with new API
-//  in the function below. That's the key function for the redesign
-
 // AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
@@ -91,24 +89,35 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	agent = &cloud.Agent{}
 	name := rippedEmail
 	aw := ssi.NewRawWalletCfg(name, key)
-	aw.Create()
+	walletAlreadyEsists := aw.Create()
+	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
+	// TODO LAPI: do we really need pairwise between steward and new CA?
+	//  should we just try to write the NYM.
+	//
 	// Bind pairwise Steward <-> New Agent
-	// TODO FAPI: it seems that we don't need protocol here, only execute
-	// correct ledger transactions bo make the 'pairwise' between steward and
-	// new agent.
-	rootDid := steward.RootDid()
-	caller := pairwise.NewCallerPairwise(mesg.MsgCreator, steward, rootDid,
+	stewardDID := steward.RootDid()
+
+	// LAPI: this builds connection/pairwise from steward to anchor (CA ROOT)
+	//  and stores the pairwise, do we need that pairwise??? what's used for?
+	//
+	caller := pairwise.NewCallerPairwise(mesg.MsgCreator, steward, stewardDID,
 		pltype.ConnectionTrustAgent)
-	caller.Build(false)
+
+	caller.Build(false) // LAPI: this creater new DID and writes the NYM
+	// LAPI: who the DID is? what it's used? it's caller, net line creates
+	// callee
 	callee := pairwise.NewCalleePairwise(mesg.MsgCreator, agent, caller.Msg)
 	responseMsg := callee.RespMsgAndOurDID()
 	caller.Bind(responseMsg)
 
+	// LAPI: would this be enough?? this will write anchor and steward
+	// connection to ledger
+
 	// Promote new agent by Trusted Anchor DID
 	anchorDid := agent.CreateDID("")
-	err2.Check(steward.SendNYM(anchorDid, rootDid.Did(),
+	err2.Check(steward.SendNYM(anchorDid, stewardDID.Did(),
 		findy.NullString, "TRUST_ANCHOR"))
 
 	// Use the anchor DID as a submitter/root DID to Ledger
