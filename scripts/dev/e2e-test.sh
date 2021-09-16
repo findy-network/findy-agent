@@ -17,16 +17,16 @@ e2e() {
   agency_conf
   agency_flag
   agency_env
-  other_cases
+#  other_cases
   rm_wallets
   echo -e "${BICYAN}*** E2E TEST FINISHED ***${NC}"
 }
 
 test_cmds() {
   rm_wallets
-  cmds_flag
-  cmds_conf
-  cmds_env
+#  cmds_flag
+#  cmds_conf
+#  cmds_env
 }
 
 clean() {
