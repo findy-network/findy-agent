@@ -85,11 +85,17 @@ func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
 
 	rd := agent.LoadDID(s.RootDID)
 	agent.SetRootDid(rd)
-	if err := agent.LoadPwOnInit(); err != nil {
-		glog.Error("cannot load pairwise for CA:", s.CADID)
-		agent.CloseWallet()
-		return nil, err
-	}
+
+	caDID := agent.LoadDID(s.CADID)
+	meDID := caDID  // we use the same for both ...
+	youDID := caDID // ... because we haven't pairwise here anymore
+	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
+	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
+	//	if err := agent.LoadPwOnInit(); err != nil {
+	//		glog.Error("cannot load pairwise for CA:", s.CADID)
+	//		agent.CloseWallet()
+	//		return nil, err
+	//	}
 	caDid := agent.Tr.PayloadPipe().In.Did()
 	if caDid != s.CADID {
 		glog.Warning("cloud agent DID is not correct")

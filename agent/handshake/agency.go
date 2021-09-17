@@ -17,7 +17,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
-	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -102,16 +101,6 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	// LAPI: this builds connection/pairwise from steward to anchor (CA ROOT)
 	//  and stores the pairwise, do we need that pairwise??? what's used for?
 	//
-	caller := pairwise.NewCallerPairwise(mesg.MsgCreator, steward, stewardDID,
-		pltype.ConnectionTrustAgent)
-
-	caller.Build(false) // LAPI: this creater new DID and writes the NYM
-	// LAPI: who the DID is? what it's used? it's caller, net line creates
-	// callee
-	callee := pairwise.NewCalleePairwise(mesg.MsgCreator, agent, caller.Msg)
-	responseMsg := callee.RespMsgAndOurDID()
-	caller.Bind(responseMsg)
-
 	// LAPI: would this be enough?? this will write anchor and steward
 	// connection to ledger
 
