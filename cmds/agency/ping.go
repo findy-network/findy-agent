@@ -1,15 +1,14 @@
 package agency
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/agency"
-	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-common-go/agency/client"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
@@ -53,18 +52,15 @@ func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
 func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	p := mesg.Payload{}
+	p := bytes.NewReader([]byte(""))
 
 	endpointAdd := &endp.Addr{
 		BasePath: c.BaseAddr,
-		Service:  agency.APIPath,
-		PlRcvr:   "ping",
+		Service:  "/", // use the root as a ping address
 	}
 
-	pl := e2.Payload.Try(cmds.SendAndWaitPayload(&p, endpointAdd, 0))
-	cmds.Fprintln(w, "ping ok.",
-		"\nserver's host address:", pl.Message.Encrypted,
-		"\nversion info:", pl.Message.Name)
+	resp := err2.Bytes.Try(comm.SendAndWaitReq(endpointAdd.Address(), p, 0))
+	cmds.Fprintln(w, string(resp))
 
 	return nil, nil
 }
