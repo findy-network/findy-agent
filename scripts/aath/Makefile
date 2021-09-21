@@ -1,6 +1,6 @@
 AGENT_DEFAULT?=acapy
 AGENT_BOB?=findy
-INCLUDE_TAGS?='@T001-RFC0160,@T001-RFC0036,@T001-RFC0037'
+INCLUDE_TAGS?='@AcceptanceTest'
 
 run: clone agency-up tag test
 run-check: clone agency-up tag test-check
