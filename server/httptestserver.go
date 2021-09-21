@@ -14,29 +14,18 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/lainio/err2"
-	"golang.org/x/net/websocket"
 )
 
-const TestServiceName = agency.CAAPIPath
 const TestServiceName2 = agency.ProtocolPath
 
 var mux *http.ServeMux
 
 func StartTestHTTPServer() {
 	mux = http.NewServeMux()
-	// We have mostly non-browser ws clients which don't send origin some remove default Handshake func
-	wsServer := websocket.Server{Handler: trans.WsListen, Handshake: nil}
-	wsPattern := fmt.Sprintf("/%sws/", TestServiceName)
-	mux.Handle(wsPattern, wsServer)
-
-	mux.HandleFunc("/api/", handleAgencyAPI)
-	pattern := fmt.Sprintf("/%s/", TestServiceName)
-	mux.HandleFunc(pattern, caAPITransport)
-	pattern = fmt.Sprintf("/%s/", TestServiceName2)
+	pattern := fmt.Sprintf("/%s/", TestServiceName2)
 	mux.HandleFunc(pattern, protocolTransport)
 
 	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
@@ -48,15 +37,7 @@ func StartTestHTTPServer() {
 
 func StartTestHTTPServer2() *httptest.Server {
 	mux = http.NewServeMux()
-	// We have mostly non-browser ws clients which don't send origin some remove default Handshake func
-	wsServer := websocket.Server{Handler: trans.WsListen, Handshake: nil}
-	wsPattern := fmt.Sprintf("/%sws/", TestServiceName)
-	mux.Handle(wsPattern, wsServer)
-
-	mux.HandleFunc("/api/", handleAgencyAPI)
-	pattern := fmt.Sprintf("/%s/", TestServiceName)
-	mux.HandleFunc(pattern, caAPITransport)
-	pattern = fmt.Sprintf("/%s/", TestServiceName2)
+	pattern := fmt.Sprintf("/%s/", TestServiceName2)
 	mux.HandleFunc(pattern, protocolTransport)
 
 	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
@@ -66,9 +47,6 @@ func StartTestHTTPServer2() *httptest.Server {
 
 	utils.Settings.SetHostAddr(srv.URL)
 	return srv
-
-	//comm.SendAndWaitReq = testSendAndWaitHTTPRequest
-	//comm.FileDownload = testDownloadFile
 }
 
 func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (data []byte, err error) {

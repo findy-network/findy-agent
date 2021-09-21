@@ -15,14 +15,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"golang.org/x/net/websocket"
 )
 
 // StartHTTPServer starts the http server. The function blocks when it success.
@@ -33,14 +29,8 @@ import (
 func StartHTTPServer(serviceName string, serverPort uint) error {
 	sp := fmt.Sprintf(":%v", serverPort)
 	mux := http.NewServeMux()
-	// We have mostly non-browser ws clients which don't send origin some remove default Handshake func
-	wsServer := websocket.Server{Handler: trans.WsListen, Handshake: nil}
-	wsPattern := fmt.Sprintf("/%sws/", serviceName)
-	mux.Handle(wsPattern, wsServer)
 
-	pattern := setHandler(serviceName, mux, caAPITransport)
-	setHandler(utils.Settings.ServiceName2(), mux, protocolTransport)
-	setHandler(agency.APIPath, mux, handleAgencyAPI)
+	pattern := setHandler(utils.Settings.ServiceName2(), mux, protocolTransport)
 
 	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		if glog.V(5) {
@@ -61,7 +51,8 @@ func StartHTTPServer(serviceName string, serverPort uint) error {
 
 	if glog.V(1) {
 		glog.Info(utils.Settings.VersionInfo())
-		glog.Infof("HTTP Server on port: %v with handle patterns: \"%s\", \"%s\"\n", serverPort, pattern, wsPattern)
+		glog.Infof("HTTP Server on port: %v with handle pattern: \"%s\"",
+			serverPort, pattern)
 	}
 	server := http.Server{
 		Addr:    sp,
@@ -88,66 +79,6 @@ func setHandler(serviceName string,
 	pattern = fmt.Sprintf("/%s/", serviceName)
 	mux.HandleFunc(pattern, handler)
 	return pattern
-}
-
-func handleAgencyAPI(w http.ResponseWriter, r *http.Request) {
-	defer err2.Catch(func(err error) {
-		glog.Error("error:", err)
-		errorResponse(w)
-	})
-
-	ourAddress := logRequestInfo("Agency API", r)
-	if ourAddress == nil {
-		errorResponse(w)
-		return
-	}
-
-	body := err2.Bytes.Try(ioutil.ReadAll(r.Body))
-
-	receivedPayload := mesg.PayloadCreator.NewFromData(body)
-	responsePayload := agency.APICall(ourAddress, receivedPayload)
-	data := responsePayload.JSON()
-
-	w.Header().Set("Content-Type", "application/x-binary")
-	_, _ = w.Write(data)
-}
-
-func caAPITransport(w http.ResponseWriter, r *http.Request) {
-	defer err2.Catch(func(err error) {
-		glog.Error("error:", err)
-		errorResponse(w)
-	})
-
-	ourAddress := logRequestInfo("C/SA API TRANSPORT", r)
-	if ourAddress == nil || !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) {
-		errorResponse(w)
-		return
-	}
-
-	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
-
-	// Get Transport from Agency to 1. decrypt the input, 2. build packet to
-	// process, 3. encrypt the response
-	tr := agency.CurrentTr(ourAddress)
-
-	// 1. decrypt payload
-	inPL := mesg.NewPayload(tr.PayloadPipe().Decrypt(data))
-
-	// Get handler CA and forward Payload to it
-	ca := agency.RcvrCA(ourAddress)
-
-	// 2. put payload to a Packet to be processed accordingly
-	outPL := comm.CloudAgentAPI().Process(comm.Packet{
-		Payload:  &mesg.PayloadImpl{Payload: inPL},
-		Address:  ourAddress,
-		Receiver: ca,
-	})
-
-	// 3. Encrypt output Payload with the transport
-	data = tr.PayloadPipe().Encrypt(dto.ToJSONBytes(outPL))
-
-	w.Header().Set("Content-Type", "application/x-binary")
-	_, _ = w.Write(data)
 }
 
 func errorResponse(w http.ResponseWriter) {

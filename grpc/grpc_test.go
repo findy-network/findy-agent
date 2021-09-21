@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
-	_ "github.com/findy-network/findy-agent/agent/caapi"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -162,7 +161,6 @@ func setUp() {
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
-	utils.Settings.SetServiceName(server.TestServiceName)
 	utils.Settings.SetServiceName2(server.TestServiceName2)
 	utils.Settings.SetHostAddr("http://localhost:8080")
 	utils.Settings.SetVersionInfo("testing testing")

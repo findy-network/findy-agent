@@ -13,7 +13,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/apns"
-	_ "github.com/findy-network/findy-agent/agent/caapi" // Command handlers need these
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
