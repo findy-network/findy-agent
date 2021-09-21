@@ -85,9 +85,8 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	rippedEmail := strings.Replace(email, "@", "_", -1)
 
 	// Build new agent with wallet
-	agent = &cloud.Agent{}
-	name := rippedEmail
-	aw := ssi.NewRawWalletCfg(name, key)
+	agent = new(cloud.Agent)
+	aw := ssi.NewRawWalletCfg(rippedEmail, key)
 	walletAlreadyEsists := aw.Create()
 	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
