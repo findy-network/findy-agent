@@ -78,30 +78,4 @@ install_run() {
   run $1
 }
 
-onboard() {
-  make install
-
-  echo -e "${GREEN}*** dev - onboard ***${NC}"
-
-  # example
-  # ./scripts/dev/dev.sh onboard myName 9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY .
-  EXPORT_NAME=$1
-  EXPORT_KEY=$2
-  EXPORT_DIR=$3
-  echo "name: $EXPORT_NAME, key: $EXPORT_KEY, dir: $EXPORT_DIR"
-  set +e
-  rm $EXPORT_DIR/${EXPORT_NAME}.export
-  rm -rf ~/.indy_client/wallet/${EXPORT_NAME}_client
-  rm -rf ~/.indy_client/wallet/${EXPORT_NAME}_server
-  set -e
-  $CLI service onboard \
-    --wallet-name ${EXPORT_NAME}_client \
-    --wallet-key ${EXPORT_KEY} \
-    --email ${EXPORT_NAME}_server \
-    --export-key ${EXPORT_KEY} \
-    --agency-url http://localhost:8080 \
-    --salt "this is only example" \
-    --export-file ${EXPORT_DIR}/${EXPORT_NAME}.export
-}
-
 "$@"
