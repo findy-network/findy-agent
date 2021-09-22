@@ -91,17 +91,8 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	// TODO LAPI: do we really need pairwise between steward and new CA?
-	//  should we just try to write the NYM.
-	//
 	// Bind pairwise Steward <-> New Agent
 	stewardDID := steward.RootDid()
-
-	// LAPI: this builds connection/pairwise from steward to anchor (CA ROOT)
-	//  and stores the pairwise, do we need that pairwise??? what's used for?
-	//
-	// LAPI: would this be enough?? this will write anchor and steward
-	// connection to ledger
 
 	// Promote new agent by Trusted Anchor DID
 	anchorDid := agent.CreateDID("")
