@@ -29,7 +29,6 @@ package. Summary of the packages:
  agency     encapsulates services for multi-tenancy
  aries      is implementation of Aries messages
  bus        offers implementation of notification bus for internal use
- caapi      CA API handlers, entry implementation to receive API messages
  cloud      is a package for cloud agent (CA)
  comm       communication receivers, packages, handlers and helpers
  didcomm    DIDComm messaging interfaces

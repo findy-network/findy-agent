@@ -1,4 +1,4 @@
-package agent
+package tools
 
 import (
 	"errors"
@@ -38,7 +38,7 @@ func (c ImportCmd) Validate() error {
 	return nil
 }
 
-func (c ImportCmd) Exec(w io.Writer) (r Result, err error) {
+func (c ImportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Annotate("import wallet cmd", &err)
 
 	walletCfg := wallet.Config{
@@ -58,5 +58,5 @@ func (c ImportCmd) Exec(w io.Writer) (r Result, err error) {
 
 	cmds.Fprintf(w, "wallet %s imported from file %s\n", c.WalletName,
 		c.Filename)
-	return Result{}, nil
+	return r, nil
 }

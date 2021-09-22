@@ -1,4 +1,4 @@
-package agent
+package tools
 
 import (
 	"errors"
@@ -42,7 +42,7 @@ func (c ExportCmd) Validate() error {
 	return nil
 }
 
-func (c ExportCmd) Exec(w io.Writer) (r Result, err error) {
+func (c ExportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Annotate("export wallet cmd", &err)
 
 	agent := cloud.NewEA()
@@ -57,5 +57,5 @@ func (c ExportCmd) Exec(w io.Writer) (r Result, err error) {
 	err2.Check(agent.Export.Result().Err())
 
 	cmds.Fprintln(w, "wallet exported:", c.Filename)
-	return Result{}, nil
+	return r, nil
 }

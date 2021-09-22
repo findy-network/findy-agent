@@ -3,24 +3,23 @@ package server
 import (
 	"context"
 	"errors"
-	"os"
-	"sync"
+	"strings"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-agent/cmds"
-	"github.com/findy-network/findy-agent/cmds/onboard"
 	"github.com/findy-network/findy-agent/enclave"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -31,37 +30,13 @@ type agencyService struct {
 	ops.UnimplementedAgencyServiceServer
 }
 
-// webAgent is variable for shared web wallet edge agent which is used for all
-// of the allocated agents. We use this struct to lock the edge agent preventing
-// not need wallet reopenings and closings
-var webAgent = struct {
-	sync.Mutex
-	*cloud.Agent
-}{}
-
-var cmd onboard.Cmd
-var onboardLock sync.Mutex
-
-func webEdgeAgent() *cloud.Agent {
-	webAgent.Lock()
-	defer webAgent.Unlock()
-	if webAgent.Agent == nil {
-		// late init to allow utils.Settings be ready
-		cmd = onboard.Cmd{
-			Cmd: cmds.Cmd{
-				WalletName: utils.Settings.WebOnboardWalletName(),
-				WalletKey:  utils.Settings.WebOnboardWalletKey(),
-			},
-			AgencyAddr: utils.Settings.HostAddr(),
-		}
-
-		webAgent.Agent = cmd.InitWebExec()
-	}
-	glog.V(1).Infoln("return web edge wallet")
-	return webAgent.Agent
-}
-
-func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) (st *ops.OnboardResult, err error) {
+func (a agencyService) Onboard(
+	ctx context.Context,
+	onboarding *ops.Onboarding,
+) (
+	st *ops.OnboardResult,
+	err error,
+) {
 	defer err2.Return(&err)
 	st = &ops.OnboardResult{Ok: false}
 
@@ -75,27 +50,28 @@ func (a agencyService) Onboard(ctx context.Context, onboarding *ops.Onboarding) 
 		return st, errors.New("invalid user")
 	}
 
-	// edgeAgent is singleton, let it init before cloning
-	edgeAgent := webEdgeAgent()
-	// make a clone because we use ui Cmd for service side
-	c := cmd
-	c.Email = onboarding.Email
-
-	// because we use same EA (one wallet) for agents and handshake pairwise
-	// is not thread safe we must protect the cmd execution.
-	// TODO: when legacy API is removed handshake must be rewritten
-	onboardLock.Lock()
-	defer onboardLock.Unlock()
-	r, err := c.WebExec(edgeAgent, os.Stdout)
+	rippedEmail := strings.Replace(onboarding.Email, "@", "_", -1)
+	ac, err := handshake.AnchorAgent(onboarding.Email)
 	err2.Check(err)
+	caDID := ac.CreateDID("")
+	DIDStr := caDID.Did()
+	agency.AddHandler(DIDStr, ac)
+	agency.Register.Add(ac.RootDid().Did(), rippedEmail, DIDStr)
+	meDID := caDID  // we use the same for both ...
+	youDID := caDID // ... because we haven't pairwise here anymore
+	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
+	transport := &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
+	ac.Tr = transport
+	glog.V(1).Infoln("build onboarding grpc result:",
+		rippedEmail, DIDStr)
+	agency.SaveRegistered()
 
-	glog.V(1).Infoln("build onboarding grpc result")
 	return &ops.OnboardResult{
 		Ok: true,
 		Result: &ops.OnboardResult_OKResult{
-			JWT:            jwt.BuildJWTWithLabel(r.CADID, onboarding.Email),
-			CADID:          r.CADID,
-			InvitationJSON: dto.ToJSON(r.Invitation),
+			JWT:            jwt.BuildJWTWithLabel(DIDStr, onboarding.Email),
+			CADID:          DIDStr,
+			InvitationJSON: "{}",
 		},
 	}, nil
 }

@@ -14,13 +14,11 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
-	_ "github.com/findy-network/findy-agent/agent/caapi"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
-	caclient "github.com/findy-network/findy-agent/client"
 	"github.com/findy-network/findy-agent/enclave"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
@@ -163,7 +161,6 @@ func setUp() {
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
-	utils.Settings.SetServiceName(server.TestServiceName)
 	utils.Settings.SetServiceName2(server.TestServiceName2)
 	utils.Settings.SetHostAddr("http://localhost:8080")
 	utils.Settings.SetVersionInfo("testing testing")
@@ -370,15 +367,16 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := caclient.Client{
-				Email:       tt.args.email,
-				BaseAddress: "http://localhost:8080",
-				Wallet:      &tt.args.wallet,
-			}
-			cadid, _, _, err := c.Handshake()
+			conn := client.TryOpen("findy-root", baseCfg)
+			ctx := context.Background()
+			agencyClient := pb.NewAgencyServiceClient(conn)
+			oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+				Email: tt.args.email,
+			})
 			if got := err; !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("handshake API = %v, want %v", got, tt.want)
 			}
+			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
 
 			// build schema and cred def for the first agent to use later
@@ -464,7 +462,9 @@ func TestInvitation_NoOneRun(t *testing.T) {
 			ctx := context.Background()
 			c := agency2.NewAgentServiceClient(conn)
 			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				t.Fatal("ERROR: ", err)
+			}
 
 			assert.NotEmpty(t, r.JSON)
 			glog.Infoln(r.JSON)

@@ -17,7 +17,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
-	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -25,6 +24,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 var Hub *Agency
@@ -72,10 +72,10 @@ Please see server.go for more information about service endpoints.
 */
 type Agency struct{}
 
-// Builds new trust anchor agent and its wallet. This is quite slow process. In
+// AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
-func anchorAgent(email string) (agent *cloud.Agent, err error) {
+func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	defer err2.Annotate("create archor", &err)
 
 	key := err2.String.Try(enclave.NewWalletKey(email))
@@ -85,24 +85,27 @@ func anchorAgent(email string) (agent *cloud.Agent, err error) {
 	rippedEmail := strings.Replace(email, "@", "_", -1)
 
 	// Build new agent with wallet
-	agent = &cloud.Agent{}
-	name := rippedEmail
-	aw := ssi.NewRawWalletCfg(name, key)
-	aw.Create()
+	agent = new(cloud.Agent)
+	aw := ssi.NewRawWalletCfg(rippedEmail, key)
+	walletAlreadyEsists := aw.Create()
+	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
+	// TODO LAPI: do we really need pairwise between steward and new CA?
+	//  should we just try to write the NYM.
+	//
 	// Bind pairwise Steward <-> New Agent
-	rootDid := steward.RootDid()
-	caller := pairwise.NewCallerPairwise(mesg.MsgCreator, steward, rootDid,
-		pltype.ConnectionTrustAgent)
-	caller.Build(false)
-	callee := pairwise.NewCalleePairwise(mesg.MsgCreator, agent, caller.Msg)
-	responseMsg := callee.RespMsgAndOurDID()
-	caller.Bind(responseMsg)
+	stewardDID := steward.RootDid()
+
+	// LAPI: this builds connection/pairwise from steward to anchor (CA ROOT)
+	//  and stores the pairwise, do we need that pairwise??? what's used for?
+	//
+	// LAPI: would this be enough?? this will write anchor and steward
+	// connection to ledger
 
 	// Promote new agent by Trusted Anchor DID
 	anchorDid := agent.CreateDID("")
-	err2.Check(steward.SendNYM(anchorDid, rootDid.Did(),
+	err2.Check(steward.SendNYM(anchorDid, stewardDID.Did(),
 		findy.NullString, "TRUST_ANCHOR"))
 
 	// Use the anchor DID as a submitter/root DID to Ledger
@@ -136,6 +139,8 @@ func (a *Agency) InOutPL(
 			},
 		}), nonce
 
+	// TODO FAPI: we will remove this API from the agency. This is legacy
+	// API.
 	case HandlerEndpoint:
 		if payload.Type() == pltype.ConnectionHandshake {
 			email := payload.Message().Endpoint().Endp
@@ -155,7 +160,7 @@ func (a *Agency) InOutPL(
 				return errorMsg, nonce
 			}
 
-			agentHandler, err := anchorAgent(email)
+			agentHandler, err := AnchorAgent(email)
 			if err != nil {
 				return errorMsg, nonce
 			}

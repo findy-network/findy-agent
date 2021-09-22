@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/findy-network/findy-agent/cmds/agent"
+	"github.com/findy-network/findy-agent/cmds/tools"
 	"github.com/lainio/err2"
 	"github.com/spf13/cobra"
 )
@@ -43,7 +43,7 @@ Example
 	},
 }
 
-var impCmd = agent.ImportCmd{}
+var impCmd = tools.ImportCmd{}
 
 func init() {
 	defer err2.Catch(func(err error) {
