@@ -90,7 +90,7 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 		glog.Error(err)
 	})
 
-	switch t.TypeID {
+	switch t.GetHeader().TypeID {
 	case pltype.CAProofPropose: // ----- prover will start -----
 		err2.Check(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.PresentProofPropose,
@@ -112,11 +112,11 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 
 				propose := msg.FieldObj().(*presentproof.Propose)
 				propose.PresentationProposal = pp
-				propose.Comment = t.Info // todo: for legacy tests
+				propose.Comment = t.GetPresentProof().Comment
 
 				rep := &psm.PresentProofRep{
 					Key:        key,
-					Values:     t.Info,
+					Values:     t.GetPresentProof().Comment, // TODO: serialize values here?
 					WeProposed: true,
 				}
 				return psm.AddPresentProofRep(rep)
@@ -147,8 +147,9 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 
 				// create Rep and save it for PSM to run protocol
 				rep := &psm.PresentProofRep{
-					Key:      key,
-					Values:   t.Info,      // Verifier cannot provide this..
+					Key:    key,
+					Values: t.GetPresentProof().Comment, // TODO: serialize attributes here?,
+					// Verifier cannot provide this..
 					ProofReq: proofReqStr, //  .. but it gives this one.
 				}
 				return psm.AddPresentProofRep(rep)

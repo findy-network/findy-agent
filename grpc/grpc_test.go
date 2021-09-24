@@ -495,7 +495,6 @@ func TestConnection_NoOneRun(t *testing.T) {
 				Label: "TestLabel",
 			}
 			connID, ch, err := pairwise.Connection(ctx, ca.Invitation)
-			fmt.Println(ca.Invitation, connID)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
 			for status := range ch {
@@ -504,7 +503,6 @@ func TestConnection_NoOneRun(t *testing.T) {
 			}
 			agents[0].ConnID[i-1] = connID
 			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
-			fmt.Println("ConnID set")
 
 			assert.NoError(t, conn.Close())
 		})

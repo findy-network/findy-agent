@@ -68,7 +68,7 @@ func StartPSM(ts Initial) (err error) {
 		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
 	})
 
-	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.Message))
+	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.GetHeader().ConnectionID))
 	msgMeDID := pipe.In.Did()
 	agentEndp := e2.Public.Try(pipe.EA())
 	ts.T.SetReceiver(&agentEndp)
@@ -76,7 +76,6 @@ func StartPSM(ts Initial) (err error) {
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   ts.SendNext,
 		Thread: decorator.NewThread(ts.T.Nonce, ""),
-		Info:   ts.T.Info,
 	})
 
 	// Let caller of StartPSM() to update T data so that it can set what we'll
@@ -193,7 +192,7 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	// Task is a helper struct here by gathering all needed data for one unit
-	task := comm.CreateTask(ts.Payload.Type(), ts.Payload.ID(), "", nil, nil)
+	task := comm.CreateTask(ts.Payload.Type(), ts.Payload.ThreadID(), "", nil, nil)
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -279,11 +278,11 @@ func updatePSM(receiver comm.Receiver, t *comm.Task, state psm.SubState) {
 		glog.Errorf("error in psm update: %s", err)
 	})
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
-		Type:   t.TypeID,
+		Type:   t.GetHeader().TypeID,
 		Thread: decorator.NewThread(t.Nonce, ""),
 	})
 	wDID := receiver.WDID()
-	opl := aries.PayloadCreator.NewMsg(t.Nonce, t.TypeID, msg)
+	opl := aries.PayloadCreator.NewMsg(t.Nonce, t.GetHeader().TypeID, msg)
 	err2.Check(UpdatePSM(wDID, "", t, opl, state))
 }
 
@@ -293,10 +292,10 @@ func FindAndStartTask(receiver comm.Receiver, task *comm.Task) {
 		glog.Errorf("Cannot start protocol: %s", err)
 	})
 
-	proc, ok := starters[task.TypeID]
+	proc, ok := starters[task.GetHeader().TypeID]
 	if !ok {
 		s := "!!!! No protocol starter !!!"
-		glog.Error(s, task.TypeID)
+		glog.Error(s, task.GetHeader().TypeID)
 		panic(s)
 	}
 	updatePSM(receiver, task, psm.Sending)

@@ -175,7 +175,7 @@ func AddAndSetFlagUpdatePSM(
 			nonce:             machineKey.Nonce,
 			meDID:             machineKey.DID,
 			pwName:            machine.PairwiseName(),
-			plType:            machine.FirstState().T.TypeID,
+			plType:            machine.FirstState().T.GetHeader().TypeID,
 			pendingUserAction: machine.PendingUserAction(),
 			initiator:         machine.Initiator,
 		})

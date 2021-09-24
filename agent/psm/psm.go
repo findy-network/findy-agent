@@ -195,8 +195,8 @@ func (p *PSM) PairwiseName() string {
 		glog.Error("error in get pw name:", err)
 	})
 
-	if state := p.FirstState(); state != nil && state.T.Message != "" {
-		return state.T.Message
+	if state := p.FirstState(); state != nil && state.T.GetHeader().ConnectionID != "" {
+		return state.T.GetHeader().ConnectionID
 	}
 	if p.InDID != "" {
 		r := comm.ActiveRcvrs.Get(p.Key.DID)

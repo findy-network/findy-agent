@@ -69,7 +69,7 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 
 	// build a connection message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
-		Label: task.Info,
+		Label: task.GetDIDExchange().Label,
 		Connection: &didexchange.Connection{
 			DID:    caller.Did(),
 			DIDDoc: diddoc.NewDoc(caller, pubEndp.AE()),
@@ -128,7 +128,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	}
 
 	respEndp := response.Endpoint()
-	task := comm.CreateTask(ipl.Type(), ipl.ID(), "", &respEndp, &respEndp)
+	task := comm.CreateTask(ipl.Type(), ipl.ThreadID(), "", &respEndp, &respEndp)
 
 	err2.Check(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
@@ -203,7 +203,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
 	}
 	receiverEP := cnxAddr.AE()
-	task := comm.CreateTask(ipl.Type(), ipl.ID(), connectionID, &receiverEP, &senderEP)
+	task := comm.CreateTask(ipl.Type(), ipl.ThreadID(), connectionID, &receiverEP, &senderEP)
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
 

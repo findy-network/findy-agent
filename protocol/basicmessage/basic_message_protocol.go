@@ -49,8 +49,8 @@ func startBasicMessage(ca comm.Receiver, t *comm.Task) {
 
 			rep := &psm.BasicMessageRep{
 				Key:       key,
-				PwName:    t.Message,
-				Message:   t.Info,
+				PwName:    t.GetHeader().ConnectionID,
+				Message:   t.GetBasicMessage().Content,
 				Timestamp: time.Now().UnixNano(),
 				SentByMe:  true,
 				Delivered: true,

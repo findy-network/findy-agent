@@ -54,7 +54,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 		glog.Error(err)
 	})
 
-	switch t.TypeID {
+	switch t.GetHeader().TypeID {
 	case pltype.CACredOffer: // Send to Holder
 		err2.Check(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.IssueCredentialOffer,
@@ -107,7 +107,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 				propose := msg.FieldObj().(*issuecredential.Propose)
 				propose.CredDefID = *t.CredDefID
 				propose.CredentialProposal = pc
-				propose.Comment = t.Info // todo: for legacy tests
+				propose.Comment = t.GetIssueCredential().Comment
 
 				rep := &psm.IssueCredRep{
 					Key:        key,

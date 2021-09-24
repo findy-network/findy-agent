@@ -32,9 +32,7 @@ func testPSM(ts int64) *PSM {
 				Type: mockType,
 			},
 			Timestamp: ts,
-			T: comm.Task{
-				Message: "pairwise",
-			},
+			T:         *comm.CreateTask("", "", "pairwise", nil, nil),
 		}
 	}
 	nonce := mockStateNonce

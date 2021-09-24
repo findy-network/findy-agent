@@ -54,25 +54,20 @@ func Serve(conf *rpc.ServerCfg) {
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 	defer err2.Return(&err)
 
-	task := comm.CreateStartTask(&comm.Task{
-		Nonce:   utils.UUID(),
-		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeID),
-		Message: protocol.ConnectionID,
+	typeID := uniqueTypeID(protocol.Role, protocol.TypeID)
+	task := comm.CreateStartTask(typeID, &comm.Task{
+		Nonce: utils.UUID(),
 	}, protocol)
 	switch protocol.TypeID {
 	case pb.Protocol_TRUST_PING:
 		if protocol.ConnectionID == "" {
 			glog.Warningln("pinging first found connection, conn-id was empty")
 		}
-	case pb.Protocol_BASIC_MESSAGE:
-		task.Info = protocol.GetBasicMessage().Content
-		glog.V(1).Infoln("basic_message content:", task.Info)
 	case pb.Protocol_DIDEXCHANGE:
 		assert.D.True(protocol.GetDIDExchange() != nil, "connection attrs cannot be nil")
 		var invitation didexchange.Invitation
 		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
 		task.ConnectionInvitation = &invitation
-		task.Info = protocol.GetDIDExchange().GetLabel()
 		task.Nonce = invitation.ID // Important!! we must use same id!
 		glog.V(1).Infoln("set invitation")
 	case pb.Protocol_ISSUE_CREDENTIAL:
