@@ -54,11 +54,11 @@ func Serve(conf *rpc.ServerCfg) {
 func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 	defer err2.Return(&err)
 
-	task := &comm.Task{
+	task := comm.CreateStartTask(&comm.Task{
 		Nonce:   utils.UUID(),
 		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeID),
 		Message: protocol.ConnectionID,
-	}
+	}, protocol)
 	switch protocol.TypeID {
 	case pb.Protocol_TRUST_PING:
 		if protocol.ConnectionID == "" {

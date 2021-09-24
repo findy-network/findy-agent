@@ -53,10 +53,10 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	task.ReceiverEndp = service.Addr{
+	task.SetReceiver(&service.Addr{
 		Endp: task.ConnectionInvitation.ServiceEndpoint,
 		Key:  task.ConnectionInvitation.RecipientKeys[0],
-	}
+	})
 
 	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
 	me := ca.WDID()
@@ -98,7 +98,8 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 	opl := aries.PayloadCreator.NewMsg(task.Nonce, pltype.AriesConnectionRequest, msg)
 
 	// Create secure pipe to send payload to other end of the new PW
-	secPipe := sec.NewPipeByVerkey(caller, task.ReceiverEndp.Key)
+	receiverKey := task.GetHeader().ReceiverEndp.Key
+	secPipe := sec.NewPipeByVerkey(caller, receiverKey)
 	wa.AddPipeToPWMap(*secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -126,7 +127,8 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		// todo: send NACK here
 	}
 
-	task := comm.NewTaskFromConnectionResponse(ipl, response)
+	respEndp := response.Endpoint()
+	task := comm.CreateTask(ipl.Type(), ipl.ID(), "", &respEndp, &respEndp)
 
 	err2.Check(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
@@ -196,12 +198,16 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
-	task := comm.NewTaskFromRequest(ipl, req, connectionID)
-	task.ReceiverEndp = cnxAddr.AE()
+	senderEP := service.Addr{
+		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
+		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
+	}
+	receiverEP := cnxAddr.AE()
+	task := comm.CreateTask(ipl.Type(), ipl.ID(), connectionID, &receiverEP, &senderEP)
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
 
-	task.SwitchDirection()
+	task.GetHeader().SwitchDirection()
 
 	// MARK: we must switch the Nonce for pairwise construction. We will return
 	//  it back after we are done. This is because AcaPy compatibility

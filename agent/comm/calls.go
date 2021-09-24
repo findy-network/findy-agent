@@ -118,7 +118,7 @@ It doesn't resend PL in case of failure. The recovering in done at PSM level.
 func SendPL(sendPipe sec.Pipe, task *Task, opl didcomm.Payload) (err error) {
 	defer err2.Annotate("send payload", &err)
 
-	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp)
+	cnxAddr := endp.NewAddrFromPublic(task.GetHeader().ReceiverEndp)
 
 	cryptSendPL, _, err := sendPipe.Pack(opl.JSON())
 	err2.Check(err)
