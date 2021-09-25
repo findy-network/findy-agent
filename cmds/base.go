@@ -117,7 +117,7 @@ func (c Cmd) Exec(p io.Writer, t string, m *mesg.Msg,
 	wcfg := ssi.NewRawWalletCfg(c.WalletName, c.WalletKey)
 	edge := Edge{
 		Cmd:   c,
-		Agent: cloud.NewTransportReadyEA(wcfg),
+		Agent: cloud.NewTransportReadyEA(wcfg), // TODO LAPI:
 	}
 	defer edge.Agent.CloseWallet()
 
@@ -149,6 +149,8 @@ func Fprint(w io.Writer, a ...interface{}) {
 		err2.Empty.Try(fmt.Fprint(w, a...))
 	}
 }
+
+// TODO LAPI: no message oriented communication to CA
 
 // MsgToCA sends what ever message to an agency.
 func (edge Edge) MsgToCA(w io.Writer,
