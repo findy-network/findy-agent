@@ -12,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/txp"
@@ -171,18 +170,4 @@ func agent(did string) comm.Receiver {
 	receivingHandler := Handler(handlerKey)
 	agent := receivingHandler.(comm.Receiver)
 	return agent
-}
-
-// Server calls this when it receives HTTP request.
-func APICall(endpointAddress *endp.Addr,
-	received didcomm.Payload) (response didcomm.Payload) {
-
-	handlerKey := endpointAddress.ReceiverDID()
-	receivingHandler := Handler(handlerKey)
-
-	if receivingHandler == nil {
-		receivingHandler = agencyHandler
-	}
-	response, _ = receivingHandler.InOutPL(endpointAddress, received)
-	return response
 }

@@ -62,7 +62,9 @@ func (rs *Receivers) Get(DID string) Receiver {
 
 // Handler can be Agency or Agent. They can input Payloads.
 type Handler interface {
-	InOutPL(addr *endp.Addr, payload didcomm.Payload) (response didcomm.Payload, nonce string)
+	// TODO: lapi, should we consider something else for handler after
+	// refactoring
+	//InOutPL(addr *endp.Addr, payload didcomm.Payload) (response didcomm.Payload, nonce string)
 }
 
 // SeedHandler is preloaded cloud agent which is not initialized yet.

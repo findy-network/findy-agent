@@ -11,7 +11,6 @@ import (
 	"github.com/lainio/err2"
 )
 
-// processor is a protocol processor for Basic Message protocol.
 var processor = comm.ProtProc{Starter: startProtocol,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerProblemReport: handleProblemReport,

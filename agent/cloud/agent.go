@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sa"
@@ -288,129 +286,6 @@ func (a *Agent) Pw() pairwise.Saver {
 		return a.callerPw
 	}
 	return nil
-}
-
-// TODO LAPI: function below is not needed anymore. it's for legacy handshake.
-
-// InOutPL handles messages of handshake protocol at the moment. Future will
-// show if it stays or even expands. The messages processed here are the CA's.
-// The EA end is handled by clients.
-func (a *Agent) InOutPL(cnxAddr *endp.Addr, ipl didcomm.Payload) (opl didcomm.Payload, nonce string) {
-	a.AssertWallet()
-
-	glog.V(1).Info("Handle message type: " + ipl.Type())
-
-	switch ipl.Type() {
-	case pltype.ConnectionResponse: // clients 2nd message for us
-		pw := a.callerPw                                    // continue with Pairwise
-		im := pw.ReceiveResponse(ipl.Message().Encrypted()) // process it with input Payload
-		if im.Nonce() != pw.Msg.Nonce() {
-			glog.Error("Fatal error, EA/CA nonce mismatch")
-		}
-
-		endAddr, pwEndAddr, pwEndKey, name := "", "", "", ""
-
-		// When we are a CA this is termination of the HANDSHAKE so we must
-		// update the Transport layer to be able to communicate with all of
-		// the EAs. Those who start communication sequences and those who
-		// listen from ws.
-		if a.IsCA() {
-			meDID := a.LoadDID(cnxAddr.ReceiverDID())
-			youDID := a.LoadDID(im.Did()) // remember set our EA and Transport layer
-			cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-			transport := &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-			a.Tr = transport
-			endAddr = a.CAEndp(false).Address()
-			workerEndpoint := a.CAEndp(true)
-			pwEndAddr = workerEndpoint.Address()
-			transport.Endp = pwEndAddr
-			pwEndKey = workerEndpoint.VerKey
-			name = a.callerPw.Pairwise.Endp
-		} else {
-			endAddr = a.BuildEndpURL()
-		}
-		nonce = pw.Msg.Nonce()
-
-		pwEKey := service.Addr{Endp: pwEndAddr, Key: pwEndKey}
-		initMsg := didcomm.MsgInit{
-			Did:      im.Did(),
-			VerKey:   im.VerKey(),
-			Endpoint: endAddr,
-			RcvrEndp: pwEKey,
-			Name:     name,
-		}
-
-		opl = mesg.PayloadCreator.New(didcomm.PayloadInit{
-			ID:      nonce,
-			Type:    pltype.ConnectionAck,
-			MsgInit: initMsg,
-		})
-		if a.IsCA() {
-			agency.SaveRegistered()
-		}
-
-	// This arrives when on-boarding is started and this Cloud Agent is
-	// allocated for that. Agency preprocess the message before this arrives
-	// here. This is clients 1st message for us.
-	case pltype.ConnectionHandshake:
-		pw := pairwise.NewCallerPairwise(mesg.MsgCreator,
-			a, a.RootDid(),
-			pltype.ConnectionHandshake) // we start the pairwise sequence
-		pw.Endp = ipl.Message().Endpoint().Endp // endpoint is used to transfer email/wallet name in handshake
-		pw.Name = ipl.Message().Name()          // in this version the requested pairwise name is here
-		pw.Build(true)                          // build Msg to be send
-		nonce = pw.Msg.Nonce()                  // attach to Payload
-		opl = mesg.PayloadCreator.NewMsg(nonce, pltype.ConnectionRequest, pw.Msg.(didcomm.Msg))
-		a.callerPw = pw // save pairwise for client opl
-
-	default:
-		panic("we should not be here")
-	}
-	return opl, nonce
-}
-
-// ProcessPL is helper method to implement a CA client aka EA. This is not
-// called by CA itself which is running on server. This for agents which are
-// connecting Agency run CAs
-func (a *Agent) ProcessPL(ipl didcomm.Payload) (opl didcomm.Payload, err error) {
-	a.AssertWallet()
-
-	p := comm.Packet{
-		Payload:  ipl,
-		Address:  nil,
-		Receiver: a,
-	}
-
-	glog.V(1).Info("Handle message type: " + ipl.Type())
-
-	switch ipl.Type() {
-	// =============================================================
-	// EA's response handlers to Payloads, note! EA == Client of CA
-	// =============================================================
-	case pltype.ConnectionRequest: // we receive from server as response from CA
-		a.calleePw = pairwise.NewCalleePairwise(mesg.MsgCreator, a, ipl.Message())
-		msg := a.calleePw.ConnReqToResp().(didcomm.Msg)
-		opl = mesg.PayloadCreator.NewMsg(ipl.ID(), pltype.ConnectionResponse, msg)
-
-	case pltype.ConnectionAck: // we receive from server as response from CA
-		a.Pw().SaveEndpoint(ipl.Message().Endpoint().Endp)
-		initMsg := didcomm.MsgInit{
-			Info: "OP Tech Lab (c)",
-		}
-		opl = mesg.PayloadCreator.New(didcomm.PayloadInit{
-			ID:      "0",
-			Type:    pltype.ConnectionOk,
-			MsgInit: initMsg,
-		})
-
-	default:
-		opl = comm.ProcessMsg(p, func(im, om didcomm.Msg) (err error) {
-			glog.Error("unknown payload")
-			glog.Error(dto.ToJSON(im))
-			return fmt.Errorf("unknown payload")
-		})
-	}
-	return opl, nil
 }
 
 func (a *Agent) BuildEndpURL() (endAddr string) {
