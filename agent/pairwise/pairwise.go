@@ -4,7 +4,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
-	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go"
@@ -94,26 +93,6 @@ func NewCallerPairwise(msgFactor didcomm.MsgFactor, callerAgent ssi.Agent,
 	}
 }
 
-func (p *Caller) Build(attachToAgency bool) {
-	if p.agent.IsEA() {
-		p.caller = p.agent.CreateDID("")
-		p.Msg = p.factor.Create(didcomm.MsgInit{
-			Did:      p.caller.Did(),
-			VerKey:   p.caller.VerKey(),
-			Nonce:    utils.NewNonceStr(),
-			Endpoint: p.Endp,
-			Name:     p.Name,
-		}).(didcomm.PwMsg)
-	} else {
-		p.caller = p.agent.CreateDID("")
-		p.buildMsg(attachToAgency)
-
-		if !utils.Settings.LocalTestMode() { // no ledger writes in test mode
-			p.agent.SendNYM(p.caller, p.callerRoot.Did(), findy.NullString, findy.NullString)
-		}
-	}
-}
-
 func (p *Caller) buildMsg(attachToAgency bool) {
 	var nonce uint64
 	if attachToAgency { // if this Handshake / On-boarding we need this only then
@@ -167,10 +146,6 @@ func (p *Caller) StoreResult() error {
 	return p.callee.StoreResult()
 }
 
-func (p *Caller) Bind(msg didcomm.PwMsg) {
-	p.processMessage(msg)
-}
-
 // MARK: Callee ---
 
 func (p *Callee) StartStore() {
@@ -197,30 +172,6 @@ func NewCalleePairwise(msgFactor didcomm.MsgFactor, agent ssi.Agent,
 			factor: msgFactor,
 		},
 	}
-}
-
-func (p *Callee) ConnReqToResp() (respMsg didcomm.PwMsg) {
-	responseMsg := p.RespMsgAndOurDID()
-	p.Name = p.Msg.Name()
-	connReqDID := p.Msg.Did()
-	connReqVK := p.Msg.VerKey()
-	callerDID := ssi.NewDid(connReqDID, connReqVK)
-	p.agent.AddDIDCache(callerDID)
-	p.Caller = callerDID // this MUST be before next line!
-	builder, ok := p.agent.(ssi.EndpointBuilder)
-	if !ok {
-		glog.Error("programming error")
-		panic("shouldn't be here!")
-	}
-	responseMsg.SetEndpoint(service.Addr{Endp: builder.BuildEndpURL()})
-	p.StartStore() // Save their DID and pairwise info
-	respMsg = responseMsg.(didcomm.Msg).AnonEncrypt(callerDID)
-
-	// Check the result for error handling AND for consuming async's result
-	if err := p.StoreResult(); err != nil {
-		glog.Error("error in finalizing the pairwise: ", err)
-	}
-	return respMsg
 }
 
 func (p *Callee) ConnReqToRespWithSet(
@@ -273,7 +224,6 @@ func (p *Pairwise) pairwiseName() string {
 }
 
 func (p *Pairwise) saveEndpoint(DID, addr, key string) {
-	//log.Printf("saveEndp(%v, %v)\n", DID, addr)
 	r := <-did.SetEndpoint(p.agent.Wallet(), DID, addr, key)
 	if r.Err() != nil {
 		panic(r.Err())

@@ -89,11 +89,6 @@ func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
 	youDID := caDID // ... because we haven't pairwise here anymore
 	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
 	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	//	if err := agent.LoadPwOnInit(); err != nil {
-	//		glog.Error("cannot load pairwise for CA:", s.CADID)
-	//		agent.CloseWallet()
-	//		return nil, err
-	//	}
 	caDid := agent.Tr.PayloadPipe().In.Did()
 	if caDid != s.CADID {
 		glog.Warning("cloud agent DID is not correct")
@@ -117,7 +112,7 @@ func NewEA() *Agent {
 }
 
 // NewTransportReadyEA creates a new EA and opens its wallet and inits its
-// transport layer for CA communication.
+// transport layer for CA communication. TODO LAPI:
 func NewTransportReadyEA(walletCfg *ssi.Wallet) *Agent {
 	ea := &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
 	ea.OpenWallet(*walletCfg)
@@ -203,6 +198,7 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		err = nil          // clear error so protocol continues NACK to other end
 	})
 
+	// TODO LAPI: this is related to SA Legacy API
 	switch a.callableEA() {
 	// this was old API web hook based SA endopoint system, but it's not used
 	// even we haven't refactored all of the code.
@@ -356,25 +352,6 @@ func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 		RcvrDID:  rcvrDID,
 		VerKey:   vk,
 	}
-}
-
-func (a *Agent) LoadPwOnInit() (err error) {
-	defer err2.Return(&err)
-
-	my, their := err2.StrStr.Try(a.Pairwise(pltype.HandshakePairwiseName))
-	if my == "" { // legacy check, this can be removed later
-		my, their = err2.StrStr.Try(a.Pairwise(pltype.ConnectionHandshake))
-	}
-
-	if my != "" {
-		meDID := a.LoadDID(my)
-		youDID := a.LoadDID(their)
-
-		cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-		a.Tr = trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-		return nil
-	}
-	return errors.New("cannot find handshake")
 }
 
 func (a *Agent) AddWs(msgDID string, ws *websocket.Conn) {
