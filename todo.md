@@ -5,6 +5,10 @@
       if we leave replys to root path '/' that could serve as that and make things
       much lean
 - [x] removed code: client.go and tests
+- [ ] check how CA endpoint is built, simplyfie
+- [ ] check how pairwise is built, if we need it only for Aries, rewrite or
+      simplyfie 
+
 
 - [ ] harri will continue previous cleanup, e.g. with `mesg` package
 
