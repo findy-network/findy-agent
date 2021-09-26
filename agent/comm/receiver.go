@@ -27,7 +27,7 @@ type Receiver interface {
 	Pool() int
 	FindPW(my string) (their string, pwname string, err error)
 	CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error)
-	NotifyEA(plType string, im didcomm.MessageHdr)
+	NotifyEA(plType string, im didcomm.MessageHdr) // todo lapi: remove ws:// stuf
 	AttachAPIEndp(endp service.Addr) error
 	AttachSAImpl(implID string, persistent bool)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe

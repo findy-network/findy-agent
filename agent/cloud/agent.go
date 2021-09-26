@@ -184,6 +184,11 @@ func (a *Agent) callableEA() callType {
 	return a.checkSAImpl()
 }
 
+// TODO LAPI: We should refactor whole machanism now.
+// - remove plugin system? how this relates to impl ID? 
+// - endpoint is not needed because we don't have web hooks anymore
+// - should we go to async PSM at the same time?
+
 // CallEA makes a remove call for real EA and its API (issuer and verifier).
 func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
 
