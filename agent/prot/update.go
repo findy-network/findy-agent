@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -110,13 +111,22 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 	} else { // create a new one
 		ss := make([]psm.State, 1, 12)
 		ss[0] = s
+
 		initiator := false
-		if subs&(psm.Sending|psm.Failure) != 0 {
-			glog.V(3).Infof("----- We (%s) are INITIATOR ----", meDID)
-			initiator = true
-		} else {
-			glog.V(3).Infof("----- We (%s) are ADDRESSEE ----", meDID)
+		if task.Role() != "" { // let task define role when it is set
+			initiator = task.Role() == pb.Protocol_INITIATOR.String()
+		} else { // otherwise try to detect role from state
+			// TODO: in propose cases the actor starting the flow is currently addressee
+			// so the role is reported incorrectly for the "receiving" side
+			initiator = subs&(psm.Sending|psm.Failure) != 0
 		}
+
+		role := "ADDRESSEE"
+		if initiator {
+			role = "INITIATOR"
+		}
+		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
+
 		machine = &psm.PSM{Key: machineKey, InDID: msgMe,
 			States: ss, Initiator: initiator}
 	}

@@ -13,6 +13,7 @@ func init() {
 type Task interface {
 	ID() string
 	Type() string
+	Role() string
 	ConnectionID() string
 	ReceiverEndp() service.Addr
 	SetReceiverEndp(r service.Addr)
@@ -41,6 +42,10 @@ func (t *TaskBase) ID() string {
 
 func (t *TaskBase) Type() string {
 	return t.Head.TypeID
+}
+
+func (t *TaskBase) Role() string {
+	return t.Head.Role
 }
 
 func (t *TaskBase) ConnectionID() string {
