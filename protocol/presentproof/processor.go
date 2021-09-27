@@ -46,8 +46,9 @@ func init() {
 }
 
 func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
+	proofTask := t.PresentProof
 	reqAttrs := make(map[string]anoncreds.AttrInfo)
-	for index, attr := range *t.ProofAttrs {
+	for index, attr := range proofTask.ProofAttrs {
 		restrictions := make([]anoncreds.Filter, 0)
 		if attr.CredDefID != "" {
 			restrictions = append(restrictions, anoncreds.Filter{CredDefID: attr.CredDefID})
@@ -62,8 +63,8 @@ func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
 		}
 	}
 	reqPredicates := make(map[string]anoncreds.PredicateInfo)
-	if t.ProofPredicates != nil {
-		for index, predicate := range *t.ProofPredicates {
+	if proofTask.ProofPredicates != nil {
+		for index, predicate := range proofTask.ProofPredicates {
 			// TODO: restrictions
 			id := "predicate_" + strconv.Itoa(index+1)
 			if predicate.ID != "" {
@@ -90,6 +91,8 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 		glog.Error(err)
 	})
 
+	proofTask := t.PresentProof
+
 	switch t.GetHeader().TypeID {
 	case pltype.CAProofPropose: // ----- prover will start -----
 		err2.Check(prot.StartPSM(prot.Initial{
@@ -101,8 +104,8 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 				// Note!! StartPSM() sends certain Task fields to other end
 				// as PL.Message like msg.ID, .SubMsg, .Info
 
-				attrs := make([]presentproof.Attribute, len(*t.ProofAttrs))
-				for i, attr := range *t.ProofAttrs {
+				attrs := make([]presentproof.Attribute, len(proofTask.ProofAttrs))
+				for i, attr := range proofTask.ProofAttrs {
 					attrs[i] = presentproof.Attribute{
 						Name:      attr.Name,
 						CredDefID: attr.CredDefID,

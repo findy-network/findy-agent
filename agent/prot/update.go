@@ -83,10 +83,10 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 
 	if glog.V(5) {
 		glog.Infof("-- %s->%s[%s:%s]",
-			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.Nonce)
+			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.GetHeader().ID)
 	}
 
-	machineKey := psm.StateKey{DID: meDID, Nonce: task.Nonce}
+	machineKey := psm.StateKey{DID: meDID, Nonce: task.GetHeader().ID}
 
 	// NOTE!!! We cannot use error handling with the GetPSM because it reports
 	// not founding as an error. TODO: It must be fixed. Filtering errors by
@@ -129,7 +129,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
 		subState:          subs,
-		nonce:             task.Nonce,
+		nonce:             task.GetHeader().ID,
 		meDID:             meDID,
 		pwName:            machine.PairwiseName(),
 		plType:            plType,

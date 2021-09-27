@@ -54,6 +54,8 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 		glog.Error(err)
 	})
 
+	credTask := t.IssueCredential
+
 	switch t.GetHeader().TypeID {
 	case pltype.CACredOffer: // Send to Holder
 		err2.Check(prot.StartPSM(prot.Initial{
@@ -65,20 +67,20 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 				defer err2.Annotate("start issuing prot", &err)
 
 				r := <-anoncreds.IssuerCreateCredentialOffer(
-					ca.Wallet(), *t.CredDefID)
+					ca.Wallet(), credTask.CredDefID)
 				err2.Check(r.Err())
 				credOffer := r.Str1()
 
-				attrsStr := err2.Bytes.Try(json.Marshal(t.CredentialAttrs))
+				attrsStr := err2.Bytes.Try(json.Marshal(credTask.CredentialAttrs))
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				codedValues := issuecredential.PreviewCredentialToCodedValues(pc)
 				rep := &psm.IssueCredRep{
 					Key:        key,
-					CredDefID:  *t.CredDefID,
+					CredDefID:  credTask.CredDefID,
 					Values:     codedValues,
 					CredOffer:  credOffer,
-					Attributes: *t.CredentialAttrs,
+					Attributes: credTask.CredentialAttrs,
 				}
 				err2.Check(psm.AddIssueCredRep(rep))
 
@@ -100,19 +102,19 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 			Setup: func(key psm.StateKey, msg didcomm.MessageHdr) (err error) {
 				defer err2.Annotate("start issue prot", &err)
 
-				attrsStr, err := json.Marshal(t.CredentialAttrs)
+				attrsStr, err := json.Marshal(credTask.CredentialAttrs)
 				err2.Check(err)
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				propose := msg.FieldObj().(*issuecredential.Propose)
-				propose.CredDefID = *t.CredDefID
+				propose.CredDefID = credTask.CredDefID
 				propose.CredentialProposal = pc
 				propose.Comment = t.GetIssueCredential().Comment
 
 				rep := &psm.IssueCredRep{
 					Key:        key,
-					CredDefID:  *t.CredDefID,
-					Attributes: *t.CredentialAttrs,
+					CredDefID:  credTask.CredDefID,
+					Attributes: credTask.CredentialAttrs,
 					Values:     issuecredential.PreviewCredentialToCodedValues(pc),
 				}
 				err2.Check(psm.AddIssueCredRep(rep))

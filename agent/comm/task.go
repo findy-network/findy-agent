@@ -5,11 +5,11 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/std/didexchange/invitation"
 	aries "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
+	"github.com/lainio/err2/assert"
 )
 
 type TaskHeader struct {
@@ -35,27 +35,18 @@ type TaskBasicMessage struct {
 }
 
 type TaskIssueCredential struct {
-	Comment string
+	Comment         string
+	CredentialAttrs []didcomm.CredentialAttribute
+	CredDefID       string
 }
 
 type TaskPresentProof struct {
-	Comment string
+	Comment         string
+	ProofAttrs      []didcomm.ProofAttribute
+	ProofPredicates []didcomm.ProofPredicate
 }
 
 type Task struct {
-	Nonce string
-
-	// Pairwise
-	ConnectionInvitation *invitation.Invitation
-
-	// Issue credential
-	CredentialAttrs *[]didcomm.CredentialAttribute
-	CredDefID       *string
-
-	// Present proof
-	ProofAttrs      *[]didcomm.ProofAttribute
-	ProofPredicates *[]didcomm.ProofPredicate
-
 	Header          *TaskHeader
 	DidExchange     *TaskDIDExchange
 	BasicMessage    *TaskBasicMessage
@@ -63,14 +54,16 @@ type Task struct {
 	PresentProof    *TaskPresentProof
 }
 
-func CreateStartTask(typeID string, t *Task, protocol *pb.Protocol) *Task {
-	t.Header = &TaskHeader{
-		ID:             t.Nonce,
-		TypeID:         typeID,
-		ProtocolTypeID: protocol.GetTypeID().String(),
-		Role:           protocol.GetRole().String(),
-		PrevThreadID:   protocol.GetPrevThreadID(),
-		ConnectionID:   protocol.GetConnectionID(),
+func CreateStartTask(typeID, id string, protocol *pb.Protocol) *Task {
+	t := &Task{
+		Header: &TaskHeader{
+			ID:             id,
+			TypeID:         typeID,
+			ProtocolTypeID: protocol.GetTypeID().String(),
+			Role:           protocol.GetRole().String(),
+			PrevThreadID:   protocol.GetPrevThreadID(),
+			ConnectionID:   protocol.GetConnectionID(),
+		},
 	}
 	switch protocol.TypeID {
 	case pb.Protocol_DIDEXCHANGE:
@@ -84,6 +77,7 @@ func CreateStartTask(typeID string, t *Task, protocol *pb.Protocol) *Task {
 			Label:        protocol.GetDIDExchange().GetLabel(),
 			InvitationID: invitation.ID,
 		}
+		t.Header.ID = invitation.ID
 		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
 	case pb.Protocol_BASIC_MESSAGE:
 		t.BasicMessage = &TaskBasicMessage{
@@ -93,76 +87,85 @@ func CreateStartTask(typeID string, t *Task, protocol *pb.Protocol) *Task {
 
 	case pb.Protocol_ISSUE_CREDENTIAL:
 		t.IssueCredential = &TaskIssueCredential{}
+		cred := protocol.GetIssueCredential()
+		if cred == nil || (protocol.GetRole() != pb.Protocol_INITIATOR && protocol.GetRole() != pb.Protocol_ADDRESSEE) {
+			panic(errors.New("cred cannot be nil for issuing protocol, role is needed"))
+		}
 
-		/*if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
-			credDef := protocol.GetIssueCredential()
-			if credDef == nil {
-				panic(errors.New("cred def cannot be nil for issuing protocol"))
-			}
-			task.CredDefID = &credDef.CredDefID
-
-			if credDef.GetAttributes() != nil {
-				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttributes()))
-				for i, attribute := range credDef.GetAttributes().GetAttributes() {
-					attributes[i] = didcomm.CredentialAttribute{
-						Name:  attribute.Name,
-						Value: attribute.Value,
-					}
+		var credAttrs []didcomm.CredentialAttribute
+		if cred.GetAttributesJSON() != "" {
+			dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
+			glog.V(3).Infoln("set cred attrs from json")
+		} else {
+			assert.P.True(cred.GetAttributes() != nil)
+			credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
+			for i, attribute := range cred.GetAttributes().GetAttributes() {
+				credAttrs[i] = didcomm.CredentialAttribute{
+					Name:  attribute.Name,
+					Value: attribute.Value,
 				}
-				task.CredentialAttrs = &attributes
-				glog.V(1).Infoln("set cred from attrs")
-			} else if credDef.GetAttributesJSON() != "" {
-				var credAttrs []didcomm.CredentialAttribute
-				dto.FromJSONStr(credDef.GetAttributesJSON(), &credAttrs)
-				task.CredentialAttrs = &credAttrs
-				glog.V(1).Infoln("set cred attrs from json")
 			}
-		}*/
+			glog.V(3).Infoln("set cred from attrs")
+		}
+		t.IssueCredential.CredentialAttrs = credAttrs
+		t.IssueCredential.CredDefID = cred.CredDefID
+		glog.V(1).Infof(
+			"Create task for IssueCredential with connection id %s, role %s",
+			t.Header.ConnectionID,
+			protocol.GetRole().String(),
+		)
 	case pb.Protocol_PRESENT_PROOF:
 		t.PresentProof = &TaskPresentProof{}
-		/*if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
-			proofReq := protocol.GetPresentProof()
+		proof := protocol.GetPresentProof()
+		if proof == nil || (protocol.GetRole() != pb.Protocol_INITIATOR && protocol.GetRole() != pb.Protocol_ADDRESSEE) {
+			panic(errors.New("proof cannot be nil for present proof protocol, role is needed"))
+		}
 
-			// Attributes
-			if proofReq.GetAttributesJSON() != "" {
-				var proofAttrs []didcomm.ProofAttribute
-				dto.FromJSONStr(proofReq.GetAttributesJSON(), &proofAttrs)
-				task.ProofAttrs = &proofAttrs
-				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJSON())
-			} else if proofReq.GetAttributes() != nil {
-				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
-				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
-					attributes[i] = didcomm.ProofAttribute{
-						ID:        attribute.ID,
-						Name:      attribute.Name,
-						CredDefID: attribute.CredDefID,
-						//Predicate: attribute.Predicate,
-					}
+		// attributes - mandatory
+		var proofAttrs []didcomm.ProofAttribute
+		if proof.GetAttributesJSON() != "" {
+			dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
+			glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
+		} else {
+			assert.P.True(proof.GetAttributes() != nil)
+			proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
+			for i, attribute := range proof.GetAttributes().GetAttributes() {
+				proofAttrs[i] = didcomm.ProofAttribute{
+					ID:        attribute.ID,
+					Name:      attribute.Name,
+					CredDefID: attribute.CredDefID,
 				}
-				task.ProofAttrs = &attributes
-				glog.V(1).Infoln("set proof from attrs")
 			}
+			glog.V(3).Infoln("set proof from attrs")
+		}
 
-			// Predicates
-			if proofReq.GetPredicatesJSON() != "" {
-				var proofPredicates []didcomm.ProofPredicate
-				dto.FromJSONStr(proofReq.GetPredicatesJSON(), &proofPredicates)
-				task.ProofPredicates = &proofPredicates
-				glog.V(1).Infoln("set proof predicates from json:", proofReq.GetPredicatesJSON())
-			} else if proofReq.GetPredicates() != nil {
-				predicates := make([]didcomm.ProofPredicate, len(proofReq.GetPredicates().GetPredicates()))
-				for i, predicate := range proofReq.GetPredicates().GetPredicates() {
-					predicates[i] = didcomm.ProofPredicate{
-						ID:     predicate.ID,
-						Name:   predicate.Name,
-						PType:  predicate.PType,
-						PValue: predicate.PValue,
-					}
+		// predicates - optional
+		var proofPredicates []didcomm.ProofPredicate
+		if proof.GetPredicatesJSON() != "" {
+			dto.FromJSONStr(proof.GetPredicatesJSON(), &proofPredicates)
+			glog.V(3).Infoln("set proof predicates from json:", proof.GetPredicatesJSON())
+		} else if proof.GetPredicates() != nil {
+			proofPredicates = make([]didcomm.ProofPredicate, len(proof.GetPredicates().GetPredicates()))
+			for i, predicate := range proof.GetPredicates().GetPredicates() {
+				proofPredicates[i] = didcomm.ProofPredicate{
+					ID:     predicate.ID,
+					Name:   predicate.Name,
+					PType:  predicate.PType,
+					PValue: predicate.PValue,
 				}
-				task.ProofPredicates = &predicates
-				glog.V(1).Infoln("set proof from predicates")
 			}
-		}*/
+			glog.V(3).Infoln("set proof from predicates")
+		}
+
+		t.PresentProof.ProofAttrs = proofAttrs
+		t.PresentProof.ProofPredicates = proofPredicates
+
+		glog.V(1).Infof(
+			"Create task for PresentProof with connection id %s, role %s",
+			t.Header.ConnectionID,
+			protocol.GetRole().String(),
+		)
+
 	}
 
 	return t
@@ -177,7 +180,6 @@ func CreateTask(typeID, id, connectionID string, receiver, sender *service.Addr)
 		s = *sender
 	}
 	t := &Task{
-		Nonce: id,
 		Header: &TaskHeader{
 			ID:           id,
 			TypeID:       typeID,

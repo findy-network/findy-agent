@@ -75,15 +75,15 @@ func StartPSM(ts Initial) (err error) {
 
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   ts.SendNext,
-		Thread: decorator.NewThread(ts.T.Nonce, ""),
+		Thread: decorator.NewThread(ts.T.GetHeader().ID, ""),
 	})
 
 	// Let caller of StartPSM() to update T data so that it can set what we'll
 	// send to receiver inside the PL.Message. So this must be here before we
 	// Encrypt and seal the output message (om) into PL
-	err2.Check(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.Nonce}, msg))
+	err2.Check(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.GetHeader().ID}, msg))
 
-	opl := aries.PayloadCreator.NewMsg(ts.T.Nonce, ts.SendNext, msg)
+	opl := aries.PayloadCreator.NewMsg(ts.T.GetHeader().ID, ts.SendNext, msg)
 
 	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, opl, psm.Sending))
 	err2.Check(comm.SendPL(pipe, ts.T, opl))
@@ -95,14 +95,14 @@ func StartPSM(ts Initial) (err error) {
 		nextState = psm.ReadyACK
 	}
 	wpl := aries.PayloadCreator.New(
-		didcomm.PayloadInit{ID: ts.T.Nonce, Type: ts.WaitingNext})
+		didcomm.PayloadInit{ID: ts.T.GetHeader().ID, Type: ts.WaitingNext})
 	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, wpl, nextState))
 
 	return err
 }
 
 func newPayload(ts Initial) didcomm.Payload {
-	return aries.PayloadCreator.New(didcomm.PayloadInit{ID: ts.T.Nonce, Type: ts.SendNext})
+	return aries.PayloadCreator.New(didcomm.PayloadInit{ID: ts.T.GetHeader().ID, Type: ts.SendNext})
 }
 
 // ContinuePSM continues PSM when, usually user, has answered what do with the
@@ -165,10 +165,10 @@ func ContinuePSM(ts Again) (err error) {
 		err2.Check(comm.SendPL(pipe, t, opl))
 	}
 	if isLast {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.Nonce, Type: plType})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.GetHeader().ID, Type: plType})
 		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Ready|ackFlag))
 	} else {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.Nonce, Type: ts.WaitingNext})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.GetHeader().ID, Type: ts.WaitingNext})
 		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Waiting))
 	}
 
@@ -212,7 +212,7 @@ func ExecPSM(ts Transition) (err error) {
 		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
-		opl := aries.PayloadCreator.NewMsg(task.Nonce, ts.Payload.Type(), im)
+		opl := aries.PayloadCreator.NewMsg(task.GetHeader().ID, ts.Payload.Type(), im)
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Decrypted))
 
 		om = aries.MsgCreator.Create(
@@ -243,10 +243,10 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	if isLast {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.Nonce, Type: plType})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.GetHeader().ID, Type: plType})
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Ready|ackFlag))
 	} else {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.Nonce, Type: ts.WaitingNext})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.GetHeader().ID, Type: ts.WaitingNext})
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Waiting))
 	}
 	return nil
@@ -279,10 +279,10 @@ func updatePSM(receiver comm.Receiver, t *comm.Task, state psm.SubState) {
 	})
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   t.GetHeader().TypeID,
-		Thread: decorator.NewThread(t.Nonce, ""),
+		Thread: decorator.NewThread(t.GetHeader().ID, ""),
 	})
 	wDID := receiver.WDID()
-	opl := aries.PayloadCreator.NewMsg(t.Nonce, t.GetHeader().TypeID, msg)
+	opl := aries.PayloadCreator.NewMsg(t.GetHeader().ID, t.GetHeader().TypeID, msg)
 	err2.Check(UpdatePSM(wDID, "", t, opl, state))
 }
 

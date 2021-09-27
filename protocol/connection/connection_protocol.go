@@ -54,8 +54,8 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 	})
 
 	task.SetReceiver(&service.Addr{
-		Endp: task.ConnectionInvitation.ServiceEndpoint,
-		Key:  task.ConnectionInvitation.RecipientKeys[0],
+		Endp: task.DidExchange.Invitation.ServiceEndpoint,
+		Key:  task.DidExchange.Invitation.RecipientKeys[0],
 	})
 
 	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
@@ -76,7 +76,7 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
-		Thread: &decorator.Thread{ID: task.ConnectionInvitation.ID},
+		Thread: &decorator.Thread{ID: task.DidExchange.InvitationID},
 	})
 	// add to the cache until all lazy fetches are called
 	ssiWA.AddDIDCache(caller)
@@ -86,16 +86,16 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: me, Nonce: task.Nonce},
-		Name:       task.Nonce,
-		TheirLabel: task.ConnectionInvitation.Label,
+		Key:        psm.StateKey{DID: me, Nonce: task.GetHeader().ID},
+		Name:       task.GetHeader().ID,
+		TheirLabel: task.DidExchange.Invitation.Label,
 		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
 		Callee:     psm.DIDRep{},
 	}
 	err2.Check(psm.AddPairwiseRep(pwr))
 
 	// Create payload to send
-	opl := aries.PayloadCreator.NewMsg(task.Nonce, pltype.AriesConnectionRequest, msg)
+	opl := aries.PayloadCreator.NewMsg(task.GetHeader().ID, pltype.AriesConnectionRequest, msg)
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.GetHeader().ReceiverEndp.Key
@@ -107,7 +107,7 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 	err2.Check(comm.SendPL(*secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
-	wpl := mesg.NewPayloadBase(task.Nonce, pltype.AriesConnectionResponse)
+	wpl := mesg.NewPayloadBase(task.GetHeader().ID, pltype.AriesConnectionResponse)
 	err2.Check(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
 }
 
@@ -280,7 +280,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// update the PSM, we are ready at this end for this protocol
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
-	wpl := aries.PayloadCreator.NewMsg(task.Nonce, pltype.AriesConnectionResponse, emptyMsg)
+	wpl := aries.PayloadCreator.NewMsg(task.GetHeader().ID, pltype.AriesConnectionResponse, emptyMsg)
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, wpl, psm.ReadyACK))
 
 	return nil
