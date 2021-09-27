@@ -185,7 +185,7 @@ func (a *Agent) callableEA() callType {
 }
 
 // TODO LAPI: We should refactor whole machanism now.
-// - remove plugin system? how this relates to impl ID? 
+// - remove plugin system? how this relates to impl ID?
 // - endpoint is not needed because we don't have web hooks anymore
 // - should we go to async PSM at the same time?
 
