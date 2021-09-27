@@ -123,8 +123,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: me, Nonce: task.ID()},
-		Name:       deTask.Head.ID,
+		Key:        psm.StateKey{DID: me, Nonce: deTask.ID()},
+		Name:       deTask.ID(),
 		TheirLabel: deTask.Invitation.Label,
 		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
 		Callee:     psm.DIDRep{},
