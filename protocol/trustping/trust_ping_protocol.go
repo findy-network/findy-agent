@@ -15,7 +15,6 @@ import (
 
 type taskTrustPing struct {
 	comm.TaskBase
-	Head comm.TaskHeader
 }
 
 type statusTrustPing struct {
@@ -50,7 +49,7 @@ func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm
 	}
 
 	return &taskTrustPing{
-		Head: *header,
+		TaskBase: comm.TaskBase{Head: *header},
 	}, nil
 }
 

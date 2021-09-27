@@ -23,17 +23,15 @@ import (
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-common-go/dto"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
-
-	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
 
 type taskDIDExchange struct {
 	comm.TaskBase
-	Head         comm.TaskHeader
 	Invitation   invitation.Invitation
 	InvitationID string
 	Label        string
@@ -77,7 +75,7 @@ func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t com
 	glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
 
 	return &taskDIDExchange{
-		Head:         *header,
+		TaskBase:     comm.TaskBase{Head: *header},
 		Invitation:   invitation,
 		InvitationID: invitation.ID,
 		Label:        protocol.GetDIDExchange().GetLabel(),

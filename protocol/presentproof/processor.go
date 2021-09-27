@@ -25,15 +25,10 @@ import (
 )
 
 type taskPresentProof struct {
-	comm.Task
-	Head            comm.TaskHeader
+	comm.TaskBase
 	Comment         string
 	ProofAttrs      []didcomm.ProofAttribute
 	ProofPredicates []didcomm.ProofPredicate
-}
-
-func (t *taskPresentProof) Header() *comm.TaskHeader {
-	return &t.Head
 }
 
 type statusPresentProof struct {
@@ -57,6 +52,7 @@ var presentProofProcessor = comm.ProtProc{
 func init() {
 	gob.Register(&taskPresentProof{})
 	prot.AddCreator(pltype.CAProofPropose, presentProofProcessor)
+	prot.AddCreator(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddContinuator(pltype.CAContinuePresentProofProtocol, presentProofProcessor)
@@ -116,7 +112,7 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 	)
 
 	return &taskPresentProof{
-		Head:            *header,
+		TaskBase:        comm.TaskBase{Head: *header},
 		ProofAttrs:      proofAttrs,
 		ProofPredicates: proofPredicates,
 	}, nil

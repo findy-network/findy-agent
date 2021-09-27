@@ -11,10 +11,9 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-
-	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines

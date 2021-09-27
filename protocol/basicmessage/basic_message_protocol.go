@@ -18,7 +18,6 @@ import (
 
 type taskBasicMessage struct {
 	comm.TaskBase
-	Head    comm.TaskHeader
 	Content string
 }
 
@@ -55,8 +54,8 @@ func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnectionID)
 
 	return &taskBasicMessage{
-		Head:    *header,
-		Content: protocol.GetBasicMessage().GetContent(),
+		TaskBase: comm.TaskBase{Head: *header},
+		Content:  protocol.GetBasicMessage().GetContent(),
 	}, nil
 }
 

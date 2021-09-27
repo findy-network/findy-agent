@@ -24,7 +24,6 @@ import (
 
 type taskIssueCredential struct {
 	comm.TaskBase
-	Head            comm.TaskHeader
 	Comment         string
 	CredentialAttrs []didcomm.CredentialAttribute
 	CredDefID       string
@@ -54,6 +53,7 @@ var issueCredentialProcessor = comm.ProtProc{
 func init() {
 	gob.Register(&taskIssueCredential{})
 	prot.AddCreator(pltype.CACredRequest, issueCredentialProcessor)
+	prot.AddCreator(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredRequest, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddContinuator(pltype.CAContinueIssueCredentialProtocol, issueCredentialProcessor)
@@ -93,7 +93,7 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 	)
 
 	return &taskIssueCredential{
-		Head:            *header,
+		TaskBase:        comm.TaskBase{Head: *header},
 		CredentialAttrs: credAttrs,
 		CredDefID:       cred.CredDefID,
 	}, nil
