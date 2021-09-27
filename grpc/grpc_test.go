@@ -1058,7 +1058,6 @@ func BenchmarkReqProof(b *testing.B) {
 	err2.Check(conn.Close())
 }
 
-/*
 func TestListenSAGrpcProofReq(t *testing.T) {
 	allPermissive = false
 	TestSetPermissive(t)
@@ -1075,7 +1074,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	}
 	i := 0
 	ca := agents[i]
-	 {
+	/*for i, ca := range agents*/ {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
 			conn := client.TryOpen(ca.DID, baseCfg)
 
@@ -1127,7 +1126,7 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 	}
 	i := 0
 	ca := agents[i]
-	 {
+	/*for i, ca := range agents*/ {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
 			conn := client.TryOpen(ca.DID, baseCfg)
 
@@ -1159,7 +1158,7 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 
 	glog.Infoln("*** closing..")
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
-}*/
+}
 
 func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
 	conn := client.TryOpen(caDID, baseCfg)
