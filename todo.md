@@ -11,7 +11,12 @@
 - [ ] Refactor SA API that it won't use old `mesg` package anymore
 - [ ] WebSocket notification remove 
 - [ ] Redesign status queries for PSMs. Should be just use gRPC messages or do
-we still want to have JSON polymorphism?
+we still want to have JSON polymorphism? No, we should get rid of it and use
+only grpc driven structures in everywhere.
+- [ ] protocol (PSM) engine uses old messages because of the legacy API
+- [ ] should we add protocol implementation type ID to our API like indy/w3c?
+Should it be in `Protocol` interface or settings? Maybe in `Protocol` if we can
+speak many protocols in the same installation.
 
 - [ ] Harri will continue previous cleanup, e.g. with `mesg` package
 
