@@ -78,15 +78,15 @@ func NotifyEdge(ne notifyEdge) {
 //  task  = current comm.Task struct for additional protocol information
 //  opl   = output payload we are building to send, state by state
 //  subs  = current sub state of the protocol state machine (PSM)
-func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
+func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
 	defer err2.Annotate("create psm", &err)
 
 	if glog.V(5) {
 		glog.Infof("-- %s->%s[%s:%s]",
-			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.GetHeader().ID)
+			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.ID())
 	}
 
-	machineKey := psm.StateKey{DID: meDID, Nonce: task.GetHeader().ID}
+	machineKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
 
 	// NOTE!!! We cannot use error handling with the GetPSM because it reports
 	// not founding as an error. TODO: It must be fixed. Filtering errors by
@@ -97,7 +97,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	timestamp := time.Now().UnixNano()
 	s := psm.State{
 		Timestamp: timestamp,
-		T:         *task,
+		T:         task,
 		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
 		Sub:       subs,
 	}
@@ -129,7 +129,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
 		subState:          subs,
-		nonce:             task.GetHeader().ID,
+		nonce:             task.ID(),
 		meDID:             meDID,
 		pwName:            machine.PairwiseName(),
 		plType:            plType,
@@ -175,7 +175,7 @@ func AddAndSetFlagUpdatePSM(
 			nonce:             machineKey.Nonce,
 			meDID:             machineKey.DID,
 			pwName:            machine.PairwiseName(),
-			plType:            machine.FirstState().T.GetHeader().TypeID,
+			plType:            machine.FirstState().T.Type(),
 			pendingUserAction: machine.PendingUserAction(),
 			initiator:         machine.Initiator,
 		})

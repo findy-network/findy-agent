@@ -115,10 +115,10 @@ SendPL is helper function to send a protocol messages to receiver which is
 defined in the Task.ReceiverEndp. Function will encrypt messages before sending.
 It doesn't resend PL in case of failure. The recovering in done at PSM level.
 */
-func SendPL(sendPipe sec.Pipe, task *Task, opl didcomm.Payload) (err error) {
+func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
 	defer err2.Annotate("send payload", &err)
 
-	cnxAddr := endp.NewAddrFromPublic(task.GetHeader().ReceiverEndp)
+	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())
 
 	cryptSendPL, _, err := sendPipe.Pack(opl.JSON())
 	err2.Check(err)

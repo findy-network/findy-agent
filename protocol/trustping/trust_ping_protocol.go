@@ -1,20 +1,29 @@
 package trustping
 
 import (
+	"encoding/gob"
+
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
+
+type taskTrustPing struct {
+	comm.TaskBase
+	Head comm.TaskHeader
+}
 
 type statusTrustPing struct {
 	Result string `json:"result"`
 }
 
 var trustPingProcessor = comm.ProtProc{
+	Creator: createTrustPingTask,
 	Starter: startTrustPing,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerPing:         handleTrustPing,
@@ -24,12 +33,28 @@ var trustPingProcessor = comm.ProtProc{
 }
 
 func init() {
+	gob.Register(&taskTrustPing{})
+	prot.AddCreator(pltype.CATrustPing, trustPingProcessor)
 	prot.AddStarter(pltype.CATrustPing, trustPingProcessor)
 	prot.AddStatusProvider(pltype.ProtocolTrustPing, trustPingProcessor)
 	comm.Proc.Add(pltype.ProtocolTrustPing, trustPingProcessor)
 }
 
-func startTrustPing(ca comm.Receiver, t *comm.Task) {
+func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+	defer err2.Annotate("createTrustPingTask", &err)
+
+	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnectionID)
+
+	if protocol.ConnectionID == "" {
+		glog.Warningln("pinging first found connection, conn-id was empty")
+	}
+
+	return &taskTrustPing{
+		Head: *header,
+	}, nil
+}
+
+func startTrustPing(ca comm.Receiver, t comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})

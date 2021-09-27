@@ -2,6 +2,8 @@
 package presentproof
 
 import (
+	"encoding/gob"
+	"errors"
 	"strconv"
 
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -14,17 +16,32 @@ import (
 	"github.com/findy-network/findy-agent/protocol/presentproof/prover"
 	"github.com/findy-network/findy-agent/protocol/presentproof/verifier"
 	"github.com/findy-network/findy-agent/std/presentproof"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
+
+type taskPresentProof struct {
+	comm.Task
+	Head            comm.TaskHeader
+	Comment         string
+	ProofAttrs      []didcomm.ProofAttribute
+	ProofPredicates []didcomm.ProofPredicate
+}
+
+func (t *taskPresentProof) Header() *comm.TaskHeader {
+	return &t.Head
+}
 
 type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
 }
 
 var presentProofProcessor = comm.ProtProc{
+	Creator:     createPresentProofTask,
 	Starter:     startProofProtocol,
 	Continuator: userActionProofPresentation,
 	Handlers: map[string]comm.HandlerFunc{
@@ -38,6 +55,8 @@ var presentProofProcessor = comm.ProtProc{
 }
 
 func init() {
+	gob.Register(&taskPresentProof{})
+	prot.AddCreator(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddContinuator(pltype.CAContinuePresentProofProtocol, presentProofProcessor)
@@ -45,8 +64,65 @@ func init() {
 	comm.Proc.Add(pltype.ProtocolPresentProof, presentProofProcessor)
 }
 
-func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
-	proofTask := t.PresentProof
+func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+	defer err2.Annotate("createIssueCredentialTask", &err)
+
+	proof := protocol.GetPresentProof()
+	assert.P.True(proof != nil)
+	if protocol.GetRole() != pb.Protocol_INITIATOR && protocol.GetRole() != pb.Protocol_ADDRESSEE {
+		panic(errors.New("role is needed for present proof protocol"))
+	}
+
+	// attributes - mandatory
+	var proofAttrs []didcomm.ProofAttribute
+	if proof.GetAttributesJSON() != "" {
+		dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
+		glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
+	} else {
+		assert.P.True(proof.GetAttributes() != nil)
+		proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
+		for i, attribute := range proof.GetAttributes().GetAttributes() {
+			proofAttrs[i] = didcomm.ProofAttribute{
+				ID:        attribute.ID,
+				Name:      attribute.Name,
+				CredDefID: attribute.CredDefID,
+			}
+		}
+		glog.V(3).Infoln("set proof from attrs")
+	}
+
+	// predicates - optional
+	var proofPredicates []didcomm.ProofPredicate
+	if proof.GetPredicatesJSON() != "" {
+		dto.FromJSONStr(proof.GetPredicatesJSON(), &proofPredicates)
+		glog.V(3).Infoln("set proof predicates from json:", proof.GetPredicatesJSON())
+	} else if proof.GetPredicates() != nil {
+		proofPredicates = make([]didcomm.ProofPredicate, len(proof.GetPredicates().GetPredicates()))
+		for i, predicate := range proof.GetPredicates().GetPredicates() {
+			proofPredicates[i] = didcomm.ProofPredicate{
+				ID:     predicate.ID,
+				Name:   predicate.Name,
+				PType:  predicate.PType,
+				PValue: predicate.PValue,
+			}
+		}
+		glog.V(3).Infoln("set proof from predicates")
+	}
+
+	glog.V(1).Infof(
+		"Create task for PresentProof with connection id %s, role %s",
+		header.ConnectionID,
+		protocol.GetRole().String(),
+	)
+
+	return &taskPresentProof{
+		Head:            *header,
+		ProofAttrs:      proofAttrs,
+		ProofPredicates: proofPredicates,
+	}, nil
+}
+
+func generateProofRequest(proofTask *taskPresentProof) *anoncreds.ProofRequest {
 	reqAttrs := make(map[string]anoncreds.AttrInfo)
 	for index, attr := range proofTask.ProofAttrs {
 		restrictions := make([]anoncreds.Filter, 0)
@@ -86,14 +162,15 @@ func generateProofRequest(t *comm.Task) *anoncreds.ProofRequest {
 	}
 }
 
-func startProofProtocol(ca comm.Receiver, t *comm.Task) {
+func startProofProtocol(ca comm.Receiver, t comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
 
-	proofTask := t.PresentProof
+	proofTask, ok := t.(*taskPresentProof)
+	assert.P.True(ok)
 
-	switch t.GetHeader().TypeID {
+	switch t.Type() {
 	case pltype.CAProofPropose: // ----- prover will start -----
 		err2.Check(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.PresentProofPropose,
@@ -115,11 +192,11 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 
 				propose := msg.FieldObj().(*presentproof.Propose)
 				propose.PresentationProposal = pp
-				propose.Comment = t.GetPresentProof().Comment
+				propose.Comment = proofTask.Comment
 
 				rep := &psm.PresentProofRep{
 					Key:        key,
-					Values:     t.GetPresentProof().Comment, // TODO: serialize values here?
+					Values:     proofTask.Comment, // TODO: serialize values here?
 					WeProposed: true,
 				}
 				return psm.AddPresentProofRep(rep)
@@ -139,7 +216,7 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 				// we cannot share same Nonce with the proof and messages
 				// here. StartPSM() sends certain Task fields to other end
 				// as PL.Message
-				proofRequest := generateProofRequest(t)
+				proofRequest := generateProofRequest(proofTask)
 				// get proof req from task came in
 				proofReqStr := dto.ToJSON(proofRequest)
 
@@ -151,7 +228,7 @@ func startProofProtocol(ca comm.Receiver, t *comm.Task) {
 				// create Rep and save it for PSM to run protocol
 				rep := &psm.PresentProofRep{
 					Key:    key,
-					Values: t.GetPresentProof().Comment, // TODO: serialize attributes here?,
+					Values: proofTask.Comment, // TODO: serialize attributes here?,
 					// Verifier cannot provide this..
 					ProofReq: proofReqStr, //  .. but it gives this one.
 				}

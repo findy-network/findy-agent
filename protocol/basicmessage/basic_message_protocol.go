@@ -1,6 +1,7 @@
 package basicmessage
 
 import (
+	"encoding/gob"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -9,9 +10,17 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/std/basicmessage"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
+
+type taskBasicMessage struct {
+	comm.TaskBase
+	Head    comm.TaskHeader
+	Content string
+}
 
 type statusBasicMessage struct {
 	PwName    string `json:"pairwise"`
@@ -22,6 +31,7 @@ type statusBasicMessage struct {
 
 // basicMessageProcessor is a protocol processor for Basic Message protocol.
 var basicMessageProcessor = comm.ProtProc{
+	Creator: createBasicMessageTask,
 	Starter: startBasicMessage,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerMessage: handleBasicMessage,
@@ -30,15 +40,31 @@ var basicMessageProcessor = comm.ProtProc{
 }
 
 func init() {
+	gob.Register(&taskBasicMessage{})
+	prot.AddCreator(pltype.CABasicMessage, basicMessageProcessor)
 	prot.AddStarter(pltype.CABasicMessage, basicMessageProcessor)
 	prot.AddStatusProvider(pltype.ProtocolBasicMessage, basicMessageProcessor)
 	comm.Proc.Add(pltype.ProtocolBasicMessage, basicMessageProcessor)
 }
 
-func startBasicMessage(ca comm.Receiver, t *comm.Task) {
+func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+	defer err2.Annotate("createBasicMessageTask", &err)
+
+	assert.P.True(protocol.GetBasicMessage() != nil)
+
+	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnectionID)
+
+	return &taskBasicMessage{
+		Head:    *header,
+		Content: protocol.GetBasicMessage().GetContent(),
+	}, nil
+}
+
+func startBasicMessage(ca comm.Receiver, t comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
+
 	err2.Check(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.BasicMessageSend,
 		WaitingNext: pltype.Terminate,
@@ -47,10 +73,13 @@ func startBasicMessage(ca comm.Receiver, t *comm.Task) {
 		Setup: func(key psm.StateKey, om didcomm.MessageHdr) (err error) {
 			defer err2.Return(&err)
 
+			bmTask, ok := t.(*taskBasicMessage)
+			assert.P.True(ok)
+
 			rep := &psm.BasicMessageRep{
 				Key:       key,
-				PwName:    t.GetHeader().ConnectionID,
-				Message:   t.GetBasicMessage().Content,
+				PwName:    bmTask.Head.ConnectionID,
+				Message:   bmTask.Content,
 				Timestamp: time.Now().UnixNano(),
 				SentByMe:  true,
 				Delivered: true,

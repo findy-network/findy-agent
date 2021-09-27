@@ -195,8 +195,8 @@ func (p *PSM) PairwiseName() string {
 		glog.Error("error in get pw name:", err)
 	})
 
-	if state := p.FirstState(); state != nil && state.T.GetHeader().ConnectionID != "" {
-		return state.T.GetHeader().ConnectionID
+	if state := p.FirstState(); state != nil && state.T.ConnectionID() != "" {
+		return state.T.ConnectionID()
 	}
 	if p.InDID != "" {
 		r := comm.ActiveRcvrs.Get(p.Key.DID)
@@ -266,14 +266,14 @@ func (p *PSM) Protocol() string {
 
 // TaskFor returns Task of the PSM which corresponds PL.Type. If Type is not
 // given it returns last state's Task.
-func (p *PSM) TaskFor(plType string) (t *comm.Task) {
+func (p *PSM) TaskFor(plType string) (t comm.Task) {
 	if plType == "" {
-		return &p.LastState().T
+		return p.LastState().T
 	}
 
 	for _, s := range p.States {
 		if s.PLInfo.Type == plType {
-			return &s.T
+			return s.T
 		}
 	}
 	return nil
