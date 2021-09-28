@@ -103,16 +103,6 @@ func NewEA() *Agent {
 	return &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
 }
 
-// NewTransportReadyEA creates a new EA and opens its wallet and inits its
-// transport layer for CA communication. TODO LAPI:
-func NewTransportReadyEA(walletCfg *ssi.Wallet) *Agent {
-	ea := &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
-	ea.OpenWallet(*walletCfg)
-	commPipe, _ := ea.PwPipe(pltype.HandshakePairwiseName)
-	ea.Tr = trans.Transport{PLPipe: commPipe, MsgPipe: commPipe}
-	return ea
-}
-
 // AttachAPIEndp sets the API endpoint for remove EA i.e. real EA not w-EA.
 func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 	a.EAEndp = &endp
