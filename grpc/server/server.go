@@ -5,7 +5,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -21,15 +20,14 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"google.golang.org/grpc"
 )
 
 var Server *grpc.Server
 
 func Serve(conf *rpc.ServerCfg) {
-	if conf == nil {
-		panic("GRPC server needs configuration")
-	}
+	assert.D.True(conf != nil, "GRPC server needs configuration")
 	if conf.PKI != nil {
 		glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
 			conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
@@ -70,9 +68,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 		task.Info = protocol.GetBasicMessage().Content
 		glog.V(1).Infoln("basic_message content:", task.Info)
 	case pb.Protocol_DIDEXCHANGE:
-		if protocol.GetDIDExchange() == nil {
-			panic(errors.New("connection attrs cannot be nil"))
-		}
+		assert.D.True(protocol.GetDIDExchange() != nil, "connection attrs cannot be nil")
 		var invitation didexchange.Invitation
 		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
 		task.ConnectionInvitation = &invitation
@@ -82,9 +78,7 @@ func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
 	case pb.Protocol_ISSUE_CREDENTIAL:
 		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
 			credDef := protocol.GetIssueCredential()
-			if credDef == nil {
-				panic(errors.New("cred def cannot be nil for issuing protocol"))
-			}
+			assert.D.True(credDef != nil, "cred def cannot be nil for issuing protocol")
 			task.CredDefID = &credDef.CredDefID
 
 			if credDef.GetAttributes() != nil {
@@ -168,13 +162,12 @@ func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 	i := int32(10*role) + int32(id)
 	glog.V(5).Infoln("unique id:", i, typeID[i])
 	s, ok := typeID[i]
-	if !ok {
-		msg := fmt.Sprintf("cannot find typeid for (%d+%d)", role, id)
-		glog.Error(msg)
-		panic(msg)
-	}
+	assert.D.Truef(ok, "cannot find typeid for (%d+%d)", role, id)
 	return s
 }
+
+// TODO: Should we shift for `role` and consider what happens when w3c protocols
+// come along
 
 // typeID is look up table for
 var typeID = map[int32]string{

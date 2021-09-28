@@ -14,10 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
-	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
@@ -31,7 +27,6 @@ var Hub *Agency
 
 func init() {
 	Hub = new(Agency)
-	agency.SetAgencyHandler(Hub)
 }
 
 // These are the named endpoints for pre-cases which are handled without pre-encryption.
@@ -91,17 +86,8 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	// TODO LAPI: do we really need pairwise between steward and new CA?
-	//  should we just try to write the NYM.
-	//
 	// Bind pairwise Steward <-> New Agent
 	stewardDID := steward.RootDid()
-
-	// LAPI: this builds connection/pairwise from steward to anchor (CA ROOT)
-	//  and stores the pairwise, do we need that pairwise??? what's used for?
-	//
-	// LAPI: would this be enough?? this will write anchor and steward
-	// connection to ledger
 
 	// Promote new agent by Trusted Anchor DID
 	anchorDid := agent.CreateDID("")
@@ -120,64 +106,6 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	err2.Check(enclave.SetKeysDID(key, anchorDid.Did()))
 
 	return agent, nil
-}
-
-// InOutPL is Handler implementation which means that Agency can serve certain
-// APIs. Most of the other HTTP call are routed to CAs.
-func (a *Agency) InOutPL(
-	endpointAddress *endp.Addr,
-	payload didcomm.Payload) (response didcomm.Payload, nonce string) {
-
-	switch endpointAddress.PlRcvr {
-	case PingHandlerEndpoint:
-		return mesg.PayloadCreator.New(didcomm.PayloadInit{
-			ID:   payload.ID(),
-			Type: payload.Type(),
-			MsgInit: didcomm.MsgInit{
-				Encrypted: utils.Settings.HostAddr(),
-				Name:      utils.Settings.VersionInfo(),
-			},
-		}), nonce
-
-	// TODO FAPI: we will remove this API from the agency. This is legacy
-	// API.
-	case HandlerEndpoint:
-		if payload.Type() == pltype.ConnectionHandshake {
-			email := payload.Message().Endpoint().Endp
-
-			errorMsg := mesg.PayloadCreator.New(didcomm.PayloadInit{
-				ID:   payload.ID(),
-				Type: pltype.ConnectionHandshake,
-				MsgInit: didcomm.MsgInit{
-					Error: AlreadyExistError,
-				},
-			})
-
-			// This IMPORTANT CHECK POINT for security check and redundancy
-			if !payload.Message().ChecksumOK() || // wrong security
-				enclave.WalletKeyExists(email) { // already registered
-
-				return errorMsg, nonce
-			}
-
-			agentHandler, err := AnchorAgent(email)
-			if err != nil {
-				return errorMsg, nonce
-			}
-			// agentHandler will register to handlers back to us with this call
-			response, _ = agentHandler.InOutPL(endpointAddress, payload)
-			// we dont want to forward previous nonce to our caller in this
-			// phase of the handshake procedure
-			return response, nonce
-		}
-	}
-	return mesg.PayloadCreator.New(didcomm.PayloadInit{
-		ID:   payload.ID(),
-		Type: payload.Type(),
-		MsgInit: didcomm.MsgInit{
-			Error: UnknownTypeError,
-		},
-	}), nonce
 }
 
 // SetSteward sets the steward agent of this Agency.

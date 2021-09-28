@@ -122,6 +122,8 @@ func startIssueCredentialByPropose(ca comm.Receiver, t *comm.Task) {
 	}
 }
 
+// todo lapi: im message is old legacy api type!!
+
 // userActionCredential is called when Holder has received a Cred_Offer and it's
 // transferred the question to user: if she accepts the credential.
 func userActionCredential(ca comm.Receiver, im didcomm.Msg) {
