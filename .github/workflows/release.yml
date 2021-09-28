@@ -1,10 +1,9 @@
 name: release
-on:  
+on:
   push:
     tags:
-      - '*'
+      - "*"
 jobs:
-
   e2e:
     runs-on: ubuntu-latest
     steps:
@@ -59,7 +58,23 @@ jobs:
         with:
           ref: master
       - name: merge
-        run:  |
+        run: |
           git fetch --tags origin
           git merge $GITHUB_REF
           git push origin master
+
+  trigger:
+    needs: merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: trigger aath build
+        run: |
+          curl \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer $PAT" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/findy-network/findy-agent-backchannel/dispatches \
+            -d '{"event_type":"bundle"}'
+        env:
+          PAT: ${{ secrets.FabTriggerToken }}
