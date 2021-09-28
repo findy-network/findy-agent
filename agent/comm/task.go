@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 
 	"github.com/findy-network/findy-agent/agent/service"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
 
 func init() {
@@ -13,7 +14,7 @@ func init() {
 type Task interface {
 	ID() string
 	Type() string
-	Role() string
+	Role() pb.Protocol_Role
 	ConnectionID() string
 	ReceiverEndp() service.Addr
 	SetReceiverEndp(r service.Addr)
@@ -23,7 +24,7 @@ type TaskHeader struct {
 	TaskID         string
 	TypeID         string
 	ProtocolTypeID string
-	ProtocolRole   string
+	ProtocolRole   pb.Protocol_Role
 	ConnID         string
 
 	Sender   service.Addr
@@ -43,7 +44,7 @@ func (t *TaskBase) Type() string {
 	return t.TypeID
 }
 
-func (t *TaskBase) Role() string {
+func (t *TaskBase) Role() pb.Protocol_Role {
 	return t.ProtocolRole
 }
 

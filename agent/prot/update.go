@@ -113,17 +113,18 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		ss[0] = s
 
 		initiator := false
-		if task.Role() != "" { // let task define role when it is set
-			initiator = task.Role() == pb.Protocol_INITIATOR.String()
+
+		if task.Role() != pb.Protocol_UNKNOWN { // let task define role when it is set
+			initiator = task.Role() == pb.Protocol_INITIATOR
 		} else { // otherwise try to detect role from state
 			// TODO: in propose cases the actor starting the flow is currently addressee
 			// so the role is reported incorrectly for the "receiving" side
 			initiator = subs&(psm.Sending|psm.Failure) != 0
 		}
 
-		role := "ADDRESSEE"
+		role := pb.Protocol_INITIATOR.String()
 		if initiator {
-			role = "INITIATOR"
+			role = pb.Protocol_ADDRESSEE.String()
 		}
 		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
 

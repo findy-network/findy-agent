@@ -56,7 +56,7 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 		TaskID:         utils.UUID(),
 		TypeID:         uniqueTypeID(protocol.Role, protocol.TypeID),
 		ProtocolTypeID: protocol.GetTypeID().String(),
-		ProtocolRole:   protocol.GetRole().String(),
+		ProtocolRole:   protocol.GetRole(),
 		ConnID:         protocol.GetConnectionID(),
 	}
 	return prot.CreateTask(header, protocol)
