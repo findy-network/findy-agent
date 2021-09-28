@@ -51,10 +51,10 @@ func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 
 	assert.P.True(protocol.GetBasicMessage() != nil)
 
-	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnectionID)
+	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnID)
 
 	return &taskBasicMessage{
-		TaskBase: comm.TaskBase{Head: *header},
+		TaskBase: comm.TaskBase{TaskHeader: *header},
 		Content:  protocol.GetBasicMessage().GetContent(),
 	}, nil
 }
@@ -77,7 +77,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 
 			rep := &psm.BasicMessageRep{
 				Key:       key,
-				PwName:    bmTask.Head.ConnectionID,
+				PwName:    bmTask.ConnectionID(),
 				Message:   bmTask.Content,
 				Timestamp: time.Now().UnixNano(),
 				SentByMe:  true,

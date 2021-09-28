@@ -20,12 +20,11 @@ type Task interface {
 }
 
 type TaskHeader struct {
-	ID             string
+	TaskID         string
 	TypeID         string
 	ProtocolTypeID string
-	Role           string
-	PrevThreadID   string
-	ConnectionID   string
+	ProtocolRole   string
+	ConnID         string
 
 	Sender   service.Addr
 	Receiver service.Addr
@@ -33,31 +32,31 @@ type TaskHeader struct {
 
 type TaskBase struct {
 	Task
-	Head TaskHeader
+	TaskHeader
 }
 
 func (t *TaskBase) ID() string {
-	return t.Head.ID
+	return t.TaskID
 }
 
 func (t *TaskBase) Type() string {
-	return t.Head.TypeID
+	return t.TypeID
 }
 
 func (t *TaskBase) Role() string {
-	return t.Head.Role
+	return t.ProtocolRole
 }
 
 func (t *TaskBase) ConnectionID() string {
-	return t.Head.ConnectionID
+	return t.ConnID
 }
 
 func (t *TaskBase) ReceiverEndp() service.Addr {
-	return t.Head.Receiver
+	return t.Receiver
 }
 
 func (t *TaskBase) SetReceiverEndp(r service.Addr) {
-	t.Head.Receiver = r
+	t.Receiver = r
 }
 
 // SwitchDirection changes SenderEndp and ReceiverEndp data

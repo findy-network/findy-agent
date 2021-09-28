@@ -33,8 +33,8 @@ func testPSM(ts int64) *PSM {
 			},
 			Timestamp: ts,
 			T: &comm.TaskBase{
-				Head: comm.TaskHeader{
-					ConnectionID: "pairwise",
+				TaskHeader: comm.TaskHeader{
+					ConnID: "pairwise",
 				},
 			},
 		}

@@ -53,12 +53,11 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
 	header := &comm.TaskHeader{
-		ID:             utils.UUID(),
+		TaskID:         utils.UUID(),
 		TypeID:         uniqueTypeID(protocol.Role, protocol.TypeID),
 		ProtocolTypeID: protocol.GetTypeID().String(),
-		Role:           protocol.GetRole().String(),
-		PrevThreadID:   protocol.GetPrevThreadID(),
-		ConnectionID:   protocol.GetConnectionID(),
+		ProtocolRole:   protocol.GetRole().String(),
+		ConnID:         protocol.GetConnectionID(),
 	}
 	return prot.CreateTask(header, protocol)
 }

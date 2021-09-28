@@ -194,8 +194,8 @@ func ExecPSM(ts Transition) (err error) {
 
 	// Task is a helper struct here by gathering all needed data for one unit
 	task := &comm.TaskBase{
-		Head: comm.TaskHeader{
-			ID:     ts.Payload.ThreadID(),
+		TaskHeader: comm.TaskHeader{
+			TaskID: ts.Payload.ThreadID(),
 			TypeID: ts.Payload.Type(),
 		},
 	}

@@ -70,12 +70,12 @@ func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t com
 
 	var invitation invitation.Invitation
 	dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
-	header.ID = invitation.ID
+	header.TaskID = invitation.ID
 
 	glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
 
 	return &taskDIDExchange{
-		TaskBase:     comm.TaskBase{Head: *header},
+		TaskBase:     comm.TaskBase{TaskHeader: *header},
 		Invitation:   invitation,
 		InvitationID: invitation.ID,
 		Label:        protocol.GetDIDExchange().GetLabel(),
@@ -166,8 +166,8 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	respEndp := response.Endpoint()
 	task := &comm.TaskBase{
-		Head: comm.TaskHeader{
-			ID:       ipl.ThreadID(),
+		TaskHeader: comm.TaskHeader{
+			TaskID:   ipl.ThreadID(),
 			TypeID:   ipl.Type(),
 			Receiver: respEndp,
 			Sender:   respEndp,
@@ -248,8 +248,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}
 	receiverEP := cnxAddr.AE()
 	task := &comm.TaskBase{
-		Head: comm.TaskHeader{
-			ID:       ipl.ThreadID(),
+		TaskHeader: comm.TaskHeader{
+			TaskID:   ipl.ThreadID(),
 			TypeID:   ipl.Type(),
 			Receiver: receiverEP,
 			Sender:   senderEP,
@@ -258,7 +258,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
 
-	task.Head.SwitchDirection()
+	task.SwitchDirection()
 
 	// MARK: we must switch the Nonce for pairwise construction. We will return
 	//  it back after we are done. This is because AcaPy compatibility

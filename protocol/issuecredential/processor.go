@@ -88,12 +88,12 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 	}
 	glog.V(1).Infof(
 		"Create task for IssueCredential with connection id %s, role %s",
-		header.ConnectionID,
+		header.ConnID,
 		protocol.GetRole().String(),
 	)
 
 	return &taskIssueCredential{
-		TaskBase:        comm.TaskBase{Head: *header},
+		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		CredentialAttrs: credAttrs,
 		CredDefID:       cred.CredDefID,
 	}, nil

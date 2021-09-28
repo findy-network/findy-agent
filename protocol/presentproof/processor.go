@@ -107,12 +107,12 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 
 	glog.V(1).Infof(
 		"Create task for PresentProof with connection id %s, role %s",
-		header.ConnectionID,
+		header.ConnID,
 		protocol.GetRole().String(),
 	)
 
 	return &taskPresentProof{
-		TaskBase:        comm.TaskBase{Head: *header},
+		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		ProofAttrs:      proofAttrs,
 		ProofPredicates: proofPredicates,
 	}, nil

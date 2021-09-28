@@ -42,14 +42,14 @@ func init() {
 func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createTrustPingTask", &err)
 
-	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnectionID)
+	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnID)
 
 	if protocol.ConnectionID == "" {
 		glog.Warningln("pinging first found connection, conn-id was empty")
 	}
 
 	return &taskTrustPing{
-		TaskBase: comm.TaskBase{Head: *header},
+		TaskBase: comm.TaskBase{TaskHeader: *header},
 	}, nil
 }
 
