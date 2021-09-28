@@ -66,7 +66,9 @@ func init() {
 func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createConnectionTask", &err)
 
-	assert.P.True(protocol.GetDIDExchange() != nil)
+	assert.P.True(
+		protocol.GetDIDExchange() != nil,
+		"didExchange protocol data missing")
 
 	var invitation invitation.Invitation
 	dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)

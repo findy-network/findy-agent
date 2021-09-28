@@ -3,7 +3,6 @@ package presentproof
 
 import (
 	"encoding/gob"
-	"errors"
 	"strconv"
 
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -64,10 +63,10 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 	defer err2.Annotate("createIssueCredentialTask", &err)
 
 	proof := protocol.GetPresentProof()
-	assert.P.True(proof != nil)
-	if protocol.GetRole() != pb.Protocol_INITIATOR && protocol.GetRole() != pb.Protocol_ADDRESSEE {
-		panic(errors.New("role is needed for present proof protocol"))
-	}
+	assert.P.True(proof != nil, "present proof data missing")
+	assert.P.True(
+		protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
+		"role is needed for proof protocol")
 
 	// attributes - mandatory
 	var proofAttrs []didcomm.ProofAttribute
@@ -75,7 +74,7 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 		dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
 		glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
 	} else {
-		assert.P.True(proof.GetAttributes() != nil)
+		assert.P.True(proof.GetAttributes() != nil, "present proof attributes data missing")
 		proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
 		for i, attribute := range proof.GetAttributes().GetAttributes() {
 			proofAttrs[i] = didcomm.ProofAttribute{

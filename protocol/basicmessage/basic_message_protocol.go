@@ -49,7 +49,9 @@ func init() {
 func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createBasicMessageTask", &err)
 
-	assert.P.True(protocol.GetBasicMessage() != nil)
+	assert.P.True(
+		protocol.GetBasicMessage() != nil,
+		"basic message protocol data missing")
 
 	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnID)
 

@@ -3,7 +3,6 @@ package issuecredential
 import (
 	"encoding/gob"
 	"encoding/json"
-	"errors"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -65,18 +64,17 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 	defer err2.Annotate("createIssueCredentialTask", &err)
 
 	cred := protocol.GetIssueCredential()
-	assert.P.True(cred != nil)
-
-	if protocol.GetRole() != pb.Protocol_INITIATOR && protocol.GetRole() != pb.Protocol_ADDRESSEE {
-		panic(errors.New("role is needed for issuing protocol"))
-	}
+	assert.P.True(cred != nil, "issue credential data missing")
+	assert.P.True(
+		protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
+		"role is needed for issuing protocol")
 
 	var credAttrs []didcomm.CredentialAttribute
 	if cred.GetAttributesJSON() != "" {
 		dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
 		glog.V(3).Infoln("set cred attrs from json")
 	} else {
-		assert.P.True(cred.GetAttributes() != nil)
+		assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
 		credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
 		for i, attribute := range cred.GetAttributes().GetAttributes() {
 			credAttrs[i] = didcomm.CredentialAttribute{
