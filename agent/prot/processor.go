@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -37,7 +38,7 @@ type Initial struct {
 	SendNext    string        // the type of the PL we will send next if any
 	WaitingNext string        // the type of the PL we will wait if any
 	Ca          comm.Receiver // the start CA
-	T           *comm.Task    // the start TAsk
+	T           comm.Task     // the start TAsk
 	Setup                     // setup & save the msg data at the PSM start
 }
 type Setup func(key psm.StateKey, msg didcomm.MessageHdr) (err error)
@@ -68,24 +69,22 @@ func StartPSM(ts Initial) (err error) {
 		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
 	})
 
-	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.Message))
+	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.ConnectionID()))
 	msgMeDID := pipe.In.Did()
 	agentEndp := e2.Public.Try(pipe.EA())
-	ts.T.ReceiverEndp = agentEndp
+	ts.T.SetReceiverEndp(agentEndp)
 
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   ts.SendNext,
-		Thread: decorator.NewThread(ts.T.Nonce, ""),
-		Info:   ts.T.Info,
-		ID:     ts.T.ID,
+		Thread: decorator.NewThread(ts.T.ID(), ""),
 	})
 
 	// Let caller of StartPSM() to update T data so that it can set what we'll
 	// send to receiver inside the PL.Message. So this must be here before we
 	// Encrypt and seal the output message (om) into PL
-	err2.Check(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.Nonce}, msg))
+	err2.Check(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.ID()}, msg))
 
-	opl := aries.PayloadCreator.NewMsg(ts.T.Nonce, ts.SendNext, msg)
+	opl := aries.PayloadCreator.NewMsg(ts.T.ID(), ts.SendNext, msg)
 
 	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, opl, psm.Sending))
 	err2.Check(comm.SendPL(pipe, ts.T, opl))
@@ -97,14 +96,14 @@ func StartPSM(ts Initial) (err error) {
 		nextState = psm.ReadyACK
 	}
 	wpl := aries.PayloadCreator.New(
-		didcomm.PayloadInit{ID: ts.T.Nonce, Type: ts.WaitingNext})
+		didcomm.PayloadInit{ID: ts.T.ID(), Type: ts.WaitingNext})
 	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, wpl, nextState))
 
 	return err
 }
 
 func newPayload(ts Initial) didcomm.Payload {
-	return aries.PayloadCreator.New(didcomm.PayloadInit{ID: ts.T.Nonce, Type: ts.SendNext})
+	return aries.PayloadCreator.New(didcomm.PayloadInit{ID: ts.T.ID(), Type: ts.SendNext})
 }
 
 // ContinuePSM continues PSM when, usually user, has answered what do with the
@@ -161,16 +160,16 @@ func ContinuePSM(ts Again) (err error) {
 	if sendBack {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
 		agentEndp := e2.Public.Try(pipe.EA())
-		t.ReceiverEndp = agentEndp
+		t.SetReceiverEndp(agentEndp)
 
 		err2.Check(UpdatePSM(meDID, msgMeDID, t, opl, psm.Sending))
 		err2.Check(comm.SendPL(pipe, t, opl))
 	}
 	if isLast {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.Nonce, Type: plType})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.ID(), Type: plType})
 		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Ready|ackFlag))
 	} else {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.Nonce, Type: ts.WaitingNext})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.ID(), Type: ts.WaitingNext})
 		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Waiting))
 	}
 
@@ -194,7 +193,12 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	// Task is a helper struct here by gathering all needed data for one unit
-	task := comm.NewTaskRawPayload(ts.Payload)
+	task := &comm.TaskBase{
+		TaskHeader: comm.TaskHeader{
+			TaskID: ts.Payload.ThreadID(),
+			TypeID: ts.Payload.Type(),
+		},
+	}
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -214,7 +218,7 @@ func ExecPSM(ts Transition) (err error) {
 		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
-		opl := aries.PayloadCreator.NewMsg(task.Nonce, ts.Payload.Type(), im)
+		opl := aries.PayloadCreator.NewMsg(task.ID(), ts.Payload.Type(), im)
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Decrypted))
 
 		om = aries.MsgCreator.Create(
@@ -238,17 +242,17 @@ func ExecPSM(ts Transition) (err error) {
 
 		// Get endpoint from secure pipe to save it in case for resending.
 		agentEndp := e2.Public.Try(ep.EA())
-		task.ReceiverEndp = agentEndp
+		task.SetReceiverEndp(agentEndp)
 
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
 		err2.Check(comm.SendPL(ep, task, opl))
 	}
 
 	if isLast {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.Nonce, Type: plType})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: plType})
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Ready|ackFlag))
 	} else {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.Nonce, Type: ts.WaitingNext})
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: ts.WaitingNext})
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Waiting))
 	}
 	return nil
@@ -257,12 +261,17 @@ func ExecPSM(ts Transition) (err error) {
 // starters is a map to start protocols. The key is CA API constant. Note! We
 // understand than this is not an ideal solution but at least there are no
 // dependency from agent package to individual protocol types.
+var creators = map[string]comm.ProtProc{}
 var starters = map[string]comm.ProtProc{}
 var continuators = map[string]comm.ProtProc{}
 var statusProviders = map[string]comm.ProtProc{}
 
 // AddStarter adds association between CA API message type and protocol. The
 // association is used to start protocol with FindAndStart function.
+func AddCreator(t string, proc comm.ProtProc) {
+	creators[t] = proc
+}
+
 func AddStarter(t string, proc comm.ProtProc) {
 	starters[t] = proc
 }
@@ -275,85 +284,42 @@ func AddStatusProvider(t string, proc comm.ProtProc) {
 	statusProviders[t] = proc
 }
 
-func createTaskForRequest(packet comm.Packet, im, om didcomm.Msg, taskID string, state psm.SubState) *comm.Task {
-	om.SetNonce(im.Nonce()) // reply same nonce for the API caller
-	// use given task id, or create a new one
-	if taskID == "" {
-		taskID = utils.UUID()
-	}
-	om.SetSubLevelID(taskID) // return it to client to monitor
-
-	t := &comm.Task{
-		TypeID:       packet.Payload.Type(), // same PL type for new task
-		Message:      im.Name(),             // transfer Name to generic message string
-		Nonce:        taskID,                // new task ID as nonce
-		ID:           im.SubLevelID(),       // additional ..
-		Info:         im.Info(),             // .. message data ..
-		ReceiverEndp: im.ReceiverEP(),
-
-		ConnectionInvitation: im.ConnectionInvitation(),
-		CredDefID:            im.CredDefID(),
-		CredentialAttrs:      im.CredentialAttributes(),
-		ProofAttrs:           im.ProofAttributes(),
-	}
-	updatePSM(packet.Receiver, t, state)
-	return t
-}
-
-func updatePSM(receiver comm.Receiver, t *comm.Task, state psm.SubState) {
+func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 	defer err2.Catch(func(err error) {
 		glog.Errorf("error in psm update: %s", err)
 	})
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
-		Type:   t.TypeID,
-		Thread: decorator.NewThread(t.Nonce, ""),
+		Type:   t.Type(),
+		Thread: decorator.NewThread(t.ID(), ""),
 	})
 	wDID := receiver.WDID()
-	opl := aries.PayloadCreator.NewMsg(t.Nonce, t.TypeID, msg)
+	opl := aries.PayloadCreator.NewMsg(t.ID(), t.Type(), msg)
 	err2.Check(UpdatePSM(wDID, "", t, opl, state))
 }
 
-// InitTask initialises the task to waiting state
-func InitTask(packet comm.Packet, im, om didcomm.Msg) *comm.Task {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error("Cannot init task")
-	})
+func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+	defer err2.Return(&err)
 
-	t := createTaskForRequest(packet, im, om, "", psm.Waiting)
-
-	return t
-}
-
-// FindAndStart start the protocol by using CA API Type in the packet.PL.
-func FindAndStart(packet comm.Packet, im, om didcomm.Msg, taskID string) (tID string) {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error("Cannot start protocol")
-	})
-
-	proc, ok := starters[packet.Payload.Type()]
+	taskCreator, ok := creators[header.TypeID]
 	if !ok {
-		s := "!!!! No protocol starter !!!"
-		glog.Error(s, packet.Payload.Type())
+		s := "!!!! No task creator !!!"
+		glog.Error(s, header.TypeID)
 		panic(s)
 	}
 
-	t := createTaskForRequest(packet, im, om, taskID, psm.Sending)
-
-	go proc.Starter(packet.Receiver, t)
-
-	return taskID
+	return taskCreator.Creator(header, protocol)
 }
 
 // FindAndStartTask start the protocol by using CA API Type in the packet.PL.
-func FindAndStartTask(receiver comm.Receiver, task *comm.Task) {
+func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Errorf("Cannot start protocol: %s", err)
 	})
 
-	proc, ok := starters[task.TypeID]
+	proc, ok := starters[task.Type()]
 	if !ok {
 		s := "!!!! No protocol starter !!!"
-		glog.Error(s, task.TypeID)
+		glog.Error(s, task.Type())
 		panic(s)
 	}
 	updatePSM(receiver, task, psm.Sending)

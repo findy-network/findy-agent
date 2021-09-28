@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"encoding/gob"
 	"errors"
 
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -20,10 +21,21 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-common-go/dto"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
+
+type taskDIDExchange struct {
+	comm.TaskBase
+	Invitation   invitation.Invitation
+	InvitationID string
+	Label        string
+}
 
 type statusPairwise struct {
 	Name          string `json:"name"`
@@ -34,6 +46,7 @@ type statusPairwise struct {
 }
 
 var connectionProcessor = comm.ProtProc{
+	Creator: createConnectionTask,
 	Starter: startConnectionProtocol,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerResponse: handleConnectionResponse,
@@ -43,20 +56,46 @@ var connectionProcessor = comm.ProtProc{
 }
 
 func init() {
+	gob.Register(&taskDIDExchange{})
+	prot.AddCreator(pltype.CAPairwiseCreate, connectionProcessor)
 	prot.AddStarter(pltype.CAPairwiseCreate, connectionProcessor)
 	prot.AddStatusProvider(pltype.AriesProtocolConnection, connectionProcessor)
 	comm.Proc.Add(pltype.AriesProtocolConnection, connectionProcessor)
 }
 
-func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
+func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+	defer err2.Annotate("createConnectionTask", &err)
+
+	assert.P.True(
+		protocol.GetDIDExchange() != nil,
+		"didExchange protocol data missing")
+
+	var invitation invitation.Invitation
+	dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
+	header.TaskID = invitation.ID
+
+	glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
+
+	return &taskDIDExchange{
+		TaskBase:     comm.TaskBase{TaskHeader: *header},
+		Invitation:   invitation,
+		InvitationID: invitation.ID,
+		Label:        protocol.GetDIDExchange().GetLabel(),
+	}, nil
+}
+
+func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	task.ReceiverEndp = service.Addr{
-		Endp: task.ConnectionInvitation.ServiceEndpoint,
-		Key:  task.ConnectionInvitation.RecipientKeys[0],
-	}
+	deTask, ok := task.(*taskDIDExchange)
+	assert.P.True(ok)
+
+	deTask.SetReceiverEndp(service.Addr{
+		Endp: deTask.Invitation.ServiceEndpoint,
+		Key:  deTask.Invitation.RecipientKeys[0],
+	})
 
 	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
 	me := ca.WDID()
@@ -69,14 +108,14 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 
 	// build a connection message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
-		Label: task.Info,
+		Label: deTask.Label,
 		Connection: &didexchange.Connection{
 			DID:    caller.Did(),
 			DIDDoc: diddoc.NewDoc(caller, pubEndp.AE()),
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
-		Thread: &decorator.Thread{ID: task.ConnectionInvitation.ID},
+		Thread: &decorator.Thread{ID: deTask.InvitationID},
 	})
 	// add to the cache until all lazy fetches are called
 	ssiWA.AddDIDCache(caller)
@@ -86,19 +125,20 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: me, Nonce: task.Nonce},
-		Name:       task.Nonce,
-		TheirLabel: task.ConnectionInvitation.Label,
+		Key:        psm.StateKey{DID: me, Nonce: deTask.ID()},
+		Name:       deTask.ID(),
+		TheirLabel: deTask.Invitation.Label,
 		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
 		Callee:     psm.DIDRep{},
 	}
 	err2.Check(psm.AddPairwiseRep(pwr))
 
 	// Create payload to send
-	opl := aries.PayloadCreator.NewMsg(task.Nonce, pltype.AriesConnectionRequest, msg)
+	opl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionRequest, msg)
 
 	// Create secure pipe to send payload to other end of the new PW
-	secPipe := sec.NewPipeByVerkey(caller, task.ReceiverEndp.Key)
+	receiverKey := task.ReceiverEndp().Key
+	secPipe := sec.NewPipeByVerkey(caller, receiverKey)
 	wa.AddPipeToPWMap(*secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -106,7 +146,7 @@ func startConnectionProtocol(ca comm.Receiver, task *comm.Task) {
 	err2.Check(comm.SendPL(*secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
-	wpl := mesg.NewPayloadBase(task.Nonce, pltype.AriesConnectionResponse)
+	wpl := mesg.NewPayloadBase(task.ID(), pltype.AriesConnectionResponse)
 	err2.Check(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
 }
 
@@ -126,7 +166,15 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		// todo: send NACK here
 	}
 
-	task := comm.NewTaskFromConnectionResponse(ipl, response)
+	respEndp := response.Endpoint()
+	task := &comm.TaskBase{
+		TaskHeader: comm.TaskHeader{
+			TaskID:   ipl.ThreadID(),
+			TypeID:   ipl.Type(),
+			Receiver: respEndp,
+			Sender:   respEndp,
+		},
+	}
 
 	err2.Check(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
@@ -196,8 +244,19 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
-	task := comm.NewTaskFromRequest(ipl, req, connectionID)
-	task.ReceiverEndp = cnxAddr.AE()
+	senderEP := service.Addr{
+		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
+		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
+	}
+	receiverEP := cnxAddr.AE()
+	task := &comm.TaskBase{
+		TaskHeader: comm.TaskHeader{
+			TaskID:   ipl.ThreadID(),
+			TypeID:   ipl.Type(),
+			Receiver: receiverEP,
+			Sender:   senderEP,
+		},
+	}
 
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
 
@@ -274,7 +333,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// update the PSM, we are ready at this end for this protocol
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
-	wpl := aries.PayloadCreator.NewMsg(task.Nonce, pltype.AriesConnectionResponse, emptyMsg)
+	wpl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionResponse, emptyMsg)
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, wpl, psm.ReadyACK))
 
 	return nil

@@ -120,7 +120,7 @@ func setupPaths() (string, string) {
 	return sealedBoxPath, exportPath
 }
 
-func Test_CreatSteward(t *testing.T) {
+func Test_CreateSteward(t *testing.T) {
 	createStewardCmd := stewardCmd.CreateCmd{
 		Cmd: cmds.Cmd{
 			WalletName: stewardTmpWalletName1,

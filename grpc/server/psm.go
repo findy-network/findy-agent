@@ -43,7 +43,7 @@ func (s *didCommServer) Run(
 	glog.V(3).Infoln(caDID, "-agent starts protocol:",
 		pb.Protocol_Type_name[int32(protocol.TypeID)])
 
-	key := psm.NewStateKey(receiver.WorkerEA(), task.Nonce)
+	key := psm.NewStateKey(receiver.WorkerEA(), task.ID())
 	statusChan := bus.WantAll.AddListener(key)
 	userActionChan := bus.WantUserActions.AddListener(key)
 
@@ -55,7 +55,7 @@ loop:
 		select {
 		case status := <-statusChan:
 			glog.V(1).Infof("grpc %s state in %s",
-				status, task.Nonce)
+				status, task.ID())
 			switch status {
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
@@ -72,7 +72,7 @@ loop:
 			case psm.Waiting:
 				glog.V(1).Infoln("waiting arrived")
 				status := &pb.ProtocolState{
-					ProtocolID: &pb.ProtocolID{ID: task.Nonce},
+					ProtocolID: &pb.ProtocolID{ID: task.ID()},
 					State:      pb.ProtocolState_WAIT_ACTION,
 				}
 				err2.Check(server.Send(status))
@@ -84,7 +84,7 @@ loop:
 	bus.WantUserActions.RmListener(key)
 
 	status := &pb.ProtocolState{
-		ProtocolID: &pb.ProtocolID{ID: task.Nonce},
+		ProtocolID: &pb.ProtocolID{ID: task.ID()},
 		State:      statusCode,
 	}
 	err2.Check(server.Send(status))
@@ -123,7 +123,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 	task := e2.Task.Try(taskFrom(protocol))
 	glog.V(1).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeID)])
 	prot.FindAndStartTask(receiver, task)
-	return &pb.ProtocolID{ID: task.Nonce}, nil
+	return &pb.ProtocolID{ID: task.ID()}, nil
 }
 
 func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {

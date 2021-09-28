@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -76,15 +77,15 @@ func NotifyEdge(ne notifyEdge) {
 //  task  = current comm.Task struct for additional protocol information
 //  opl   = output payload we are building to send, state by state
 //  subs  = current sub state of the protocol state machine (PSM)
-func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
+func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
 	defer err2.Annotate("create psm", &err)
 
 	if glog.V(5) {
 		glog.Infof("-- %s->%s[%s:%s]",
-			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.Nonce)
+			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.ID())
 	}
 
-	machineKey := psm.StateKey{DID: meDID, Nonce: task.Nonce}
+	machineKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
 
 	// NOTE!!! We cannot use error handling with the GetPSM because it reports
 	// not founding as an error. TODO: It must be fixed. Filtering errors by
@@ -95,7 +96,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	timestamp := time.Now().UnixNano()
 	s := psm.State{
 		Timestamp: timestamp,
-		T:         *task,
+		T:         task,
 		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
 		Sub:       subs,
 	}
@@ -108,13 +109,23 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	} else { // create a new one
 		ss := make([]psm.State, 1, 12)
 		ss[0] = s
+
 		initiator := false
-		if subs&(psm.Sending|psm.Failure) != 0 {
-			glog.V(3).Infof("----- We (%s) are INITIATOR ----", meDID)
-			initiator = true
-		} else {
-			glog.V(3).Infof("----- We (%s) are ADDRESSEE ----", meDID)
+
+		if task.Role() != pb.Protocol_UNKNOWN { // let task define role when it is set
+			initiator = task.Role() == pb.Protocol_INITIATOR
+		} else { // otherwise try to detect role from state
+			// TODO: in propose cases the actor starting the flow is currently addressee
+			// so the role is reported incorrectly for the "receiving" side
+			initiator = subs&(psm.Sending|psm.Failure) != 0
 		}
+
+		role := pb.Protocol_INITIATOR.String()
+		if initiator {
+			role = pb.Protocol_ADDRESSEE.String()
+		}
+		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
+
 		machine = &psm.PSM{Key: machineKey, InDID: msgMe,
 			States: ss, Initiator: initiator}
 	}
@@ -127,7 +138,7 @@ func UpdatePSM(meDID, msgMe string, task *comm.Task, opl didcomm.Payload, subs p
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
 		subState:          subs,
-		nonce:             task.Nonce,
+		nonce:             task.ID(),
 		meDID:             meDID,
 		pwName:            machine.PairwiseName(),
 		plType:            plType,
@@ -173,7 +184,7 @@ func AddAndSetFlagUpdatePSM(
 			nonce:             machineKey.Nonce,
 			meDID:             machineKey.DID,
 			pwName:            machine.PairwiseName(),
-			plType:            machine.FirstState().T.TypeID,
+			plType:            machine.FirstState().T.Type(),
 			pendingUserAction: machine.PendingUserAction(),
 			initiator:         machine.Initiator,
 		})

@@ -1,76 +1,68 @@
 package comm
 
 import (
-	"github.com/findy-network/findy-agent/agent/didcomm"
+	"encoding/gob"
+
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/std/didexchange"
-	"github.com/findy-network/findy-agent/std/didexchange/invitation"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
 
-type Task struct {
-	Nonce        string
-	TypeID       string // "connection", "issue-credential", "trust_ping"
-	SenderEndp   service.Addr
-	ReceiverEndp service.Addr
-	Message      string
-	ID           string
-	Info         string
+func init() {
+	gob.Register(&TaskBase{})
+}
 
-	// Pairwise
-	ConnectionInvitation *invitation.Invitation
+type Task interface {
+	ID() string
+	Type() string
+	Role() pb.Protocol_Role
+	ConnectionID() string
+	ReceiverEndp() service.Addr
+	SetReceiverEndp(r service.Addr)
+}
 
-	// Issue credential
-	CredentialAttrs *[]didcomm.CredentialAttribute
-	CredDefID       *string
+type TaskHeader struct {
+	TaskID         string
+	TypeID         string
+	ProtocolTypeID string
+	ProtocolRole   pb.Protocol_Role
+	ConnID         string
 
-	// Present proof
-	ProofAttrs      *[]didcomm.ProofAttribute
-	ProofPredicates *[]didcomm.ProofPredicate
+	Sender   service.Addr
+	Receiver service.Addr
+}
+
+type TaskBase struct {
+	Task
+	TaskHeader
+}
+
+func (t *TaskBase) ID() string {
+	return t.TaskID
+}
+
+func (t *TaskBase) Type() string {
+	return t.TypeID
+}
+
+func (t *TaskBase) Role() pb.Protocol_Role {
+	return t.ProtocolRole
+}
+
+func (t *TaskBase) ConnectionID() string {
+	return t.ConnID
+}
+
+func (t *TaskBase) ReceiverEndp() service.Addr {
+	return t.Receiver
+}
+
+func (t *TaskBase) SetReceiverEndp(r service.Addr) {
+	t.Receiver = r
 }
 
 // SwitchDirection changes SenderEndp and ReceiverEndp data
-func (t *Task) SwitchDirection() {
-	tmp := t.SenderEndp
-	t.SenderEndp = t.ReceiverEndp
-	t.ReceiverEndp = tmp
-}
-
-// NewTaskRawPayload creates a new task from raw PL.
-func NewTaskRawPayload(ipl didcomm.Payload) (t *Task) {
-	return &Task{
-		Nonce:  ipl.ThreadID(),
-		TypeID: ipl.Type(),
-	}
-}
-
-// NewTaskFromRequest creates a new task from raw PL
-func NewTaskFromRequest(
-	ipl didcomm.Payload,
-	req *didexchange.Request,
-	connectionID string,
-) (
-	t *Task,
-) {
-	senderEP := service.Addr{
-		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
-		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
-	}
-	return &Task{
-		// We take nonce from connection ID which is transferred with ThreadID
-		Nonce:      ipl.ThreadID(),
-		TypeID:     ipl.Type(),
-		SenderEndp: senderEP,
-		// We use same connection ID for pairwise naming
-		Message: connectionID,
-	}
-}
-
-// NewTaskFromConnectionResponse creates a new task from raw PL
-func NewTaskFromConnectionResponse(ipl didcomm.Payload, res *didexchange.Response) (t *Task) {
-	return &Task{
-		Nonce:        ipl.ThreadID(),
-		TypeID:       ipl.Type(),
-		SenderEndp:   res.Endpoint(),
-		ReceiverEndp: res.Endpoint(),
-	}
+func (t *TaskHeader) SwitchDirection() {
+	tmp := t.Sender
+	t.Sender = t.Receiver
+	t.Receiver = tmp
 }
