@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sa"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
@@ -145,7 +144,6 @@ type callType int
 const (
 	_ callType = 0 + iota // was callTypeNone but not needed anymore
 	callTypeImplID
-	callTypeEndp
 )
 
 // callableEA tells if we can call EA from here, from Agency. It means that EA
@@ -154,21 +152,12 @@ func (a *Agent) callableEA() callType {
 	if !a.IsCA() {
 		panic("not a CA")
 	}
-	if a.SAImplID == "" && a.EAEndp == nil {
-		theirDid := a.Tr.PayloadPipe().Out.Did()
-		r := <-did.Meta(a.Wallet(), theirDid)
-		if r.Err() == nil && r.Str1() != "pairwise" && r.Str1() != "" {
-			a.EAEndp = new(service.Addr)
-			dto.FromJSONStr(r.Str1(), a.EAEndp)
-			glog.V(3).Info("got endpoint from META", r.Str1())
-		}
-	}
 	return a.checkSAImpl()
 }
 
 // TODO LAPI: We should refactor whole machanism now.
 // - remove plugin system? how this relates to impl ID?
-// - endpoint is not needed because we don't have web hooks anymore
+// - DONE: endpoint is not needed because we don't have web hooks anymore
 // - should we go to async PSM at the same time?
 
 // CallEA makes a remove call for real EA and its API (issuer and verifier).
@@ -185,14 +174,7 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		err = nil          // clear error so protocol continues NACK to other end
 	})
 
-	// TODO LAPI: this is related to SA Legacy API
 	switch a.callableEA() {
-	// this was old API web hook based SA endopoint system, but it's not used
-	// even we haven't refactored all of the code.
-	case callTypeEndp:
-		glog.V(3).Info("calling EA")
-		return a.callEA(plType, im)
-
 	// for the current implementation this is only type used. We use
 	// callTypeImplID for verything, and most importantly for grpc SAs.
 	// other types are for old tests.
@@ -210,20 +192,6 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		om.SetInfo(info)
 		return om, nil
 	}
-}
-
-func (a *Agent) callEA(plType string, msg didcomm.Msg) (om didcomm.Msg, err error) {
-	defer err2.Return(&err)
-
-	glog.V(5).Info("Calling EA:", a.EAEndp.Endp, plType)
-	ipl, err := a.Tr.DIDComCallEndp(a.EAEndp.Endp, plType, msg)
-	err2.Check(err)
-
-	if ipl.Type() == pltype.ConnectionError {
-		return om, fmt.Errorf("call ea api: %v", ipl.Message().Error())
-	}
-
-	return ipl.Message(), nil
 }
 
 func (a *Agent) Trans() txp.Trans {
