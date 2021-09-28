@@ -13,7 +13,7 @@ var Task _Task
 
 // Try is a helper method to call func() (*comm.Task, error) functions
 // with it and be as fast as Check(err).
-func (o _Task) Try(v *comm.Task, err error) *comm.Task {
+func (o _Task) Try(v comm.Task, err error) comm.Task {
 	err2.Check(err)
 	return v
 }

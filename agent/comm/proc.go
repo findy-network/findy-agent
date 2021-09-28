@@ -2,6 +2,7 @@ package comm
 
 import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 )
 
@@ -56,13 +57,16 @@ type ProtHandler interface {
 // Instances of it are the actual protocol handlers. Just declare var and the
 // needed msg handlers (HandlerFunc) and register it to the processor.
 type ProtProc struct {
+	Creator
 	Starter
 	Handlers map[string]HandlerFunc
 	Continuator
 	Status
 }
 
-type Starter func(ca Receiver, t *Task)
+type Creator func(header *TaskHeader, protocol *pb.Protocol) (Task, error)
+
+type Starter func(ca Receiver, t Task)
 
 type Continuator func(ca Receiver, im didcomm.Msg)
 

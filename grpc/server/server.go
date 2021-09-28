@@ -9,15 +9,13 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/utils"
-	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-common-go/rpc"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -51,99 +49,17 @@ func Serve(conf *rpc.ServerCfg) {
 	err2.Check(s.Serve(lis))
 }
 
-func taskFrom(protocol *pb.Protocol) (t *comm.Task, err error) {
+func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
-	task := &comm.Task{
-		Nonce:   utils.UUID(),
-		TypeID:  uniqueTypeID(protocol.Role, protocol.TypeID),
-		Message: protocol.ConnectionID,
+	header := &comm.TaskHeader{
+		TaskID:         utils.UUID(),
+		TypeID:         uniqueTypeID(protocol.Role, protocol.TypeID),
+		ProtocolTypeID: protocol.GetTypeID().String(),
+		ProtocolRole:   protocol.GetRole(),
+		ConnID:         protocol.GetConnectionID(),
 	}
-	switch protocol.TypeID {
-	case pb.Protocol_TRUST_PING:
-		if protocol.ConnectionID == "" {
-			glog.Warningln("pinging first found connection, conn-id was empty")
-		}
-	case pb.Protocol_BASIC_MESSAGE:
-		task.Info = protocol.GetBasicMessage().Content
-		glog.V(1).Infoln("basic_message content:", task.Info)
-	case pb.Protocol_DIDEXCHANGE:
-		assert.D.True(protocol.GetDIDExchange() != nil, "connection attrs cannot be nil")
-		var invitation didexchange.Invitation
-		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
-		task.ConnectionInvitation = &invitation
-		task.Info = protocol.GetDIDExchange().GetLabel()
-		task.Nonce = invitation.ID // Important!! we must use same id!
-		glog.V(1).Infoln("set invitation")
-	case pb.Protocol_ISSUE_CREDENTIAL:
-		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
-			credDef := protocol.GetIssueCredential()
-			assert.D.True(credDef != nil, "cred def cannot be nil for issuing protocol")
-			task.CredDefID = &credDef.CredDefID
-
-			if credDef.GetAttributes() != nil {
-				attributes := make([]didcomm.CredentialAttribute, len(credDef.GetAttributes().GetAttributes()))
-				for i, attribute := range credDef.GetAttributes().GetAttributes() {
-					attributes[i] = didcomm.CredentialAttribute{
-						Name:  attribute.Name,
-						Value: attribute.Value,
-					}
-				}
-				task.CredentialAttrs = &attributes
-				glog.V(1).Infoln("set cred from attrs")
-			} else if credDef.GetAttributesJSON() != "" {
-				var credAttrs []didcomm.CredentialAttribute
-				dto.FromJSONStr(credDef.GetAttributesJSON(), &credAttrs)
-				task.CredentialAttrs = &credAttrs
-				glog.V(1).Infoln("set cred attrs from json")
-			}
-		}
-	case pb.Protocol_PRESENT_PROOF:
-		if protocol.Role == pb.Protocol_INITIATOR || protocol.Role == pb.Protocol_ADDRESSEE {
-			proofReq := protocol.GetPresentProof()
-
-			// Attributes
-			if proofReq.GetAttributesJSON() != "" {
-				var proofAttrs []didcomm.ProofAttribute
-				dto.FromJSONStr(proofReq.GetAttributesJSON(), &proofAttrs)
-				task.ProofAttrs = &proofAttrs
-				glog.V(1).Infoln("set proof attrs from json:", proofReq.GetAttributesJSON())
-			} else if proofReq.GetAttributes() != nil {
-				attributes := make([]didcomm.ProofAttribute, len(proofReq.GetAttributes().GetAttributes()))
-				for i, attribute := range proofReq.GetAttributes().GetAttributes() {
-					attributes[i] = didcomm.ProofAttribute{
-						ID:        attribute.ID,
-						Name:      attribute.Name,
-						CredDefID: attribute.CredDefID,
-						//Predicate: attribute.Predicate,
-					}
-				}
-				task.ProofAttrs = &attributes
-				glog.V(1).Infoln("set proof from attrs")
-			}
-
-			// Predicates
-			if proofReq.GetPredicatesJSON() != "" {
-				var proofPredicates []didcomm.ProofPredicate
-				dto.FromJSONStr(proofReq.GetPredicatesJSON(), &proofPredicates)
-				task.ProofPredicates = &proofPredicates
-				glog.V(1).Infoln("set proof predicates from json:", proofReq.GetPredicatesJSON())
-			} else if proofReq.GetPredicates() != nil {
-				predicates := make([]didcomm.ProofPredicate, len(proofReq.GetPredicates().GetPredicates()))
-				for i, predicate := range proofReq.GetPredicates().GetPredicates() {
-					predicates[i] = didcomm.ProofPredicate{
-						ID:     predicate.ID,
-						Name:   predicate.Name,
-						PType:  predicate.PType,
-						PValue: predicate.PValue,
-					}
-				}
-				task.ProofPredicates = &predicates
-				glog.V(1).Infoln("set proof from predicates")
-			}
-		}
-	}
-	return task, nil
+	return prot.CreateTask(header, protocol)
 }
 
 var notificationTypeID = map[string]pb.Notification_Type{

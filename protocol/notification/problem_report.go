@@ -21,7 +21,7 @@ func init() {
 	comm.Proc.Add(pltype.ProtocolNotification, processor)
 }
 
-func startProtocol(ca comm.Receiver, t *comm.Task) {
+func startProtocol(ca comm.Receiver, t comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
