@@ -61,8 +61,6 @@ func NotifyEdge(ne notifyEdge) {
 				Body:  taskStatus,
 			}).(didcomm.Msg)
 
-			// Websocket
-			myCA.NotifyEA(ne.plType, msg)
 			// Webhook - catch and ignore errors in response parsing
 			_, _ = myCA.CallEA(ne.plType, msg)
 		}()

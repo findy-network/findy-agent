@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/txp"
-	"golang.org/x/net/websocket"
 )
 
 type Receiver interface {
@@ -17,7 +16,6 @@ type Receiver interface {
 	MyCA() Receiver
 	WorkerEA() Receiver
 	ExportWallet(key string, exportPath string) (url string)
-	BuildEndpURL() (endAddr string)
 	RootDid() *ssi.DID
 	SendNYM(targetDid *ssi.DID, submitterDid, alias, role string) (err error)
 	LoadDID(did string) *ssi.DID
@@ -27,14 +25,12 @@ type Receiver interface {
 	Pool() int
 	FindPW(my string) (their string, pwname string, err error)
 	CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error)
-	NotifyEA(plType string, im didcomm.MessageHdr) // todo lapi: remove ws:// stuf
 	AttachAPIEndp(endp service.Addr) error
 	AttachSAImpl(implID string, persistent bool)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string, writeNYM bool) (err error)
 	CAEndp(wantWorker bool) (endP *endp.Addr)
 	AddPipeToPWMap(p sec.Pipe, name string)
-	AddWs(msgDID string, ws *websocket.Conn)
 	MasterSecret() (string, error)
 	AutoPermission() bool
 }

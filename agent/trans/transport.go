@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"net/url"
 	"strconv"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -18,7 +16,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"golang.org/x/net/websocket"
 )
 
@@ -105,34 +102,6 @@ func (tr Transport) cnxAddr() *endp.Addr {
 	addr := endp.NewClientAddr(endpoint)
 	addr.MsgRcvr = addr.PlRcvr
 	addr.PlRcvr = tr.PLPipe.Out.Did()
-	return addr
-}
-
-// wsCnxAddr returns *Addr for making WS requests. The *Addr is build
-// from DID data and Endp string.
-func (tr Transport) wsCnxAddr(wsServiceName string) *endp.Addr {
-	endpoint := tr.Endp
-	if endpoint == "" {
-		endpoint = tr.MsgPipe.Out.Endpoint()
-	}
-	addr := endp.NewClientAddr(endpoint)
-	u, _ := url.Parse(addr.BasePath)
-	if u.Scheme != "ws" {
-		u.Scheme = "ws"
-	}
-	addr.BasePath = u.String()
-	sName := wsServiceName
-	if sName == "" {
-		sName = utils.Settings.WsServiceName()
-	}
-	addr.Service = sName
-
-	//addr.MsgRcvr = addr.PlRcvr // We have to use our other end's PL handler
-	// current server side implementation is according to this
-	addr.MsgRcvr = tr.PLPipe.Out.Did()
-
-	addr.PlRcvr = tr.PLPipe.Out.Did()
-	addr.RcvrDID = tr.MsgPipe.In.Did()
 	return addr
 }
 
@@ -231,21 +200,6 @@ func (tr Transport) decryptMsg(pl *mesg.Payload) (rm mesg.Msg) {
 		return pl.Message
 	}
 	return *tr.DecMsg(&pl.Message)
-}
-
-type EchoListener func(im *mesg.Payload) (while bool, err error)
-
-func (tr Transport) WsListenLoop(sName string, echo EchoListener) (err error) {
-	defer err2.Annotate("ws listen loop", &err)
-
-	ws, err := WsConnect(tr.wsCnxAddr(sName))
-	err2.Check(err)
-
-	var pl *mesg.Payload
-	for loop := true; loop; loop = err2.Bool.Try(echo(pl)) {
-		pl = e2.Payload.Try(tr.receivePl(ws))
-	}
-	return nil
 }
 
 func (tr Transport) receivePl(ws *websocket.Conn) (pl *mesg.Payload, err error) {

@@ -28,10 +28,6 @@ type Agent interface {
 	AddDIDCache(DID *DID)
 }
 
-type EndpointBuilder interface {
-	BuildEndpURL() string
-}
-
 // Type of the agent instance. In most cases it's Cloud Agent (CA). Which is the
 // the default value.
 type Type int

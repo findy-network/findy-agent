@@ -25,10 +25,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"golang.org/x/net/websocket"
 )
-
-type cnxMap map[string]*websocket.Conn
 
 /*
 Agent is the main abstraction of the package together with Agency. The agent
@@ -58,8 +55,6 @@ type Agent struct {
 	ca       *Agent           // if this is worker agent (see prev) this is the CA
 	callerPw *pairwise.Caller // the helper class for binding DID pairwise, this we are Caller
 	calleePw *pairwise.Callee // the helper class for binding DID pairwise, this we are Callee
-	cnxes    cnxMap           // web socket connections by DID
-	cnxesLK  sync.Mutex       // web socket map's lock
 	pwLock   sync.Mutex       // pw map lock, see below:
 	pws      PipeMap          // Map of pairwise secure pipes by DID
 	pwNames  PipeMap          // Map of pairwise secure pipes by name
@@ -230,28 +225,6 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	}
 }
 
-// NotifyEA notifies the corresponding EA via web socket. Consider other options
-// like apns, http, even rpc, etc.
-func (a *Agent) NotifyEA(plType string, im didcomm.MessageHdr) {
-	defer err2.CatchTrace(func(err error) {
-		if glog.V(3) {
-			glog.Info("cannot notify EA anymore: ", err)
-			glog.Info("---> cleaning up websocket for this DID: ", a.WDID())
-		}
-		a.rmWs(a.WDID())
-	})
-
-	ws := a.cnx(a.WDID()) // Is there ongoing websocket..
-	if ws == nil {        // .. live and well?
-		return
-	}
-
-	creator := didcomm.CreatorGod.PayloadCreatorByType(plType)
-	pl := creator.NewMsg(im.Thread().ID, plType, im)
-	data := a.Tr.PayloadPipe().Encrypt(pl.JSON())
-	err2.Check(websocket.Message.Send(ws, data))
-}
-
 func (a *Agent) callEA(plType string, msg didcomm.Msg) (om didcomm.Msg, err error) {
 	defer err2.Return(&err)
 
@@ -289,50 +262,6 @@ func (a *Agent) Pw() pairwise.Saver {
 	return nil
 }
 
-func (a *Agent) BuildEndpURL() (endAddr string) {
-	hostname := utils.Settings.HostAddr()
-
-	if a.IsCA() { // ===== this is HANDSHAKE
-		cloudAgentDID := ""
-
-		if a.Pw() != nil { // during and just after handshake for THIS CA
-			cloudAgentDID = a.Pw().MeDID()
-		} else if a.Tr.PayloadPipe().In != nil { // after Handshake we have Transport
-			cloudAgentDID = a.Tr.PayloadPipe().In.Did()
-		}
-
-		endpAddr := endp.Addr{
-			BasePath: hostname,
-			Service:  utils.Settings.ServiceName(),
-			PlRcvr:   cloudAgentDID,
-			MsgRcvr:  cloudAgentDID,
-			RcvrDID:  cloudAgentDID,
-		}
-		endAddr = endpAddr.Address()
-	} else if a.IsEA() && a.Pw() != nil { // === This is a PAIRWISE CONN_OFFER
-		var youDID string
-		if a.Tr != nil && a.Tr.PayloadPipe().Out != nil { // if we Handshake is done we have Trans
-			youDID = a.Tr.PayloadPipe().Out.Did() // outside access is always thru our CA
-		} else {
-			youDID = a.Pw().YouDID() // If this is ready
-		}
-		myCnxAddr := endp.Addr{
-			BasePath: hostname,                     // This's what we know now
-			Service:  utils.Settings.ServiceName(), // Set our agency's name to the address
-			PlRcvr:   youDID,                       // Set our CA to a PL transfer DID
-			MsgRcvr:  a.Pw().MeDID(),               // Set our PW DID to the actual msg receiver router
-			RcvrDID:  a.Pw().MeDID(),               // Set our PW DID to the actual DID receiver
-		}
-		endAddr = myCnxAddr.Address()
-	} else {
-		// This should newer happen but this's easier for development than panic
-		// we won't log this because we are here during the actual handshake or
-		// pairwise
-		endAddr = "TODO!"
-	}
-	return endAddr
-}
-
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
 func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 	hostname := utils.Settings.HostAddr()
@@ -357,39 +286,6 @@ func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 		RcvrDID:  rcvrDID,
 		VerKey:   vk,
 	}
-}
-
-func (a *Agent) AddWs(msgDID string, ws *websocket.Conn) {
-	wsList := a.cnxMap()
-
-	a.cnxesLK.Lock()
-	defer a.cnxesLK.Unlock()
-	wsList[msgDID] = ws
-}
-
-func (a *Agent) rmWs(msgDID string) {
-	wsList := a.cnxMap()
-
-	a.cnxesLK.Lock()
-	defer a.cnxesLK.Unlock()
-	delete(wsList, msgDID)
-}
-
-func (a *Agent) cnxMap() cnxMap {
-	a.cnxesLK.Lock()
-	defer a.cnxesLK.Unlock()
-	if a.cnxes == nil {
-		a.cnxes = make(cnxMap)
-	}
-	return a.cnxes
-}
-
-func (a *Agent) cnx(msgDID string) *websocket.Conn {
-	wsList := a.cnxMap()
-
-	a.cnxesLK.Lock()
-	defer a.cnxesLK.Unlock()
-	return wsList[msgDID]
 }
 
 func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
