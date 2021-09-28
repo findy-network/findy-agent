@@ -291,7 +291,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 }
 
 // workerAgent creates worker agent for our EA if it isn't already done. Worker
-// is a pseudo EA which presents EA in the could and so it is always ONLINE. By
+// is a pseudo EA which presents EA in the cloud and so it is always ONLINE. By
 // this other agents can connect to us even when all of our EAs are offline.
 // This is under construction.
 func (a *Agent) workerAgent(rcvrDID, suffix string) (wa *Agent) {
