@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sa"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -50,14 +49,12 @@ and CLI Go clients.
 */
 type Agent struct {
 	ssi.DIDAgent
-	Tr       txp.Trans        // Our transport layer for communication
-	worker   *Agent           // worker agent to perform tasks when corresponding EA is not available
-	ca       *Agent           // if this is worker agent (see prev) this is the CA
-	callerPw *pairwise.Caller // the helper class for binding DID pairwise, this we are Caller
-	calleePw *pairwise.Callee // the helper class for binding DID pairwise, this we are Callee
-	pwLock   sync.Mutex       // pw map lock, see below:
-	pws      PipeMap          // Map of pairwise secure pipes by DID
-	pwNames  PipeMap          // Map of pairwise secure pipes by name
+	Tr      txp.Trans  // Our transport layer for communication
+	worker  *Agent     // worker agent to perform tasks when corresponding EA is not available
+	ca      *Agent     // if this is worker agent (see prev) this is the CA
+	pwLock  sync.Mutex // pw map lock, see below:
+	pws     PipeMap    // Map of pairwise secure pipes by DID
+	pwNames PipeMap    // Map of pairwise secure pipes by name
 }
 
 func (a *Agent) AutoPermission() bool {
@@ -251,15 +248,6 @@ func (a *Agent) MyCA() comm.Receiver {
 		panic("CA is nil in Worker EA")
 	}
 	return a.ca
-}
-
-func (a *Agent) Pw() pairwise.Saver {
-	if a.calleePw != nil {
-		return a.calleePw
-	} else if a.callerPw != nil {
-		return a.callerPw
-	}
-	return nil
 }
 
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
