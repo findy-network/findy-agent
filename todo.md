@@ -8,10 +8,11 @@
 - [x] check how pairwise is built, if we need it only for Aries, rewrite or
       simplyfie 
 
+- [ ] WebSocket notification call remove 
+
 - [ ] check how CA endpoint is built, simplify
 - [ ] Refactor SA API that it won't use old `mesg` package anymore
 - [ ] remove SA API plug-in system
-- [ ] WebSocket notification call remove 
 - [ ] APNS notification remove
 - [ ] Redesign status queries for PSMs. 
 - [ ] protocol (PSM) engine uses old messages because of the legacy API
