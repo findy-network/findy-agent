@@ -5,14 +5,15 @@
       if we leave replys to root path '/' that could serve as that and make things
       much lean
 - [x] removed code: client.go and tests
-- [ ] check how CA endpoint is built, simplify
-- [ ] check how pairwise is built, if we need it only for Aries, rewrite or
+- [x] check how pairwise is built, if we need it only for Aries, rewrite or
       simplyfie 
+
+- [ ] check how CA endpoint is built, simplify
 - [ ] Refactor SA API that it won't use old `mesg` package anymore
-- [ ] WebSocket notification remove 
-- [ ] Redesign status queries for PSMs. Should be just use gRPC messages or do
-we still want to have JSON polymorphism? No, we should get rid of it and use
-only grpc driven structures in everywhere.
+- [ ] remove SA API plug-in system
+- [ ] WebSocket notification call remove 
+- [ ] APNS notification remove
+- [ ] Redesign status queries for PSMs. 
 - [ ] protocol (PSM) engine uses old messages because of the legacy API
 - [ ] should we add protocol implementation type ID to our API like indy/w3c?
 Should it be in `Protocol` interface or settings? Maybe in `Protocol` if we can
@@ -20,9 +21,9 @@ speak many protocols in the same installation.
 
 - [ ] Harri will continue previous cleanup, e.g. with `mesg` package
 
-- [ ] start to figure out protocol starters, think about `Task`
+- [ ] start to figure out protocol starters, think about `Task`, Laura
 
-- [ ] figure out protocol status info getters, `Task`?
+- [ ] figure out protocol status info getters, `Task`?, Laura
 
 - [ ] not in this refactoring: should also SA API be async?
 - [ ] replace EA did in URL with some other ID like UUID/other string 
