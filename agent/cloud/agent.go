@@ -289,50 +289,6 @@ func (a *Agent) Pw() pairwise.Saver {
 	return nil
 }
 
-func (a *Agent) BuildEndpURL() (endAddr string) {
-	hostname := utils.Settings.HostAddr()
-
-	if a.IsCA() { // ===== this is HANDSHAKE
-		cloudAgentDID := ""
-
-		if a.Pw() != nil { // during and just after handshake for THIS CA
-			cloudAgentDID = a.Pw().MeDID()
-		} else if a.Tr.PayloadPipe().In != nil { // after Handshake we have Transport
-			cloudAgentDID = a.Tr.PayloadPipe().In.Did()
-		}
-
-		endpAddr := endp.Addr{
-			BasePath: hostname,
-			Service:  utils.Settings.ServiceName(),
-			PlRcvr:   cloudAgentDID,
-			MsgRcvr:  cloudAgentDID,
-			RcvrDID:  cloudAgentDID,
-		}
-		endAddr = endpAddr.Address()
-	} else if a.IsEA() && a.Pw() != nil { // === This is a PAIRWISE CONN_OFFER
-		var youDID string
-		if a.Tr != nil && a.Tr.PayloadPipe().Out != nil { // if we Handshake is done we have Trans
-			youDID = a.Tr.PayloadPipe().Out.Did() // outside access is always thru our CA
-		} else {
-			youDID = a.Pw().YouDID() // If this is ready
-		}
-		myCnxAddr := endp.Addr{
-			BasePath: hostname,                     // This's what we know now
-			Service:  utils.Settings.ServiceName(), // Set our agency's name to the address
-			PlRcvr:   youDID,                       // Set our CA to a PL transfer DID
-			MsgRcvr:  a.Pw().MeDID(),               // Set our PW DID to the actual msg receiver router
-			RcvrDID:  a.Pw().MeDID(),               // Set our PW DID to the actual DID receiver
-		}
-		endAddr = myCnxAddr.Address()
-	} else {
-		// This should newer happen but this's easier for development than panic
-		// we won't log this because we are here during the actual handshake or
-		// pairwise
-		endAddr = "TODO!"
-	}
-	return endAddr
-}
-
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
 func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 	hostname := utils.Settings.HostAddr()

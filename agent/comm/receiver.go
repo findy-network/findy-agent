@@ -17,7 +17,6 @@ type Receiver interface {
 	MyCA() Receiver
 	WorkerEA() Receiver
 	ExportWallet(key string, exportPath string) (url string)
-	BuildEndpURL() (endAddr string)
 	RootDid() *ssi.DID
 	SendNYM(targetDid *ssi.DID, submitterDid, alias, role string) (err error)
 	LoadDID(did string) *ssi.DID
