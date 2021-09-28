@@ -7,13 +7,12 @@
 - [x] removed code: client.go and tests
 - [x] check how pairwise is built, if we need it only for Aries, rewrite or
       simplyfie 
-
-- [ ] WebSocket notification call remove 
-
-- [ ] check how CA endpoint is built, simplify
-- [ ] Refactor SA API that it won't use old `mesg` package anymore
+- [x] WebSocket notification call remove 
+- [x] check how CA endpoint is built, simplify
+- [x] APNS notification remove
 - [ ] remove SA API plug-in system
-- [ ] APNS notification remove
+
+- [ ] Refactor SA API that it won't use old `mesg` package anymore
 - [ ] Redesign status queries for PSMs. 
 - [ ] protocol (PSM) engine uses old messages because of the legacy API
 - [ ] should we add protocol implementation type ID to our API like indy/w3c?

@@ -1,7 +1,6 @@
 package agency
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
-	"github.com/findy-network/findy-agent/agent/apns"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -57,7 +55,6 @@ type Cmd struct {
 	URL               string
 	VersionInfo       string
 	Salt              string
-	APNSP12CertFile   string
 	AllowRPC          bool
 	GRPCTls           bool
 	GRPCPort          int
@@ -101,7 +98,6 @@ var (
 		URL:                    "",
 		VersionInfo:            "",
 		Salt:                   "",
-		APNSP12CertFile:        "",
 		AllowRPC:               true,
 		GRPCTls:                true,
 		GRPCPort:               50051,
@@ -152,12 +148,6 @@ func (c *Cmd) Validate() (err error) {
 			return err
 		}
 	}
-	if c.APNSP12CertFile != "" {
-		_, err := os.Stat(c.APNSP12CertFile)
-		if os.IsNotExist(err) {
-			return errors.New("apns p12 cert file does not exist")
-		}
-	}
 	return nil
 }
 
@@ -177,10 +167,6 @@ func (c *Cmd) Setup() (err error) {
 	c.setRuntimeSettings()
 	server.BuildHostAddr(c.HostScheme, c.HostPort)
 
-	if c.APNSP12CertFile != "" {
-		utils.Settings.SetCertFileForAPNS(c.APNSP12CertFile)
-		err2.Check(apns.Init())
-	}
 	return nil
 }
 

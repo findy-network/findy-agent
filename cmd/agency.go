@@ -24,7 +24,6 @@ Parent command for starting and pinging agency
 }
 
 var agencyStartEnvs = map[string]string{
-	"apns-p12-file":            "APNS_P12_FILE",
 	"host-address":             "HOST_ADDRESS",
 	"host-port":                "HOST_PORT",
 	"server-port":              "SERVER_PORT",
@@ -132,7 +131,6 @@ func init() {
 	aCmd.VersionInfo = "findy-agent v" + utils.Version
 
 	flags := startAgencyCmd.Flags()
-	flags.StringVar(&aCmd.APNSP12CertFile, "apns-p12-file", "", flagInfo("APNS certificate p12 file", AgencyCmd.Name(), agencyStartEnvs["apns-p12-file"]))
 	flags.StringVar(&aCmd.HostAddr, "host-address", "localhost", flagInfo("host address", AgencyCmd.Name(), agencyStartEnvs["host-address"]))
 	flags.UintVar(&aCmd.HostPort, "host-port", 8080, flagInfo("host port", AgencyCmd.Name(), agencyStartEnvs["host-port"]))
 	flags.UintVar(&aCmd.ServerPort, "server-port", 8080, flagInfo("server port", AgencyCmd.Name(), agencyStartEnvs["server-port"]))
