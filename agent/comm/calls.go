@@ -41,7 +41,8 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 
 	request, _ := http.NewRequest("POST", URL.String(), msg)
 
-	request.Header.Set("Content-Type", "application/x-binary")
+	// TODO: make configurable when there is support for application/didcomm-envelope-enc
+	request.Header.Set("Content-Type", "application/ssi-agent-wire")
 
 	response, err := c.Do(request)
 	err2.Check(err)
