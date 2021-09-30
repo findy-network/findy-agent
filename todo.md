@@ -11,6 +11,7 @@
 - [x] check how CA endpoint is built, simplify
 - [x] APNS notification remove
 - [ ] remove SA API plug-in system
+- [ ] remove SALT
 
 - [ ] Refactor SA API that it won't use old `mesg` package anymore
 - [ ] Redesign status queries for PSMs. 
