@@ -30,8 +30,6 @@ type Hub struct {
 	exportPath    string        // wallet export path
 
 	localTestMode bool // tells if are running unit tests, will be obsolete
-
-	certFileForAPNS string // APNS certification file in P12
 }
 
 func (h *Hub) GRPCAdmin() string {
@@ -72,14 +70,6 @@ func (h *Hub) RegisterBackupInterval() time.Duration {
 
 func (h *Hub) SetRegisterBackupInterval(interval time.Duration) {
 	h.registerBackupInterval = interval
-}
-
-func (h *Hub) CertFileForAPNS() string {
-	return h.certFileForAPNS
-}
-
-func (h *Hub) SetCertFileForAPNS(certFileForAPNS string) {
-	h.certFileForAPNS = certFileForAPNS
 }
 
 func (h *Hub) RegisterName() string {

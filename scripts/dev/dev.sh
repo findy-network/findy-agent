@@ -32,7 +32,6 @@ run() {
   fi
   $CLI agency start \
     --pool-name ${LEDGER_NAME} \
-    --grpc true \
     --steward-wallet-name sovrin_steward_wallet \
     --steward-wallet-key 9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
     --steward-did Th7MpTaRZVRYnPiabds81Y

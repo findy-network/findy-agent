@@ -189,7 +189,7 @@ agency_env() {
 
   # run agency
   echo -e "${BLUE}*** env - run agency ***${NC}"
-  $CLI agency start &
+  $CLI agency start --config=${CURRENT_DIR}/configs/startAgency.yaml &
   sleep 2
   test_cmds
   stop_agency
@@ -251,6 +251,9 @@ agency_flag() {
     --steward-seed=000000000000000000000000Steward1 \
     --host-port=8090 \
     --server-port=8090 \
+    --grpc-port=50051 \
+    --grpc-cert-path="./grpc/cert" \
+    --grpc-jwt-secret="my-secret" \
     --salt=my_test_salt &
     sleep 2
   test_cmds

@@ -29,4 +29,7 @@ func List() []string {
 	return l
 }
 
+// Handler is function type that receives messages to delivered to DID
+// controller. These messages are questions considering how proceed with the
+// protocol.
 type Handler func(WDID string, plType string, im didcomm.Msg) (om didcomm.Msg, err error)

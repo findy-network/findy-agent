@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/apns"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -40,7 +39,6 @@ func NotifyEdge(ne notifyEdge) {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
-			apns.Push(ne.did)
 
 			taskStatus := StatusForTask(ne.did, ne.nonce)
 

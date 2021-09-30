@@ -12,7 +12,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -109,23 +108,6 @@ func NewCmd(d []byte) (c *Cmd, err error) {
 	return &cmd, nil
 }
 
-func (c Cmd) Exec(p io.Writer, t string, m *mesg.Msg,
-	f func(e Edge, im *mesg.Msg) (Result, error)) (r Result, err error) {
-
-	defer err2.Return(&err)
-
-	wcfg := ssi.NewRawWalletCfg(c.WalletName, c.WalletKey)
-	edge := Edge{
-		Cmd:   c,
-		Agent: cloud.NewTransportReadyEA(wcfg), // TODO LAPI:
-	}
-	defer edge.Agent.CloseWallet()
-
-	im := e2.Msg.Try(edge.MsgToCA(p, t, m))
-
-	return f(edge, &im)
-}
-
 // Fprintln is fmt.Fprintln but it allows writer to be nil. Note! it throws an
 // error.
 func Fprintln(w io.Writer, a ...interface{}) {
@@ -148,37 +130,6 @@ func Fprint(w io.Writer, a ...interface{}) {
 	if w != nil {
 		err2.Empty.Try(fmt.Fprint(w, a...))
 	}
-}
-
-// TODO LAPI: no message oriented communication to CA
-
-// MsgToCA sends what ever message to an agency.
-func (edge Edge) MsgToCA(w io.Writer,
-	t string, msg *mesg.Msg) (in mesg.Msg, err error) {
-
-	if edge.Agent == nil {
-		edge.Agent = cloud.NewTransportReadyEA(
-			ssi.NewRawWalletCfg(edge.WalletName, edge.WalletKey))
-		defer func() { edge.Agent.CloseWallet() }()
-	}
-
-	trans := edge.Agent.Trans()
-	if trans.PayloadPipe().IsNull() || trans.MessagePipe().IsNull() {
-		return mesg.Msg{}, fmt.Errorf("wallet (%s) has no connection",
-			edge.WalletName)
-	}
-	ipl, err := trans.Call(t, msg)
-	if err != nil {
-		return mesg.Msg{}, err
-	}
-	if ipl.Type == pltype.ConnectionError {
-		return mesg.Msg{}, fmt.Errorf("%v", ipl.Message.Error)
-	}
-	if ipl.Message.Error != "" {
-		return mesg.Msg{}, fmt.Errorf("msg to ca: %v", ipl.Message.Error)
-	}
-
-	return ipl.Message, nil
 }
 
 func Progress(w io.Writer) chan<- struct{} {

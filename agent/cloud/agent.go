@@ -8,8 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/pairwise"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sa"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
@@ -50,14 +48,12 @@ and CLI Go clients.
 */
 type Agent struct {
 	ssi.DIDAgent
-	Tr       txp.Trans        // Our transport layer for communication
-	worker   *Agent           // worker agent to perform tasks when corresponding EA is not available
-	ca       *Agent           // if this is worker agent (see prev) this is the CA
-	callerPw *pairwise.Caller // the helper class for binding DID pairwise, this we are Caller
-	calleePw *pairwise.Callee // the helper class for binding DID pairwise, this we are Callee
-	pwLock   sync.Mutex       // pw map lock, see below:
-	pws      PipeMap          // Map of pairwise secure pipes by DID
-	pwNames  PipeMap          // Map of pairwise secure pipes by name
+	Tr      txp.Trans  // Our transport layer for communication
+	worker  *Agent     // worker agent to perform tasks when corresponding EA is not available
+	ca      *Agent     // if this is worker agent (see prev) this is the CA
+	pwLock  sync.Mutex // pw map lock, see below:
+	pws     PipeMap    // Map of pairwise secure pipes by DID
+	pwNames PipeMap    // Map of pairwise secure pipes by name
 }
 
 func (a *Agent) AutoPermission() bool {
@@ -106,16 +102,6 @@ func NewEA() *Agent {
 	return &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
 }
 
-// NewTransportReadyEA creates a new EA and opens its wallet and inits its
-// transport layer for CA communication. TODO LAPI:
-func NewTransportReadyEA(walletCfg *ssi.Wallet) *Agent {
-	ea := &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
-	ea.OpenWallet(*walletCfg)
-	commPipe, _ := ea.PwPipe(pltype.HandshakePairwiseName)
-	ea.Tr = trans.Transport{PLPipe: commPipe, MsgPipe: commPipe}
-	return ea
-}
-
 // AttachAPIEndp sets the API endpoint for remove EA i.e. real EA not w-EA.
 func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 	a.EAEndp = &endp
@@ -158,7 +144,6 @@ type callType int
 const (
 	_ callType = 0 + iota // was callTypeNone but not needed anymore
 	callTypeImplID
-	callTypeEndp
 )
 
 // callableEA tells if we can call EA from here, from Agency. It means that EA
@@ -167,21 +152,12 @@ func (a *Agent) callableEA() callType {
 	if !a.IsCA() {
 		panic("not a CA")
 	}
-	if a.SAImplID == "" && a.EAEndp == nil {
-		theirDid := a.Tr.PayloadPipe().Out.Did()
-		r := <-did.Meta(a.Wallet(), theirDid)
-		if r.Err() == nil && r.Str1() != "pairwise" && r.Str1() != "" {
-			a.EAEndp = new(service.Addr)
-			dto.FromJSONStr(r.Str1(), a.EAEndp)
-			glog.V(3).Info("got endpoint from META", r.Str1())
-		}
-	}
 	return a.checkSAImpl()
 }
 
 // TODO LAPI: We should refactor whole machanism now.
 // - remove plugin system? how this relates to impl ID?
-// - endpoint is not needed because we don't have web hooks anymore
+// - DONE: endpoint is not needed because we don't have web hooks anymore
 // - should we go to async PSM at the same time?
 
 // CallEA makes a remove call for real EA and its API (issuer and verifier).
@@ -198,14 +174,7 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 		err = nil          // clear error so protocol continues NACK to other end
 	})
 
-	// TODO LAPI: this is related to SA Legacy API
 	switch a.callableEA() {
-	// this was old API web hook based SA endopoint system, but it's not used
-	// even we haven't refactored all of the code.
-	case callTypeEndp:
-		glog.V(3).Info("calling EA")
-		return a.callEA(plType, im)
-
 	// for the current implementation this is only type used. We use
 	// callTypeImplID for verything, and most importantly for grpc SAs.
 	// other types are for old tests.
@@ -225,20 +194,6 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	}
 }
 
-func (a *Agent) callEA(plType string, msg didcomm.Msg) (om didcomm.Msg, err error) {
-	defer err2.Return(&err)
-
-	glog.V(5).Info("Calling EA:", a.EAEndp.Endp, plType)
-	ipl, err := a.Tr.DIDComCallEndp(a.EAEndp.Endp, plType, msg)
-	err2.Check(err)
-
-	if ipl.Type() == pltype.ConnectionError {
-		return om, fmt.Errorf("call ea api: %v", ipl.Message().Error())
-	}
-
-	return ipl.Message(), nil
-}
-
 func (a *Agent) Trans() txp.Trans {
 	return a.Tr
 }
@@ -251,15 +206,6 @@ func (a *Agent) MyCA() comm.Receiver {
 		panic("CA is nil in Worker EA")
 	}
 	return a.ca
-}
-
-func (a *Agent) Pw() pairwise.Saver {
-	if a.calleePw != nil {
-		return a.calleePw
-	} else if a.callerPw != nil {
-		return a.callerPw
-	}
-	return nil
 }
 
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
@@ -313,7 +259,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 }
 
 // workerAgent creates worker agent for our EA if it isn't already done. Worker
-// is a pseudo EA which presents EA in the could and so it is always ONLINE. By
+// is a pseudo EA which presents EA in the cloud and so it is always ONLINE. By
 // this other agents can connect to us even when all of our EAs are offline.
 // This is under construction.
 func (a *Agent) workerAgent(rcvrDID, suffix string) (wa *Agent) {

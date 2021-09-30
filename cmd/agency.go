@@ -24,7 +24,6 @@ Parent command for starting and pinging agency
 }
 
 var agencyStartEnvs = map[string]string{
-	"apns-p12-file":            "APNS_P12_FILE",
 	"host-address":             "HOST_ADDRESS",
 	"host-port":                "HOST_PORT",
 	"server-port":              "SERVER_PORT",
@@ -41,7 +40,6 @@ var agencyStartEnvs = map[string]string{
 	"protocol-path":            "PROTOCOL_PATH",
 	"salt":                     "SALT",
 	"admin-id":                 "ADMIN_ID",
-	"grpc":                     "GRPC",
 	"grpc-tls":                 "GRPC_TLS",
 	"grpc-port":                "GRPC_PORT",
 	"grpc-cert-path":           "GRPC_CERT_PATH",
@@ -132,7 +130,6 @@ func init() {
 	aCmd.VersionInfo = "findy-agent v" + utils.Version
 
 	flags := startAgencyCmd.Flags()
-	flags.StringVar(&aCmd.APNSP12CertFile, "apns-p12-file", "", flagInfo("APNS certificate p12 file", AgencyCmd.Name(), agencyStartEnvs["apns-p12-file"]))
 	flags.StringVar(&aCmd.HostAddr, "host-address", "localhost", flagInfo("host address", AgencyCmd.Name(), agencyStartEnvs["host-address"]))
 	flags.UintVar(&aCmd.HostPort, "host-port", 8080, flagInfo("host port", AgencyCmd.Name(), agencyStartEnvs["host-port"]))
 	flags.UintVar(&aCmd.ServerPort, "server-port", 8080, flagInfo("server port", AgencyCmd.Name(), agencyStartEnvs["server-port"]))
@@ -148,7 +145,6 @@ func init() {
 	flags.StringVar(&aCmd.StewardDid, "steward-did", "", flagInfo("steward DID", AgencyCmd.Name(), agencyStartEnvs["steward-did"]))
 	flags.StringVar(&aCmd.ServiceName2, "protocol-path", "a2a", flagInfo("URL path for A2A protocols", AgencyCmd.Name(), agencyStartEnvs["protocol-path"])) // agency.ProtocolPath is available
 	flags.StringVar(&aCmd.Salt, "salt", "", flagInfo("salt", AgencyCmd.Name(), agencyStartEnvs["salt"]))
-	flags.BoolVar(&aCmd.AllowRPC, "grpc", false, flagInfo("enable grpc", AgencyCmd.Name(), agencyStartEnvs["grpc"]))
 	flags.BoolVar(&aCmd.GRPCTls, "grpc-tls", true, flagInfo("use secure grpc", AgencyCmd.Name(), agencyStartEnvs["grpc-tls"]))
 	flags.IntVar(&aCmd.GRPCPort, "grpc-port", 50051, flagInfo("grpc server port", AgencyCmd.Name(), agencyStartEnvs["grpc-port"]))
 	flags.StringVar(&aCmd.TlsCertPath, "grpc-cert-path", "", flagInfo("folder path for grpc server tls certificates", AgencyCmd.Name(), agencyStartEnvs["grpc-cert-path"]))
