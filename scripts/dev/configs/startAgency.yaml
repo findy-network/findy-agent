@@ -6,3 +6,6 @@ steward-seed: "000000000000000000000000Steward1"
 salt: "my_test_salt"
 host-port: 8090
 server-port: 8090
+grpc-port: 50051
+grpc-cert-path: "./docker/cert"
+grpc-jwt-secret: "my-secret"
