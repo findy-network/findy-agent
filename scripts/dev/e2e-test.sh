@@ -189,7 +189,7 @@ agency_env() {
 
   # run agency
   echo -e "${BLUE}*** env - run agency ***${NC}"
-  $CLI agency start &
+  $CLI agency start --config=${CURRENT_DIR}/configs/startAgency.yaml &
   sleep 2
   test_cmds
   stop_agency
