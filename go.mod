@@ -10,7 +10,6 @@ require (
 	github.com/golang/glog v0.0.0-20210429001901-424d2337a529
 	github.com/google/uuid v1.3.0
 	github.com/lainio/err2 v0.6.1
-	github.com/sideshow/apns2 v0.20.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1

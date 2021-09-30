@@ -8,6 +8,5 @@ go run ../.. agency start "$@" \
 --pool-name "FINDY_FILE_LEDGER" \
 --steward-did "Th7MpTaRZVRYnPiabds81Y" \
 --register-file "findy.json" \
---host-address "localhost" \
---grpc
+--host-address "localhost"
 

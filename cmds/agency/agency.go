@@ -55,7 +55,6 @@ type Cmd struct {
 	URL               string
 	VersionInfo       string
 	Salt              string
-	AllowRPC          bool
 	GRPCTls           bool
 	GRPCPort          int
 	TlsCertPath       string
@@ -98,7 +97,6 @@ var (
 		URL:                    "",
 		VersionInfo:            "",
 		Salt:                   "",
-		AllowRPC:               true,
 		GRPCTls:                true,
 		GRPCPort:               50051,
 		TlsCertPath:            "",
@@ -174,9 +172,7 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
 	c.startBackupTasks()
-	if c.AllowRPC {
-		StartGrpcServer(c.GRPCTls, c.GRPCPort, c.TlsCertPath, c.JWTSecret)
-	}
+	StartGrpcServer(c.GRPCTls, c.GRPCPort, c.TlsCertPath, c.JWTSecret)
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil
