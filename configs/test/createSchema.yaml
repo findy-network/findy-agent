@@ -1,3 +1,0 @@
-name: my_schema
-attributes: ["field1", "field2", "field3"]
-version: "1.0"
