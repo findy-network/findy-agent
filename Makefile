@@ -112,16 +112,6 @@ image:
 		-f scripts/deploy/Dockerfile .
 	docker tag findy-agent:latest findy-agent:$(VERSION)
 
-run-agency: 
-	echo "{}" > findy.json && \
-	docker run -it --rm \
-		-e FCLI_AGENCY_SALT="this is only example" \
-		-p 8080:8080 \
-		-p 50052:50051 \
-		-v $(PWD)/scripts/dev/genesis_transactions:/genesis_transactions \
-		-v $(PWD)/scripts/dev/steward.exported:/steward.exported \
-		-v $(PWD)/findy.json:/root/findy.json findy-agent
-
 # **** scripts for local agency development:
 # WARNING: this will erase all your local indy wallets
 scratch:

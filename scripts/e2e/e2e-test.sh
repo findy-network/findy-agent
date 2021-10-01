@@ -84,7 +84,6 @@ set_envs() {
     export FCLI_AGENCY_STEWARD_WALLET_KEY=""$WALLET_KEY""
     export FCLI_AGENCY_STEWARD_DID="Th7MpTaRZVRYnPiabds81Y"
     export FCLI_AGENCY_STEWARD_SEED="000000000000000000000000Steward1"
-    export FCLI_AGENCY_SALT="my_test_salt"
     export FCLI_AGENCY_HOST_PORT="8090"
     export FCLI_AGENCY_SERVER_PORT="8090"
 
@@ -210,8 +209,7 @@ agency_flag() {
     --server-port=8090 \
     --grpc-port=50051 \
     --grpc-cert-path="./grpc/cert" \
-    --grpc-jwt-secret="my-secret" \
-    --salt=my_test_salt &
+    --grpc-jwt-secret="my-secret" &
     sleep 2
   test_cmds
   stop_agency
@@ -246,8 +244,7 @@ other_cases() {
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
     --host-port=8090 \
     --server-port=8090 \
-    --grpc-cert-path=./grpc/cert \
-    --salt=this is only example &
+    --grpc-cert-path=./grpc/cert &
 
   # export
   echo -e "${BLUE}*** other - export wallet ***${NC}"
