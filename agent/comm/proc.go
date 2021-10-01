@@ -59,8 +59,8 @@ type ProtHandler interface {
 type ProtProc struct {
 	Creator
 	Starter
-	Handlers map[string]HandlerFunc
-	Continuator
+	Handlers     map[string]HandlerFunc
+	Continuators map[string]Continuator
 	Status
 }
 

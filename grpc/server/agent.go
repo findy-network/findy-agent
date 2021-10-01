@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
@@ -261,6 +262,7 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_Liste
 		AgentDID: receiver.WDID(),
 		ClientID: clientID.ID,
 	}
+
 	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
 	defer bus.WantAllAgentActions.AgentRmListener(listenKey)
 
@@ -292,6 +294,66 @@ loop:
 }
 
 func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitServer) (err error) {
+	defer err2.Handle(&err, func() {
+		glog.Errorf("grpc agent listen error: %s", err)
+		status := &pb.Question{
+			Status: &pb.AgentStatus{
+				ClientID: &pb.ClientID{ID: clientID.ID},
+			},
+		}
+		if err := server.Send(status); err != nil {
+			glog.Errorln("error sending response:", err)
+		}
+	})
+
+	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
+
+	listenKey := bus.AgentKeyType{
+		AgentDID: receiver.WDID(),
+		ClientID: clientID.ID, // TODO: avoid collisions
+	}
+
+	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
+	defer bus.WantAllAgentActions.AgentRmListener(listenKey)
+
+loop:
+	for {
+		select {
+		case notify := <-notifyChan:
+			glog.V(1).Infoln("notification", notify.ID, "arrived")
+			assert.D.True(clientID.ID == notify.ClientID)
+
+			var question *pb.Question
+			question, err = processQuestion(ctx, notify)
+			err2.Check(err)
+			if question != nil {
+				question.Status.ClientID.ID = notify.ClientID
+				err2.Check(server.Send(question))
+				glog.V(1).Infoln("send question..")
+			}
+
+		case <-time.After(keepaliveTimer):
+			// send keep alive message
+			glog.V(7).Infoln("sending keepalive timer")
+			err2.Check(server.Send(&pb.Question{
+				Status: &pb.AgentStatus{
+					ClientID: &pb.ClientID{ID: clientID.ID},
+				},
+				TypeID: pb.Question_KEEPALIVE,
+			}))
+
+		case <-ctx.Done():
+			glog.V(1).Infoln("ctx.Done() received, returning")
+			break loop
+		}
+	}
+	return nil
+
+}
+
+/*func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitServer) (err error) {
 	defer err2.Handle(&err, func() {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.Question{
@@ -392,6 +454,75 @@ func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
 		}
 	}
 	return &q2send
+}*/
+
+func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
+	defer err2.Annotate("processQuestion", &err)
+
+	// TODO: if auto-permission on -> continue automatically
+	notificationType := notificationTypeID[notify.NotificationType]
+	notificationProtocolType := protocolType[notify.ProtocolFamily]
+
+	if notificationType != pb.Notification_PROTOCOL_PAUSED {
+		return nil, nil
+	}
+	q2send := pb.Question{
+		TypeID: questionTypeID[notify.NotificationType],
+		Status: &pb.AgentStatus{
+			ClientID: &pb.ClientID{ID: notify.AgentDID},
+			Notification: &pb.Notification{
+				ID:             notify.ID,
+				PID:            notify.PID,
+				ConnectionID:   notify.ConnectionID,
+				ProtocolID:     notify.ProtocolID,
+				ProtocolFamily: notify.ProtocolFamily,
+				ProtocolType:   notificationProtocolType,
+				Timestamp:      notify.Timestamp,
+				Role:           roleType[notify.Initiator],
+			},
+		},
+	}
+
+	id := &pb.ProtocolID{
+		TypeID: protocolType[notify.ProtocolFamily],
+		Role:   roleType[notify.Initiator],
+		ID:     notify.ProtocolID,
+	}
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
+	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeID)], protocolName[id.TypeID])
+	ps, _ := tryProtocolStatus(id, key)
+
+	switch notificationProtocolType {
+	case pb.Protocol_ISSUE_CREDENTIAL:
+		glog.V(1).Infoln("issue propose handling")
+		q2send.Question = &pb.Question_IssuePropose{
+			IssuePropose: &pb.Question_IssueProposeMsg{
+				CredDefID:  ps.GetIssueCredential().GetCredDefID(),
+				ValuesJSON: ps.GetIssueCredential().GetAttributes().String(), // TODO?
+			},
+		}
+	case pb.Protocol_PRESENT_PROOF:
+		glog.V(1).Infoln("proof verify handling")
+		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0,
+			len(ps.GetPresentProof().GetProof().Attributes))
+		for _, attr := range ps.GetPresentProof().GetProof().Attributes {
+			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
+				//Value:     attr.Value, // TODO:
+				Name:      attr.Name,
+				CredDefID: attr.CredDefID,
+			})
+		}
+		q2send.Question = &pb.Question_ProofVerify{
+			ProofVerify: &pb.Question_ProofVerifyMsg{
+				Attributes: attrs,
+			},
+		}
+
+	}
+
+	return &q2send, nil
 }
 
 func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {

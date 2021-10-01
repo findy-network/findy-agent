@@ -326,15 +326,24 @@ func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
 	go proc.Starter(receiver, task)
 }
 
-func Continue(packet comm.Packet, im didcomm.Msg) {
+/*func Continue(packet comm.Packet, im didcomm.Msg) {
+
 	proc, ok := continuators[packet.Payload.Type()]
 	if !ok {
 		glog.Error("!!No prot continuator for:", packet.Payload.Type())
 		panic("no protocol continuator")
 	}
 
-	go proc.Continuator(packet.Receiver, im)
-}
+	continuator, ok := proc.Handlers[packet.Payload.ProtocolMsg()]
+	if !ok {
+		glog.Info(string(packet.Payload.JSON()))
+		s := "!!!! No continuator in processor !!!"
+		glog.Error(s)
+		panic(s)
+	}
+
+	go continuator(packet.Receiver, im)
+}*/
 
 func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	proc, ok := continuators[typeID]
@@ -343,12 +352,19 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 		panic("no protocol continuator")
 	}
 
+	continuator, ok := proc.Continuators[protocolID]
+	if !ok {
+		s := "!!!! No continuator in processor !!!"
+		glog.Error(s)
+		panic(s)
+	}
+
 	om := mesg.MsgCreator.Create(didcomm.MsgInit{
 		Ready: ack,
 		ID:    protocolID,
 	}).(didcomm.Msg)
 
-	go proc.Continuator(rcvr, om)
+	go continuator(rcvr, om)
 }
 
 func GetStatus(protocol string, key *psm.StateKey) interface{} {

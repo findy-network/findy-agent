@@ -63,8 +63,12 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 }
 
 var notificationTypeID = map[string]pb.Notification_Type{
-	pltype.CANotifyStatus:     pb.Notification_STATUS_UPDATE,
-	pltype.CANotifyUserAction: pb.Notification_PROTOCOL_PAUSED,
+	pltype.CANotifyStatus:                 pb.Notification_STATUS_UPDATE,
+	pltype.CANotifyUserAction:             pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPing:                         pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAIssueCredentialAcceptPropose: pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPresentProofAcceptPropose:    pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPresentProofAcceptValues:     pb.Notification_PROTOCOL_PAUSED,
 }
 
 var questionTypeID = map[string]pb.Question_Type{
