@@ -89,12 +89,12 @@ misspell:
 	@find . -name '*.md' -o -name '*.go' -o -name '*.puml' | xargs misspell -error
 
 e2e: install
-	./scripts/dev/e2e-test.sh init_ledger
-	./scripts/dev/e2e-test.sh e2e
-	./scripts/dev/e2e-test.sh clean
+	./scripts/e2e/e2e-test.sh init_ledger
+	./scripts/e2e/e2e-test.sh e2e
+	./scripts/e2e/e2e-test.sh clean
 
 e2e_ci: install
-	./scripts/dev/e2e-test.sh e2e
+	./scripts/e2e/e2e-test.sh e2e
 
 check: check_fmt vet shadow
 

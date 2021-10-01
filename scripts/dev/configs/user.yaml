@@ -1,5 +1,0 @@
-email: user_test_email2
-wallet-name: user_test_wallet2
-agency-url: http://localhost:8090
-salt: my_test_salt
-label: my_invitation_label
