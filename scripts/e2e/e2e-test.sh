@@ -3,6 +3,8 @@
 
 CLI=$GOPATH/bin/findy-agent
 
+WALLET_KEY='9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY'
+
 CURRENT_DIR=$(dirname "$BASH_SOURCE")
 
 RED='\033[0;31m'
@@ -17,7 +19,7 @@ e2e() {
   agency_conf
   agency_flag
   agency_env
-#  other_cases
+  other_cases
   rm_wallets
   echo -e "${BICYAN}*** E2E TEST FINISHED ***${NC}"
 }
@@ -60,28 +62,7 @@ init_ledger() {
 
 rm_wallets() {
   set +e
-  rm ${CURRENT_DIR}/test_wallet1.export
-  rm -rf ~/.indy_client/wallet/test_wallet1
-  rm -rf ~/.indy_client/wallet/test_email1
-
-  rm -rf ~/.indy_client/wallet/user_test_wallet1
-  rm -rf ~/.indy_client/wallet/user_test_email1
-
-  rm -rf ~/.indy_client/wallet/user_test_wallet3
-  rm -rf ~/.indy_client/wallet/user_test_email3
-
-  rm -rf ~/.indy_client/wallet/user_test_wallet2
-  rm -rf ~/.indy_client/wallet/user_test_email2
-
-  rm ${CURRENT_DIR}/test_wallet2.export
-  rm -rf ~/.indy_client/wallet/test_wallet2
-  rm -rf ~/.indy_client/wallet/test_email2
-
-  rm ${CURRENT_DIR}/test_wallet3.export
-  rm -rf ~/.indy_client/wallet/test_wallet3
-  rm -rf ~/.indy_client/wallet/test_email3
-
-  rm ${CURRENT_DIR}/test_wallet4.export
+  rm ${CURRENT_DIR}/steward.export.tmp
   set -e
 }
 
@@ -96,44 +77,19 @@ set_envs() {
     export FCLI_STEWARD_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_STEWARD_SEED="000000000000000000000000Steward1"
     export FCLI_STEWARD_WALLET_NAME="sovrin_steward_wallet"
-    export FCLI_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
+    export FCLI_STEWARD_WALLET_KEY=""$WALLET_KEY""
 
     export FCLI_AGENCY_POOL_NAME="FINDY_FILE_LEDGER"
     export FCLI_AGENCY_STEWARD_WALLET_NAME="sovrin_steward_wallet"
-    export FCLI_AGENCY_STEWARD_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
+    export FCLI_AGENCY_STEWARD_WALLET_KEY=""$WALLET_KEY""
     export FCLI_AGENCY_STEWARD_DID="Th7MpTaRZVRYnPiabds81Y"
     export FCLI_AGENCY_STEWARD_SEED="000000000000000000000000Steward1"
-    export FCLI_AGENCY_SALT="my_test_salt"
     export FCLI_AGENCY_HOST_PORT="8090"
     export FCLI_AGENCY_SERVER_PORT="8090"
 
     export FCLI_AGENCY_PING_BASE_ADDRESS="http://localhost:8090"
 
-    export FCLI_SERVICE_WALLET_NAME="test_wallet1"
-    export FCLI_SERVICE_WALLET_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
-    export FCLI_SERVICE_AGENCY_URL="http://localhost:8090"
-    export FCLI_ONBOARD_EMAIL="test_email1"
-    export FCLI_ONBOARD_EXPORT_FILE="${CURRENT_DIR}/test_wallet1.export"
-    export FCLI_ONBOARD_EXPORT_KEY="9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY"
-    export FCLI_ONBOARD_SALT="my_test_salt"
-
-    export FCLI_FCLI_PING_SERVICE_ENDPOINT="true"
-
-    export FCLI_SCHEMA_NAME="my_schema1"
-    export FCLI_SCHEMA_VERSION="2.0"
-    export FCLI_SCHEMA_ATTRIBUTES="[\"field1\", \"field2\", \"field3\"]"
-
-    export FCLI_CREDDEF_TAG="my_tag1"
-
     export FCLI_KEY_SEED="000000000000000000000000Steward1"
-
-    export FCLI_USER_WALLET_NAME="user_test_wallet1"
-    export FCLI_USER_AGENCY_URL="http://localhost:8090"
-
-    export FCLI_INVITATION_LABEL="my_label"
-
-    export FCLI_SEND_MESSAGE="Hello!"
-    export FCLI_SEND_FROM="me"
 }
 
 cmds_env() {
@@ -239,22 +195,21 @@ agency_flag() {
     --pool-name=FINDY_FILE_LEDGER \
     --seed=000000000000000000000000Steward1 \
     --wallet-name=sovrin_steward_wallet \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
+    --wallet-key="$WALLET_KEY"
 
   # run agency
   echo -e "${BLUE}*** flag - run agency ***${NC}"
   $CLI agency start \
     --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=sovrin_steward_wallet \
-    --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
+    --steward-wallet-key="$WALLET_KEY" \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
     --steward-seed=000000000000000000000000Steward1 \
     --host-port=8090 \
     --server-port=8090 \
     --grpc-port=50051 \
     --grpc-cert-path="./grpc/cert" \
-    --grpc-jwt-secret="my-secret" \
-    --salt=my_test_salt &
+    --grpc-jwt-secret="my-secret" &
     sleep 2
   test_cmds
   stop_agency
@@ -275,57 +230,30 @@ other_cases() {
 
   echo -e "${BLUE}*** other - import wallet ***${NC}"
   $CLI tools import \
-    --key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
+    --key="$WALLET_KEY" \
     --file=${CURRENT_DIR}/steward.exported \
     --wallet-name=steward \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
+    --wallet-key="$WALLET_KEY"
 
   # run agency
   echo -e "${BLUE}*** other - run agency ***${NC}"
   $CLI agency start \
     --pool-name=FINDY_FILE_LEDGER \
     --steward-wallet-name=steward \
-    --steward-wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
+    --steward-wallet-key="$WALLET_KEY" \
     --steward-did=Th7MpTaRZVRYnPiabds81Y \
-    --steward-seed=000000000000000000000000Steward1 \
     --host-port=8090 \
     --server-port=8090 \
-    --salt=this is only example &
-    sleep 2
-
-  # onboard
-  echo -e "${BLUE}*** other - onboard ***${NC}"
-  $CLI service onboard \
-    --agency-url=http://localhost:8090 \
-    --wallet-name=test_wallet1 \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
-    --email=test_email1 \
-    --salt=this is only example
-
-  # create schema
-  echo -e "${BLUE}*** other - create schema ***${NC}"
-  sID=$($CLI service schema create \
-    --wallet-name=test_wallet1 \
-    --agency-url=http://localhost:8090 \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
-    --name=my_schema4 --version="2.0" --attributes="["field1", "field2", "field3"]")
-
-  # read schema
-  echo -e "${BLUE}*** other - read schema ***${NC}"
-  $CLI service schema read \
-    --id=$sID \
-    --wallet-name=test_wallet1 \
-    --agency-url=http://localhost:8090 \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
+    --grpc-cert-path=./grpc/cert &
 
   # export
   echo -e "${BLUE}*** other - export wallet ***${NC}"
-  f=${CURRENT_DIR}/test_wallet4.export 
+  f=${CURRENT_DIR}/steward.export.tmp
   $CLI tools export \
-    --wallet-name=test_wallet1 \
+    --wallet-name=steward \
     --file=$f \
-    --key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY \
-    --wallet-key=9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY
+    --key="$WALLET_KEY" \
+    --wallet-key="$WALLET_KEY"
   # check if file exist
   if [ ! -f "$f" ]; then
     echo "$f does not exist."
