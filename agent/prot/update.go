@@ -26,10 +26,7 @@ type notifyEdge struct {
 	initiator bool   // true if we are to one who started the protocol
 }
 
-// NotifyEdge sends notification to client (previously edge agent). It sends
-// notifications via apns, web socket, and web hook if any of these are
-// available.
-//func NotifyEdge(did, plType, nonce, pwName string) {
+// NotifyEdge sends notification to CA's controllores.
 func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
