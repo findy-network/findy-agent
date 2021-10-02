@@ -84,7 +84,6 @@ func setUp() {
 		PsmDb:             "findy.bolt",
 		ResetData:         true, // IMPORTANT for testing!
 		VersionInfo:       "test test",
-		Salt:              "",
 	}
 	err2.Check(agencyCmd.Validate())
 

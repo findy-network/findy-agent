@@ -188,7 +188,6 @@ type ProofValue struct {
 type Msg interface {
 	PwMsg
 
-	ChecksumOK() bool
 	Error() string
 	SetError(s string)
 	Info() string

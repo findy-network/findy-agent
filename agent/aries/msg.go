@@ -311,10 +311,6 @@ func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
 	return newMsgFrom(string(msgJSON))
 }
 
-func (m *Msg) ChecksumOK() bool {
-	return false
-}
-
 func (m *Msg) anonDecrypt(wallet int, did *ssi.DID) *Msg {
 	return NewAnonDecryptedMsg(wallet, m.Encrypted, did)
 }

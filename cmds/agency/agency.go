@@ -54,7 +54,6 @@ type Cmd struct {
 	ResetData         bool
 	URL               string
 	VersionInfo       string
-	Salt              string
 	GRPCTls           bool
 	GRPCPort          int
 	TlsCertPath       string
@@ -96,7 +95,6 @@ var (
 		ResetData:              false,
 		URL:                    "",
 		VersionInfo:            "",
-		Salt:                   "",
 		GRPCTls:                true,
 		GRPCPort:               50051,
 		TlsCertPath:            "",
@@ -244,15 +242,6 @@ func (c *Cmd) PreRun() {
 	setProtocol(c.PoolProtocol)
 
 	handshake.RegisterGobs()
-
-	if c.Salt == "" {
-		saltFromEnv := os.Getenv("FINDY_AGENT_SALT")
-		if len(saltFromEnv) > 0 {
-			utils.Salt = saltFromEnv
-		}
-	} else {
-		utils.Salt = c.Salt
-	}
 }
 
 func setProtocol(version uint64) {
