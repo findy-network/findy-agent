@@ -72,12 +72,17 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	return AgentMaps[m].agentStationMap[key]
 }
 
+// AgentRmListener removes the listener.
 func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
 	glog.V(3).Infoln(key.AgentDID, " notify rm for:", key.ClientID)
-	delete(AgentMaps[m].agentStationMap, key)
+	ch, ok := AgentMaps[m].agentStationMap[key]
+	if ok {
+		close(ch)
+		delete(AgentMaps[m].agentStationMap, key)
+	}
 }
 
 func (m mapIndex) AgentBroadcast(state AgentNotify) {
