@@ -250,10 +250,6 @@ func triggerEnd(info endingInfo) {
 				initiator: info.initiator,
 			})
 		}
-		bus.ReadyStation.BroadcastReady(key, ack)
-	case psm.Failure:
-		// Do broadcasts for chained protocols to be able to report clients
-		bus.ReadyStation.BroadcastReady(key, false)
 	case psm.Waiting:
 		// Notify also tasks that are waiting for user action
 		if info.pendingUserAction {
