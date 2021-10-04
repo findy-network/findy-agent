@@ -46,16 +46,31 @@ const (
 )
 
 type agentStationMap map[AgentKeyType]AgentStateChan
-type agentLockMap struct {
+
+type buffer []*AgentNotify
+
+type agentStation struct {
 	agentStationMap
 	sync.Mutex
+
+	// buffer stores notifications if no one listens
+	buffer
 }
 
 var (
-	AgentMaps = [...]agentLockMap{
-		{agentStationMap: make(agentStationMap)},
-		{agentStationMap: make(agentStationMap)},
-		{agentStationMap: make(agentStationMap)},
+	AgentMaps = [...]agentStation{
+		{
+			agentStationMap: make(agentStationMap),
+			buffer:          make(buffer, 0, 12),
+		},
+		{
+			agentStationMap: make(agentStationMap),
+			buffer:          make(buffer, 0, 12),
+		},
+		{
+			agentStationMap: make(agentStationMap),
+			buffer:          make(buffer, 0, 12),
+		},
 	}
 
 	WantAllAgentActions  mapIndex = agentListen
@@ -64,12 +79,29 @@ var (
 )
 
 func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
+	c := make(AgentStateChan, 1)
+	AgentMaps[m].Lock()
+	AgentMaps[m].agentStationMap[key] = c
+	AgentMaps[m].Unlock()
+
+	glog.V(3).Infoln(key.AgentDID, " notify add for:", key.ClientID)
+
+	go m.checkBuffered()
+
+	return c
+}
+
+// checkBuffered sends all buffered notifications to listeners and reset the
+// buffer. TODO: make buffer persistent.
+func (m mapIndex) checkBuffered() {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
-	glog.V(3).Infoln(key.AgentDID, " notify add for:", key.ClientID)
-	AgentMaps[m].agentStationMap[key] = make(AgentStateChan, 1)
-	return AgentMaps[m].agentStationMap[key]
+	for _, notif := range AgentMaps[m].buffer {
+		glog.V(1).Infoln("broadcasting buffered notification")
+		m.agentBroadcast(notif)
+	}
+	AgentMaps[m].buffer = make(buffer, 0, 12)
 }
 
 // AgentRmListener removes the listener.
@@ -98,9 +130,18 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 		// TODO: build the resender here who do the job
 		// the DB could be one bucket where key is DID and notifications are
 		// kept in the slices. Remember ActionsTypes or own buckets per.
+
+		// first implementation just saves notifications to buffer, no persitency
+		AgentMaps[m].buffer = append(AgentMaps[m].buffer, &state)
+
 		return
 	}
+	m.agentBroadcast(&state)
+}
 
+// agentBroadcast broadcasts notification to listeners. Note! it doesn't lock
+// the maps.
+func (m mapIndex) agentBroadcast(state *AgentNotify) {
 	broadcastKey := state.AgentKeyType
 	for listenKey, ch := range AgentMaps[m].agentStationMap {
 		hit := broadcastKey.AgentDID == listenKey.AgentDID ||
@@ -109,7 +150,7 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 			glog.V(3).Infoln(broadcastKey.AgentDID,
 				"agent notify:", listenKey.ClientID)
 			state.ClientID = listenKey.ClientID
-			ch <- state
+			ch <- *state
 		}
 	}
 }
