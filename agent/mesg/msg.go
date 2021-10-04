@@ -1,7 +1,6 @@
 package mesg
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/crypto"
@@ -244,18 +242,6 @@ func (m *MsgImpl) AnonEncrypt(did *ssi.DID) didcomm.Msg {
 	return &MsgImpl{Msg: m.Msg.AnonEncrypt(did)}
 }
 
-// The salt used to calculate sha256 checksum of connection invite (Handshake)
-// message. Add agent/salt.go to your specific build BUT don't add it to this
-// Git repo. We have already ignored it in .gitignore. That's how you can over
-// ride quite easily to default salt.
-//
-//		package agent
-//
-//		func init() {
-//			salt = "THIS IS YOUR PROJECT SPECIFIC SALT"
-//		}
-//
-
 // The Msg is multipurpose way to transfer messages inside actual Payload
 // which will be standardized hopefully by hyperledger-indy or someone.
 // The Msg works like C language union i.e. if Error happened is filled
@@ -324,28 +310,6 @@ func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
 	f.SetChan(crypto.AnonDecrypt(wallet, did.VerKey(), msg))
 	msgJSON := f.Bytes()
 	return newMsgFrom(string(msgJSON))
-}
-
-func NewHandshake(email, pwName string) *Msg {
-	checkStr := checksum(email)
-	msg := Msg{
-		Endpoint: email,
-		Name:     pwName,
-		Info:     checkStr,
-		Nonce:    "0",
-	}
-	return &msg
-}
-
-func checksum(email string) string {
-	salted := []byte(email + utils.Salt)
-	checkSum := sha256.Sum256(salted)
-	checkStr := base64.StdEncoding.EncodeToString(checkSum[:])
-	return checkStr
-}
-
-func (m *Msg) ChecksumOK() bool {
-	return m.Info == checksum(m.Endpoint)
 }
 
 func (m *Msg) anonDecrypt(wallet int, did *ssi.DID) *Msg {

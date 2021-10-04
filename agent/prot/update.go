@@ -23,13 +23,13 @@ type notifyEdge struct {
 	nonce     string // protocol ID (not a Aries message ID but thead ID)
 	timestamp int64  // the timestamp of the PSM
 	pwName    string // connection ID (note!! not a pairwise Label)
-	initiator bool   // true if we are to one who started the protocol
+
+	// TODO: change the name protocol starter and moved initiator and addressee
+	// other ways
+	initiator bool // true if we are to one who started the protocol
 }
 
-// NotifyEdge sends notification to client (previously edge agent). It sends
-// notifications via apns, web socket, and web hook if any of these are
-// available.
-//func NotifyEdge(did, plType, nonce, pwName string) {
+// NotifyEdge sends notification to CA's controllores.
 func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
@@ -40,6 +40,8 @@ func NotifyEdge(ne notifyEdge) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
 
+			// todo: when CallEA() changes or removes we should get this
+			// information from some where performant place
 			taskStatus := StatusForTask(ne.did, ne.nonce)
 
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
@@ -133,6 +135,9 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 	if plType == pltype.Nothing {
 		plType = machine.FirstState().PLInfo.Type
 	}
+
+	// TODO: add machine to endingInfo to allow 'cheap' data access for
+	// notifications
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
 		subState:          subs,
@@ -253,10 +258,6 @@ func triggerEnd(info endingInfo) {
 				initiator: info.initiator,
 			})
 		}
-		bus.ReadyStation.BroadcastReady(key, ack)
-	case psm.Failure:
-		// Do broadcasts for chained protocols to be able to report clients
-		bus.ReadyStation.BroadcastReady(key, false)
 	case psm.Waiting:
 		// Notify also tasks that are waiting for user action
 		if info.pendingUserAction {

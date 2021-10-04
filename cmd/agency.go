@@ -38,7 +38,6 @@ var agencyStartEnvs = map[string]string{
 	"steward-wallet-key":       "STEWARD_WALLET_KEY",
 	"steward-did":              "STEWARD_DID",
 	"protocol-path":            "PROTOCOL_PATH",
-	"salt":                     "SALT",
 	"admin-id":                 "ADMIN_ID",
 	"grpc-tls":                 "GRPC_TLS",
 	"grpc-port":                "GRPC_PORT",
@@ -67,8 +66,7 @@ Example
 		--pool-name findy \
 		--steward-wallet-name sovrin_steward_wallet \
 		--steward-wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
-		--steward-did Th7MpTaRZVRYnPiabds81Y \
-		--salt mySalt
+		--steward-did Th7MpTaRZVRYnPiabds81Y
 	`,
 	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
 		return BindEnvs(agencyStartEnvs, "AGENCY")
@@ -144,7 +142,6 @@ func init() {
 	flags.StringVar(&aCmd.WalletPwd, "steward-wallet-key", "", flagInfo("steward wallet key", AgencyCmd.Name(), agencyStartEnvs["steward-wallet-key"]))
 	flags.StringVar(&aCmd.StewardDid, "steward-did", "", flagInfo("steward DID", AgencyCmd.Name(), agencyStartEnvs["steward-did"]))
 	flags.StringVar(&aCmd.ServiceName2, "protocol-path", "a2a", flagInfo("URL path for A2A protocols", AgencyCmd.Name(), agencyStartEnvs["protocol-path"])) // agency.ProtocolPath is available
-	flags.StringVar(&aCmd.Salt, "salt", "", flagInfo("salt", AgencyCmd.Name(), agencyStartEnvs["salt"]))
 	flags.BoolVar(&aCmd.GRPCTls, "grpc-tls", true, flagInfo("use secure grpc", AgencyCmd.Name(), agencyStartEnvs["grpc-tls"]))
 	flags.IntVar(&aCmd.GRPCPort, "grpc-port", 50051, flagInfo("grpc server port", AgencyCmd.Name(), agencyStartEnvs["grpc-port"]))
 	flags.StringVar(&aCmd.TlsCertPath, "grpc-cert-path", "", flagInfo("folder path for grpc server tls certificates", AgencyCmd.Name(), agencyStartEnvs["grpc-cert-path"]))

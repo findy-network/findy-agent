@@ -72,17 +72,34 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	return AgentMaps[m].agentStationMap[key]
 }
 
+// AgentRmListener removes the listener.
 func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
 	glog.V(3).Infoln(key.AgentDID, " notify rm for:", key.ClientID)
-	delete(AgentMaps[m].agentStationMap, key)
+	ch, ok := AgentMaps[m].agentStationMap[key]
+	if ok {
+		close(ch)
+		delete(AgentMaps[m].agentStationMap, key)
+	}
 }
 
+// AgentBroadcast broadcasts the notification.
+// TODO: add persitency here
 func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
+
+	if len(AgentMaps[m].agentStationMap) == 0 { //
+		glog.V(1).Infoln("there are no one to listen us!")
+		// Save the notification for future broadcasting
+
+		// TODO: build the resender here who do the job
+		// the DB could be one bucket where key is DID and notifications are
+		// kept in the slices. Remember ActionsTypes or own buckets per.
+		return
+	}
 
 	broadcastKey := state.AgentKeyType
 	for listenKey, ch := range AgentMaps[m].agentStationMap {
