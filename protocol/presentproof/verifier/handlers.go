@@ -92,9 +92,11 @@ func HandleProposePresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 			}
 			err2.Check(psm.AddPresentProofRep(rep))
 
-			req := om.FieldObj().(*presentproof.Request) // query interface
-			req.RequestPresentations = presentproof.NewRequestPresentation(
-				utils.UUID(), []byte(reqStr))
+			req, autoAccept := om.FieldObj().(*presentproof.Request)
+			if autoAccept {
+				req.RequestPresentations = presentproof.NewRequestPresentation(
+					utils.UUID(), []byte(reqStr))
+			}
 
 			return true, nil
 		},
@@ -177,8 +179,10 @@ func HandlePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (e
 			err2.Check(psm.AddPresentProofRep(rep))
 
 			// Autoaccept -> all checks done, let's send ACK
-			ackMsg := om.FieldObj().(*common.Ack)
-			ackMsg.Status = "OK"
+			ackMsg, autoAccept := om.FieldObj().(*common.Ack)
+			if autoAccept {
+				ackMsg.Status = "OK"
+			}
 
 			return true, nil
 		},
