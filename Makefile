@@ -78,6 +78,9 @@ lint:
 test:
 	go test -p 1 -failfast ./...
 
+testr:
+	go test -p 1 -failfast -race ./...
+
 testv:
 	go test -v -p 1 -failfast ./...
 
