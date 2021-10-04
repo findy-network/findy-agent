@@ -57,7 +57,7 @@ type Agent struct {
 }
 
 func (a *Agent) AutoPermission() bool {
-	autoPermissionOn := a.SAImplID == "permissive_sa"
+	autoPermissionOn := a.SAImplID() == "permissive_sa"
 	glog.V(1).Infof("auto permission = %v", autoPermissionOn)
 	return autoPermissionOn
 }
@@ -116,8 +116,8 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("attach sa impl:", err)
 	})
-	a.SAImplID = implID
-	glog.V(3).Infof("setting implementation (%s)", a.SAImplID)
+	a.SetSAImplID(implID)
+	glog.V(3).Infof("setting implementation (%s)", a.SAImplID())
 	if a.IsCA() {
 		wa, ok := a.WorkerEA().(*Agent)
 		if !ok {
@@ -131,7 +131,7 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 				Endp: implEndp,
 			}))
 		}
-		wa.SAImplID = implID
+		wa.SetSAImplID(implID)
 	}
 }
 
@@ -179,8 +179,8 @@ func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error
 	// callTypeImplID for verything, and most importantly for grpc SAs.
 	// other types are for old tests.
 	case callTypeImplID:
-		glog.V(3).Infof("call SA impl %s", a.SAImplID)
-		return sa.Get(a.SAImplID)(a.WDID(), plType, im)
+		glog.V(3).Infof("call SA impl %s", a.SAImplID())
+		return sa.Get(a.SAImplID())(a.WDID(), plType, im)
 
 	// we should not be here never.
 	default:
@@ -419,13 +419,13 @@ func (a *Agent) SecPipe(meDID string) sec.Pipe {
 }
 
 func (a *Agent) checkSAImpl() callType {
-	if a.SAImplID != "" {
+	if a.SAImplID() != "" {
 		return callTypeImplID
 	}
 
 	// We are in the middle of releasing gRPC API v1 and old SA endpoints
 	// aren't supported any more.
-	a.SAImplID = sa.GRPCSA
-	glog.V(3).Infoln("=== using default impl id:", a.SAImplID)
+	a.SetSAImplID(sa.GRPCSA)
+	glog.V(3).Infoln("=== using default impl id:", a.SAImplID())
 	return callTypeImplID
 }
