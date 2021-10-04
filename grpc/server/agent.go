@@ -243,8 +243,7 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 	})
 	protocol := pb.Protocol_PRESENT_PROOF
 	if state != nil {
-		// TODO:
-		//protocol = state.FirstState().T.Type()
+		protocol = state.FirstState().T.ProtocolType()
 	}
 	fmt.Println("PROTOCOL", protocol)
 

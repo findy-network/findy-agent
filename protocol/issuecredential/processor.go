@@ -204,8 +204,9 @@ func handleProtocol(packet comm.Packet) (err error) {
 	if packet.Payload.ThreadID() != "" {
 		credTask = &task.TaskIssueCredential{
 			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-				TaskID: packet.Payload.ThreadID(),
-				TypeID: packet.Payload.Type(),
+				TaskID:  packet.Payload.ThreadID(),
+				TypeID:  packet.Payload.Type(),
+				APIType: pb.Protocol_ISSUE_CREDENTIAL,
 			}},
 		}
 	}

@@ -14,6 +14,7 @@ func init() {
 type Task interface {
 	ID() string
 	Type() string
+	ProtocolType() pb.Protocol_Type
 	UserActionType() string
 	Role() pb.Protocol_Role
 	ConnectionID() string
@@ -22,12 +23,12 @@ type Task interface {
 }
 
 type TaskHeader struct {
-	TaskID         string
-	TypeID         string
-	ProtocolTypeID string
-	ProtocolRole   pb.Protocol_Role
-	ConnID         string
-	UAType         string
+	TaskID       string
+	TypeID       string
+	APIType      pb.Protocol_Type
+	ProtocolRole pb.Protocol_Role
+	ConnID       string
+	UAType       string
 
 	Sender   service.Addr
 	Receiver service.Addr
@@ -44,6 +45,10 @@ func (t *TaskBase) ID() string {
 
 func (t *TaskBase) Type() string {
 	return t.TypeID
+}
+
+func (t *TaskBase) ProtocolType() pb.Protocol_Type {
+	return t.APIType
 }
 
 func (t *TaskBase) Role() pb.Protocol_Role {

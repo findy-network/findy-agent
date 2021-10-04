@@ -171,6 +171,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		TaskHeader: comm.TaskHeader{
 			TaskID:   ipl.ThreadID(),
 			TypeID:   ipl.Type(),
+			APIType:  pb.Protocol_DIDEXCHANGE,
 			Receiver: respEndp,
 			Sender:   respEndp,
 		},
@@ -253,6 +254,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		TaskHeader: comm.TaskHeader{
 			TaskID:   ipl.ThreadID(),
 			TypeID:   ipl.Type(),
+			APIType:  pb.Protocol_DIDEXCHANGE,
 			Receiver: receiverEP,
 			Sender:   senderEP,
 		},

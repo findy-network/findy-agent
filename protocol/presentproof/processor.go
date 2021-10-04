@@ -234,8 +234,9 @@ func handleProtocol(packet comm.Packet) (err error) {
 	if packet.Payload.ThreadID() != "" {
 		proofTask = &task.TaskPresentProof{
 			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-				TaskID: packet.Payload.ThreadID(),
-				TypeID: packet.Payload.Type(),
+				TaskID:  packet.Payload.ThreadID(),
+				TypeID:  packet.Payload.Type(),
+				APIType: pb.Protocol_PRESENT_PROOF,
 			}},
 		}
 	}
