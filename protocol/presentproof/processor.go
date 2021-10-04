@@ -292,11 +292,11 @@ func handleProofACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err e
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
+		Task:        proofTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof ACK handler", &err)
 			return true, nil
 		},
-		Task: proofTask,
 	})
 }
 
@@ -309,11 +309,11 @@ func handleProofNACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err 
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
+		Task:        proofTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof NACK handler", &err)
 			return false, nil
 		},
-		Task: proofTask,
 	})
 }
 

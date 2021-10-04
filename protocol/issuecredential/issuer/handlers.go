@@ -29,6 +29,7 @@ func HandleCredentialPropose(packet comm.Packet, credTask *task.TaskIssueCredent
 	}
 
 	credTask.ActionType = task.AcceptPropose
+	credTask.TaskBase.TaskHeader.UAType = pltype.SAIssueCredentialAcceptPropose
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
@@ -44,8 +45,6 @@ func HandleCredentialPropose(packet comm.Packet, credTask *task.TaskIssueCredent
 
 			prop := im.FieldObj().(*issuecredential.Propose)
 
-			// we calculate attr values here even it's not necessary
-			// because the SA will usually update them by it self.
 			values := issuecredential.PreviewCredentialToCodedValues(
 				prop.CredentialProposal)
 
@@ -56,21 +55,23 @@ func HandleCredentialPropose(packet comm.Packet, credTask *task.TaskIssueCredent
 			err2.Check(r.Err())
 			credOffer := r.Str1()
 
-			offer := om.FieldObj().(*issuecredential.Offer)
-			offer.OffersAttach =
-				issuecredential.NewOfferAttach([]byte(credOffer))
-			offer.CredentialPreview =
-				issuecredential.NewPreviewCredentialRaw(values)
-			offer.Comment = values // todo: for legacy tests
-
 			rep := &psm.IssueCredRep{
 				Key:       psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
 				CredDefID: prop.CredDefID,
 				CredOffer: credOffer,
 				Values:    values, // important! saved for Req handling
 			}
-			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 			err2.Check(psm.AddIssueCredRep(rep))
+
+			offer, autoAccept := om.FieldObj().(*issuecredential.Offer)
+			if autoAccept {
+				offer.OffersAttach =
+					issuecredential.NewOfferAttach([]byte(credOffer))
+				offer.CredentialPreview =
+					issuecredential.NewPreviewCredentialRaw(values)
+				offer.Comment = values // todo: for legacy tests
+				preview.StoreCredPreview(&offer.CredentialPreview, rep)
+			}
 
 			return true, nil
 		},
@@ -109,6 +110,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 			offer.CredentialPreview =
 				issuecredential.NewPreviewCredentialRaw(rep.Values)
 			offer.Comment = rep.Values // todo: for legacy tests
+			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 
 			return true, nil
 		},

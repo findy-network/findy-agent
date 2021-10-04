@@ -146,6 +146,7 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		plType:            plType,
 		pendingUserAction: machine.PendingUserAction(),
 		initiator:         machine.Initiator,
+		userActionType:    task.UserActionType(),
 	})
 
 	return nil
@@ -228,6 +229,7 @@ type endingInfo struct {
 	timestamp         int64
 	pendingUserAction bool
 	initiator         bool
+	userActionType    string
 }
 
 func triggerEnd(info endingInfo) {
@@ -263,7 +265,7 @@ func triggerEnd(info endingInfo) {
 			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(notifyEdge{
 				did:       info.meDID,
-				plType:    pltype.CANotifyUserAction,
+				plType:    info.userActionType,
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,

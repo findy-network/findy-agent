@@ -231,19 +231,8 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
 	defer err2.Annotate("give answer", &err)
 
-	/*_, receiver := e2.StrRcvr.Try(ca(ctx))
-	bus.WantAllAgentAnswers.AgentSendAnswer(bus.AgentAnswer{
-		ID: answer.ID,
-		AgentKeyType: bus.AgentKeyType{
-			AgentDID: receiver.WDID(),
-			ClientID: answer.ClientID.ID,
-		},
-		ACK:  answer.Ack,
-		Info: answer.Info,
-	})*/
-
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent Resume protocol:",
+	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
 		answer.ID,
 		answer.Ack,
 	)
@@ -376,109 +365,6 @@ loop:
 	return nil
 
 }
-
-/*func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitServer) (err error) {
-	defer err2.Handle(&err, func() {
-		glog.Errorf("grpc agent listen error: %s", err)
-		status := &pb.Question{
-			Status: &pb.AgentStatus{
-				ClientID: &pb.ClientID{ID: clientID.ID},
-			},
-		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
-	})
-
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent starts Wait():", clientID.ID)
-
-	listenKey := bus.AgentKeyType{
-		AgentDID: receiver.WDID(),
-		ClientID: clientID.ID,
-	}
-	questionChan := bus.WantAllAgentAnswers.AgentAddAnswerer(listenKey)
-	defer bus.WantAllAgentAnswers.AgentRmAnswerer(listenKey)
-
-loop:
-	for {
-		select {
-		case question := <-questionChan:
-			glog.V(1).Infoln("QUESTION in conn-id:", question.ConnectionID,
-				"QID:", question.ID,
-				question.ProtocolFamily,
-				questionTypeID[question.NotificationType])
-			assert.D.True(clientID.ID == question.ClientID)
-			q2send := processQuestion(question)
-			q2send.Status.ClientID.ID = question.ClientID
-			err2.Check(server.Send(q2send))
-			glog.V(1).Infoln("send question..")
-
-		case <-time.After(keepaliveTimer):
-			// send keep alive message
-			glog.V(7).Infoln("sending keepalive timer")
-			err2.Check(server.Send(&pb.Question{
-				Status: &pb.AgentStatus{
-					ClientID: &pb.ClientID{ID: clientID.ID},
-				},
-				TypeID: pb.Question_KEEPALIVE,
-			}))
-
-		case <-ctx.Done():
-			glog.V(1).Infoln("ctx.Done() received, returning")
-			break loop
-		}
-	}
-	return nil
-}
-
-func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
-	q2send := pb.Question{
-		TypeID: questionTypeID[question.NotificationType],
-		Status: &pb.AgentStatus{
-			ClientID: &pb.ClientID{ID: question.AgentDID},
-			Notification: &pb.Notification{
-				ID:             question.ID,
-				PID:            question.PID,
-				ConnectionID:   question.ConnectionID,
-				ProtocolID:     question.ProtocolID,
-				ProtocolFamily: question.ProtocolFamily,
-				ProtocolType:   protocolType[question.ProtocolFamily],
-				Timestamp:      question.Timestamp,
-				Role:           roleType[question.Initiator],
-			},
-		},
-	}
-	if question.IssuePropose != nil {
-		glog.V(1).Infoln("issue propose handling")
-		q2send.Question = &pb.Question_IssuePropose{
-			IssuePropose: &pb.Question_IssueProposeMsg{
-				CredDefID:  question.IssuePropose.CredDefID,
-				ValuesJSON: question.IssuePropose.ValuesJSON,
-			},
-		}
-	}
-	if question.ProofVerify != nil {
-		glog.V(1).Infoln("proof verify handling")
-		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0,
-			len(question.ProofVerify.Attrs))
-		for _, attr := range question.Attrs {
-			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
-				Value:     attr.Value,
-				Name:      attr.Name,
-				CredDefID: attr.CredDefID,
-				//Predicate: attr.Predicate,
-			})
-		}
-		q2send.Question = &pb.Question_ProofVerify{
-			ProofVerify: &pb.Question_ProofVerifyMsg{
-				Attributes: attrs,
-			},
-		}
-	}
-	return &q2send
-}*/
 
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
 	defer err2.Annotate("processQuestion", &err)

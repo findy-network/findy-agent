@@ -32,11 +32,13 @@ func HandleRequestPresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 
 	sendNext, waitingNext := checkAutoPermission(packet)
 	proofTask.ActionType = task.AcceptRequest
+	proofTask.TaskBase.TaskHeader.UAType = pltype.CANotifyUserAction
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
+		Task:        proofTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof req handler", &err)
 
@@ -62,7 +64,6 @@ func HandleRequestPresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 
 			return true, nil
 		},
-		Task: proofTask,
 	})
 }
 

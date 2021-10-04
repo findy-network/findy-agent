@@ -68,12 +68,14 @@ func HandleProposePresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 	}
 
 	proofTask.ActionType = task.AcceptPropose
+	proofTask.TaskBase.TaskHeader.UAType = pltype.SAPresentProofAcceptPropose
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
+		Task:        proofTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof propose handler", &err)
 
@@ -96,7 +98,6 @@ func HandleProposePresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 
 			return true, nil
 		},
-		Task: proofTask,
 	})
 }
 
@@ -147,12 +148,14 @@ func HandlePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (e
 		waitingNext = pltype.PresentProofUserAction
 	}
 	proofTask.ActionType = task.AcceptValues
+	proofTask.TaskBase.TaskHeader.UAType = pltype.SAPresentProofAcceptValues
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
+		Task:        proofTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof presentation handler", &err)
 
@@ -179,7 +182,6 @@ func HandlePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (e
 
 			return true, nil
 		},
-		Task: proofTask,
 	})
 }
 

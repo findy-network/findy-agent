@@ -41,6 +41,7 @@ func HandleCredentialOffer(packet comm.Packet, credTask *task.TaskIssueCredentia
 
 	sendNext, waitingNext := checkAutoPermission(packet)
 	credTask.ActionType = task.AcceptOffer
+	credTask.TaskBase.TaskHeader.UAType = pltype.CANotifyUserAction
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
