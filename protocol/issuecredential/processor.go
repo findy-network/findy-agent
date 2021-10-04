@@ -35,11 +35,9 @@ type statusIssueCredential struct {
 }
 
 var issueCredentialProcessor = comm.ProtProc{
-	Creator: createIssueCredentialTask,
-	Starter: startIssueCredentialByPropose,
-	Continuators: map[string]comm.Continuator{
-		pltype.CAContinueIssueCredentialProtocol: userActionCredential,
-	},
+	Creator:     createIssueCredentialTask,
+	Starter:     startIssueCredentialByPropose,
+	Continuator: userActionCredential,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
 		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,

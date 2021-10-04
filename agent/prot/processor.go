@@ -20,10 +20,11 @@ import (
 // rules to execute state transition i.e. move to next state.
 type Transition struct {
 	comm.Packet
-	SendNext    string // the type of the PL we will send next if any
-	WaitingNext string // the type of the PL we will wait if any
-	SendOnNACK  string // the type to send when we NACK
-	InOut              // the handler func, NOTE! return false in all NACK cases
+	SendNext    string    // the type of the PL we will send next if any
+	WaitingNext string    // the type of the PL we will wait if any
+	SendOnNACK  string    // the type to send when we NACK
+	InOut                 // the handler func, NOTE! return false in all NACK cases
+	Task        comm.Task // updated task
 }
 
 // TransitionHandler is a type for Transition to process PSM state transition.
@@ -193,11 +194,14 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	// Task is a helper struct here by gathering all needed data for one unit
-	task := &comm.TaskBase{
-		TaskHeader: comm.TaskHeader{
-			TaskID: ts.Payload.ThreadID(),
-			TypeID: ts.Payload.Type(),
-		},
+	task := ts.Task
+	if task == nil {
+		task = &comm.TaskBase{
+			TaskHeader: comm.TaskHeader{
+				TaskID: ts.Payload.ThreadID(),
+				TypeID: ts.Payload.Type(),
+			},
+		}
 	}
 
 	msgMeDID := ts.Address.RcvrDID
@@ -326,25 +330,6 @@ func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
 	go proc.Starter(receiver, task)
 }
 
-/*func Continue(packet comm.Packet, im didcomm.Msg) {
-
-	proc, ok := continuators[packet.Payload.Type()]
-	if !ok {
-		glog.Error("!!No prot continuator for:", packet.Payload.Type())
-		panic("no protocol continuator")
-	}
-
-	continuator, ok := proc.Handlers[packet.Payload.ProtocolMsg()]
-	if !ok {
-		glog.Info(string(packet.Payload.JSON()))
-		s := "!!!! No continuator in processor !!!"
-		glog.Error(s)
-		panic(s)
-	}
-
-	go continuator(packet.Receiver, im)
-}*/
-
 func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	proc, ok := continuators[typeID]
 	if !ok {
@@ -352,19 +337,12 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 		panic("no protocol continuator")
 	}
 
-	continuator, ok := proc.Continuators[protocolID]
-	if !ok {
-		s := "!!!! No continuator in processor !!!"
-		glog.Error(s)
-		panic(s)
-	}
-
 	om := mesg.MsgCreator.Create(didcomm.MsgInit{
 		Ready: ack,
 		ID:    protocolID,
 	}).(didcomm.Msg)
 
-	go continuator(rcvr, om)
+	go proc.Continuator(rcvr, om)
 }
 
 func GetStatus(protocol string, key *psm.StateKey) interface{} {

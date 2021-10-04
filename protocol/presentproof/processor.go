@@ -3,16 +3,17 @@ package presentproof
 
 import (
 	"encoding/gob"
+	"errors"
 	"strconv"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/protocol/presentproof/prover"
+	"github.com/findy-network/findy-agent/protocol/presentproof/task"
 	"github.com/findy-network/findy-agent/protocol/presentproof/verifier"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -23,13 +24,6 @@ import (
 	"github.com/lainio/err2/assert"
 )
 
-type taskPresentProof struct {
-	comm.TaskBase
-	Comment         string
-	ProofAttrs      []didcomm.ProofAttribute
-	ProofPredicates []didcomm.ProofPredicate
-}
-
 type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
 }
@@ -37,19 +31,19 @@ type statusPresentProof struct {
 var presentProofProcessor = comm.ProtProc{
 	Creator:     createPresentProofTask,
 	Starter:     startProofProtocol,
-	Continuator: userActionProofPresentation,
+	Continuator: continueProtocol,
 	Handlers: map[string]comm.HandlerFunc{
-		pltype.HandlerPresentProofPropose:      verifier.HandleProposePresentation,
-		pltype.HandlerPresentProofRequest:      prover.HandleRequestPresentation,
-		pltype.HandlerPresentProofPresentation: verifier.HandlePresentation,
-		pltype.HandlerPresentProofACK:          handleProofACK,
-		pltype.HandlerPresentProofNACK:         handleProofNACK,
+		pltype.HandlerPresentProofPropose:      handleProtocol,
+		pltype.HandlerPresentProofRequest:      handleProtocol,
+		pltype.HandlerPresentProofPresentation: handleProtocol,
+		pltype.HandlerPresentProofACK:          handleProtocol,
+		pltype.HandlerPresentProofNACK:         handleProtocol,
 	},
 	Status: getPresentProofStatus,
 }
 
 func init() {
-	gob.Register(&taskPresentProof{})
+	gob.Register(&task.TaskPresentProof{})
 	prot.AddCreator(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddCreator(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofPropose, presentProofProcessor)
@@ -110,14 +104,14 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 		protocol.GetRole().String(),
 	)
 
-	return &taskPresentProof{
+	return &task.TaskPresentProof{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		ProofAttrs:      proofAttrs,
 		ProofPredicates: proofPredicates,
 	}, nil
 }
 
-func generateProofRequest(proofTask *taskPresentProof) *anoncreds.ProofRequest {
+func generateProofRequest(proofTask *task.TaskPresentProof) *anoncreds.ProofRequest {
 	reqAttrs := make(map[string]anoncreds.AttrInfo)
 	for index, attr := range proofTask.ProofAttrs {
 		restrictions := make([]anoncreds.Filter, 0)
@@ -162,7 +156,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	proofTask, ok := t.(*taskPresentProof)
+	proofTask, ok := t.(*task.TaskPresentProof)
 	assert.P.True(ok)
 
 	switch t.Type() {
@@ -235,50 +229,62 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 	}
 }
 
-func userActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error(err)
-	})
+func handleProtocol(packet comm.Packet) (err error) {
+	var proofTask *task.TaskPresentProof
+	if packet.Payload.ThreadID() != "" {
+		proofTask = &task.TaskPresentProof{
+			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
+				TaskID: packet.Payload.ThreadID(),
+				TypeID: packet.Payload.Type(),
+			}},
+		}
+	}
 
-	err2.Check(prot.ContinuePSM(prot.Again{
-		CA:          ca,
-		InMsg:       im,
-		SendNext:    pltype.PresentProofPresentation,
-		WaitingNext: pltype.PresentProofACK,
-		SendOnNACK:  pltype.PresentProofNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof user action handler", &err)
+	switch packet.Payload.Protocol() {
+	case pltype.HandlerPresentProofPropose:
+		return verifier.HandleProposePresentation(packet, proofTask)
+	case pltype.HandlerPresentProofRequest:
+		return prover.HandleRequestPresentation(packet, proofTask)
+	case pltype.HandlerPresentProofPresentation:
+		return verifier.HandlePresentation(packet, proofTask)
+	case pltype.HandlerPresentProofACK:
+		return handleProofACK(packet, proofTask)
+	case pltype.HandlerPresentProofNACK:
+		return handleProofNACK(packet, proofTask)
+	}
+	return errors.New("no present proof handler")
+}
 
-			// Does user allow continue?
-			iMsg := im.(didcomm.Msg)
-			if !iMsg.Ready() {
-				glog.Warning("user doesn't accept proof")
-				return false, nil
-			}
+func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
-			// We continue, get previous data, create the proof and send it
-			agent := wa
-			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+	var proofTask *task.TaskPresentProof
+	if im.Thread().ID != "" {
+		key := &psm.StateKey{
+			DID:   ca.WDID(),
+			Nonce: im.Thread().ID,
+		}
+		state, _ := psm.GetPSM(*key) // ignore error for now
+		if state != nil {
+			proofTask = state.LastState().T.(*task.TaskPresentProof)
+		}
+	}
 
-			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
-			// save created proof to Representative
-			err2.Check(psm.AddPresentProofRep(rep))
+	assert.D.True(proofTask != nil, "proof task not found")
 
-			pres := om.FieldObj().(*presentproof.Presentation)
-			pres.PresentationAttaches = presentproof.NewPresentationAttach(
-				pltype.LibindyPresentationID, []byte(rep.Proof))
+	switch proofTask.ActionType {
+	case task.AcceptPropose:
+		verifier.ContinueProposePresentation(ca, im)
+	default:
+		prover.UserActionProofPresentation(ca, im)
+	}
 
-			return true, nil
-		},
-	}))
 }
 
 // handleProofACK is a protocol handler func at PROVER side.
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofACK(packet comm.Packet) (err error) {
+func handleProofACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
@@ -287,6 +293,7 @@ func handleProofACK(packet comm.Packet) (err error) {
 			defer err2.Annotate("proof ACK handler", &err)
 			return true, nil
 		},
+		Task: proofTask,
 	})
 }
 
@@ -294,7 +301,7 @@ func handleProofACK(packet comm.Packet) (err error) {
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofNACK(packet comm.Packet) (err error) {
+func handleProofNACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
@@ -303,6 +310,7 @@ func handleProofNACK(packet comm.Packet) (err error) {
 			defer err2.Annotate("proof NACK handler", &err)
 			return false, nil
 		},
+		Task: proofTask,
 	})
 }
 

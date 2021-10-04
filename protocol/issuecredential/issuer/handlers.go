@@ -15,54 +15,14 @@ import (
 	"github.com/lainio/err2"
 )
 
-func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error(err)
-	})
-
-	err2.Check(prot.ContinuePSM(prot.Again{
-		CA:          ca,
-		InMsg:       im,
-		SendNext:    pltype.IssueCredentialOffer,
-		WaitingNext: pltype.IssueCredentialRequest,
-		SendOnNACK:  pltype.IssueCredentialNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			/*defer err2.Annotate("issuing user action handler", &err)
-
-			iMsg := im.(didcomm.Msg)
-			ack = iMsg.Ready()
-			if !ack {
-				glog.Warning("user doesn't accept the issuing")
-				return ack, nil
-			}
-
-			agent := wa
-			repK := psm.NewStateKey(agent, im.Thread().ID)
-
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
-			credRq := err2.String.Try(rep.BuildCredRequest(
-				comm.Packet{Receiver: agent}))
-
-			err2.Check(psm.AddIssueCredRep(rep))
-			req := om.FieldObj().(*issuecredential.Request)
-			req.RequestsAttach =
-				issuecredential.NewRequestAttach([]byte(credRq))
-			*/ //TODO
-			return true, nil
-		},
-	}))
-}
-
 // HandleCredentialPropose is protocol function for IssueCredentialPropose at Issuer.
 // Note! This is not called in the case where Issuer starts the protocol by
 // sending Cred_Offer.
 func HandleCredentialPropose(packet comm.Packet) (err error) {
-	sendNext, waitingNext := checkAutoPermission(packet)
-
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
-		SendNext:    sendNext,
-		WaitingNext: waitingNext,
+		SendNext:    pltype.IssueCredentialOffer,
+		WaitingNext: pltype.IssueCredentialRequest,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("credential propose handler", &err)
@@ -89,8 +49,6 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 				Msg:   subMsg,
 				Name:  connID,
 			}).(didcomm.Msg)
-
-			// TODO
 			eaAnswer := e2.M.Try(agent.MyCA().CallEA(
 				pltype.SAIssueCredentialAcceptPropose, saMsg))
 			if !eaAnswer.Ready() { // if EA wont accept
@@ -126,17 +84,6 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 			return true, nil
 		},
 	})
-}
-
-func checkAutoPermission(packet comm.Packet) (next string, wait string) {
-	if packet.Receiver.AutoPermission() {
-		next = pltype.IssueCredentialOffer
-		wait = pltype.IssueCredentialRequest
-	} else {
-		next = pltype.Nothing
-		wait = pltype.IssueCredentialUserAction
-	}
-	return next, wait
 }
 
 // HandleCredentialRequest implements the handler for credential request protocol
