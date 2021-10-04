@@ -322,9 +322,10 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
+	waitClientID := "Wait" + clientID.ID // avoid collisions
 	listenKey := bus.AgentKeyType{
 		AgentDID: receiver.WDID(),
-		ClientID: clientID.ID, // TODO: avoid collisions
+		ClientID: waitClientID,
 	}
 
 	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
@@ -335,13 +336,13 @@ loop:
 		select {
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
-			assert.D.True(clientID.ID == notify.ClientID)
+			assert.D.True(waitClientID == notify.ClientID)
 
 			var question *pb.Question
 			question, err = processQuestion(ctx, notify)
 			err2.Check(err)
 			if question != nil {
-				question.Status.ClientID.ID = notify.ClientID
+				question.Status.ClientID.ID = clientID.ID
 				err2.Check(server.Send(question))
 				glog.V(1).Infoln("send question..")
 			}
