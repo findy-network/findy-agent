@@ -54,7 +54,7 @@ func (t *TaskBase) ConnectionID() string {
 	return t.ConnID
 }
 
-func (t *TaskBase) ActionType() string {
+func (t *TaskBase) UserActionType() string {
 	return t.UAType
 }
 
