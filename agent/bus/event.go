@@ -85,9 +85,21 @@ func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	}
 }
 
+// AgentBroadcast broadcasts the notification.
+// TODO: add persitency here
 func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
+
+	if len(AgentMaps[m].agentStationMap) == 0 { //
+		glog.V(1).Infoln("there are no one to listen us!")
+		// Save the notification for future broadcasting
+
+		// TODO: build the resender here who do the job
+		// the DB could be one bucket where key is DID and notifications are
+		// kept in the slices. Remember ActionsTypes or own buckets per.
+		return
+	}
 
 	broadcastKey := state.AgentKeyType
 	for listenKey, ch := range AgentMaps[m].agentStationMap {

@@ -27,6 +27,7 @@ func NewWorker(a comm.Receiver) *worker {
 	return &worker{ca: a.(*cloud.Agent)}
 }
 
+// Exec TODO: not used after LAPI
 func (w *worker) Exec(t *TaskParam) interface{} {
 	switch t.Type {
 	case pltype.CATaskStatus:
