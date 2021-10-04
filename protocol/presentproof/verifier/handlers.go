@@ -121,6 +121,8 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 				return false, nil
 			}
 
+			// TODO: support changing proof req
+
 			repK := psm.NewStateKey(ca, im.Thread().ID)
 			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
 

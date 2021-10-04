@@ -8,14 +8,16 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/task"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder
-func HandleCredentialOffer(packet comm.Packet) (err error) {
+func HandleCredentialOffer(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
 	defer err2.Return(&err)
 
 	// First check who is starting the protocol. If we receive this as a first
@@ -38,11 +40,13 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
+	credTask.ActionType = task.AcceptOffer
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
+		Task:        credTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred offer ask user", &err)
 
@@ -82,6 +86,48 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 	})
 }
 
+// todo lapi: im message is old legacy api type!!
+
+// userActionCredential is called when Holder has received a Cred_Offer and it's
+// transferred the question to user: if she accepts the credential.
+func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	err2.Check(prot.ContinuePSM(prot.Again{
+		CA:          ca,
+		InMsg:       im,
+		SendNext:    pltype.IssueCredentialRequest,
+		WaitingNext: pltype.IssueCredentialACK,
+		SendOnNACK:  pltype.IssueCredentialNACK,
+		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("issuing user action handler", &err)
+
+			iMsg := im.(didcomm.Msg)
+			ack = iMsg.Ready()
+			if !ack {
+				glog.Warning("user doesn't accept the issuing")
+				return ack, nil
+			}
+
+			agent := wa
+			repK := psm.NewStateKey(agent, im.Thread().ID)
+
+			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+			credRq := err2.String.Try(rep.BuildCredRequest(
+				comm.Packet{Receiver: agent}))
+
+			err2.Check(psm.AddIssueCredRep(rep))
+			req := om.FieldObj().(*issuecredential.Request)
+			req.RequestsAttach =
+				issuecredential.NewRequestAttach([]byte(credRq))
+
+			return true, nil
+		},
+	}))
+}
+
 func checkAutoPermission(packet comm.Packet) (next string, wait string) {
 	if packet.Receiver.AutoPermission() {
 		next = pltype.IssueCredentialRequest
@@ -94,11 +140,13 @@ func checkAutoPermission(packet comm.Packet) (next string, wait string) {
 }
 
 // HandleCredentialIssue is protocol function for CRED_ISSUE for prover/holder.
-func HandleCredentialIssue(packet comm.Packet) (err error) {
+func HandleCredentialIssue(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialACK,
 		WaitingNext: pltype.Terminate, // no next state, we are fine
+		Task:        credTask,
+
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred issue", &err)
 

@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -33,7 +32,7 @@ type notifyEdge struct {
 func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
-		myCA := r.MyCA()
+		//myCA := r.MyCA()
 
 		go func() {
 			defer err2.CatchTrace(func(err error) {
@@ -55,14 +54,14 @@ func NotifyEdge(ne notifyEdge) {
 				Initiator:        ne.initiator,
 			})
 
-			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
+			/*msg := mesg.MsgCreator.Create(didcomm.MsgInit{
 				Nonce: ne.nonce,
 				Name:  ne.pwName,
 				Body:  taskStatus,
 			}).(didcomm.Msg)
 
 			// Webhook - catch and ignore errors in response parsing
-			_, _ = myCA.CallEA(ne.plType, msg)
+			_, _ = myCA.CallEA(ne.plType, msg)*/
 		}()
 	} else {
 		glog.Warning("unable to notify edge with did", ne.did)

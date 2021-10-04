@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -99,11 +99,13 @@ func (a *agentServer) Ping(
 
 	saReply := false
 	if pm.PingController {
-		glog.V(3).Info("calling sa ping")
-		om := mesg.MsgCreator.Create(didcomm.MsgInit{}).(didcomm.Msg)
-		ask, err := receiver.CallEA(pltype.SAPing, om)
-		err2.Check(err)
-		saReply = ask.Ready()
+		glog.V(3).Info("calling sa ping", receiver.WDID())
+		// TODO:
+		//om := mesg.MsgCreator.Create(didcomm.MsgInit{}).(didcomm.Msg)
+		//ask, err := receiver.CallEA(pltype.SAPing, om)
+		//err2.Check(err)
+		//saReply = ask.Ready()
+		saReply = true
 	}
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
 }
@@ -229,7 +231,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
 	defer err2.Annotate("give answer", &err)
 
-	_, receiver := e2.StrRcvr.Try(ca(ctx))
+	/*_, receiver := e2.StrRcvr.Try(ca(ctx))
 	bus.WantAllAgentAnswers.AgentSendAnswer(bus.AgentAnswer{
 		ID: answer.ID,
 		AgentKeyType: bus.AgentKeyType{
@@ -238,7 +240,29 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 		},
 		ACK:  answer.Ack,
 		Info: answer.Info,
+	})*/
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent Resume protocol:",
+		answer.ID,
+		answer.Ack,
+	)
+
+	state, _ := psm.GetPSM(psm.StateKey{
+		DID:   receiver.WDID(),
+		Nonce: answer.ID,
 	})
+	protocol := pb.Protocol_PRESENT_PROOF
+	if state != nil {
+		// TODO:
+		//protocol = state.FirstState().T.Type()
+	}
+	fmt.Println("PROTOCOL", protocol)
+
+	prot.Resume(
+		receiver,
+		uniqueTypeID(pb.Protocol_RESUMER, protocol),
+		answer.ID, answer.Ack)
 
 	return &pb.ClientID{ID: answer.ClientID.ID}, nil
 }
@@ -471,8 +495,8 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 		Status: &pb.AgentStatus{
 			ClientID: &pb.ClientID{ID: notify.AgentDID},
 			Notification: &pb.Notification{
-				ID:             notify.ID,
-				PID:            notify.PID,
+				ID:             notify.ProtocolID,
+				PID:            notify.ProtocolID,
 				ConnectionID:   notify.ConnectionID,
 				ProtocolID:     notify.ProtocolID,
 				ProtocolFamily: notify.ProtocolFamily,

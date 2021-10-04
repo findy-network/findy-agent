@@ -240,7 +240,7 @@ func handleProtocol(packet comm.Packet) (err error) {
 		}
 	}
 
-	switch packet.Payload.Protocol() {
+	switch packet.Payload.ProtocolMsg() {
 	case pltype.HandlerPresentProofPropose:
 		return verifier.HandleProposePresentation(packet, proofTask)
 	case pltype.HandlerPresentProofRequest:
@@ -257,6 +257,7 @@ func handleProtocol(packet comm.Packet) (err error) {
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
+	actionType := task.AcceptRequest
 	var proofTask *task.TaskPresentProof
 	if im.Thread().ID != "" {
 		key := &psm.StateKey{
@@ -266,14 +267,16 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		state, _ := psm.GetPSM(*key) // ignore error for now
 		if state != nil {
 			proofTask = state.LastState().T.(*task.TaskPresentProof)
+			assert.D.True(proofTask != nil, "proof task not found")
+			actionType = proofTask.ActionType
 		}
 	}
 
-	assert.D.True(proofTask != nil, "proof task not found")
-
-	switch proofTask.ActionType {
+	switch actionType {
 	case task.AcceptPropose:
 		verifier.ContinueProposePresentation(ca, im)
+	case task.AcceptValues:
+		verifier.ContinueHandlePresentation(ca, im)
 	default:
 		prover.UserActionProofPresentation(ca, im)
 	}

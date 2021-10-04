@@ -3,6 +3,7 @@ package issuecredential
 import (
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -12,6 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/holder"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/issuer"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/task"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -20,13 +22,6 @@ import (
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 )
-
-type taskIssueCredential struct {
-	comm.TaskBase
-	Comment         string
-	CredentialAttrs []didcomm.CredentialAttribute
-	CredDefID       string
-}
 
 type statusIssueCredential struct {
 	CredDefID  string                        `json:"credDefId"`
@@ -37,20 +32,20 @@ type statusIssueCredential struct {
 var issueCredentialProcessor = comm.ProtProc{
 	Creator:     createIssueCredentialTask,
 	Starter:     startIssueCredentialByPropose,
-	Continuator: userActionCredential,
+	Continuator: continueProtocol,
 	Handlers: map[string]comm.HandlerFunc{
-		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
-		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,
-		pltype.HandlerIssueCredentialRequest: issuer.HandleCredentialRequest,
-		pltype.HandlerIssueCredentialIssue:   holder.HandleCredentialIssue,
-		pltype.HandlerIssueCredentialACK:     issuer.HandleCredentialACK,
-		pltype.HandlerIssueCredentialNACK:    handleCredentialNACK,
+		pltype.HandlerIssueCredentialPropose: handleProtocol,
+		pltype.HandlerIssueCredentialOffer:   handleProtocol,
+		pltype.HandlerIssueCredentialRequest: handleProtocol,
+		pltype.HandlerIssueCredentialIssue:   handleProtocol,
+		pltype.HandlerIssueCredentialACK:     handleProtocol,
+		pltype.HandlerIssueCredentialNACK:    handleProtocol,
 	},
 	Status: getIssueCredentialStatus,
 }
 
 func init() {
-	gob.Register(&taskIssueCredential{})
+	gob.Register(&task.TaskIssueCredential{})
 	prot.AddCreator(pltype.CACredRequest, issueCredentialProcessor)
 	prot.AddCreator(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredRequest, issueCredentialProcessor)
@@ -90,7 +85,7 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 		protocol.GetRole().String(),
 	)
 
-	return &taskIssueCredential{
+	return &task.TaskIssueCredential{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		CredentialAttrs: credAttrs,
 		CredDefID:       cred.CredDefID,
@@ -106,7 +101,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	credTask, ok := t.(*taskIssueCredential)
+	credTask, ok := t.(*task.TaskIssueCredential)
 	assert.P.True(ok)
 
 	switch t.Type() {
@@ -177,54 +172,68 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 	}
 }
 
-// todo lapi: im message is old legacy api type!!
+func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
-// userActionCredential is called when Holder has received a Cred_Offer and it's
-// transferred the question to user: if she accepts the credential.
-func userActionCredential(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error(err)
-	})
+	actionType := task.AcceptOffer
+	var credTask *task.TaskIssueCredential
+	if im.Thread().ID != "" {
+		key := &psm.StateKey{
+			DID:   ca.WDID(),
+			Nonce: im.Thread().ID,
+		}
+		state, _ := psm.GetPSM(*key) // ignore error for now
+		if state != nil {
+			credTask = state.LastState().T.(*task.TaskIssueCredential)
+			assert.D.True(credTask != nil, "cred task not found")
+			actionType = credTask.ActionType
+		}
+	}
 
-	err2.Check(prot.ContinuePSM(prot.Again{
-		CA:          ca,
-		InMsg:       im,
-		SendNext:    pltype.IssueCredentialRequest,
-		WaitingNext: pltype.IssueCredentialACK,
-		SendOnNACK:  pltype.IssueCredentialNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("issuing user action handler", &err)
+	switch actionType {
+	case task.AcceptPropose:
+		issuer.ContinueCredentialPropose(ca, im)
+	default:
+		holder.UserActionCredential(ca, im)
+	}
 
-			iMsg := im.(didcomm.Msg)
-			ack = iMsg.Ready()
-			if !ack {
-				glog.Warning("user doesn't accept the issuing")
-				return ack, nil
-			}
+}
 
-			agent := wa
-			repK := psm.NewStateKey(agent, im.Thread().ID)
+func handleProtocol(packet comm.Packet) (err error) {
 
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
-			credRq := err2.String.Try(rep.BuildCredRequest(
-				comm.Packet{Receiver: agent}))
+	var credTask *task.TaskIssueCredential
+	if packet.Payload.ThreadID() != "" {
+		credTask = &task.TaskIssueCredential{
+			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
+				TaskID: packet.Payload.ThreadID(),
+				TypeID: packet.Payload.Type(),
+			}},
+		}
+	}
 
-			err2.Check(psm.AddIssueCredRep(rep))
-			req := om.FieldObj().(*issuecredential.Request)
-			req.RequestsAttach =
-				issuecredential.NewRequestAttach([]byte(credRq))
-
-			return true, nil
-		},
-	}))
+	switch packet.Payload.ProtocolMsg() {
+	case pltype.HandlerIssueCredentialPropose:
+		return issuer.HandleCredentialPropose(packet, credTask)
+	case pltype.HandlerIssueCredentialOffer:
+		return holder.HandleCredentialOffer(packet, credTask)
+	case pltype.HandlerIssueCredentialRequest:
+		return issuer.HandleCredentialRequest(packet, credTask)
+	case pltype.HandlerIssueCredentialIssue:
+		return holder.HandleCredentialIssue(packet, credTask)
+	case pltype.HandlerIssueCredentialACK:
+		return issuer.HandleCredentialACK(packet, credTask)
+	case pltype.HandlerIssueCredentialNACK:
+		return handleCredentialNACK(packet, credTask)
+	}
+	return errors.New("no issue credential handler")
 }
 
 // handleCredentialNACK is holder`s protocol function for now.
-func handleCredentialNACK(packet comm.Packet) (err error) {
+func handleCredentialNACK(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
+		Task:        credTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred NACK", &err)
 			// return false to mark this PSM to NACK!
