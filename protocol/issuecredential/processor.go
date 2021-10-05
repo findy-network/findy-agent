@@ -35,6 +35,9 @@ type statusIssueCredential struct {
 	Attributes []didcomm.CredentialAttribute `json:"attributes"`
 }
 
+type handlerFunc func(packet comm.Packet, task comm.Task) (err error)
+type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
+
 var issueCredentialProcessor = comm.ProtProc{
 	Creator:     createIssueCredentialTask,
 	Starter:     startIssueCredentialByPropose,
@@ -178,12 +181,63 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 	}
 }
 
+// handleCredentialNACK is holder`s protocol function for now.
+func handleCredentialNACK(packet comm.Packet, task comm.Task) (err error) {
+	return prot.ExecPSM(prot.Transition{
+		Packet:      packet,
+		SendNext:    pltype.Terminate, // this ends here
+		WaitingNext: pltype.Terminate, // no next state
+		Task:        task,
+		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("cred NACK", &err)
+			// return false to mark this PSM to NACK!
+			return false, nil
+		},
+	})
+}
+
+func handleProtocol(packet comm.Packet) (err error) {
+	defer err2.Return(&err)
+
+	var handlers = map[string]handlerFunc{
+		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
+		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,
+		pltype.HandlerIssueCredentialRequest: issuer.HandleCredentialRequest,
+		pltype.HandlerIssueCredentialIssue:   holder.HandleCredentialIssue,
+		pltype.HandlerIssueCredentialACK:     issuer.HandleCredentialACK,
+		pltype.HandlerIssueCredentialNACK:    handleCredentialNACK,
+	}
+
+	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
+
+	credTask := &taskIssueCredential{
+		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
+			TaskID: packet.Payload.ThreadID(),
+			TypeID: packet.Payload.Type(),
+		}},
+	}
+
+	handler, ok := handlers[packet.Payload.ProtocolMsg()]
+	if !ok {
+		glog.Info(string(packet.Payload.JSON()))
+		s := "no handler in issue credential processor"
+		glog.Error(s)
+		return errors.New(s)
+	}
+	return handler(packet, credTask)
+}
+
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
 
 	assert.D.True(im.Thread().ID != "", "continue issue credential, packet thread ID missing")
+
+	var continuators = map[string]continuatorFunc{
+		pltype.SAIssueCredentialAcceptPropose: issuer.ContinueCredentialPropose,
+		pltype.CANotifyUserAction:             holder.UserActionCredential,
+	}
 
 	key := &psm.StateKey{
 		DID:   ca.WDID(),
@@ -195,57 +249,14 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
 	credTask := state.LastState().T.(*taskIssueCredential)
 
-	switch credTask.UserActionType() {
-	case pltype.SAIssueCredentialAcceptPropose:
-		issuer.ContinueCredentialPropose(ca, im)
-	default:
-		holder.UserActionCredential(ca, im)
+	continuator, ok := continuators[credTask.UserActionType()]
+	if !ok {
+		glog.Info(string(im.JSON()))
+		s := "no continuator in issue credential processor"
+		glog.Error(s)
+		panic(s)
 	}
-
-}
-
-func handleProtocol(packet comm.Packet) (err error) {
-	defer err2.Return(&err)
-
-	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
-
-	credTask := &taskIssueCredential{
-		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-			TaskID: packet.Payload.ThreadID(),
-			TypeID: packet.Payload.Type(),
-		}},
-	}
-
-	switch packet.Payload.ProtocolMsg() {
-	case pltype.HandlerIssueCredentialPropose:
-		return issuer.HandleCredentialPropose(packet, credTask)
-	case pltype.HandlerIssueCredentialOffer:
-		return holder.HandleCredentialOffer(packet, credTask)
-	case pltype.HandlerIssueCredentialRequest:
-		return issuer.HandleCredentialRequest(packet, credTask)
-	case pltype.HandlerIssueCredentialIssue:
-		return holder.HandleCredentialIssue(packet, credTask)
-	case pltype.HandlerIssueCredentialACK:
-		return issuer.HandleCredentialACK(packet, credTask)
-	case pltype.HandlerIssueCredentialNACK:
-		return handleCredentialNACK(packet, credTask)
-	}
-	return errors.New("no issue credential handler")
-}
-
-// handleCredentialNACK is holder`s protocol function for now.
-func handleCredentialNACK(packet comm.Packet, credTask *taskIssueCredential) (err error) {
-	return prot.ExecPSM(prot.Transition{
-		Packet:      packet,
-		SendNext:    pltype.Terminate, // this ends here
-		WaitingNext: pltype.Terminate, // no next state
-		Task:        credTask,
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred NACK", &err)
-			// return false to mark this PSM to NACK!
-			return false, nil
-		},
-	})
+	continuator(ca, im)
 }
 
 func getIssueCredentialStatus(workerDID string, taskID string) interface{} {

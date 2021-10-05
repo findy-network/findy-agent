@@ -23,7 +23,6 @@ type Receiver interface {
 	Wallet() int
 	Pool() int
 	FindPW(my string) (their string, pwname string, err error)
-	//CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error)
 	AttachAPIEndp(endp service.Addr) error
 	AttachSAImpl(implID string, persistent bool)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe

@@ -34,6 +34,9 @@ type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
 }
 
+type handlerFunc func(packet comm.Packet, task comm.Task) (err error)
+type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
+
 var presentProofProcessor = comm.ProtProc{
 	Creator:     createPresentProofTask,
 	Starter:     startProofProtocol,
@@ -236,29 +239,33 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 }
 
 func handleProtocol(packet comm.Packet) (err error) {
-	var proofTask *taskPresentProof
-	if packet.Payload.ThreadID() != "" {
-		proofTask = &taskPresentProof{
-			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-				TaskID: packet.Payload.ThreadID(),
-				TypeID: packet.Payload.Type(),
-			}},
-		}
+	defer err2.Return(&err)
+
+	var handlers = map[string]handlerFunc{
+		pltype.HandlerPresentProofPropose:      verifier.HandleProposePresentation,
+		pltype.HandlerPresentProofRequest:      prover.HandleRequestPresentation,
+		pltype.HandlerPresentProofPresentation: verifier.HandlePresentation,
+		pltype.HandlerPresentProofACK:          handleProofACK,
+		pltype.HandlerPresentProofNACK:         handleProofNACK,
 	}
 
-	switch packet.Payload.ProtocolMsg() {
-	case pltype.HandlerPresentProofPropose:
-		return verifier.HandleProposePresentation(packet, proofTask)
-	case pltype.HandlerPresentProofRequest:
-		return prover.HandleRequestPresentation(packet, proofTask)
-	case pltype.HandlerPresentProofPresentation:
-		return verifier.HandlePresentation(packet, proofTask)
-	case pltype.HandlerPresentProofACK:
-		return handleProofACK(packet, proofTask)
-	case pltype.HandlerPresentProofNACK:
-		return handleProofNACK(packet, proofTask)
+	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
+
+	proofTask := &taskPresentProof{
+		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
+			TaskID: packet.Payload.ThreadID(),
+			TypeID: packet.Payload.Type(),
+		}},
 	}
-	return errors.New("no present proof handler")
+
+	handler, ok := handlers[packet.Payload.ProtocolMsg()]
+	if !ok {
+		glog.Info(string(packet.Payload.JSON()))
+		s := "no handler in present proof processor"
+		glog.Error(s)
+		return errors.New(s)
+	}
+	return handler(packet, proofTask)
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
@@ -268,6 +275,12 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
 	assert.D.True(im.Thread().ID != "", "continue present proof, packet thread ID missing")
 
+	var continuators = map[string]continuatorFunc{
+		pltype.SAPresentProofAcceptPropose: verifier.ContinueProposePresentation,
+		pltype.SAPresentProofAcceptValues:  verifier.ContinueHandlePresentation,
+		pltype.CANotifyUserAction:          prover.UserActionProofPresentation,
+	}
+
 	key := &psm.StateKey{
 		DID:   ca.WDID(),
 		Nonce: im.Thread().ID,
@@ -275,24 +288,24 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 
 	state, _ := psm.GetPSM(*key)
 	assert.D.True(state != nil, "continue present proof, task not found")
+
 	proofTask := state.LastState().T.(*taskPresentProof)
 
-	switch proofTask.UserActionType() {
-	case pltype.SAPresentProofAcceptPropose:
-		verifier.ContinueProposePresentation(ca, im)
-	case pltype.SAPresentProofAcceptValues:
-		verifier.ContinueHandlePresentation(ca, im)
-	default:
-		prover.UserActionProofPresentation(ca, im)
+	continuator, ok := continuators[proofTask.UserActionType()]
+	if !ok {
+		glog.Info(string(im.JSON()))
+		s := "no continuator in present proof processor"
+		glog.Error(s)
+		panic(s)
 	}
-
+	continuator(ca, im)
 }
 
 // handleProofACK is a protocol handler func at PROVER side.
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofACK(packet comm.Packet, proofTask *taskPresentProof) (err error) {
+func handleProofACK(packet comm.Packet, proofTask comm.Task) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
@@ -309,7 +322,7 @@ func handleProofACK(packet comm.Packet, proofTask *taskPresentProof) (err error)
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofNACK(packet comm.Packet, proofTask *taskPresentProof) (err error) {
+func handleProofNACK(packet comm.Packet, proofTask comm.Task) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,

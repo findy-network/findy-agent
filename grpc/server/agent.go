@@ -364,7 +364,6 @@ loop:
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
 	defer err2.Annotate("processQuestion", &err)
 
-	// TODO: if auto-permission on -> continue automatically
 	notificationType := notificationTypeID[notify.NotificationType]
 	notificationProtocolType := protocolType[notify.ProtocolFamily]
 
