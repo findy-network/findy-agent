@@ -87,8 +87,8 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 	err2.Check(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
-		SendNext:    pltype.IssueCredentialRequest,
-		WaitingNext: pltype.IssueCredentialACK,
+		SendNext:    pltype.IssueCredentialOffer,
+		WaitingNext: pltype.IssueCredentialRequest,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("credential propose user action handler", &err)
