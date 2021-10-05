@@ -86,6 +86,9 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 				Delivered: true,
 			}
 			err2.Check(psm.AddBasicMessageRep(rep))
+
+			msg := om.FieldObj().(*basicmessage.Basicmessage)
+			msg.Content = bmTask.Content
 			return nil
 		},
 	}))
@@ -100,7 +103,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 		bm := im.FieldObj().(*basicmessage.Basicmessage)
 
 		if glog.V(3) {
-			glog.Info("-- Nonce: ", im.Thread().ID)
+			glog.Info("-- Thread id: ", im.Thread().ID)
 			glog.Info("Basic msg from:", name)
 			glog.Info("Sent time:", bm.SentTime)
 			glog.Info("Content: ", bm.Content)
