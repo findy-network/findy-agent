@@ -13,7 +13,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/holder"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/issuer"
-	"github.com/findy-network/findy-agent/protocol/issuecredential/task"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -22,6 +21,13 @@ import (
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 )
+
+type taskIssueCredential struct {
+	comm.TaskBase
+	Comment         string
+	CredentialAttrs []didcomm.CredentialAttribute
+	CredDefID       string
+}
 
 type statusIssueCredential struct {
 	CredDefID  string                        `json:"credDefId"`
@@ -45,7 +51,7 @@ var issueCredentialProcessor = comm.ProtProc{
 }
 
 func init() {
-	gob.Register(&task.TaskIssueCredential{})
+	gob.Register(&taskIssueCredential{})
 	prot.AddCreator(pltype.CACredRequest, issueCredentialProcessor)
 	prot.AddCreator(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredRequest, issueCredentialProcessor)
@@ -85,7 +91,7 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 		protocol.GetRole().String(),
 	)
 
-	return &task.TaskIssueCredential{
+	return &taskIssueCredential{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		CredentialAttrs: credAttrs,
 		CredDefID:       cred.CredDefID,
@@ -101,7 +107,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	credTask, ok := t.(*task.TaskIssueCredential)
+	credTask, ok := t.(*taskIssueCredential)
 	assert.P.True(ok)
 
 	switch t.Type() {
@@ -173,24 +179,24 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
 
-	actionType := task.AcceptOffer
-	var credTask *task.TaskIssueCredential
-	if im.Thread().ID != "" {
-		key := &psm.StateKey{
-			DID:   ca.WDID(),
-			Nonce: im.Thread().ID,
-		}
-		state, _ := psm.GetPSM(*key) // ignore error for now
-		if state != nil {
-			credTask = state.LastState().T.(*task.TaskIssueCredential)
-			assert.D.True(credTask != nil, "cred task not found")
-			actionType = credTask.ActionType
-		}
+	assert.D.True(im.Thread().ID != "", "continue issue credential, packet thread ID missing")
+
+	key := &psm.StateKey{
+		DID:   ca.WDID(),
+		Nonce: im.Thread().ID,
 	}
 
-	switch actionType {
-	case task.AcceptPropose:
+	state, _ := psm.GetPSM(*key)
+	assert.D.True(state != nil, "continue issue credential, task not found")
+
+	credTask := state.LastState().T.(*taskIssueCredential)
+
+	switch credTask.UserActionType() {
+	case pltype.SAIssueCredentialAcceptPropose:
 		issuer.ContinueCredentialPropose(ca, im)
 	default:
 		holder.UserActionCredential(ca, im)
@@ -203,7 +209,7 @@ func handleProtocol(packet comm.Packet) (err error) {
 
 	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
 
-	credTask := &task.TaskIssueCredential{
+	credTask := &taskIssueCredential{
 		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
 			TaskID: packet.Payload.ThreadID(),
 			TypeID: packet.Payload.Type(),
@@ -228,7 +234,7 @@ func handleProtocol(packet comm.Packet) (err error) {
 }
 
 // handleCredentialNACK is holder`s protocol function for now.
-func handleCredentialNACK(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func handleCredentialNACK(packet comm.Packet, credTask *taskIssueCredential) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here

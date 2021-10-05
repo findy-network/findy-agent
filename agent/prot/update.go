@@ -53,15 +53,6 @@ func NotifyEdge(ne notifyEdge) {
 				Timestamp:        ne.timestamp,
 				Initiator:        ne.initiator,
 			})
-
-			/*msg := mesg.MsgCreator.Create(didcomm.MsgInit{
-				Nonce: ne.nonce,
-				Name:  ne.pwName,
-				Body:  taskStatus,
-			}).(didcomm.Msg)
-
-			// Webhook - catch and ignore errors in response parsing
-			_, _ = myCA.CallEA(ne.plType, msg)*/
 		}()
 	} else {
 		glog.Warning("unable to notify edge with did", ne.did)

@@ -13,7 +13,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/protocol/presentproof/prover"
-	"github.com/findy-network/findy-agent/protocol/presentproof/task"
 	"github.com/findy-network/findy-agent/protocol/presentproof/verifier"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -23,6 +22,13 @@ import (
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 )
+
+type taskPresentProof struct {
+	comm.TaskBase
+	Comment         string
+	ProofAttrs      []didcomm.ProofAttribute
+	ProofPredicates []didcomm.ProofPredicate
+}
 
 type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
@@ -43,7 +49,7 @@ var presentProofProcessor = comm.ProtProc{
 }
 
 func init() {
-	gob.Register(&task.TaskPresentProof{})
+	gob.Register(&taskPresentProof{})
 	prot.AddCreator(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddCreator(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofPropose, presentProofProcessor)
@@ -104,14 +110,14 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 		protocol.GetRole().String(),
 	)
 
-	return &task.TaskPresentProof{
+	return &taskPresentProof{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		ProofAttrs:      proofAttrs,
 		ProofPredicates: proofPredicates,
 	}, nil
 }
 
-func generateProofRequest(proofTask *task.TaskPresentProof) *anoncreds.ProofRequest {
+func generateProofRequest(proofTask *taskPresentProof) *anoncreds.ProofRequest {
 	reqAttrs := make(map[string]anoncreds.AttrInfo)
 	for index, attr := range proofTask.ProofAttrs {
 		restrictions := make([]anoncreds.Filter, 0)
@@ -156,7 +162,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	proofTask, ok := t.(*task.TaskPresentProof)
+	proofTask, ok := t.(*taskPresentProof)
 	assert.P.True(ok)
 
 	switch t.Type() {
@@ -230,9 +236,9 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 }
 
 func handleProtocol(packet comm.Packet) (err error) {
-	var proofTask *task.TaskPresentProof
+	var proofTask *taskPresentProof
 	if packet.Payload.ThreadID() != "" {
-		proofTask = &task.TaskPresentProof{
+		proofTask = &taskPresentProof{
 			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
 				TaskID: packet.Payload.ThreadID(),
 				TypeID: packet.Payload.Type(),
@@ -256,26 +262,25 @@ func handleProtocol(packet comm.Packet) (err error) {
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
 
-	actionType := task.AcceptRequest
-	var proofTask *task.TaskPresentProof
-	if im.Thread().ID != "" {
-		key := &psm.StateKey{
-			DID:   ca.WDID(),
-			Nonce: im.Thread().ID,
-		}
-		state, _ := psm.GetPSM(*key) // ignore error for now
-		if state != nil {
-			proofTask = state.LastState().T.(*task.TaskPresentProof)
-			assert.D.True(proofTask != nil, "proof task not found")
-			actionType = proofTask.ActionType
-		}
+	assert.D.True(im.Thread().ID != "", "continue present proof, packet thread ID missing")
+
+	key := &psm.StateKey{
+		DID:   ca.WDID(),
+		Nonce: im.Thread().ID,
 	}
 
-	switch actionType {
-	case task.AcceptPropose:
+	state, _ := psm.GetPSM(*key)
+	assert.D.True(state != nil, "continue present proof, task not found")
+	proofTask := state.LastState().T.(*taskPresentProof)
+
+	switch proofTask.UserActionType() {
+	case pltype.SAPresentProofAcceptPropose:
 		verifier.ContinueProposePresentation(ca, im)
-	case task.AcceptValues:
+	case pltype.SAPresentProofAcceptValues:
 		verifier.ContinueHandlePresentation(ca, im)
 	default:
 		prover.UserActionProofPresentation(ca, im)
@@ -287,7 +292,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
+func handleProofACK(packet comm.Packet, proofTask *taskPresentProof) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
@@ -304,7 +309,7 @@ func handleProofACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err e
 // Even the inner handler does nothing, the execution of PSM transition
 // terminates the state machine which triggers the notification system to the EA
 // side.
-func handleProofNACK(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
+func handleProofNACK(packet comm.Packet, proofTask *taskPresentProof) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate,

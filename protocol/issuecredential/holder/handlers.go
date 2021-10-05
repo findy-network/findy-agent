@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
-	"github.com/findy-network/findy-agent/protocol/issuecredential/task"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -17,7 +16,7 @@ import (
 )
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder
-func HandleCredentialOffer(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func HandleCredentialOffer(packet comm.Packet, credTask comm.Task) (err error) {
 	defer err2.Return(&err)
 
 	// First check who is starting the protocol. If we receive this as a first
@@ -40,8 +39,8 @@ func HandleCredentialOffer(packet comm.Packet, credTask *task.TaskIssueCredentia
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
-	credTask.ActionType = task.AcceptOffer
-	credTask.TaskBase.TaskHeader.UAType = pltype.CANotifyUserAction
+
+	credTask.SetUserActionType(pltype.CANotifyUserAction)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
@@ -141,7 +140,7 @@ func checkAutoPermission(packet comm.Packet) (next string, wait string) {
 }
 
 // HandleCredentialIssue is protocol function for CRED_ISSUE for prover/holder.
-func HandleCredentialIssue(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func HandleCredentialIssue(packet comm.Packet, credTask comm.Task) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialACK,

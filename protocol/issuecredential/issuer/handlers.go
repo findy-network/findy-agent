@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
-	"github.com/findy-network/findy-agent/protocol/issuecredential/task"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/golang/glog"
@@ -18,7 +17,7 @@ import (
 // HandleCredentialPropose is protocol function for IssueCredentialPropose at Issuer.
 // Note! This is not called in the case where Issuer starts the protocol by
 // sending Cred_Offer.
-func HandleCredentialPropose(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func HandleCredentialPropose(packet comm.Packet, credTask comm.Task) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.IssueCredentialOffer
@@ -28,8 +27,7 @@ func HandleCredentialPropose(packet comm.Packet, credTask *task.TaskIssueCredent
 		waitingNext = pltype.IssueCredentialUserAction
 	}
 
-	credTask.ActionType = task.AcceptPropose
-	credTask.TaskBase.TaskHeader.UAType = pltype.SAIssueCredentialAcceptPropose
+	credTask.SetUserActionType(pltype.SAIssueCredentialAcceptPropose)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
@@ -119,7 +117,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 
 // HandleCredentialRequest implements the handler for credential request protocol
 // msg. This is Issuer side action.
-func HandleCredentialRequest(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func HandleCredentialRequest(packet comm.Packet, credTask comm.Task) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialIssue,
@@ -149,7 +147,7 @@ func HandleCredentialRequest(packet comm.Packet, credTask *task.TaskIssueCredent
 // HandleCredentialACK is Issuer's protocol function. This message is currently
 // received at issuer's side. However, in future implementations we might move
 // it into the processor.
-func HandleCredentialACK(packet comm.Packet, credTask *task.TaskIssueCredential) (err error) {
+func HandleCredentialACK(packet comm.Packet, credTask comm.Task) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here

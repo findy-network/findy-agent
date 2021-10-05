@@ -12,7 +12,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
-	"github.com/findy-network/findy-agent/protocol/presentproof/task"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
@@ -57,7 +56,7 @@ func generateProofRequest(proofTask *presentproof.Propose) *anoncreds.ProofReque
 }
 
 // HandleProposePresentation is a protocol handler function at VERIFIER side.
-func HandleProposePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
+func HandleProposePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.PresentProofRequest
@@ -67,8 +66,7 @@ func HandleProposePresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 		waitingNext = pltype.PresentProofUserAction
 	}
 
-	proofTask.ActionType = task.AcceptPropose
-	proofTask.TaskBase.TaskHeader.UAType = pltype.SAPresentProofAcceptPropose
+	proofTask.SetUserActionType(pltype.SAPresentProofAcceptPropose)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
@@ -140,7 +138,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 
 // HandlePresentation is a protocol handler function at VERIFIER side for handling
 // proof presentation.
-func HandlePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
+func HandlePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.PresentProofACK
@@ -149,8 +147,7 @@ func HandlePresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (e
 		sendNext = pltype.Nothing
 		waitingNext = pltype.PresentProofUserAction
 	}
-	proofTask.ActionType = task.AcceptValues
-	proofTask.TaskBase.TaskHeader.UAType = pltype.SAPresentProofAcceptValues
+	proofTask.SetUserActionType(pltype.SAPresentProofAcceptValues)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,

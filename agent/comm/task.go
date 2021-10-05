@@ -18,6 +18,7 @@ type Task interface {
 	Type() string
 	ProtocolType() pb.Protocol_Type
 	UserActionType() string
+	SetUserActionType(userActionType string)
 	Role() pb.Protocol_Role
 	ConnectionID() string
 	ReceiverEndp() service.Addr
@@ -25,11 +26,11 @@ type Task interface {
 }
 
 type TaskHeader struct {
-	TaskID       string
-	TypeID       string
-	ProtocolRole pb.Protocol_Role
-	ConnID       string
-	UAType       string
+	TaskID           string
+	TypeID           string
+	ProtocolRole     pb.Protocol_Role
+	ConnID           string
+	UserActionPLType string
 
 	Sender   service.Addr
 	Receiver service.Addr
@@ -58,7 +59,7 @@ func (t *TaskBase) ProtocolType() pb.Protocol_Type {
 	case pltype.ProtocolIssueCredential:
 		return pb.Protocol_ISSUE_CREDENTIAL
 	case pltype.ProtocolPresentProof:
-		return pb.Protocol_TRUST_PING
+		return pb.Protocol_PRESENT_PROOF
 	case pltype.ProtocolTrustPing:
 		return pb.Protocol_TRUST_PING
 	}
@@ -74,7 +75,11 @@ func (t *TaskBase) ConnectionID() string {
 }
 
 func (t *TaskBase) UserActionType() string {
-	return t.UAType
+	return t.UserActionPLType
+}
+
+func (t *TaskBase) SetUserActionType(userActionType string) {
+	t.UserActionPLType = userActionType
 }
 
 func (t *TaskBase) ReceiverEndp() service.Addr {

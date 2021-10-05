@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
@@ -241,15 +240,11 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 		DID:   receiver.WDID(),
 		Nonce: answer.ID,
 	})
-	protocol := pb.Protocol_PRESENT_PROOF
-	if state != nil {
-		protocol = state.FirstState().T.ProtocolType()
-	}
-	fmt.Println("PROTOCOL", protocol)
+	assert.P.True(state != nil, "no task found for answer")
 
 	prot.Resume(
 		receiver,
-		uniqueTypeID(pb.Protocol_RESUMER, protocol),
+		uniqueTypeID(pb.Protocol_RESUMER, state.FirstState().T.ProtocolType()),
 		answer.ID, answer.Ack)
 
 	return &pb.ClientID{ID: answer.ClientID.ID}, nil

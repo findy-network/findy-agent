@@ -9,14 +9,13 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
-	"github.com/findy-network/findy-agent/protocol/presentproof/task"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
 // HandleRequestPresentation is a handler func at PROVER side.
-func HandleRequestPresentation(packet comm.Packet, proofTask *task.TaskPresentProof) (err error) {
+func HandleRequestPresentation(packet comm.Packet, proofTask comm.Task) (err error) {
 	defer err2.Return(&err)
 
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
@@ -31,8 +30,7 @@ func HandleRequestPresentation(packet comm.Packet, proofTask *task.TaskPresentPr
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
-	proofTask.ActionType = task.AcceptRequest
-	proofTask.TaskBase.TaskHeader.UAType = pltype.CANotifyUserAction
+	proofTask.SetUserActionType(pltype.CANotifyUserAction)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
