@@ -55,7 +55,6 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 	header := &comm.TaskHeader{
 		TaskID:       utils.UUID(),
 		TypeID:       uniqueTypeID(protocol.Role, protocol.TypeID),
-		APIType:      protocol.GetTypeID(),
 		ProtocolRole: protocol.GetRole(),
 		ConnID:       protocol.GetConnectionID(),
 	}

@@ -3,6 +3,8 @@ package comm
 import (
 	"encoding/gob"
 
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
@@ -25,7 +27,6 @@ type Task interface {
 type TaskHeader struct {
 	TaskID       string
 	TypeID       string
-	APIType      pb.Protocol_Type
 	ProtocolRole pb.Protocol_Role
 	ConnID       string
 	UAType       string
@@ -48,7 +49,20 @@ func (t *TaskBase) Type() string {
 }
 
 func (t *TaskBase) ProtocolType() pb.Protocol_Type {
-	return t.APIType
+	protocol := mesg.ProtocolForType(t.TypeID)
+	switch protocol {
+	case pltype.ProtocolBasicMessage:
+		return pb.Protocol_BASIC_MESSAGE
+	case pltype.ProtocolConnection:
+		return pb.Protocol_DIDEXCHANGE
+	case pltype.ProtocolIssueCredential:
+		return pb.Protocol_ISSUE_CREDENTIAL
+	case pltype.ProtocolPresentProof:
+		return pb.Protocol_TRUST_PING
+	case pltype.ProtocolTrustPing:
+		return pb.Protocol_TRUST_PING
+	}
+	return pb.Protocol_NONE
 }
 
 func (t *TaskBase) Role() pb.Protocol_Role {

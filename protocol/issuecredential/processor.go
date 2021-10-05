@@ -199,16 +199,15 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 }
 
 func handleProtocol(packet comm.Packet) (err error) {
+	defer err2.Return(&err)
 
-	var credTask *task.TaskIssueCredential
-	if packet.Payload.ThreadID() != "" {
-		credTask = &task.TaskIssueCredential{
-			TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-				TaskID:  packet.Payload.ThreadID(),
-				TypeID:  packet.Payload.Type(),
-				APIType: pb.Protocol_ISSUE_CREDENTIAL,
-			}},
-		}
+	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
+
+	credTask := &task.TaskIssueCredential{
+		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
+			TaskID: packet.Payload.ThreadID(),
+			TypeID: packet.Payload.Type(),
+		}},
 	}
 
 	switch packet.Payload.ProtocolMsg() {
