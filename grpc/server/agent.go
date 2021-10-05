@@ -313,7 +313,7 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 				ClientID: &pb.ClientID{ID: clientID.ID},
 			},
 		}
-		if err := server.Send(status); err != nil {
+		if err = server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
 		}
 	})

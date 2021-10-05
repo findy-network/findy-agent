@@ -340,6 +340,7 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	om := mesg.MsgCreator.Create(didcomm.MsgInit{
 		Ready: ack,
 		ID:    protocolID,
+		Nonce: protocolID,
 	}).(didcomm.Msg)
 
 	go proc.Continuator(rcvr, om)

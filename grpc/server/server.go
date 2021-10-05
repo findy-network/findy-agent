@@ -72,6 +72,7 @@ var notificationTypeID = map[string]pb.Notification_Type{
 }
 
 var questionTypeID = map[string]pb.Question_Type{
+	pltype.CANotifyUserAction:             pb.Question_NONE,
 	pltype.SAPing:                         pb.Question_PING_WAITS,
 	pltype.SAIssueCredentialAcceptPropose: pb.Question_ISSUE_PROPOSE_WAITS,
 	pltype.SAPresentProofAcceptPropose:    pb.Question_PROOF_PROPOSE_WAITS,
