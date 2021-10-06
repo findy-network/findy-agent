@@ -86,6 +86,9 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 				Delivered: true,
 			}
 			err2.Check(psm.AddBasicMessageRep(rep))
+
+			msg := om.FieldObj().(*basicmessage.Basicmessage)
+			msg.Content = bmTask.Content
 			return nil
 		},
 	}))
