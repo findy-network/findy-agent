@@ -165,6 +165,7 @@ type ProofAttribute struct {
 	Name      string `json:"name,omitempty"`
 	CredDefID string `json:"credDefId,omitempty"`
 	Predicate string `json:"predicate,omitempty"`
+	Value     string `json:"-"`
 }
 
 // ProofPredicate for proof request predicates

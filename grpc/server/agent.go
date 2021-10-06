@@ -99,12 +99,16 @@ func (a *agentServer) Ping(
 	saReply := false
 	if pm.PingController {
 		glog.V(3).Info("calling sa ping", receiver.WDID())
-		// TODO:
-		//om := mesg.MsgCreator.Create(didcomm.MsgInit{}).(didcomm.Msg)
-		//ask, err := receiver.CallEA(pltype.SAPing, om)
-		//err2.Check(err)
-		//saReply = ask.Ready()
-		saReply = true
+		if receiver.AutoPermission() {
+			saReply = true
+		} else {
+			// TODO:
+			// we cannot return ping answer currently synchronously
+			// if needed:
+			// 1) create task with user action handling for ping
+			// 2) block while answer is received
+			// 3) add ping support to Resume-API
+		}
 	}
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
 }
@@ -413,7 +417,7 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 			len(ps.GetPresentProof().GetProof().Attributes))
 		for _, attr := range ps.GetPresentProof().GetProof().Attributes {
 			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
-				//Value:     attr.Value, // TODO:
+				Value:     attr.Value,
 				Name:      attr.Name,
 				CredDefID: attr.CredDefID,
 			})

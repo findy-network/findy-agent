@@ -46,6 +46,14 @@ func HandleCredentialPropose(packet comm.Packet, credTask comm.Task) (err error)
 			values := issuecredential.PreviewCredentialToCodedValues(
 				prop.CredentialProposal)
 
+			attributes := make([]didcomm.CredentialAttribute, 0)
+			for _, attr := range prop.CredentialProposal.Attributes {
+				attributes = append(attributes, didcomm.CredentialAttribute{
+					Name:  attr.Name,
+					Value: attr.Value,
+				})
+			}
+
 			// TODO: support changing values
 
 			r := <-anoncreds.IssuerCreateCredentialOffer(
@@ -54,10 +62,11 @@ func HandleCredentialPropose(packet comm.Packet, credTask comm.Task) (err error)
 			credOffer := r.Str1()
 
 			rep := &psm.IssueCredRep{
-				Key:       psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
-				CredDefID: prop.CredDefID,
-				CredOffer: credOffer,
-				Values:    values, // important! saved for Req handling
+				Key:        psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
+				CredDefID:  prop.CredDefID,
+				CredOffer:  credOffer,
+				Values:     values, // important! saved for Req handling
+				Attributes: attributes,
 			}
 			err2.Check(psm.AddIssueCredRep(rep))
 

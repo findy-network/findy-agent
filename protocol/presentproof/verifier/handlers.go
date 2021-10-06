@@ -84,9 +84,19 @@ func HandleProposePresentation(packet comm.Packet, proofTask comm.Task) (err err
 			propose := im.FieldObj().(*presentproof.Propose)
 			proofReq := generateProofRequest(propose)
 			reqStr := dto.ToJSON(proofReq)
+
+			attributes := make([]didcomm.ProofAttribute, 0)
+			for _, attr := range propose.PresentationProposal.Attributes {
+				attributes = append(attributes, didcomm.ProofAttribute{
+					Name:      attr.Name,
+					CredDefID: attr.CredDefID,
+				})
+			}
+
 			rep := &psm.PresentProofRep{
-				Key:      key,
-				ProofReq: reqStr,
+				Key:        key,
+				ProofReq:   reqStr,
+				Attributes: attributes,
 			}
 			err2.Check(psm.AddPresentProofRep(rep))
 
@@ -173,6 +183,13 @@ func HandlePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
 			}
 
 			preview.StoreProofData([]byte(rep.ProofReq), rep)
+
+			var proof anoncreds.Proof
+			dto.FromJSON(data, &proof)
+			for index, attr := range rep.Attributes {
+				rep.Attributes[index].Value = proof.RequestedProof.RevealedAttrs[attr.ID].Raw
+			}
+
 			err2.Check(psm.AddPresentProofRep(rep))
 
 			// Autoaccept -> all checks done, let's send ACK
