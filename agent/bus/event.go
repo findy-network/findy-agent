@@ -45,9 +45,17 @@ const (
 	psmCleanup
 )
 
+// todo: should we add the buffer here? now we have only channel but if there is
+// no cannel we would add least have a resend buffer? BUT if it's at the upper
+// level we don't need to wonder when we will create the buffer. It should be
+// there anyhow.
 type agentStationMap map[AgentKeyType]AgentStateChan
 
-type buffer []*AgentNotify
+type buf []*AgentNotify
+type buffer struct {
+	buf
+	sync.Mutex
+}
 
 type agentStation struct {
 	agentStationMap
@@ -61,15 +69,21 @@ var (
 	AgentMaps = [...]agentStation{
 		{
 			agentStationMap: make(agentStationMap),
-			buffer:          make(buffer, 0, 12),
+			buffer: buffer{
+				buf: make(buf, 0, 12), // Agent Actions are resend now.
+			},
 		},
 		{
 			agentStationMap: make(agentStationMap),
-			buffer:          make(buffer, 0, 12),
+			buffer:          buffer{
+				// buf: make(buf, 0, 12),
+			},
 		},
 		{
 			agentStationMap: make(agentStationMap),
-			buffer:          make(buffer, 0, 12),
+			buffer:          buffer{
+				// buf: make(buf, 0, 12),
+			},
 		},
 	}
 
@@ -86,22 +100,28 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 
 	glog.V(3).Infoln(key.AgentDID, " notify add for:", key.ClientID)
 
-	go m.checkBuffered()
-
+	if m == WantAllAgentActions {
+		go m.checkBuffered()
+	}
 	return c
 }
 
 // checkBuffered sends all buffered notifications to listeners and reset the
 // buffer. TODO: make buffer persistent.
 func (m mapIndex) checkBuffered() {
-	AgentMaps[m].Lock()
-	defer AgentMaps[m].Unlock()
+	AgentMaps[m].buffer.Lock()
+	defer AgentMaps[m].buffer.Unlock()
 
-	for _, notif := range AgentMaps[m].buffer {
-		glog.V(1).Infoln("broadcasting buffered notification")
-		m.agentBroadcast(notif)
+	for _, notif := range AgentMaps[m].buffer.buf { // nil is checked by Go
+		glog.V(3).Infoln("+++++++++++++++++ broadcasting buffered notification",
+			notif.NotificationType)
+
+		// broadcast needs outside locking
+		AgentMaps[m].Lock()
+		m.broadcast(notif)
+		AgentMaps[m].Unlock()
 	}
-	AgentMaps[m].buffer = make(buffer, 0, 12)
+	AgentMaps[m].buffer.buf = make(buf, 0, 12)
 }
 
 // AgentRmListener removes the listener.
@@ -124,7 +144,7 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	defer AgentMaps[m].Unlock()
 
 	if len(AgentMaps[m].agentStationMap) == 0 { //
-		glog.V(1).Infoln("there are no one to listen us!")
+		glog.V(1).Infoln("+++++++++++++++++++++\nthere are no one to listen us!")
 		// Save the notification for future broadcasting
 
 		// TODO: build the resender here who do the job
@@ -132,16 +152,24 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 		// kept in the slices. Remember ActionsTypes or own buckets per.
 
 		// first implementation just saves notifications to buffer, no persitency
-		AgentMaps[m].buffer = append(AgentMaps[m].buffer, &state)
-
+		go m.saveToResendBuf(state)
 		return
 	}
-	m.agentBroadcast(&state)
+	m.broadcast(&state)
 }
 
-// agentBroadcast broadcasts notification to listeners. Note! it doesn't lock
+func (m mapIndex) saveToResendBuf(state AgentNotify) {
+	AgentMaps[m].buffer.Lock()
+	defer AgentMaps[m].buffer.Unlock()
+
+	if AgentMaps[m].buffer.buf != nil {
+		AgentMaps[m].buffer.buf = append(AgentMaps[m].buffer.buf, &state)
+	}
+}
+
+// broadcast broadcasts notification to listeners. Note! it doesn't lock
 // the maps.
-func (m mapIndex) agentBroadcast(state *AgentNotify) {
+func (m mapIndex) broadcast(state *AgentNotify) {
 	broadcastKey := state.AgentKeyType
 	for listenKey, ch := range AgentMaps[m].agentStationMap {
 		hit := broadcastKey.AgentDID == listenKey.AgentDID ||
