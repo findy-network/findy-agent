@@ -83,7 +83,6 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 
 func TestMain(m *testing.M) {
 	err2.Check(flag.Set("logtostderr", "true"))
-	err2.Check(flag.Set("v", "0"))
 
 	prepareBuildOneTest()
 	setUp()
@@ -480,7 +479,6 @@ func TestConnection_NoOneRun(t *testing.T) {
 		return
 	}
 
-	err2.Check(flag.Set("v", "0"))
 	for i, ca := range agents {
 		if i == 0 {
 			continue
@@ -520,8 +518,6 @@ func TestConnection_NoOneRun(t *testing.T) {
 func TestTrustPing(t *testing.T) {
 	intCh := make(chan struct{})
 	if testMode == TestModeRunOne {
-		err2.Check(flag.Set("v", "1"))
-
 		go runPSMHook(intCh)
 	}
 
@@ -651,8 +647,6 @@ func TestIssue(t *testing.T) {
 		TestSetPermissive(t)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
 			conn := client.TryOpen(agents[0].DID, baseCfg)
@@ -685,8 +679,6 @@ func TestIssueJSON(t *testing.T) {
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
 	}
-
-	err2.Check(flag.Set("v", "0"))
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
@@ -723,8 +715,6 @@ func TestProposeIssue(t *testing.T) {
 		TestSetPermissive(t)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	// agent with 0 index is issuer -> rest are holders
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE ISSUE-%d", i), func(t *testing.T) {
@@ -758,8 +748,6 @@ func TestProposeIssueJSON(t *testing.T) {
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
 	}
-
-	err2.Check(flag.Set("v", "0"))
 
 	// agent with 0 index is issuer -> rest are holders
 	for i := 1; i < len(agents); i++ {
@@ -796,8 +784,6 @@ func TestReqProof(t *testing.T) {
 		TestIssue(t)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
 			conn := client.TryOpen(agents[0].DID, baseCfg)
@@ -829,8 +815,6 @@ func TestReqProofJSON(t *testing.T) {
 		TestIssue(t)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
 			conn := client.TryOpen(agents[0].DID, baseCfg)
@@ -861,8 +845,6 @@ func TestProposeProof(t *testing.T) {
 	if testMode == TestModeRunOne {
 		TestIssue(t)
 	}
-
-	err2.Check(flag.Set("v", "0"))
 
 	// agent with 0 index is verifier -> rest are provers
 	for i := 1; i < len(agents); i++ {
@@ -896,8 +878,6 @@ func TestProposeProofJSON(t *testing.T) {
 		TestIssue(t)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	// agent with 0 index is verifier -> rest are provers
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE PROOF-%d", i), func(t *testing.T) {
@@ -923,8 +903,8 @@ func TestProposeProofJSON(t *testing.T) {
 		})
 	}
 }
+
 func TestListen(t *testing.T) {
-	err2.Check(flag.Set("v", "0"))
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
@@ -934,7 +914,7 @@ func TestListen(t *testing.T) {
 			continue
 		}
 		if i == 1 {
-			go doListen(ca.DID, intCh, readyCh, waitCh)
+			go doListen(t, ca.DID, intCh, readyCh, waitCh, handleStatusBMEcho)
 		}
 	}
 
@@ -958,7 +938,8 @@ func TestListen(t *testing.T) {
 		}
 	}
 	glog.Infoln("*** breaking out..")
-	<-readyCh           // listener is tested now and it's ready
+	<-readyCh // listener is tested now and it's ready
+	glog.Infoln("*** got readyCh. waiting intCh...")
 	intCh <- struct{}{} // tell it to stop
 
 	glog.Infoln("*** closing..")
@@ -966,7 +947,6 @@ func TestListen(t *testing.T) {
 }
 
 func TestListen100(t *testing.T) {
-	err2.Check(flag.Set("v", "0"))
 	for i := 0; i < 10; i++ {
 		TestListen(t)
 	}
@@ -976,8 +956,6 @@ func BenchmarkIssue(b *testing.B) {
 	if testMode == TestModeRunOne {
 		TestSetPermissive(nil)
 	}
-
-	err2.Check(flag.Set("v", "0"))
 
 	i := 0
 	conn := client.TryOpen(agents[0].DID, baseCfg)
@@ -1021,8 +999,6 @@ func BenchmarkReqProof(b *testing.B) {
 		TestSetPermissive(nil)
 	}
 
-	err2.Check(flag.Set("v", "0"))
-
 	i := 0
 	conn := client.TryOpen(agents[0].DID, baseCfg)
 	ctx := context.Background()
@@ -1062,14 +1038,13 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	allPermissive = false
 	TestSetPermissive(t)
 
-	err2.Check(flag.Set("v", "3"))
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
 	// start listeners for grpc SA
 	for i, ca := range agents {
 		if i == 0 {
-			go doListen(ca.DID, intCh, readyCh, waitCh)
+			go doListen(t, ca.DID, intCh, readyCh, waitCh, handleStatusProoReq)
 		}
 	}
 	i := 0
@@ -1099,8 +1074,10 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 			assert.NoError(t, conn.Close())
 		})
 	}
-	<-readyCh           // listener is tested now and it's ready
-	intCh <- struct{}{} // tell it to stop
+	glog.Infoln("*** breaking, wait listener is ready by listen readyCh")
+	<-readyCh
+	glog.Infoln("*** signaling intCh to stop")
+	intCh <- struct{}{}
 
 	glog.Infoln("*** closing..")
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
@@ -1108,20 +1085,21 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 
 func TestListenGrpcIssuingResume(t *testing.T) {
 	if testMode != TestModeRunOne { // todo: until all tests are ready
+		glog.Infoln("========================\n========================\ntest skipped")
 		return
 	}
 
 	allPermissive = false
 	//	TestSetPermissive(t)
 
-	err2.Check(flag.Set("v", "3"))
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
 	// start listener for holder
 	for i, ca := range agents {
 		if i == 1 {
-			go doListen(ca.DID, intCh, readyCh, waitCh)
+			// TODO: this is not properly tested
+			go doListen(t, ca.DID, intCh, readyCh, waitCh, handleStatusProoReq)
 		}
 	}
 	i := 0
@@ -1160,14 +1138,23 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
 }
 
-func doListen(caDID string, intCh chan struct{}, readyCh chan struct{}, wait chan struct{}) {
+func doListen(
+	t *testing.T,
+	caDID string,
+	intCh chan struct{},
+	readyCh chan struct{},
+	wait chan struct{},
+	handleStatus handleStatusFn,
+) {
 	conn := client.TryOpen(caDID, baseCfg)
 	//defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch, err := conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()})
 	err2.Check(err)
-	glog.V(1).Infoln("** start to listen")
+	glog.V(1).Info("***********************************\n",
+		"********** start to listen *******\n",
+		"***********************************\n")
 	count := 0
 	wait <- struct{}{}
 loop:
@@ -1178,26 +1165,35 @@ loop:
 				glog.V(0).Infoln("closed from server")
 				break loop
 			}
-			glog.Infoln("\n\t===== listen status:\n\t",
-				status.Status.Notification.ConnectionID,
-				status.Status.Notification.ProtocolFamily,
-				status.Status.Notification.TypeID,
-				status.Status.Notification.ID,
-				status.Status.Notification.ProtocolID)
+			glog.V(3).Infoln(status.Status.String())
+
+			// If this is not a Question but normal status notification
 			if status.Status.Notification.TypeID != agency2.Notification_NONE {
+
 				switch status.Status.Notification.TypeID {
 				case agency2.Notification_STATUS_UPDATE:
-					noAction := handleStatus(conn, status.Status, true)
-					if noAction {
+					noAction := handleStatus(t, conn, status.Status, true)
+					switch noAction {
+					case handleOK:
+						// send BM two times to test our own sending
+						count++
+						if count > 1 {
+							glog.V(3).Info("count =", count, ". signaling readyCh")
+							readyCh <- struct{}{}
+							glog.V(3).Infoln(".. signaled readyCh")
+						}
+					case handleNotOurs:
+						glog.V(3).Info("---- not ours")
+					case handleStop:
+						glog.V(3).Info("------- handleStop:  sending readyCh signal")
 						readyCh <- struct{}{}
-					}
-					count++ // run two times to test our own sending
-					if count > 1 {
-						readyCh <- struct{}{}
+						glog.V(3).Infoln(".. signaled readyCh")
 					}
 				case agency2.Notification_PROTOCOL_PAUSED:
 					resume(conn.ClientConn, status.Status, true)
 				}
+
+				// this a question
 			} else if status.TypeID != agency2.Question_NONE {
 				switch status.TypeID {
 				case agency2.Question_PING_WAITS:
@@ -1223,8 +1219,50 @@ loop:
 	}
 }
 
-func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
-	if status.Notification.ProtocolType == agency2.Protocol_BASIC_MESSAGE {
+type handleAction int
+
+const (
+	handleNotOurs = 0 + iota
+	handleStop
+	handleOK
+)
+
+type handleStatusFn func(
+	t *testing.T,
+	conn client.Conn,
+	status *agency2.AgentStatus,
+	_ bool,
+) handleAction
+
+func handleStatusProoReq(
+	t *testing.T,
+	conn client.Conn,
+	status *agency2.AgentStatus,
+	_ bool,
+) handleAction {
+	if glog.V(3) {
+		glog.Infoln("====================================")
+		glog.Infoln(status.String())
+	}
+	switch status.Notification.ProtocolType {
+	case agency2.Protocol_BASIC_MESSAGE:
+		return handleNotOurs
+	case agency2.Protocol_PRESENT_PROOF:
+		if status.Notification.GetRole() == agency2.Protocol_INITIATOR {
+			return handleStop
+		}
+	}
+	return handleNotOurs
+}
+
+func handleStatusBMEcho(
+	t *testing.T,
+	conn client.Conn,
+	status *agency2.AgentStatus,
+	_ bool,
+) handleAction {
+	switch status.Notification.ProtocolType {
+	case agency2.Protocol_BASIC_MESSAGE:
 		ctx := context.Background()
 		didComm := agency2.NewProtocolServiceClient(conn)
 		statusResult, err := didComm.Status(ctx, &agency2.ProtocolID{
@@ -1235,10 +1273,13 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
 		})
 		err2.Check(err)
 		if statusResult.GetBasicMessage().SentByMe {
-			glog.V(0).Infoln("-- ours, no reply")
-			return false
+			glog.V(0).Infoln("---------- ours, no reply")
+			return handleOK
 		}
-		glog.Infoln("sending BM")
+
+		assert.NotEmpty(t, statusResult.GetBasicMessage().GetContent())
+
+		glog.Infoln("sending BM back")
 		ch, err := client.Pairwise{
 			ID:   status.Notification.ConnectionID,
 			Conn: conn,
@@ -1248,9 +1289,9 @@ func handleStatus(conn client.Conn, status *agency2.AgentStatus, _ bool) bool {
 			glog.Infoln("BM send state:", state.State, "|", state.Info)
 			//assert.Equal(t, agency2.ProtocolState_OK, state.State)
 		}
-		return false
+		return handleOK
 	}
-	return true
+	return handleNotOurs
 }
 
 func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
@@ -1267,6 +1308,8 @@ func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
 }
 
 func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
+	glog.Infoln("---- resume protocol w/ ack =", ack)
+
 	ctx := context.Background()
 	didComm := agency2.NewProtocolServiceClient(conn)
 	stateAck := agency2.ProtocolState_ACK
