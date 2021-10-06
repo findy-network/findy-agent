@@ -116,10 +116,8 @@ func (m mapIndex) checkBuffered() {
 		glog.V(3).Infoln("+++++++++++++++++ broadcasting buffered notification",
 			notif.NotificationType)
 
-		// broadcast needs outside locking
-		AgentMaps[m].Lock()
-		m.broadcast(notif)
-		AgentMaps[m].Unlock()
+		// broadcast sends notifications only those agent's ctrls that listen
+		m.lockedBroadcast(notif)
 	}
 	AgentMaps[m].buffer.buf = make(buf, 0, 12)
 }
@@ -137,24 +135,21 @@ func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	}
 }
 
-// AgentBroadcast broadcasts the notification.
-// TODO: add persitency here
+// AgentBroadcast broadcasts the notification. If no Agent Ctrls are currently
+// connected notifications are buffered and agency send them immetiately any of
+// the controllers connect.
+//
+// TODO: add persitency that agency can be restarted.
 func (m mapIndex) AgentBroadcast(state AgentNotify) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
 	if len(AgentMaps[m].agentStationMap) == 0 { //
-		glog.V(1).Infoln("+++++++++++++++++++++\nthere are no one to listen us!")
-		// Save the notification for future broadcasting
-
-		// TODO: build the resender here who do the job
-		// the DB could be one bucket where key is DID and notifications are
-		// kept in the slices. Remember ActionsTypes or own buckets per.
-
-		// first implementation just saves notifications to buffer, no persitency
+		glog.V(5).Infoln("there are no one to listen us! saving for resend")
 		go m.saveToResendBuf(state)
 		return
 	}
+
 	m.broadcast(&state)
 }
 
@@ -165,6 +160,13 @@ func (m mapIndex) saveToResendBuf(state AgentNotify) {
 	if AgentMaps[m].buffer.buf != nil {
 		AgentMaps[m].buffer.buf = append(AgentMaps[m].buffer.buf, &state)
 	}
+}
+
+// lockedBroadcast is same as broadcast function but thread save version of it.
+func (m mapIndex) lockedBroadcast(state *AgentNotify) {
+	AgentMaps[m].Lock()
+	m.broadcast(state)
+	AgentMaps[m].Unlock()
 }
 
 // broadcast broadcasts notification to listeners. Note! it doesn't lock
