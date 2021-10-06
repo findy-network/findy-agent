@@ -170,7 +170,9 @@ func (d *DID) hasKeyData() bool {
 func (d *DID) StartEndp(wallet int) {
 	f := &Future{}
 	f.SetChan(did.Endpoint(wallet, Pool(), d.Did()))
+	d.Lock()
 	d.endp = f
+	d.Unlock()
 }
 
 func (d *DID) Endpoint() string {
@@ -180,10 +182,14 @@ func (d *DID) Endpoint() string {
 		}
 	}()
 
-	if d.endp != nil && d.endp.Result().Err() != nil {
+	d.Lock()
+	endp := d.endp
+	d.Unlock()
+
+	if endp != nil && endp.Result().Err() != nil {
 		return ""
-	} else if d.endp != nil {
-		return d.endp.Str1()
+	} else if endp != nil {
+		return endp.Str1()
 	}
 	return ""
 }
@@ -196,10 +202,14 @@ func (d *DID) SetAEndp(ae service.Addr) {
 }
 
 func (d *DID) AEndp() (ae service.Addr, err error) {
-	if d.endp != nil && d.endp.Result().Err() != nil {
-		return service.Addr{}, d.endp.Result().Err()
-	} else if d.endp != nil {
-		endP, vk, _ := d.endp.Strs()
+	d.Lock()
+	endp := d.endp
+	d.Unlock()
+
+	if endp != nil && endp.Result().Err() != nil {
+		return service.Addr{}, endp.Result().Err()
+	} else if endp != nil {
+		endP, vk, _ := endp.Strs()
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
 	return service.Addr{}, fmt.Errorf("no data")
