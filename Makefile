@@ -33,7 +33,7 @@ repl_all: repl_api repl_comm repl_wrap
 modules: modules_comm modules_wrap modules_api
 
 modules_comm: drop_comm
-	@echo Syncing modules: findy-common-api/$(GRPC_BRANCH)
+	@echo Syncing modules: findy-common-go/$(GRPC_BRANCH)
 	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
 
 modules_wrap:
