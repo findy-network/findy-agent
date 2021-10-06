@@ -53,8 +53,8 @@ func Test_newReg_and_toJsonBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotR := NewReg(tt.args.data); !reflect.DeepEqual(gotR, tt.wantR) {
-				t.Errorf("NewReg() = %v, want %v", gotR, tt.wantR)
+			if gotR := newReg(tt.args.data); !reflect.DeepEqual(gotR, tt.wantR) {
+				t.Errorf("newReg() = %v, want %v", gotR, tt.wantR)
 			}
 		})
 	}

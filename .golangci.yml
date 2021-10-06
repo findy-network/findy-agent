@@ -22,8 +22,6 @@ linters-settings:
       - wrapperFunc
   gocyclo:
     min-complexity: 15
-  golint:
-    min-confidence: 0
   gomnd:
     settings:
       mnd:
@@ -59,7 +57,6 @@ linters:
     #    - gocyclo
     - gofmt
     - goimports
-    #    - golint
     #    - gomnd
     #    - goprintffuncname
     #    - gosec
@@ -72,6 +69,7 @@ linters:
     - nakedret
     #    - noctx
     - nolintlint
+    - revive
     - rowserrcheck
     - staticcheck
     #    - structcheck
@@ -81,14 +79,14 @@ linters:
     #    - unparam
     #    - unused
     - varcheck
-#    - whitespace
+    #   - whitespace
 issues:
   exclude-rules:
     - linters:
-        - gocritic
-      text: "unnecessaryDefer:"
+        - revive
+      text: "dot-imports:"
 run:
 service:
-  golangci-lint-version: 1.39.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.41.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"

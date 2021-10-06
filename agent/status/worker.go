@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/cloud"
-	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -21,10 +20,6 @@ type TaskParam struct {
 	ID          string
 	DeviceToken string
 	TsSinceMs   *uint64
-}
-
-func NewWorker(a comm.Receiver) *worker {
-	return &worker{ca: a.(*cloud.Agent)}
 }
 
 // Exec TODO: not used after LAPI

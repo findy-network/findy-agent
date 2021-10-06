@@ -23,10 +23,10 @@ func (c LoggingCmd) Validate() error {
 	return nil
 }
 
-func (c LoggingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
+func (c LoggingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
+	baseCfg := client.BuildClientConnBase(c.TLSPath, c.Addr, c.Port, nil)
 	conn := client.TryOpen(c.AdminID, baseCfg)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

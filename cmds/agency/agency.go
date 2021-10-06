@@ -54,9 +54,9 @@ type Cmd struct {
 	ResetData         bool
 	URL               string
 	VersionInfo       string
-	GRPCTls           bool
+	GRPCTLS           bool
 	GRPCPort          int
-	TlsCertPath       string
+	TLSCertPath       string
 	JWTSecret         string
 
 	EnclaveKey        string
@@ -95,9 +95,9 @@ var (
 		ResetData:              false,
 		URL:                    "",
 		VersionInfo:            "",
-		GRPCTls:                true,
+		GRPCTLS:                true,
 		GRPCPort:               50051,
-		TlsCertPath:            "",
+		TLSCertPath:            "",
 		JWTSecret:              "",
 		EnclaveKey:             "",
 		EnclaveBackupName:      "",
@@ -170,7 +170,7 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Return(&err)
 
 	c.startBackupTasks()
-	StartGrpcServer(c.GRPCTls, c.GRPCPort, c.TlsCertPath, c.JWTSecret)
+	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
 	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
 
 	return nil

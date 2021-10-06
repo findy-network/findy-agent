@@ -27,14 +27,14 @@ func (c PingCmd) Validate() error {
 	return nil
 }
 
-func (c PingCmd) RpcExec(w io.Writer) (r cmds.Result, err error) {
+func (c PingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
 	if err = c.GrpcCmd.Validate(); err != nil {
 		return nil, err
 	}
 
-	baseCfg := client.BuildClientConnBase(c.TlsPath, c.Addr, c.Port, nil)
+	baseCfg := client.BuildClientConnBase(c.TLSPath, c.Addr, c.Port, nil)
 	conn := client.TryOpen(c.AdminID, baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
