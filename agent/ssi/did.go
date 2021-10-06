@@ -2,6 +2,7 @@ package ssi
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
@@ -39,6 +40,8 @@ type DID struct {
 	meta   *Future // Meta data stored to DID
 	pw     *Future // Pairwise data stored to DID
 	endp   *Future // When endpoint is started to fetch it's here
+
+	sync.Mutex // when setting Future ptrs making sure that happens atomically
 }
 
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
@@ -92,19 +95,27 @@ func (d *DID) SetWallet(w managed.Wallet) {
 // for status.
 func (d *DID) Store(wallet int) {
 	ds, vk, _ := d.data.Strs()
+
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
 	f := new(Future)
-	//log.Printf("Store (w: %v) Their: %s\n", wallet, json)
+
 	f.SetChan(did.StoreTheir(wallet, json))
+
+	d.Lock()
 	d.stored = f
+	d.Unlock()
 
 	go func() {
 		defer err2.CatchTrace(func(err error) {}) // dont let crash on panics
+
 		f := new(Future)
 		f.SetChan(did.SetMeta(wallet, ds, "pairwise"))
+
 		if f.Result().Err() == nil { // no error
+			d.Lock()
 			d.meta = f
+			d.Unlock()
 		}
 	}()
 }
@@ -112,14 +123,28 @@ func (d *DID) Store(wallet int) {
 // StoreResult returns error status of the Store() functions result. If storing
 // their DID and related meta and pairwise data isn't ready, this call blocks.
 func (d *DID) StoreResult() error {
-	if d.stored != nil && d.stored.Result().Err() != nil {
-		return fmt.Errorf("their: %s", d.stored.Result().Error())
+	d.Lock()
+	stored := d.stored
+	d.Unlock()
+
+	if stored != nil && stored.Result().Err() != nil {
+		return fmt.Errorf("their: %s", stored.Result().Error())
 	}
-	if d.meta != nil && d.meta.Result().Err() != nil {
-		return fmt.Errorf("meta: %s", d.meta.Result().Error())
+
+	d.Lock()
+	meta := d.meta
+	d.Unlock()
+
+	if meta != nil && meta.Result().Err() != nil {
+		return fmt.Errorf("meta: %s", meta.Result().Error())
 	}
-	if d.pw != nil && d.pw.Result().Err() != nil {
-		return fmt.Errorf("pairwise: %s", d.pw.Result().Error())
+
+	d.Lock()
+	pw := d.pw
+	d.Unlock()
+
+	if pw != nil && pw.Result().Err() != nil {
+		return fmt.Errorf("pairwise: %s", pw.Result().Error())
 	}
 	return nil
 }
@@ -145,7 +170,9 @@ func (d *DID) hasKeyData() bool {
 func (d *DID) StartEndp(wallet int) {
 	f := &Future{}
 	f.SetChan(did.Endpoint(wallet, Pool(), d.Did()))
+	d.Lock()
 	d.endp = f
+	d.Unlock()
 }
 
 func (d *DID) Endpoint() string {
@@ -155,10 +182,14 @@ func (d *DID) Endpoint() string {
 		}
 	}()
 
-	if d.endp != nil && d.endp.Result().Err() != nil {
+	d.Lock()
+	endp := d.endp
+	d.Unlock()
+
+	if endp != nil && endp.Result().Err() != nil {
 		return ""
-	} else if d.endp != nil {
-		return d.endp.Str1()
+	} else if endp != nil {
+		return endp.Str1()
 	}
 	return ""
 }
@@ -171,10 +202,14 @@ func (d *DID) SetAEndp(ae service.Addr) {
 }
 
 func (d *DID) AEndp() (ae service.Addr, err error) {
-	if d.endp != nil && d.endp.Result().Err() != nil {
-		return service.Addr{}, d.endp.Result().Err()
-	} else if d.endp != nil {
-		endP, vk, _ := d.endp.Strs()
+	d.Lock()
+	endp := d.endp
+	d.Unlock()
+
+	if endp != nil && endp.Result().Err() != nil {
+		return service.Addr{}, endp.Result().Err()
+	} else if endp != nil {
+		endP, vk, _ := endp.Strs()
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
 	return service.Addr{}, fmt.Errorf("no data")

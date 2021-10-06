@@ -2,6 +2,7 @@ package ssi
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
@@ -81,8 +82,22 @@ type DIDAgent struct {
 	// Agent type: CA, EA, Worker, etc.
 	Type Type
 
-	SAImplID string        // SA implementation ID, used mostly for tests
+	sync.Mutex // Currently saImplID makes the agent mutable
+
+	saImplID string        // SA implementation ID, used mostly for tests
 	EAEndp   *service.Addr // EA endpoint if set, used for SA API and notifications
+}
+
+func (a *DIDAgent) SAImplID() string {
+	a.Lock()
+	defer a.Unlock()
+	return a.saImplID
+}
+
+func (a *DIDAgent) SetSAImplID(id string) {
+	a.Lock()
+	defer a.Unlock()
+	a.saImplID = id
 }
 
 func (a *DIDAgent) AddDIDCache(DID *DID) {
