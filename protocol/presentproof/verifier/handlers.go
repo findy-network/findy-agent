@@ -103,7 +103,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 			req, autoAccept := om.FieldObj().(*presentproof.Request)
 			if autoAccept {
 				req.RequestPresentations = presentproof.NewRequestPresentation(
-					utils.UUID(), []byte(reqStr))
+					pltype.LibindyRequestPresentationID, []byte(reqStr))
 			}
 
 			return true, nil
@@ -139,7 +139,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 
 			req := om.FieldObj().(*presentproof.Request) // query interface
 			req.RequestPresentations = presentproof.NewRequestPresentation(
-				utils.UUID(), []byte(rep.ProofReq))
+				pltype.LibindyRequestPresentationID, []byte(rep.ProofReq))
 
 			return true, nil
 		},
