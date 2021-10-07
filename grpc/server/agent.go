@@ -108,6 +108,7 @@ func (a *agentServer) Ping(
 			// 1) create task with user action handling for ping
 			// 2) block while answer is received
 			// 3) add ping support to Resume-API
+			glog.Warning("SA ping not implemented")
 		}
 	}
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
@@ -196,12 +197,17 @@ func (a *agentServer) GetCredDef(
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
 	defer err2.Annotate("create invitation", &err)
 
+	// in the future we might have generatedConnID as argument in the API
 	id := base.ID
+	generatedConnID := id
 	// if connection is not given from the caller we generate a new one and use
 	// it for both one
 	if id == "" {
 		id = utils.UUID()
 		glog.V(4).Infoln("generating connection id:", id)
+	} else {
+		generatedConnID = utils.UUID()
+		glog.V(4).Infoln("generating sub connection id:", generatedConnID)
 	}
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
@@ -213,7 +219,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		label = "empty-label"
 	}
 	invitation := didexchange.Invitation{
-		ID:              id,
+		ID:              generatedConnID,
 		Type:            pltype.AriesConnectionInvitation,
 		ServiceEndpoint: ep.Address(),
 		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
