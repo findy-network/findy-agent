@@ -1,5 +1,9 @@
 package pltype
 
+import (
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+)
+
 // name constants
 const (
 	HandshakePairwiseName = "HANDSHAKE"
@@ -195,3 +199,18 @@ const (
 	CAContinuePresentProofProtocol    = CA + "/protocol/1.0/continue-present-proof"
 	CAContinueIssueCredentialProtocol = CA + "/protocol/1.0/continue-issue-credential"
 )
+
+var protocolType = map[string]pb.Protocol_Type{
+	AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
+	ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
+	ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
+	ProtocolTrustPing:       pb.Protocol_TRUST_PING,
+	ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
+}
+
+func ProtocolTypeForFamily(family string) pb.Protocol_Type {
+	if protocol, ok := protocolType[family]; ok {
+		return protocol
+	}
+	return pb.Protocol_NONE
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/handshake"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -166,7 +167,7 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
 	pid := &pb.ProtocolID{
-		TypeID: protocolType[notify.ProtocolFamily],
+		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
 		Role:   roleType[notify.Initiator],
 		ID:     notify.ProtocolID,
 	}

@@ -112,14 +112,6 @@ var protocolName = [...]string{
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
 }
 
-var protocolType = map[string]pb.Protocol_Type{
-	pltype.AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
-	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
-	pltype.ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
-	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
-	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
-}
-
 var roleType = map[bool]pb.Protocol_Role{
 	true:  pb.Protocol_INITIATOR, // is Initiator
 	false: pb.Protocol_ADDRESSEE, //

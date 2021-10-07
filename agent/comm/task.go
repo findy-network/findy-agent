@@ -49,20 +49,7 @@ func (t *TaskBase) Type() string {
 }
 
 func (t *TaskBase) ProtocolType() pb.Protocol_Type {
-	protocol := mesg.ProtocolForType(t.TypeID)
-	switch protocol {
-	case pltype.ProtocolBasicMessage:
-		return pb.Protocol_BASIC_MESSAGE
-	case pltype.ProtocolConnection:
-		return pb.Protocol_DIDEXCHANGE
-	case pltype.ProtocolIssueCredential:
-		return pb.Protocol_ISSUE_CREDENTIAL
-	case pltype.ProtocolPresentProof:
-		return pb.Protocol_PRESENT_PROOF
-	case pltype.ProtocolTrustPing:
-		return pb.Protocol_TRUST_PING
-	}
-	return pb.Protocol_NONE
+	return pltype.ProtocolTypeForFamily(mesg.ProtocolForType(t.TypeID))
 }
 
 func (t *TaskBase) Role() pb.Protocol_Role {

@@ -369,7 +369,7 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 	defer err2.Annotate("processQuestion", &err)
 
 	notificationType := notificationTypeID[notify.NotificationType]
-	notificationProtocolType := protocolType[notify.ProtocolFamily]
+	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)
 
 	if notificationType != pb.Notification_PROTOCOL_PAUSED {
 		return nil, nil
@@ -392,7 +392,7 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 	}
 
 	id := &pb.ProtocolID{
-		TypeID: protocolType[notify.ProtocolFamily],
+		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
 		Role:   roleType[notify.Initiator],
 		ID:     notify.ProtocolID,
 	}
@@ -442,7 +442,7 @@ func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
 			ConnectionID:   notify.ConnectionID,
 			ProtocolID:     notify.ProtocolID,
 			ProtocolFamily: notify.ProtocolFamily,
-			ProtocolType:   protocolType[notify.ProtocolFamily],
+			ProtocolType:   pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
 			Timestamp:      notify.Timestamp,
 			Role:           roleType[notify.Initiator],
 		},
