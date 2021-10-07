@@ -22,6 +22,7 @@ var MsgCreator = MsgFactor{}
 func init() {
 	gob.Register(&MsgImpl{})
 	didcomm.CreatorGod.AddMsgCreator(pltype.Aries, MsgCreator)
+	didcomm.CreatorGod.AddMsgCreator(pltype.DIDOrgAries, MsgCreator)
 }
 
 type MsgFactor struct{}

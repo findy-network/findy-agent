@@ -32,6 +32,7 @@ func (f *IssueFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&IssueImpl{})
 	aries.Creator.Add(pltype.IssueCredentialIssue, IssueCreator)
+	aries.Creator.Add(pltype.DIDOrgIssueCredentialIssue, IssueCreator)
 }
 
 func NewIssue(r *Issue) *IssueImpl {

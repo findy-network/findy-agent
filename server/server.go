@@ -97,8 +97,11 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
-	if ourAddress == nil || !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) ||
-		!saveIncoming(ourAddress, data) {
+	canContinue := ourAddress != nil &&
+		agency.IsHandlerInThisAgency(ourAddress.PlRcvr) &&
+		saveIncoming(ourAddress, data)
+
+	if !canContinue {
 		errorResponse(w)
 		return
 	}
