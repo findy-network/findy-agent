@@ -74,7 +74,7 @@ func ValidateTime(t string) error {
 var r *regexp.Regexp
 
 func init() {
-	r, _ = regexp.Compile("^([0-1]?\\d|2[0-3]):([0-5]?\\d)(?::([0-5]?\\d))?$")
+	r, _ = regexp.Compile(`^([0-1]?\d|2[0-3]):([0-5]?\d)(?::([0-5]?\d))?$`)
 }
 
 func ValidateSeed(seed string) error {

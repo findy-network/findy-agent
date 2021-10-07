@@ -229,7 +229,7 @@ func ExecPSM(ts Transition) (err error) {
 			didcomm.MsgInit{
 				Type:   ts.SendNext,         // if we don't reply, generic Msg is used
 				Thread: ts.Payload.Thread(), // very important!
-			}).(didcomm.MessageHdr)
+			})
 
 		if !err2.Bool.Try(ts.InOut(connID, im, om)) { // if handler says NACK
 			if ts.SendOnNACK != pltype.Nothing {

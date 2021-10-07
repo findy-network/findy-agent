@@ -149,7 +149,6 @@ func buildHandlerFromSeed(rcvrDID string) {
 	handlers.Lock()
 	defer handlers.Unlock()
 	handlers.m[rcvrDID] = h
-	return
 }
 
 // RcvrCA returns the CA which is the actual PL receiver and Handler.
