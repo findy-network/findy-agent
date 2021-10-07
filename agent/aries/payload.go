@@ -23,6 +23,7 @@ var PayloadCreator = PayloadFactor{}
 func init() {
 	gob.Register(&PayloadImpl{})
 	didcomm.CreatorGod.AddPayloadCreator(pltype.Aries, PayloadCreator)
+	didcomm.CreatorGod.AddPayloadCreator(pltype.DIDOrgAries, PayloadCreator)
 }
 
 var Creator = &Factor{factors: make(map[string]didcomm.Factor)}

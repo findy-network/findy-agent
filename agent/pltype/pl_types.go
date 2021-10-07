@@ -12,12 +12,13 @@ const (
 
 // Protocol constants
 const (
-	Terminate = ""
-	Nothing   = ""
-	Agent     = "urn:indy:sov:agent:message_type:findy.fi" // This will be for old and EA/CA PW
-	Aries     = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"      // This will be for all Aries protocols
-	CA        = "urn:indy:sov:agent_api:message_type:findy.fi"
-	SA        = "urn:indy:sov:service_agent_api:message_type:findy.fi"
+	Terminate   = ""
+	Nothing     = ""
+	Agent       = "urn:indy:sov:agent:message_type:findy.fi" // This will be for old and EA/CA PW
+	Aries       = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"      // This will be for all Aries protocols
+	DIDOrgAries = "https://didcomm.org"                      // This will be for all Aries protocols
+	CA          = "urn:indy:sov:agent_api:message_type:findy.fi"
+	SA          = "urn:indy:sov:service_agent_api:message_type:findy.fi"
 
 	LibindyPresentationID = "libindy-presentation-0"
 
