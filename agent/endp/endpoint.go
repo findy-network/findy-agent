@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 /*
@@ -183,10 +182,6 @@ func (e *Addr) TestAddress() string {
 		basePath += "/" + e.RcvrDID
 	}
 	return strings.TrimSuffix(basePath, "/")
-}
-
-func (e *Addr) toGOB() []byte {
-	return dto.ToGOB(e)
 }
 
 // AE returns Addr which includes URL + VerKey.

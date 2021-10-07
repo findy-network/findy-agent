@@ -45,13 +45,7 @@ var (
 	}{
 		m: make(map[Endpoint]comm.SeedHandler),
 	}
-
-	agencyHandler comm.Handler
 )
-
-func SetAgencyHandler(handler comm.Handler) {
-	agencyHandler = handler
-}
 
 // CurrentTr returns current Transport according the PL receiver.
 func CurrentTr(addr *endp.Addr) txp.Trans {

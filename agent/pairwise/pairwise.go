@@ -1,7 +1,6 @@
 package pairwise
 
 import (
-	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
@@ -91,24 +90,6 @@ func NewCallerPairwise(msgFactor didcomm.MsgFactor, callerAgent ssi.Agent,
 		},
 		callerRoot: callerRootDid,
 	}
-}
-
-func (p *Caller) buildMsg(attachToAgency bool) {
-	var nonce uint64
-	if attachToAgency { // if this Handshake / On-boarding we need this only then
-		agency.AddHandler(p.caller.Did(), p.agent)
-		nonce = utils.NewNonce()
-		agency.Register.Add(p.agent.RootDid().Did(), p.Endp, p.caller.Did())
-	}
-
-	ns := utils.NonceToStr(nonce)
-	p.Msg = p.factor.Create(didcomm.MsgInit{
-		Did:      p.caller.Did(),
-		VerKey:   p.caller.VerKey(),
-		Nonce:    ns,
-		Endpoint: p.Name,
-		Name:     p.Name,
-	}).(didcomm.PwMsg)
 }
 
 func (p *Caller) ReceiveResponse(encryptedResponse string) didcomm.PwMsg {
