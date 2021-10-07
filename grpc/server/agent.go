@@ -199,15 +199,13 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	// in the future we might have generatedConnID as argument in the API
 	id := base.ID
-	generatedConnID := id
+	generatedConnID := utils.UUID()
 	// if connection is not given from the caller we generate a new one and use
 	// it for both one
 	if id == "" {
 		id = utils.UUID()
+		generatedConnID = id
 		glog.V(4).Infoln("generating connection id:", id)
-	} else {
-		generatedConnID = utils.UUID()
-		glog.V(4).Infoln("generating sub connection id:", generatedConnID)
 	}
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
@@ -241,11 +239,11 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 		answer.Ack,
 	)
 
-	state, _ := psm.GetPSM(psm.StateKey{
-		DID:   receiver.WDID(),
+	state, err := psm.GetPSM(psm.StateKey{
+		DID:   caDID,
 		Nonce: answer.ID,
 	})
-	assert.P.True(state != nil, "no task found for answer")
+	err2.Check(err)
 
 	prot.Resume(
 		receiver,

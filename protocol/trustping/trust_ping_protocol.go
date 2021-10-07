@@ -74,7 +74,7 @@ func handleTrustPing(packet comm.Packet) (err error) {
 		SendNext:    pltype.TrustPingResponse,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			glog.V(3).Info("-- Nonce: ", im.Thread().ID)
+			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},
 	})
@@ -86,7 +86,7 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			glog.V(3).Info("-- Nonce: ", im.Thread().ID)
+			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},
 	})
