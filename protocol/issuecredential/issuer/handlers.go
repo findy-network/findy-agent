@@ -4,7 +4,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -19,11 +18,21 @@ import (
 // Note! This is not called in the case where Issuer starts the protocol by
 // sending Cred_Offer.
 func HandleCredentialPropose(packet comm.Packet) (err error) {
+	var sendNext, waitingNext string
+	if packet.Receiver.AutoPermission() {
+		sendNext = pltype.IssueCredentialOffer
+		waitingNext = pltype.IssueCredentialRequest
+	} else {
+		sendNext = pltype.Nothing
+		waitingNext = pltype.IssueCredentialUserAction
+	}
+
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
-		SendNext:    pltype.IssueCredentialOffer,
-		WaitingNext: pltype.IssueCredentialRequest,
+		SendNext:    sendNext,
+		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.IssueCredentialNACK,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAIssueCredentialAcceptPropose},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("credential propose handler", &err)
 
@@ -32,58 +41,85 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 
 			prop := im.FieldObj().(*issuecredential.Propose)
 
-			// we calculate attr values here even it's not necessary
-			// because the SA will usually update them by it self.
 			values := issuecredential.PreviewCredentialToCodedValues(
 				prop.CredentialProposal)
 
-			var subMsg map[string]interface{}
-			if im.Thread().PID != "" {
-				subMsg = make(map[string]interface{}, 1)
-				subMsg["id"] = im.Thread().PID
+			attributes := make([]didcomm.CredentialAttribute, 0)
+			for _, attr := range prop.CredentialProposal.Attributes {
+				attributes = append(attributes, didcomm.CredentialAttribute{
+					Name:  attr.Name,
+					Value: attr.Value,
+				})
 			}
-			saMsg := mesg.MsgCreator.Create(didcomm.MsgInit{
-				Nonce: im.Thread().ID,
-				ID:    prop.CredDefID,
-				Info:  values,
-				Msg:   subMsg,
-				Name:  connID,
-			}).(didcomm.Msg)
-			eaAnswer := e2.M.Try(agent.MyCA().CallEA(
-				pltype.SAIssueCredentialAcceptPropose, saMsg))
-			if !eaAnswer.Ready() { // if EA wont accept
-				glog.Warning("EA rejects API call:", eaAnswer.Error())
-				return false, nil
-			}
-			if eaAnswer.Info() != "" && eaAnswer.Info() != values {
-				glog.V(1).Info("SA sets the cred attrs")
-				values = eaAnswer.Info()
-			}
+
+			// TODO: support changing values
 
 			r := <-anoncreds.IssuerCreateCredentialOffer(
 				agent.MyCA().Wallet(), prop.CredDefID)
 			err2.Check(r.Err())
 			credOffer := r.Str1()
 
-			offer := om.FieldObj().(*issuecredential.Offer)
-			offer.OffersAttach =
-				issuecredential.NewOfferAttach([]byte(credOffer))
-			offer.CredentialPreview =
-				issuecredential.NewPreviewCredentialRaw(values)
-			offer.Comment = values // todo: for legacy tests
-
 			rep := &psm.IssueCredRep{
-				Key:       psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
-				CredDefID: prop.CredDefID,
-				CredOffer: credOffer,
-				Values:    values, // important! saved for Req handling
+				Key:        psm.StateKey{DID: meDID, Nonce: im.Thread().ID},
+				CredDefID:  prop.CredDefID,
+				CredOffer:  credOffer,
+				Values:     values, // important! saved for Req handling
+				Attributes: attributes,
 			}
-			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 			err2.Check(psm.AddIssueCredRep(rep))
+
+			offer, autoAccept := om.FieldObj().(*issuecredential.Offer)
+			if autoAccept {
+				offer.OffersAttach =
+					issuecredential.NewOfferAttach([]byte(credOffer))
+				offer.CredentialPreview =
+					issuecredential.NewPreviewCredentialRaw(values)
+				offer.Comment = values // todo: for legacy tests
+				preview.StoreCredPreview(&offer.CredentialPreview, rep)
+			}
 
 			return true, nil
 		},
 	})
+}
+
+// todo lapi: im message is old legacy api type!!
+func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	err2.Check(prot.ContinuePSM(prot.Again{
+		CA:          ca,
+		InMsg:       im,
+		SendNext:    pltype.IssueCredentialOffer,
+		WaitingNext: pltype.IssueCredentialRequest,
+		SendOnNACK:  pltype.IssueCredentialNACK,
+		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("credential propose user action handler", &err)
+
+			iMsg := im.(didcomm.Msg)
+			ack = iMsg.Ready()
+			if !ack {
+				glog.Warning("user doesn't accept the cred propose")
+				return ack, nil
+			}
+
+			repK := psm.NewStateKey(ca, im.Thread().ID)
+
+			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+
+			offer := om.FieldObj().(*issuecredential.Offer)
+			offer.OffersAttach =
+				issuecredential.NewOfferAttach([]byte(rep.CredOffer))
+			offer.CredentialPreview =
+				issuecredential.NewPreviewCredentialRaw(rep.Values)
+			offer.Comment = rep.Values // todo: for legacy tests
+			preview.StoreCredPreview(&offer.CredentialPreview, rep)
+
+			return true, nil
+		},
+	}))
 }
 
 // HandleCredentialRequest implements the handler for credential request protocol

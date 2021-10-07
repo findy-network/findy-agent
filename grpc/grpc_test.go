@@ -1070,6 +1070,9 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 			assert.NoError(t, err)
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+				if status.State == agency2.ProtocolState_WAIT_ACTION {
+					continue
+				}
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
 			}
 			assert.NoError(t, conn.Close())

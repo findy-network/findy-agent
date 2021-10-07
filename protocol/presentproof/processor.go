@@ -7,7 +7,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -34,10 +33,12 @@ type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
 }
 
+type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
+
 var presentProofProcessor = comm.ProtProc{
 	Creator:     createPresentProofTask,
 	Starter:     startProofProtocol,
-	Continuator: userActionProofPresentation,
+	Continuator: continueProtocol,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerPresentProofPropose:      verifier.HandleProposePresentation,
 		pltype.HandlerPresentProofRequest:      prover.HandleRequestPresentation,
@@ -50,8 +51,7 @@ var presentProofProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskPresentProof{})
-	prot.AddCreator(pltype.CAProofPropose, presentProofProcessor)
-	prot.AddCreator(pltype.CAProofRequest, presentProofProcessor)
+	prot.AddCreator(pltype.ProtocolPresentProof, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofPropose, presentProofProcessor)
 	prot.AddStarter(pltype.CAProofRequest, presentProofProcessor)
 	prot.AddContinuator(pltype.CAContinuePresentProofProtocol, presentProofProcessor)
@@ -62,53 +62,55 @@ func init() {
 func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createIssueCredentialTask", &err)
 
-	proof := protocol.GetPresentProof()
-	assert.P.True(proof != nil, "present proof data missing")
-	assert.P.True(
-		protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
-		"role is needed for proof protocol")
-
-	// attributes - mandatory
 	var proofAttrs []didcomm.ProofAttribute
-	if proof.GetAttributesJSON() != "" {
-		dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
-		glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
-	} else {
-		assert.P.True(proof.GetAttributes() != nil, "present proof attributes data missing")
-		proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
-		for i, attribute := range proof.GetAttributes().GetAttributes() {
-			proofAttrs[i] = didcomm.ProofAttribute{
-				ID:        attribute.ID,
-				Name:      attribute.Name,
-				CredDefID: attribute.CredDefID,
-			}
-		}
-		glog.V(3).Infoln("set proof from attrs")
-	}
-
-	// predicates - optional
 	var proofPredicates []didcomm.ProofPredicate
-	if proof.GetPredicatesJSON() != "" {
-		dto.FromJSONStr(proof.GetPredicatesJSON(), &proofPredicates)
-		glog.V(3).Infoln("set proof predicates from json:", proof.GetPredicatesJSON())
-	} else if proof.GetPredicates() != nil {
-		proofPredicates = make([]didcomm.ProofPredicate, len(proof.GetPredicates().GetPredicates()))
-		for i, predicate := range proof.GetPredicates().GetPredicates() {
-			proofPredicates[i] = didcomm.ProofPredicate{
-				ID:     predicate.ID,
-				Name:   predicate.Name,
-				PType:  predicate.PType,
-				PValue: predicate.PValue,
-			}
-		}
-		glog.V(3).Infoln("set proof from predicates")
-	}
+	if protocol != nil {
+		proof := protocol.GetPresentProof()
+		assert.P.True(proof != nil, "present proof data missing")
+		assert.P.True(
+			protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
+			"role is needed for proof protocol")
 
-	glog.V(1).Infof(
-		"Create task for PresentProof with connection id %s, role %s",
-		header.ConnID,
-		protocol.GetRole().String(),
-	)
+		// attributes - mandatory
+		if proof.GetAttributesJSON() != "" {
+			dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
+			glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
+		} else {
+			assert.P.True(proof.GetAttributes() != nil, "present proof attributes data missing")
+			proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
+			for i, attribute := range proof.GetAttributes().GetAttributes() {
+				proofAttrs[i] = didcomm.ProofAttribute{
+					ID:        attribute.ID,
+					Name:      attribute.Name,
+					CredDefID: attribute.CredDefID,
+				}
+			}
+			glog.V(3).Infoln("set proof from attrs")
+		}
+
+		// predicates - optional
+		if proof.GetPredicatesJSON() != "" {
+			dto.FromJSONStr(proof.GetPredicatesJSON(), &proofPredicates)
+			glog.V(3).Infoln("set proof predicates from json:", proof.GetPredicatesJSON())
+		} else if proof.GetPredicates() != nil {
+			proofPredicates = make([]didcomm.ProofPredicate, len(proof.GetPredicates().GetPredicates()))
+			for i, predicate := range proof.GetPredicates().GetPredicates() {
+				proofPredicates[i] = didcomm.ProofPredicate{
+					ID:     predicate.ID,
+					Name:   predicate.Name,
+					PType:  predicate.PType,
+					PValue: predicate.PValue,
+				}
+			}
+			glog.V(3).Infoln("set proof from predicates")
+		}
+
+		glog.V(1).Infof(
+			"Create task for PresentProof with connection id %s, role %s",
+			header.ConnID,
+			protocol.GetRole().String(),
+		)
+	}
 
 	return &taskPresentProof{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
@@ -235,43 +237,37 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 	}
 }
 
-func userActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
+func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
-		CA:          ca,
-		InMsg:       im,
-		SendNext:    pltype.PresentProofPresentation,
-		WaitingNext: pltype.PresentProofACK,
-		SendOnNACK:  pltype.PresentProofNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof user action handler", &err)
+	assert.D.True(im.Thread().ID != "", "continue present proof, packet thread ID missing")
 
-			// Does user allow continue?
-			iMsg := im.(didcomm.Msg)
-			if !iMsg.Ready() {
-				glog.Warning("user doesn't accept proof")
-				return false, nil
-			}
+	var continuators = map[string]continuatorFunc{
+		pltype.SAPresentProofAcceptPropose: verifier.ContinueProposePresentation,
+		pltype.SAPresentProofAcceptValues:  verifier.ContinueHandlePresentation,
+		pltype.CANotifyUserAction:          prover.UserActionProofPresentation,
+	}
 
-			// We continue, get previous data, create the proof and send it
-			agent := wa
-			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+	key := &psm.StateKey{
+		DID:   ca.WDID(),
+		Nonce: im.Thread().ID,
+	}
 
-			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
-			// save created proof to Representative
-			err2.Check(psm.AddPresentProofRep(rep))
+	state, _ := psm.GetPSM(*key)
+	assert.D.True(state != nil, "continue present proof, task not found")
 
-			pres := om.FieldObj().(*presentproof.Presentation)
-			pres.PresentationAttaches = presentproof.NewPresentationAttach(
-				pltype.LibindyPresentationID, []byte(rep.Proof))
+	proofTask := state.LastState().T.(*taskPresentProof)
 
-			return true, nil
-		},
-	}))
+	continuator, ok := continuators[proofTask.UserActionType()]
+	if !ok {
+		glog.Info(string(im.JSON()))
+		s := "no continuator in present proof processor"
+		glog.Error(s)
+		panic(s)
+	}
+	continuator(ca, im)
 }
 
 // handleProofACK is a protocol handler func at PROVER side.

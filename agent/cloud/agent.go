@@ -6,9 +6,7 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/sa"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
@@ -153,45 +151,6 @@ func (a *Agent) callableEA() callType {
 		panic("not a CA")
 	}
 	return a.checkSAImpl()
-}
-
-// TODO LAPI: We should refactor whole machanism now.
-// - remove plugin system? how this relates to impl ID?
-// - DONE: endpoint is not needed because we don't have web hooks anymore
-// - should we go to async PSM at the same time?
-
-// CallEA makes a remove call for real EA and its API (issuer and verifier).
-func (a *Agent) CallEA(plType string, im didcomm.Msg) (om didcomm.Msg, err error) {
-
-	// An error in calling SA usually tells that SA is not present or a
-	// network error did happened. It's better to let actual protocol
-	// continue so other end will know. We cannot just interrupt the protocol.
-	defer err2.Handle(&err, func() {
-		glog.Error("Error in calling EA:", err)
-
-		om = im            // rollback is the safest
-		om.SetReady(false) // The way to tell that NO GO!!
-		err = nil          // clear error so protocol continues NACK to other end
-	})
-
-	switch a.callableEA() {
-	// for the current implementation this is only type used. We use
-	// callTypeImplID for verything, and most importantly for grpc SAs.
-	// other types are for old tests.
-	case callTypeImplID:
-		glog.V(3).Infof("call SA impl %s", a.SAImplID())
-		return sa.Get(a.SAImplID())(a.WDID(), plType, im)
-
-	// we should not be here never.
-	default:
-		// Default answer is definitely NO, we don't have issuer or prover
-		om = im
-		om.SetReady(false)
-		info := "no SA endpoint or implementation ID set"
-		glog.V(3).Info(info)
-		om.SetInfo(info)
-		return om, nil
-	}
 }
 
 func (a *Agent) Trans() txp.Trans {
@@ -425,7 +384,7 @@ func (a *Agent) checkSAImpl() callType {
 
 	// We are in the middle of releasing gRPC API v1 and old SA endpoints
 	// aren't supported any more.
-	a.SetSAImplID(sa.GRPCSA)
+	a.SetSAImplID("grpc")
 	glog.V(3).Infoln("=== using default impl id:", a.SAImplID())
 	return callTypeImplID
 }

@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/prot"
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
@@ -98,11 +98,17 @@ func (a *agentServer) Ping(
 
 	saReply := false
 	if pm.PingController {
-		glog.V(3).Info("calling sa ping")
-		om := mesg.MsgCreator.Create(didcomm.MsgInit{}).(didcomm.Msg)
-		ask, err := receiver.CallEA(pltype.SAPing, om)
-		err2.Check(err)
-		saReply = ask.Ready()
+		glog.V(3).Info("calling sa ping", receiver.WDID())
+		if receiver.AutoPermission() {
+			saReply = true
+		} else {
+			// TODO:
+			// we cannot return ping answer currently synchronously
+			// if needed:
+			// 1) create task with user action handling for ping
+			// 2) block while answer is received
+			// 3) add ping support to Resume-API
+		}
 	}
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
 }
@@ -228,16 +234,22 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
 	defer err2.Annotate("give answer", &err)
 
-	_, receiver := e2.StrRcvr.Try(ca(ctx))
-	bus.WantAllAgentAnswers.AgentSendAnswer(bus.AgentAnswer{
-		ID: answer.ID,
-		AgentKeyType: bus.AgentKeyType{
-			AgentDID: receiver.WDID(),
-			ClientID: answer.ClientID.ID,
-		},
-		ACK:  answer.Ack,
-		Info: answer.Info,
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
+		answer.ID,
+		answer.Ack,
+	)
+
+	state, _ := psm.GetPSM(psm.StateKey{
+		DID:   receiver.WDID(),
+		Nonce: answer.ID,
 	})
+	assert.P.True(state != nil, "no task found for answer")
+
+	prot.Resume(
+		receiver,
+		uniqueTypeID(pb.Protocol_RESUMER, state.FirstState().T.ProtocolType()),
+		answer.ID, answer.Ack)
 
 	return &pb.ClientID{ID: answer.ClientID.ID}, nil
 }
@@ -261,6 +273,7 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_Liste
 		AgentDID: receiver.WDID(),
 		ClientID: clientID.ID,
 	}
+
 	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
 	defer bus.WantAllAgentActions.AgentRmListener(listenKey)
 
@@ -299,35 +312,39 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 				ClientID: &pb.ClientID{ID: clientID.ID},
 			},
 		}
-		if err := server.Send(status); err != nil {
+		if err = server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
 		}
 	})
 
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	glog.V(1).Infoln(caDID, "-agent starts Wait():", clientID.ID)
+	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
+	waitClientID := "Wait" + clientID.ID // avoid collisions
 	listenKey := bus.AgentKeyType{
 		AgentDID: receiver.WDID(),
-		ClientID: clientID.ID,
+		ClientID: waitClientID,
 	}
-	questionChan := bus.WantAllAgentAnswers.AgentAddAnswerer(listenKey)
-	defer bus.WantAllAgentAnswers.AgentRmAnswerer(listenKey)
+
+	notifyChan := bus.WantAllAgentActions.AgentAddListener(listenKey)
+	defer bus.WantAllAgentActions.AgentRmListener(listenKey)
 
 loop:
 	for {
 		select {
-		case question := <-questionChan:
-			glog.V(1).Infoln("QUESTION in conn-id:", question.ConnectionID,
-				"QID:", question.ID,
-				question.ProtocolFamily,
-				questionTypeID[question.NotificationType])
-			assert.D.True(clientID.ID == question.ClientID)
-			q2send := processQuestion(question)
-			q2send.Status.ClientID.ID = question.ClientID
-			err2.Check(server.Send(q2send))
-			glog.V(1).Infoln("send question..")
+		case notify := <-notifyChan:
+			glog.V(1).Infoln("notification", notify.ID, "arrived")
+			assert.D.True(waitClientID == notify.ClientID)
+
+			var question *pb.Question
+			question, err = processQuestion(ctx, notify)
+			err2.Check(err)
+			if question != nil {
+				question.Status.ClientID.ID = clientID.ID
+				err2.Check(server.Send(question))
+				glog.V(1).Infoln("send question..")
+			}
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
@@ -345,44 +362,64 @@ loop:
 		}
 	}
 	return nil
+
 }
 
-func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
+func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
+	defer err2.Annotate("processQuestion", &err)
+
+	notificationType := notificationTypeID[notify.NotificationType]
+	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)
+
+	if notificationType != pb.Notification_PROTOCOL_PAUSED {
+		return nil, nil
+	}
 	q2send := pb.Question{
-		TypeID: questionTypeID[question.NotificationType],
+		TypeID: questionTypeID[notify.NotificationType],
 		Status: &pb.AgentStatus{
-			ClientID: &pb.ClientID{ID: question.AgentDID},
+			ClientID: &pb.ClientID{ID: notify.AgentDID},
 			Notification: &pb.Notification{
-				ID:             question.ID,
-				PID:            question.PID,
-				ConnectionID:   question.ConnectionID,
-				ProtocolID:     question.ProtocolID,
-				ProtocolFamily: question.ProtocolFamily,
-				ProtocolType:   protocolType[question.ProtocolFamily],
-				Timestamp:      question.Timestamp,
-				Role:           roleType[question.Initiator],
+				ID:             notify.ProtocolID,
+				PID:            notify.ProtocolID,
+				ConnectionID:   notify.ConnectionID,
+				ProtocolID:     notify.ProtocolID,
+				ProtocolFamily: notify.ProtocolFamily,
+				ProtocolType:   notificationProtocolType,
+				Timestamp:      notify.Timestamp,
+				Role:           roleType[notify.Initiator],
 			},
 		},
 	}
-	if question.IssuePropose != nil {
+
+	id := &pb.ProtocolID{
+		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
+		Role:   roleType[notify.Initiator],
+		ID:     notify.ProtocolID,
+	}
+
+	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
+	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeID)], protocolName[id.TypeID])
+	ps, _ := tryProtocolStatus(id, key)
+
+	switch notificationProtocolType {
+	case pb.Protocol_ISSUE_CREDENTIAL:
 		glog.V(1).Infoln("issue propose handling")
 		q2send.Question = &pb.Question_IssuePropose{
 			IssuePropose: &pb.Question_IssueProposeMsg{
-				CredDefID:  question.IssuePropose.CredDefID,
-				ValuesJSON: question.IssuePropose.ValuesJSON,
+				CredDefID:  ps.GetIssueCredential().GetCredDefID(),
+				ValuesJSON: ps.GetIssueCredential().GetAttributes().String(), // TODO?
 			},
 		}
-	}
-	if question.ProofVerify != nil {
+	case pb.Protocol_PRESENT_PROOF:
 		glog.V(1).Infoln("proof verify handling")
 		attrs := make([]*pb.Question_ProofVerifyMsg_Attribute, 0,
-			len(question.ProofVerify.Attrs))
-		for _, attr := range question.Attrs {
+			len(ps.GetPresentProof().GetProof().Attributes))
+		for _, attr := range ps.GetPresentProof().GetProof().Attributes {
 			attrs = append(attrs, &pb.Question_ProofVerifyMsg_Attribute{
 				Value:     attr.Value,
 				Name:      attr.Name,
 				CredDefID: attr.CredDefID,
-				//Predicate: attr.Predicate,
 			})
 		}
 		q2send.Question = &pb.Question_ProofVerify{
@@ -390,8 +427,10 @@ func processQuestion(question bus.AgentQuestion) (as *pb.Question) {
 				Attributes: attrs,
 			},
 		}
+
 	}
-	return &q2send
+
+	return &q2send, nil
 }
 
 func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
@@ -403,7 +442,7 @@ func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
 			ConnectionID:   notify.ConnectionID,
 			ProtocolID:     notify.ProtocolID,
 			ProtocolFamily: notify.ProtocolFamily,
-			ProtocolType:   protocolType[notify.ProtocolFamily],
+			ProtocolType:   pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
 			Timestamp:      notify.Timestamp,
 			Role:           roleType[notify.Initiator],
 		},

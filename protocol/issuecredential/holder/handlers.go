@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
 	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -43,6 +44,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred offer ask user", &err)
 
@@ -82,6 +84,48 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 	})
 }
 
+// todo lapi: im message is old legacy api type!!
+
+// userActionCredential is called when Holder has received a Cred_Offer and it's
+// transferred the question to user: if she accepts the credential.
+func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	err2.Check(prot.ContinuePSM(prot.Again{
+		CA:          ca,
+		InMsg:       im,
+		SendNext:    pltype.IssueCredentialRequest,
+		WaitingNext: pltype.IssueCredentialACK,
+		SendOnNACK:  pltype.IssueCredentialNACK,
+		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("issuing user action handler", &err)
+
+			iMsg := im.(didcomm.Msg)
+			ack = iMsg.Ready()
+			if !ack {
+				glog.Warning("user doesn't accept the issuing")
+				return ack, nil
+			}
+
+			agent := wa
+			repK := psm.NewStateKey(agent, im.Thread().ID)
+
+			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+			credRq := err2.String.Try(rep.BuildCredRequest(
+				comm.Packet{Receiver: agent}))
+
+			err2.Check(psm.AddIssueCredRep(rep))
+			req := om.FieldObj().(*issuecredential.Request)
+			req.RequestsAttach =
+				issuecredential.NewRequestAttach([]byte(credRq))
+
+			return true, nil
+		},
+	}))
+}
+
 func checkAutoPermission(packet comm.Packet) (next string, wait string) {
 	if packet.Receiver.AutoPermission() {
 		next = pltype.IssueCredentialRequest
@@ -99,6 +143,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialACK,
 		WaitingNext: pltype.Terminate, // no next state, we are fine
+
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred issue", &err)
 

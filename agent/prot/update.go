@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -33,8 +32,6 @@ type notifyEdge struct {
 func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
-		myCA := r.MyCA()
-
 		go func() {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
@@ -54,15 +51,6 @@ func NotifyEdge(ne notifyEdge) {
 				Timestamp:        ne.timestamp,
 				Initiator:        ne.initiator,
 			})
-
-			msg := mesg.MsgCreator.Create(didcomm.MsgInit{
-				Nonce: ne.nonce,
-				Name:  ne.pwName,
-				Body:  taskStatus,
-			}).(didcomm.Msg)
-
-			// Webhook - catch and ignore errors in response parsing
-			_, _ = myCA.CallEA(ne.plType, msg)
 		}()
 	} else {
 		glog.Warning("unable to notify edge with did", ne.did)
@@ -147,6 +135,7 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		plType:            plType,
 		pendingUserAction: machine.PendingUserAction(),
 		initiator:         machine.Initiator,
+		userActionType:    task.UserActionType(),
 	})
 
 	return nil
@@ -229,6 +218,7 @@ type endingInfo struct {
 	timestamp         int64
 	pendingUserAction bool
 	initiator         bool
+	userActionType    string
 }
 
 func triggerEnd(info endingInfo) {
@@ -264,7 +254,7 @@ func triggerEnd(info endingInfo) {
 			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(notifyEdge{
 				did:       info.meDID,
-				plType:    pltype.CANotifyUserAction,
+				plType:    info.userActionType,
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,

@@ -20,10 +20,11 @@ import (
 // rules to execute state transition i.e. move to next state.
 type Transition struct {
 	comm.Packet
-	SendNext    string // the type of the PL we will send next if any
-	WaitingNext string // the type of the PL we will wait if any
-	SendOnNACK  string // the type to send when we NACK
-	InOut              // the handler func, NOTE! return false in all NACK cases
+	SendNext    string           // the type of the PL we will send next if any
+	WaitingNext string           // the type of the PL we will wait if any
+	SendOnNACK  string           // the type to send when we NACK
+	InOut                        // the handler func, NOTE! return false in all NACK cases
+	TaskHeader  *comm.TaskHeader // updated task data
 }
 
 // TransitionHandler is a type for Transition to process PSM state transition.
@@ -193,12 +194,15 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	// Task is a helper struct here by gathering all needed data for one unit
-	task := &comm.TaskBase{
-		TaskHeader: comm.TaskHeader{
-			TaskID: ts.Payload.ThreadID(),
-			TypeID: ts.Payload.Type(),
-		},
+	if ts.TaskHeader == nil {
+		ts.TaskHeader = &comm.TaskHeader{}
 	}
+	ts.TaskHeader.TaskID = ts.Payload.ThreadID()
+	ts.TaskHeader.TypeID = ts.Payload.Type()
+
+	// Create protocol task in protocol implementation
+	task, err := CreateTask(ts.TaskHeader, nil)
+	err2.Check(err)
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -300,10 +304,11 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
-	taskCreator, ok := creators[header.TypeID]
+	protocolType := mesg.ProtocolForType(header.TypeID)
+	taskCreator, ok := creators[protocolType]
 	if !ok {
-		s := "!!!! No task creator !!!"
-		glog.Error(s, header.TypeID)
+		s := "!!!! No task creator !!! %s, %s"
+		glog.Errorf(s, protocolType, header.TypeID)
 		panic(s)
 	}
 
@@ -326,16 +331,6 @@ func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
 	go proc.Starter(receiver, task)
 }
 
-func Continue(packet comm.Packet, im didcomm.Msg) {
-	proc, ok := continuators[packet.Payload.Type()]
-	if !ok {
-		glog.Error("!!No prot continuator for:", packet.Payload.Type())
-		panic("no protocol continuator")
-	}
-
-	go proc.Continuator(packet.Receiver, im)
-}
-
 func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	proc, ok := continuators[typeID]
 	if !ok {
@@ -346,6 +341,7 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	om := mesg.MsgCreator.Create(didcomm.MsgInit{
 		Ready: ack,
 		ID:    protocolID,
+		Nonce: protocolID,
 	}).(didcomm.Msg)
 
 	go proc.Continuator(rcvr, om)

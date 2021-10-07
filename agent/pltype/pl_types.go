@@ -1,5 +1,10 @@
 package pltype
 
+import (
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	"github.com/golang/glog"
+)
+
 // name constants
 const (
 	HandshakePairwiseName = "HANDSHAKE"
@@ -149,12 +154,9 @@ const (
 	CAWalletGet = CAWallet + "/1.0/get"
 
 	// Protocol launchers - protocol string must match Aries protocol
-	CAPairwise             = CA + "/" + AriesProtocolConnection
-	CAPairwiseInvitation   = CAPairwise + "/1.0/invitation"
-	CAPairwiseCreate       = CAPairwise + "/1.0/create"
-	CAPairwiseAndCredReq   = CAPairwise + "/1.0/create_and_cred_req"
-	CAPairwiseAndProofProp = CAPairwise + "/1.0/create_and_proof_prop"
-	CAPairwiseAndTrustPing = CAPairwise + "/1.0/create_and_trust_ping"
+	CAPairwise           = CA + "/" + AriesProtocolConnection
+	CAPairwiseInvitation = CAPairwise + "/1.0/invitation"
+	CAPairwiseCreate     = CAPairwise + "/1.0/create"
 
 	// Protocol launcher - protocol string must match Aries protocol
 	CATrustPing = CA + "/" + ProtocolTrustPing + "/1.0/ping"
@@ -195,3 +197,19 @@ const (
 	CAContinuePresentProofProtocol    = CA + "/protocol/1.0/continue-present-proof"
 	CAContinueIssueCredentialProtocol = CA + "/protocol/1.0/continue-issue-credential"
 )
+
+var protocolType = map[string]pb.Protocol_Type{
+	AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
+	ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
+	ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
+	ProtocolTrustPing:       pb.Protocol_TRUST_PING,
+	ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
+}
+
+func ProtocolTypeForFamily(family string) pb.Protocol_Type {
+	if protocol, ok := protocolType[family]; ok {
+		return protocol
+	}
+	glog.Warningf("no protocol type found for family %s", family)
+	return pb.Protocol_NONE
+}

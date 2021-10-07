@@ -3,6 +3,8 @@ package comm
 import (
 	"encoding/gob"
 
+	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
@@ -12,20 +14,22 @@ func init() {
 }
 
 type Task interface {
-	ID() string
-	Type() string
-	Role() pb.Protocol_Role
-	ConnectionID() string
-	ReceiverEndp() service.Addr
+	ID() string                     // Unique uid: API Protocol ID/Protocol thread ID
+	Type() string                   // Our internal payload type
+	ProtocolType() pb.Protocol_Type // Aries protocol
+	UserActionType() string         // Internal payload type when waiting for user action
+	Role() pb.Protocol_Role         // Agent role in Aries protocol
+	ConnectionID() string           // Pairwise id
+	ReceiverEndp() service.Addr     // Pairwise receiver endpoint
 	SetReceiverEndp(r service.Addr)
 }
 
 type TaskHeader struct {
-	TaskID         string
-	TypeID         string
-	ProtocolTypeID string
-	ProtocolRole   pb.Protocol_Role
-	ConnID         string
+	TaskID           string
+	TypeID           string
+	ProtocolRole     pb.Protocol_Role
+	ConnID           string
+	UserActionPLType string
 
 	Sender   service.Addr
 	Receiver service.Addr
@@ -44,12 +48,20 @@ func (t *TaskBase) Type() string {
 	return t.TypeID
 }
 
+func (t *TaskBase) ProtocolType() pb.Protocol_Type {
+	return pltype.ProtocolTypeForFamily(mesg.ProtocolForType(t.TypeID))
+}
+
 func (t *TaskBase) Role() pb.Protocol_Role {
 	return t.ProtocolRole
 }
 
 func (t *TaskBase) ConnectionID() string {
 	return t.ConnID
+}
+
+func (t *TaskBase) UserActionType() string {
+	return t.UserActionPLType
 }
 
 func (t *TaskBase) ReceiverEndp() service.Addr {

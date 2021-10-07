@@ -26,6 +26,7 @@ type AgentNotify struct {
 	ProtocolFamily   string
 	Timestamp        int64
 	Initiator        bool
+	UserActionType   string
 	*IssuePropose
 	*ProofVerify
 }

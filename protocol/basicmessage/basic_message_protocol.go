@@ -40,7 +40,7 @@ var basicMessageProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskBasicMessage{})
-	prot.AddCreator(pltype.CABasicMessage, basicMessageProcessor)
+	prot.AddCreator(pltype.ProtocolBasicMessage, basicMessageProcessor)
 	prot.AddStarter(pltype.CABasicMessage, basicMessageProcessor)
 	prot.AddStatusProvider(pltype.ProtocolBasicMessage, basicMessageProcessor)
 	comm.Proc.Add(pltype.ProtocolBasicMessage, basicMessageProcessor)
@@ -49,15 +49,20 @@ func init() {
 func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createBasicMessageTask", &err)
 
-	assert.P.True(
-		protocol.GetBasicMessage() != nil,
-		"basic message protocol data missing")
+	var content string
+	if protocol != nil {
+		assert.P.True(
+			protocol.GetBasicMessage() != nil,
+			"basic message protocol data missing")
 
-	glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnID)
+		content = protocol.GetBasicMessage().GetContent()
+
+		glog.V(1).Infof("Create task for BasicMessage with connection id %s", header.ConnID)
+	}
 
 	return &taskBasicMessage{
 		TaskBase: comm.TaskBase{TaskHeader: *header},
-		Content:  protocol.GetBasicMessage().GetContent(),
+		Content:  content,
 	}, nil
 }
 

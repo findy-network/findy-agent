@@ -53,21 +53,25 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
 	header := &comm.TaskHeader{
-		TaskID:         utils.UUID(),
-		TypeID:         uniqueTypeID(protocol.Role, protocol.TypeID),
-		ProtocolTypeID: protocol.GetTypeID().String(),
-		ProtocolRole:   protocol.GetRole(),
-		ConnID:         protocol.GetConnectionID(),
+		TaskID:       utils.UUID(),
+		TypeID:       uniqueTypeID(protocol.Role, protocol.TypeID),
+		ProtocolRole: protocol.GetRole(),
+		ConnID:       protocol.GetConnectionID(),
 	}
 	return prot.CreateTask(header, protocol)
 }
 
 var notificationTypeID = map[string]pb.Notification_Type{
-	pltype.CANotifyStatus:     pb.Notification_STATUS_UPDATE,
-	pltype.CANotifyUserAction: pb.Notification_PROTOCOL_PAUSED,
+	pltype.CANotifyStatus:                 pb.Notification_STATUS_UPDATE,
+	pltype.CANotifyUserAction:             pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPing:                         pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAIssueCredentialAcceptPropose: pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPresentProofAcceptPropose:    pb.Notification_PROTOCOL_PAUSED,
+	pltype.SAPresentProofAcceptValues:     pb.Notification_PROTOCOL_PAUSED,
 }
 
 var questionTypeID = map[string]pb.Question_Type{
+	pltype.CANotifyUserAction:             pb.Question_NONE,
 	pltype.SAPing:                         pb.Question_PING_WAITS,
 	pltype.SAIssueCredentialAcceptPropose: pb.Question_ISSUE_PROPOSE_WAITS,
 	pltype.SAPresentProofAcceptPropose:    pb.Question_PROOF_PROPOSE_WAITS,
@@ -106,14 +110,6 @@ var protocolName = [...]string{
 	pltype.ProtocolPresentProof,    // "PROOF",
 	pltype.ProtocolTrustPing,       // "TRUST_PING",
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
-}
-
-var protocolType = map[string]pb.Protocol_Type{
-	pltype.AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
-	pltype.ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
-	pltype.ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
-	pltype.ProtocolTrustPing:       pb.Protocol_TRUST_PING,
-	pltype.ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
 }
 
 var roleType = map[bool]pb.Protocol_Role{
