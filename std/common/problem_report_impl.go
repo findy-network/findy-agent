@@ -31,6 +31,7 @@ func (f *ProblemReportFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&ProblemReportImpl{})
 	aries.Creator.Add(pltype.NotificationProblemReport, ProblemReportCreator)
+	aries.Creator.Add(pltype.DIDOrgNotificationProblemReport, ProblemReportCreator)
 }
 
 func NewProblemReport(r *ProblemReport) *ProblemReportImpl {

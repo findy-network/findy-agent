@@ -31,6 +31,7 @@ func (f *Factor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&ProposeImpl{})
 	aries.Creator.Add(pltype.PresentProofPropose, Creator)
+	aries.Creator.Add(pltype.DIDOrgPresentProofPropose, Creator)
 }
 
 func NewPropose(r *Propose) *ProposeImpl {

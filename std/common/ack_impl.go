@@ -32,6 +32,8 @@ func init() {
 	gob.Register(&AckImpl{})
 	aries.Creator.Add(pltype.IssueCredentialACK, AckCreator)
 	aries.Creator.Add(pltype.PresentProofACK, AckCreator)
+	aries.Creator.Add(pltype.DIDOrgIssueCredentialACK, AckCreator)
+	aries.Creator.Add(pltype.DIDOrgPresentProofACK, AckCreator)
 }
 
 func NewAck(r *Ack) *AckImpl {

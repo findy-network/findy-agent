@@ -49,6 +49,10 @@ const (
 	ProblemReport             = Aries + "/" + ProtocolNotification
 	NotificationProblemReport = ProblemReport + "/1.0/" + HandlerProblemReport
 	NotificationAck           = ProblemReport + "/1.0/" + HandlerAck
+
+	DIDOrgProblemReport             = DIDOrgAries + "/" + ProtocolNotification
+	DIDOrgNotificationProblemReport = DIDOrgProblemReport + "/1.0/" + HandlerProblemReport
+	DIDOrgNotificationAck           = DIDOrgProblemReport + "/1.0/" + HandlerAck
 )
 
 // Issue Credential protocol constants
@@ -71,6 +75,16 @@ const (
 	IssueCredentialACK               = IssueCredential + "/1.0/" + HandlerIssueCredentialACK
 	IssueCredentialNACK              = IssueCredential + "/1.0/" + HandlerIssueCredentialNACK
 	IssueCredentialCredentialPreview = IssueCredential + "/1.0/" + ObjectTypeCredentialPreview
+
+	DIDOrgIssueCredential                  = DIDOrgAries + "/" + ProtocolIssueCredential
+	DIDOrgIssueCredentialPropose           = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialPropose
+	DIDOrgIssueCredentialOffer             = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialOffer
+	DIDOrgIssueCredentialUserAction        = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialUserAction
+	DIDOrgIssueCredentialRequest           = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialRequest
+	DIDOrgIssueCredentialIssue             = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialIssue
+	DIDOrgIssueCredentialACK               = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialACK
+	DIDOrgIssueCredentialNACK              = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialNACK
+	DIDOrgIssueCredentialCredentialPreview = DIDOrgIssueCredential + "/1.0/" + ObjectTypeCredentialPreview
 )
 
 // DID exchange aka Connection related constants
@@ -85,6 +99,12 @@ const (
 	AriesConnectionRequest    = AriesConnection + "/1.0/" + HandlerRequest
 	AriesConnectionOffer      = AriesConnection + "/1.0/" + HandlerOffer
 	AriesConnectionResponse   = AriesConnection + "/1.0/" + HandlerResponse
+
+	DIDOrgAriesConnection           = DIDOrgAries + "/" + AriesProtocolConnection
+	DIDOrgAriesConnectionInvitation = DIDOrgAriesConnection + "/1.0/" + Invitation
+	DIDOrgAriesConnectionRequest    = DIDOrgAriesConnection + "/1.0/" + HandlerRequest
+	DIDOrgAriesConnectionOffer      = DIDOrgAriesConnection + "/1.0/" + HandlerOffer
+	DIDOrgAriesConnectionResponse   = DIDOrgAriesConnection + "/1.0/" + HandlerResponse
 )
 
 // Present Proof protocol constants
@@ -105,6 +125,15 @@ const (
 	PresentProofACK                 = PresentProof + "/1.0/" + HandlerPresentProofACK
 	PresentProofNACK                = PresentProof + "/1.0/" + HandlerPresentProofNACK
 	PresentationPreviewObj          = PresentProof + "/1.0/" + ObjectTypePresentationPreview
+
+	DIDOrgPresentProof             = Aries + "/" + ProtocolPresentProof
+	DIDOrgPresentProofPropose      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPropose
+	DIDOrgPresentProofRequest      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofRequest
+	DIDOrgPresentProofPresentation = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPresentation
+	DIDOrgPresentProofUserAction   = DIDOrgPresentProof + "/1.0/" + HandlerPresentUserAction
+	DIDOrgPresentProofACK          = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofACK
+	DIDOrgPresentProofNACK         = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofNACK
+	DIDOrgPresentationPreviewObj   = DIDOrgPresentProof + "/1.0/" + ObjectTypePresentationPreview
 )
 
 // Basic Message protocol constants
@@ -113,6 +142,9 @@ const (
 	HandlerMessage       = "message"
 	BasicMessage         = Aries + "/" + ProtocolBasicMessage
 	BasicMessageSend     = BasicMessage + "/1.0/" + HandlerMessage
+
+	DIDOrgBasicMessage     = DIDOrgAries + "/" + ProtocolBasicMessage
+	DIDOrgBasicMessageSend = DIDOrgBasicMessage + "/1.0/" + HandlerMessage
 )
 
 // Trust Ping protocol constants
@@ -123,6 +155,10 @@ const (
 	TrustPing           = Aries + "/" + ProtocolTrustPing
 	TrustPingPing       = TrustPing + "/1.0/" + HandlerPing
 	TrustPingResponse   = TrustPing + "/1.0/" + HandlerPingResponse
+
+	DIDOrgTrustPing         = DIDOrgAries + "/" + ProtocolTrustPing
+	DIDOrgTrustPingPing     = DIDOrgTrustPing + "/1.0/" + HandlerPing
+	DIDOrgTrustPingResponse = DIDOrgTrustPing + "/1.0/" + HandlerPingResponse
 )
 
 // SA API msg types
