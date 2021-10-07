@@ -220,7 +220,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 				// set proof req to outgoing request message
 				req := msg.FieldObj().(*presentproof.Request)
 				req.RequestPresentations = presentproof.NewRequestPresentation(
-					utils.UUID(), []byte(proofReqStr))
+					pltype.LibindyRequestPresentationID, []byte(proofReqStr))
 
 				// create Rep and save it for PSM to run protocol
 				rep := &psm.PresentProofRep{

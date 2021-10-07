@@ -19,6 +19,7 @@ const (
 	CA        = "urn:indy:sov:agent_api:message_type:findy.fi"
 	SA        = "urn:indy:sov:service_agent_api:message_type:findy.fi"
 
+	LibindyRequestPresentationID = "libindy-request-presentation-0"
 	LibindyPresentationID = "libindy-presentation-0"
 
 	UserAction = "user-action"
