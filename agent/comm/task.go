@@ -14,7 +14,7 @@ func init() {
 }
 
 type Task interface {
-	ID() string                     // Unique uid
+	ID() string                     // Unique uid: API Protocol ID/Protocol thread ID
 	Type() string                   // Our internal payload type
 	ProtocolType() pb.Protocol_Type // Aries protocol
 	UserActionType() string         // Internal payload type when waiting for user action

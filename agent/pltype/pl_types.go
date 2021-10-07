@@ -2,6 +2,7 @@ package pltype
 
 import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	"github.com/golang/glog"
 )
 
 // name constants
@@ -209,5 +210,6 @@ func ProtocolTypeForFamily(family string) pb.Protocol_Type {
 	if protocol, ok := protocolType[family]; ok {
 		return protocol
 	}
+	glog.Warningf("no protocol type found for family %s", family)
 	return pb.Protocol_NONE
 }
