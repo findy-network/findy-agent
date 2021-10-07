@@ -94,7 +94,7 @@ func init() {
 	err2.Check(viper.BindPFlag("logging", flags.Lookup("logging")))
 	err2.Check(viper.BindPFlag("dry-run", flags.Lookup("dry-run")))
 
-	BindEnvs(rootEnvs, "")
+	err2.Check(BindEnvs(rootEnvs, ""))
 
 }
 
@@ -157,13 +157,17 @@ func handleViperFlags(cmd *cobra.Command) {
 }
 
 func setRequiredStringFlags(cmd *cobra.Command) {
-	viper.BindPFlags(cmd.LocalFlags())
+	defer err2.Catch(func(err error) {
+		log.Println(err)
+	})
+
+	err2.Check(viper.BindPFlags(cmd.LocalFlags()))
 	if cmd.PreRunE != nil {
-		cmd.PreRunE(cmd, nil)
+		err2.Check(cmd.PreRunE(cmd, nil))
 	}
 	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
 		if viper.GetString(f.Name) != "" {
-			cmd.LocalFlags().Set(f.Name, viper.GetString(f.Name))
+			err2.Check(cmd.LocalFlags().Set(f.Name, viper.GetString(f.Name)))
 		}
 	})
 }
@@ -171,6 +175,6 @@ func setRequiredStringFlags(cmd *cobra.Command) {
 // SubCmdNeeded prints the help and error messages because the cmd is abstract.
 func SubCmdNeeded(cmd *cobra.Command) {
 	fmt.Println("Subcommand needed!")
-	cmd.Help()
+	_ = cmd.Help()
 	os.Exit(1)
 }

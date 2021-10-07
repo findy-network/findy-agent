@@ -99,6 +99,10 @@ func (p *Caller) ReceiveResponse(encryptedResponse string) didcomm.PwMsg {
 }
 
 func (p *Caller) processMessage(decryptedMsg didcomm.PwMsg) {
+	defer err2.Catch(func(err error) {
+		glog.Errorln("error in finalizing a pairwise:", err)
+	})
+
 	// get the DID from decrypted msg data values
 	p.callee = ssi.NewDid(decryptedMsg.Did(), decryptedMsg.VerKey())
 
@@ -107,13 +111,11 @@ func (p *Caller) processMessage(decryptedMsg didcomm.PwMsg) {
 
 	// Only a cloud agent can write to the ledger where we don't write on test mode
 	if p.agent.IsCA() && !utils.Settings.LocalTestMode() {
-		p.agent.SendNYM(p.callee, p.callerRoot.Did(), findy.NullString, findy.NullString)
+		err2.Check(p.agent.SendNYM(p.callee, p.callerRoot.Did(), findy.NullString, findy.NullString))
 	}
 
 	// Check the result for error handling AND for consuming async's result
-	if err := p.StoreResult(); err != nil {
-		glog.Error("error in finalizing a pairwise: ", err)
-	}
+	err2.Check(p.StoreResult())
 }
 
 func (p *Caller) StartStore() {
