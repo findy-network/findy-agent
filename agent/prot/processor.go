@@ -304,10 +304,11 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
-	taskCreator, ok := creators[mesg.ProtocolForType(header.TypeID)]
+	protocolType := mesg.ProtocolForType(header.TypeID)
+	taskCreator, ok := creators[protocolType]
 	if !ok {
-		s := "!!!! No task creator !!!"
-		glog.Error(s, header.TypeID)
+		s := "!!!! No task creator !!! %s, %s"
+		glog.Errorf(s, protocolType, header.TypeID)
 		panic(s)
 	}
 

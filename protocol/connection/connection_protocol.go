@@ -57,7 +57,9 @@ var connectionProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskDIDExchange{})
+	// handle both protocol formats - with and without s
 	prot.AddCreator(pltype.ProtocolConnection, connectionProcessor)
+	prot.AddCreator(pltype.AriesProtocolConnection, connectionProcessor)
 	prot.AddStarter(pltype.CAPairwiseCreate, connectionProcessor)
 	prot.AddStatusProvider(pltype.AriesProtocolConnection, connectionProcessor)
 	comm.Proc.Add(pltype.AriesProtocolConnection, connectionProcessor)

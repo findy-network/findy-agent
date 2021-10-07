@@ -153,12 +153,9 @@ const (
 	CAWalletGet = CAWallet + "/1.0/get"
 
 	// Protocol launchers - protocol string must match Aries protocol
-	CAPairwise             = CA + "/" + AriesProtocolConnection
-	CAPairwiseInvitation   = CAPairwise + "/1.0/invitation"
-	CAPairwiseCreate       = CAPairwise + "/1.0/create"
-	CAPairwiseAndCredReq   = CAPairwise + "/1.0/create_and_cred_req"
-	CAPairwiseAndProofProp = CAPairwise + "/1.0/create_and_proof_prop"
-	CAPairwiseAndTrustPing = CAPairwise + "/1.0/create_and_trust_ping"
+	CAPairwise           = CA + "/" + AriesProtocolConnection
+	CAPairwiseInvitation = CAPairwise + "/1.0/invitation"
+	CAPairwiseCreate     = CAPairwise + "/1.0/create"
 
 	// Protocol launcher - protocol string must match Aries protocol
 	CATrustPing = CA + "/" + ProtocolTrustPing + "/1.0/ping"

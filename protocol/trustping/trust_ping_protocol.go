@@ -44,7 +44,7 @@ func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm
 
 	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnID)
 
-	if protocol.ConnectionID == "" {
+	if protocol != nil && protocol.ConnectionID == "" {
 		glog.Warningln("pinging first found connection, conn-id was empty")
 	}
 

@@ -33,7 +33,6 @@ type statusPresentProof struct {
 	Attributes []didcomm.ProofAttribute `json:"attributes"`
 }
 
-type handlerFunc func(packet comm.Packet, task comm.Task) (err error)
 type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
 
 var presentProofProcessor = comm.ProtProc{

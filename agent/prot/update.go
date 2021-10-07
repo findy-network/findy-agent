@@ -32,8 +32,6 @@ type notifyEdge struct {
 func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
-		//myCA := r.MyCA()
-
 		go func() {
 			defer err2.CatchTrace(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)

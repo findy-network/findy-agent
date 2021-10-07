@@ -64,10 +64,6 @@ func (t *TaskBase) UserActionType() string {
 	return t.UserActionPLType
 }
 
-func (t *TaskBase) SetUserActionType(userActionType string) {
-	t.UserActionPLType = userActionType
-}
-
 func (t *TaskBase) ReceiverEndp() service.Addr {
 	return t.Receiver
 }

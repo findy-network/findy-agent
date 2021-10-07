@@ -34,7 +34,6 @@ type statusIssueCredential struct {
 	Attributes []didcomm.CredentialAttribute `json:"attributes"`
 }
 
-type handlerFunc func(packet comm.Packet, task comm.Task) (err error)
 type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
 
 var issueCredentialProcessor = comm.ProtProc{
