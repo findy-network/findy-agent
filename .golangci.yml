@@ -49,6 +49,7 @@ linters:
     - dogsled
     #    - dupl
     #    - errcheck
+    - exportloopref
     #    - exhaustive
     - funlen
     #    - gochecknoinits
@@ -72,12 +73,12 @@ linters:
     - revive
     - rowserrcheck
     - staticcheck
-    #    - structcheck
+    - structcheck
     #    - stylecheck
     - typecheck
     - unconvert
     #    - unparam
-    #    - unused
+    #- unused
     - varcheck
     #   - whitespace
 issues:
@@ -87,6 +88,6 @@ issues:
       text: "dot-imports:"
 run:
 service:
-  golangci-lint-version: 1.41.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.42.x # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"

@@ -3,7 +3,6 @@ package utils
 import (
 	"os"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -129,7 +128,6 @@ func Test_reg_enumValues(t *testing.T) {
 	}
 	type fields struct {
 		r regMapType
-		l sync.Mutex
 	}
 	type args struct {
 		handler func(k keyDID, v []string) bool
@@ -162,7 +160,6 @@ func Test_reg_Reset(t *testing.T) {
 
 	type fields struct {
 		r regMapType
-		l sync.Mutex
 	}
 	type args struct {
 		filename string
