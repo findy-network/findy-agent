@@ -11,8 +11,6 @@ type Ready chan bool
 type StateChan chan psm.SubState
 
 type Station struct {
-	channels map[KeyType]Ready
-	lk       sync.Mutex
 }
 
 type mapIndex int

@@ -45,13 +45,7 @@ var (
 	}{
 		m: make(map[Endpoint]comm.SeedHandler),
 	}
-
-	agencyHandler comm.Handler
 )
-
-func SetAgencyHandler(handler comm.Handler) {
-	agencyHandler = handler
-}
 
 // CurrentTr returns current Transport according the PL receiver.
 func CurrentTr(addr *endp.Addr) txp.Trans {
@@ -155,7 +149,6 @@ func buildHandlerFromSeed(rcvrDID string) {
 	handlers.Lock()
 	defer handlers.Unlock()
 	handlers.m[rcvrDID] = h
-	return
 }
 
 // RcvrCA returns the CA which is the actual PL receiver and Handler.

@@ -45,7 +45,7 @@ func Test_getAllPSM(t *testing.T) {
 	registerGobs()
 	data := []PSM{*testPSM(0), *testPSM(123), *testPSM(200)}
 	for _, d := range data {
-		db.addPSM(&d)
+		_ = db.addPSM(&d)
 	}
 
 	tests := []struct {
@@ -78,7 +78,7 @@ func Test_getAllDeviceID(t *testing.T) {
 	}
 	data := []DeviceIDRep{*deviceIDRep}
 	for _, d := range data {
-		db.AddDeviceIDRep(&d)
+		_ = db.AddDeviceIDRep(&d)
 	}
 
 	tests := []struct {

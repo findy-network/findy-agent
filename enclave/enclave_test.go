@@ -41,7 +41,7 @@ func TestNewWalletKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, k, k2)
 
-	k, err = NewWalletKey(emailAddress)
+	_, err = NewWalletKey(emailAddress)
 	assert.Error(t, err)
 }
 

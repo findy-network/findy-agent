@@ -20,6 +20,8 @@ import (
 	"github.com/lainio/err2"
 )
 
+const ackOK = "OK"
+
 func generateProofRequest(proofTask *presentproof.Propose) *anoncreds.ProofRequest {
 	reqAttrs := make(map[string]anoncreds.AttrInfo)
 	for index, attr := range proofTask.PresentationProposal.Attributes {
@@ -192,7 +194,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 			// Autoaccept -> all checks done, let's send ACK
 			ackMsg, autoAccept := om.FieldObj().(*common.Ack)
 			if autoAccept {
-				ackMsg.Status = "OK"
+				ackMsg.Status = ackOK
 			}
 
 			return true, nil
@@ -223,7 +225,7 @@ func ContinueHandlePresentation(ca comm.Receiver, im didcomm.Msg) {
 
 			// All checks done, let's send ACK
 			ackMsg := om.FieldObj().(*common.Ack)
-			ackMsg.Status = "OK"
+			ackMsg.Status = ackOK
 
 			return true, nil
 		},

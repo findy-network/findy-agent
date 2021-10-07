@@ -108,6 +108,7 @@ func (a *agentServer) Ping(
 			// 1) create task with user action handling for ping
 			// 2) block while answer is received
 			// 3) add ping support to Resume-API
+			glog.Warning("SA ping not implemented")
 		}
 	}
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
@@ -197,12 +198,12 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 	defer err2.Annotate("create invitation", &err)
 
 	// in the future we might have generatedConnID as argument in the API
-	id, generatedConnID := base.ID, base.ID
+	id := base.ID
+	generatedConnID := id
 	// if connection is not given from the caller we generate a new one and use
 	// it for both one
 	if id == "" {
 		id = utils.UUID()
-		generatedConnID = id
 		glog.V(4).Infoln("generating connection id:", id)
 	} else {
 		generatedConnID = utils.UUID()

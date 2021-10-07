@@ -312,10 +312,6 @@ func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
 	return newMsgFrom(string(msgJSON))
 }
 
-func (m *Msg) anonDecrypt(wallet int, did *ssi.DID) *Msg {
-	return NewAnonDecryptedMsg(wallet, m.Encrypted, did)
-}
-
 func (m *Msg) AnonEncrypt(did *ssi.DID) *Msg {
 	mb := dto.ToJSONBytes(m)
 	f := ssi.Future{}

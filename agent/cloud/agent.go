@@ -133,26 +133,6 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	}
 }
 
-// callType and related constants will be deprecated when old Agency API is
-// removed. In them meanwhile we use the to allow old API based tests to work.
-// Please be noted that callTypeImplID is now the default not previous
-// callTypeNone.
-type callType int
-
-const (
-	_ callType = 0 + iota // was callTypeNone but not needed anymore
-	callTypeImplID
-)
-
-// callableEA tells if we can call EA from here, from Agency. It means that EA
-// is offering a callable endpoint and we must have a pairwise do that.
-func (a *Agent) callableEA() callType {
-	if !a.IsCA() {
-		panic("not a CA")
-	}
-	return a.checkSAImpl()
-}
-
 func (a *Agent) Trans() txp.Trans {
 	return a.Tr
 }
@@ -375,16 +355,4 @@ func (a *Agent) SecPipe(meDID string) sec.Pipe {
 	defer a.pwLock.Unlock()
 
 	return a.pws[meDID]
-}
-
-func (a *Agent) checkSAImpl() callType {
-	if a.SAImplID() != "" {
-		return callTypeImplID
-	}
-
-	// We are in the middle of releasing gRPC API v1 and old SA endpoints
-	// aren't supported any more.
-	a.SetSAImplID("grpc")
-	glog.V(3).Infoln("=== using default impl id:", a.SAImplID())
-	return callTypeImplID
 }

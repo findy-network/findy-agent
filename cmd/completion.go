@@ -28,9 +28,9 @@ above to your shell configuration script (e.g. .bash_profile/.zshrc).
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
 		case "bash":
-			rootCmd.GenBashCompletion(os.Stdout)
+			_ = rootCmd.GenBashCompletion(os.Stdout)
 		case "zsh":
-			rootCmd.GenZshCompletion(os.Stdout)
+			_ = rootCmd.GenZshCompletion(os.Stdout)
 		}
 	},
 }

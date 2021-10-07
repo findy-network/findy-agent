@@ -116,17 +116,6 @@ func (tr Transport) sendEndpDIDComPL(endp string, p didcomm.Payload) (didcomm.Pa
 	return payload, err
 }
 
-func (tr Transport) sendEndpPL(endp string, p *mesg.Payload, orgNonce uint64) (*mesg.Payload, error) {
-	data := tr.PLPipe.Encrypt(dto.ToJSONBytes(p))
-	responseData, err := comm.SendAndWaitReq(endp,
-		bytes.NewReader(data), utils.Settings.Timeout())
-	if err != nil {
-		return nil, fmt.Errorf("send to CA: %s", err)
-	}
-	payload := tr.receivePayload(responseData, orgNonce)
-	return payload, err
-}
-
 func (tr Transport) Call(msgType string, msg *mesg.Msg) (rp *mesg.Payload, err error) {
 	sendMsg := *msg
 	originalNonce := utils.NewNonceStr()
@@ -200,20 +189,6 @@ func (tr Transport) decryptMsg(pl *mesg.Payload) (rm mesg.Msg) {
 		return pl.Message
 	}
 	return *tr.DecMsg(&pl.Message)
-}
-
-func (tr Transport) receivePl(ws *websocket.Conn) (pl *mesg.Payload, err error) {
-	var data []byte
-	if err = websocket.Message.Receive(ws, &data); err != nil {
-		glog.V(1).Info(err)
-		return
-	}
-	pl = mesg.NewPayload(tr.PLPipe.Decrypt(data))
-	if pl == nil {
-		glog.Error("cannot decrypt payload")
-		return pl, fmt.Errorf("cannot decrypt payload")
-	}
-	return pl, err
 }
 
 func (tr Transport) Notify(ws *websocket.Conn, pl *mesg.Payload) error {

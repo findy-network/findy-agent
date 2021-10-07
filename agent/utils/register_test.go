@@ -3,7 +3,6 @@ package utils
 import (
 	"os"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -53,8 +52,8 @@ func Test_newReg_and_toJsonBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotR := NewReg(tt.args.data); !reflect.DeepEqual(gotR, tt.wantR) {
-				t.Errorf("NewReg() = %v, want %v", gotR, tt.wantR)
+			if gotR := newReg(tt.args.data); !reflect.DeepEqual(gotR, tt.wantR) {
+				t.Errorf("newReg() = %v, want %v", gotR, tt.wantR)
 			}
 		})
 	}
@@ -129,7 +128,6 @@ func Test_reg_enumValues(t *testing.T) {
 	}
 	type fields struct {
 		r regMapType
-		l sync.Mutex
 	}
 	type args struct {
 		handler func(k keyDID, v []string) bool
@@ -162,7 +160,6 @@ func Test_reg_Reset(t *testing.T) {
 
 	type fields struct {
 		r regMapType
-		l sync.Mutex
 	}
 	type args struct {
 		filename string

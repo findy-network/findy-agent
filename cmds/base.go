@@ -74,7 +74,7 @@ func ValidateTime(t string) error {
 var r *regexp.Regexp
 
 func init() {
-	r, _ = regexp.Compile("^([0-1]?\\d|2[0-3]):([0-5]?\\d)(?::([0-5]?\\d))?$")
+	r, _ = regexp.Compile(`^([0-1]?\d|2[0-3]):([0-5]?\d)(?::([0-5]?\d))?$`)
 }
 
 func ValidateSeed(seed string) error {
@@ -96,7 +96,7 @@ type Result interface {
 type Command interface {
 	Validate() error
 	Exec(w io.Writer) (r Result, err error)
-	RpcExec(w io.Writer) (r Result, err error)
+	RPCExec(w io.Writer) (r Result, err error)
 }
 
 func NewCmd(d []byte) (c *Cmd, err error) {

@@ -22,7 +22,7 @@ type Reg struct {
 	l sync.Mutex // sync obj for register
 }
 
-func NewReg(data []byte) (r *regMapType) {
+func newReg(data []byte) (r *regMapType) {
 	r = new(regMapType)
 	err := json.Unmarshal(data, r)
 	if err != nil {
@@ -56,7 +56,7 @@ func (r *Reg) Load(filename string) error {
 	if err != nil {
 		return err
 	}
-	r.r = *NewReg(data)
+	r.r = *newReg(data)
 	return nil
 }
 

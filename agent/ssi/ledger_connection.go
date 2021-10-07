@@ -27,7 +27,6 @@ func ClosePool() {
 		pool.SetChan(indypool.CloseLedger(oldPool))
 		pool.Int() // call to make this a blocking call
 	}
-	return
 }
 
 func Pool() (v int) {
