@@ -3,7 +3,6 @@ package issuecredential
 import (
 	"encoding/gob"
 	"encoding/json"
-	"errors"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -43,20 +42,19 @@ var issueCredentialProcessor = comm.ProtProc{
 	Starter:     startIssueCredentialByPropose,
 	Continuator: continueProtocol,
 	Handlers: map[string]comm.HandlerFunc{
-		pltype.HandlerIssueCredentialPropose: handleProtocol,
-		pltype.HandlerIssueCredentialOffer:   handleProtocol,
-		pltype.HandlerIssueCredentialRequest: handleProtocol,
-		pltype.HandlerIssueCredentialIssue:   handleProtocol,
-		pltype.HandlerIssueCredentialACK:     handleProtocol,
-		pltype.HandlerIssueCredentialNACK:    handleProtocol,
+		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
+		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,
+		pltype.HandlerIssueCredentialRequest: issuer.HandleCredentialRequest,
+		pltype.HandlerIssueCredentialIssue:   holder.HandleCredentialIssue,
+		pltype.HandlerIssueCredentialACK:     issuer.HandleCredentialACK,
+		pltype.HandlerIssueCredentialNACK:    handleCredentialNACK,
 	},
 	Status: getIssueCredentialStatus,
 }
 
 func init() {
 	gob.Register(&taskIssueCredential{})
-	prot.AddCreator(pltype.CACredRequest, issueCredentialProcessor)
-	prot.AddCreator(pltype.CACredOffer, issueCredentialProcessor)
+	prot.AddCreator(pltype.ProtocolIssueCredential, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredRequest, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddContinuator(pltype.CAContinueIssueCredentialProtocol, issueCredentialProcessor)
@@ -67,37 +65,42 @@ func init() {
 func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createIssueCredentialTask", &err)
 
-	cred := protocol.GetIssueCredential()
-	assert.P.True(cred != nil, "issue credential data missing")
-	assert.P.True(
-		protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
-		"role is needed for issuing protocol")
-
 	var credAttrs []didcomm.CredentialAttribute
-	if cred.GetAttributesJSON() != "" {
-		dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
-		glog.V(3).Infoln("set cred attrs from json")
-	} else {
-		assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
-		credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
-		for i, attribute := range cred.GetAttributes().GetAttributes() {
-			credAttrs[i] = didcomm.CredentialAttribute{
-				Name:  attribute.Name,
-				Value: attribute.Value,
+	var credDefID string
+
+	if protocol != nil {
+		cred := protocol.GetIssueCredential()
+		assert.P.True(cred != nil, "issue credential data missing")
+		assert.P.True(
+			protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
+			"role is needed for issuing protocol")
+
+		if cred.GetAttributesJSON() != "" {
+			dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
+			glog.V(3).Infoln("set cred attrs from json")
+		} else {
+			assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
+			credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
+			for i, attribute := range cred.GetAttributes().GetAttributes() {
+				credAttrs[i] = didcomm.CredentialAttribute{
+					Name:  attribute.Name,
+					Value: attribute.Value,
+				}
 			}
+			glog.V(3).Infoln("set cred from attrs")
 		}
-		glog.V(3).Infoln("set cred from attrs")
+		glog.V(1).Infof(
+			"Create task for IssueCredential with connection id %s, role %s",
+			header.ConnID,
+			protocol.GetRole().String(),
+		)
+		credDefID = cred.CredDefID
 	}
-	glog.V(1).Infof(
-		"Create task for IssueCredential with connection id %s, role %s",
-		header.ConnID,
-		protocol.GetRole().String(),
-	)
 
 	return &taskIssueCredential{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		CredentialAttrs: credAttrs,
-		CredDefID:       cred.CredDefID,
+		CredDefID:       credDefID,
 	}, nil
 }
 
@@ -182,49 +185,17 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 }
 
 // handleCredentialNACK is holder`s protocol function for now.
-func handleCredentialNACK(packet comm.Packet, task comm.Task) (err error) {
+func handleCredentialNACK(packet comm.Packet) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
-		Task:        task,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred NACK", &err)
 			// return false to mark this PSM to NACK!
 			return false, nil
 		},
 	})
-}
-
-func handleProtocol(packet comm.Packet) (err error) {
-	defer err2.Return(&err)
-
-	var handlers = map[string]handlerFunc{
-		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
-		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,
-		pltype.HandlerIssueCredentialRequest: issuer.HandleCredentialRequest,
-		pltype.HandlerIssueCredentialIssue:   holder.HandleCredentialIssue,
-		pltype.HandlerIssueCredentialACK:     issuer.HandleCredentialACK,
-		pltype.HandlerIssueCredentialNACK:    handleCredentialNACK,
-	}
-
-	assert.D.True(packet.Payload.ThreadID() != "", "packet thread ID missing")
-
-	credTask := &taskIssueCredential{
-		TaskBase: comm.TaskBase{TaskHeader: comm.TaskHeader{
-			TaskID: packet.Payload.ThreadID(),
-			TypeID: packet.Payload.Type(),
-		}},
-	}
-
-	handler, ok := handlers[packet.Payload.ProtocolMsg()]
-	if !ok {
-		glog.Info(string(packet.Payload.JSON()))
-		s := "no handler in issue credential processor"
-		glog.Error(s)
-		return errors.New(s)
-	}
-	return handler(packet, credTask)
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {

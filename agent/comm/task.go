@@ -14,14 +14,13 @@ func init() {
 }
 
 type Task interface {
-	ID() string
-	Type() string
-	ProtocolType() pb.Protocol_Type
-	UserActionType() string
-	SetUserActionType(userActionType string)
-	Role() pb.Protocol_Role
-	ConnectionID() string
-	ReceiverEndp() service.Addr
+	ID() string                     // Unique uid
+	Type() string                   // Our internal payload type
+	ProtocolType() pb.Protocol_Type // Aries protocol
+	UserActionType() string         // Internal payload type when waiting for user action
+	Role() pb.Protocol_Role         // Agent role in Aries protocol
+	ConnectionID() string           // Pairwise id
+	ReceiverEndp() service.Addr     // Pairwise receiver endpoint
 	SetReceiverEndp(r service.Addr)
 }
 

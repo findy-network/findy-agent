@@ -15,7 +15,7 @@ import (
 )
 
 // HandleRequestPresentation is a handler func at PROVER side.
-func HandleRequestPresentation(packet comm.Packet, proofTask comm.Task) (err error) {
+func HandleRequestPresentation(packet comm.Packet) (err error) {
 	defer err2.Return(&err)
 
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
@@ -30,13 +30,12 @@ func HandleRequestPresentation(packet comm.Packet, proofTask comm.Task) (err err
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
-	proofTask.SetUserActionType(pltype.CANotifyUserAction)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
-		Task:        proofTask,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof req handler", &err)
 

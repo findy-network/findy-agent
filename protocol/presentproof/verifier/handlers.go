@@ -56,7 +56,7 @@ func generateProofRequest(proofTask *presentproof.Propose) *anoncreds.ProofReque
 }
 
 // HandleProposePresentation is a protocol handler function at VERIFIER side.
-func HandleProposePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
+func HandleProposePresentation(packet comm.Packet) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.PresentProofRequest
@@ -66,14 +66,12 @@ func HandleProposePresentation(packet comm.Packet, proofTask comm.Task) (err err
 		waitingNext = pltype.PresentProofUserAction
 	}
 
-	proofTask.SetUserActionType(pltype.SAPresentProofAcceptPropose)
-
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
-		Task:        proofTask,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptPropose},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof propose handler", &err)
 
@@ -148,7 +146,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 
 // HandlePresentation is a protocol handler function at VERIFIER side for handling
 // proof presentation.
-func HandlePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
+func HandlePresentation(packet comm.Packet) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.PresentProofACK
@@ -157,14 +155,13 @@ func HandlePresentation(packet comm.Packet, proofTask comm.Task) (err error) {
 		sendNext = pltype.Nothing
 		waitingNext = pltype.PresentProofUserAction
 	}
-	proofTask.SetUserActionType(pltype.SAPresentProofAcceptValues)
 
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
-		Task:        proofTask,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptValues},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof presentation handler", &err)
 

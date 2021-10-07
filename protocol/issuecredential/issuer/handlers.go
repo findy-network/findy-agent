@@ -17,7 +17,7 @@ import (
 // HandleCredentialPropose is protocol function for IssueCredentialPropose at Issuer.
 // Note! This is not called in the case where Issuer starts the protocol by
 // sending Cred_Offer.
-func HandleCredentialPropose(packet comm.Packet, credTask comm.Task) (err error) {
+func HandleCredentialPropose(packet comm.Packet) (err error) {
 	var sendNext, waitingNext string
 	if packet.Receiver.AutoPermission() {
 		sendNext = pltype.IssueCredentialOffer
@@ -27,14 +27,12 @@ func HandleCredentialPropose(packet comm.Packet, credTask comm.Task) (err error)
 		waitingNext = pltype.IssueCredentialUserAction
 	}
 
-	credTask.SetUserActionType(pltype.SAIssueCredentialAcceptPropose)
-
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.IssueCredentialNACK,
-		Task:        credTask,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAIssueCredentialAcceptPropose},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("credential propose handler", &err)
 
@@ -126,12 +124,11 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 
 // HandleCredentialRequest implements the handler for credential request protocol
 // msg. This is Issuer side action.
-func HandleCredentialRequest(packet comm.Packet, credTask comm.Task) (err error) {
+func HandleCredentialRequest(packet comm.Packet) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialIssue,
 		WaitingNext: pltype.IssueCredentialACK,
-		Task:        credTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred req", &err)
 
@@ -156,12 +153,11 @@ func HandleCredentialRequest(packet comm.Packet, credTask comm.Task) (err error)
 // HandleCredentialACK is Issuer's protocol function. This message is currently
 // received at issuer's side. However, in future implementations we might move
 // it into the processor.
-func HandleCredentialACK(packet comm.Packet, credTask comm.Task) (err error) {
+func HandleCredentialACK(packet comm.Packet) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
-		Task:        credTask,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred ACK", &err)
 			return true, nil

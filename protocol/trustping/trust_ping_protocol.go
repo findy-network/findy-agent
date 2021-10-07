@@ -33,7 +33,7 @@ var trustPingProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskTrustPing{})
-	prot.AddCreator(pltype.CATrustPing, trustPingProcessor)
+	prot.AddCreator(pltype.ProtocolTrustPing, trustPingProcessor)
 	prot.AddStarter(pltype.CATrustPing, trustPingProcessor)
 	prot.AddStatusProvider(pltype.ProtocolTrustPing, trustPingProcessor)
 	comm.Proc.Add(pltype.ProtocolTrustPing, trustPingProcessor)

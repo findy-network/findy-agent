@@ -16,7 +16,7 @@ import (
 )
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder
-func HandleCredentialOffer(packet comm.Packet, credTask comm.Task) (err error) {
+func HandleCredentialOffer(packet comm.Packet) (err error) {
 	defer err2.Return(&err)
 
 	// First check who is starting the protocol. If we receive this as a first
@@ -40,13 +40,11 @@ func HandleCredentialOffer(packet comm.Packet, credTask comm.Task) (err error) {
 
 	sendNext, waitingNext := checkAutoPermission(packet)
 
-	credTask.SetUserActionType(pltype.CANotifyUserAction)
-
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
-		Task:        credTask,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred offer ask user", &err)
 
@@ -140,12 +138,11 @@ func checkAutoPermission(packet comm.Packet) (next string, wait string) {
 }
 
 // HandleCredentialIssue is protocol function for CRED_ISSUE for prover/holder.
-func HandleCredentialIssue(packet comm.Packet, credTask comm.Task) (err error) {
+func HandleCredentialIssue(packet comm.Packet) (err error) {
 	return prot.ExecPSM(prot.Transition{
 		Packet:      packet,
 		SendNext:    pltype.IssueCredentialACK,
 		WaitingNext: pltype.Terminate, // no next state, we are fine
-		Task:        credTask,
 
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("cred issue", &err)

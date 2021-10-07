@@ -20,11 +20,11 @@ import (
 // rules to execute state transition i.e. move to next state.
 type Transition struct {
 	comm.Packet
-	SendNext    string    // the type of the PL we will send next if any
-	WaitingNext string    // the type of the PL we will wait if any
-	SendOnNACK  string    // the type to send when we NACK
-	InOut                 // the handler func, NOTE! return false in all NACK cases
-	Task        comm.Task // updated task
+	SendNext    string           // the type of the PL we will send next if any
+	WaitingNext string           // the type of the PL we will wait if any
+	SendOnNACK  string           // the type to send when we NACK
+	InOut                        // the handler func, NOTE! return false in all NACK cases
+	TaskHeader  *comm.TaskHeader // updated task data
 }
 
 // TransitionHandler is a type for Transition to process PSM state transition.
@@ -194,15 +194,15 @@ func ExecPSM(ts Transition) (err error) {
 	}
 
 	// Task is a helper struct here by gathering all needed data for one unit
-	task := ts.Task
-	if task == nil {
-		task = &comm.TaskBase{
-			TaskHeader: comm.TaskHeader{
-				TaskID: ts.Payload.ThreadID(),
-				TypeID: ts.Payload.Type(),
-			},
-		}
+	if ts.TaskHeader == nil {
+		ts.TaskHeader = &comm.TaskHeader{}
 	}
+	ts.TaskHeader.TaskID = ts.Payload.ThreadID()
+	ts.TaskHeader.TypeID = ts.Payload.Type()
+
+	// Create protocol task in protocol implementation
+	task, err := CreateTask(ts.TaskHeader, nil)
+	err2.Check(err)
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -304,7 +304,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
-	taskCreator, ok := creators[header.TypeID]
+	taskCreator, ok := creators[mesg.ProtocolForType(header.TypeID)]
 	if !ok {
 		s := "!!!! No task creator !!!"
 		glog.Error(s, header.TypeID)
