@@ -3,29 +3,12 @@ package psm
 import (
 	"bytes"
 	"encoding/gob"
-	"flag"
-	"fmt"
-	"os"
 	"reflect"
 	"testing"
-
-	"github.com/lainio/err2"
 )
 
 type TestJSON struct {
 	Name string `json:"name"`
-}
-
-func TestMain(m *testing.M) {
-	defer err2.CatchTrace(func(err error) {
-		fmt.Println("error on setup", err)
-	})
-
-	// We don't want logs on file with tests
-	err2.Check(flag.Set("logtostderr", "true"))
-
-	code := m.Run()
-	os.Exit(code)
 }
 
 func TestPSM_data(t *testing.T) {

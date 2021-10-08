@@ -1,27 +1,49 @@
 package psm
 
 import (
+	"flag"
+	"fmt"
 	"os"
 	"testing"
 
+	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/go-test/deep"
+	"github.com/lainio/err2"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
 	dbPath = "db_test.bolt"
 )
 
-var (
-	db *DB
-)
+func TestMain(m *testing.M) {
+	setUp()
+	code := m.Run()
+	tearDown()
+	os.Exit(code)
+}
 
-func init() {
+func setUp() {
+	defer err2.CatchTrace(func(err error) {
+		fmt.Println("error on setup", err)
+	})
+
+	// We don't want logs on file with tests
+	err2.Check(flag.Set("logtostderr", "true"))
+
+	err2.Check(Open(dbPath))
+}
+
+func tearDown() {
+	db.Close()
+
 	os.Remove(dbPath)
-	db, _ = OpenDb(dbPath)
 }
 
 func Test_addPSM(t *testing.T) {
 	psm := testPSM(0)
+	assert.NotNil(t, psm)
+
 	tests := []struct {
 		name string
 	}{
@@ -29,69 +51,13 @@ func Test_addPSM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := db.addPSM(psm)
+			err := AddPSM(psm)
 			if err != nil {
-				t.Errorf("addPSM() %s error %v", tt.name, err)
+				t.Errorf("AddPSM() %s error %v", tt.name, err)
 			}
-			got, err := db.GetPSM(StateKey{DID: mockStateDID, Nonce: mockStateNonce})
+			got, err := GetPSM(StateKey{DID: mockStateDID, Nonce: mockStateNonce})
 			if diff := deep.Equal(psm, got); err != nil || diff != nil {
 				t.Errorf("GetPSM() diff %v, err %v", diff, err)
-			}
-		})
-	}
-}
-
-func Test_getAllPSM(t *testing.T) {
-	registerGobs()
-	data := []PSM{*testPSM(0), *testPSM(123), *testPSM(200)}
-	for _, d := range data {
-		_ = db.addPSM(&d)
-	}
-
-	tests := []struct {
-		name           string
-		sinceTimestamp int64
-		data           []PSM
-	}{
-		{"get all", -1, data},
-		{"get since 1", 1, []PSM{data[1], data[2]}},
-		{"get since 200", 200, []PSM{data[2]}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var tsSince *int64
-			if tt.sinceTimestamp >= 0 {
-				tsSince = &tt.sinceTimestamp
-			}
-			got, err := db.AllPSM(mockStateDID, tsSince)
-			if diff := deep.Equal(tt.data, *got); err != nil || diff != nil {
-				t.Errorf("getAllPSM() diff %v, err %v", diff, err)
-			}
-		})
-	}
-}
-
-func Test_getAllDeviceID(t *testing.T) {
-	deviceIDRep := &DeviceIDRep{
-		DID:         mockStateDID,
-		DeviceToken: "token",
-	}
-	data := []DeviceIDRep{*deviceIDRep}
-	for _, d := range data {
-		_ = db.AddDeviceIDRep(&d)
-	}
-
-	tests := []struct {
-		name string
-		data []DeviceIDRep
-	}{
-		{"get all", data},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := db.GetAllDeviceIDRep(mockStateDID)
-			if diff := deep.Equal(tt.data, *got); err != nil || diff != nil {
-				t.Errorf("GetAllDeviceIDRep() diff %v, err %v", diff, err)
 			}
 		})
 	}
@@ -109,11 +75,11 @@ func Test_addPairwiseRep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := db.AddPairwiseRep(pwRep)
+			err := AddPairwiseRep(pwRep)
 			if err != nil {
 				t.Errorf("AddPairwiseRep() %s error %v", tt.name, err)
 			}
-			got, err := db.GetPairwiseRep(pwRep.Key)
+			got, err := GetPairwiseRep(pwRep.Key)
 			if diff := deep.Equal(pwRep, got); err != nil || diff != nil {
 				t.Errorf("GetPairwiseRep() diff %v, err %v", diff, err)
 			}
@@ -133,11 +99,11 @@ func Test_addBasicMessageRep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := db.AddBasicMessageRep(msgRep)
+			err := AddBasicMessageRep(msgRep)
 			if err != nil {
 				t.Errorf("AddBasicMessageRep() %s error %v", tt.name, err)
 			}
-			got, err := db.GetBasicMessageRep(msgRep.Key)
+			got, err := GetBasicMessageRep(msgRep.Key)
 			if diff := deep.Equal(msgRep, got); err != nil || diff != nil {
 				t.Errorf("GetBasicMessageRep() diff %v, err %v", diff, err)
 			}
@@ -157,11 +123,11 @@ func Test_addIssueCredRep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := db.AddIssueCredRep(credRep)
+			err := AddIssueCredRep(credRep)
 			if err != nil {
 				t.Errorf("AddIssueCredRep() %s error %v", tt.name, err)
 			}
-			got, err := db.GetIssueCredRep(credRep.Key)
+			got, err := GetIssueCredRep(credRep.Key)
 			if diff := deep.Equal(credRep, got); err != nil || diff != nil {
 				t.Errorf("GetIssueCredRep() diff %v, err %v", diff, err)
 			}
@@ -181,11 +147,11 @@ func Test_addPresentProofRep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := db.AddPresentProofRep(proofRep)
+			err := AddPresentProofRep(proofRep)
 			if err != nil {
 				t.Errorf("AddPresentProofRep() %s error %v", tt.name, err)
 			}
-			got, err := db.GetPresentProofRep(proofRep.Key)
+			got, err := GetPresentProofRep(proofRep.Key)
 			if diff := deep.Equal(proofRep, got); err != nil || diff != nil {
 				t.Errorf("GetPresentProofRep() diff %v, err %v", diff, err)
 			}
