@@ -57,7 +57,9 @@ var connectionProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskDIDExchange{})
-	prot.AddCreator(pltype.CAPairwiseCreate, connectionProcessor)
+	// handle both protocol formats - with and without s
+	prot.AddCreator(pltype.ProtocolConnection, connectionProcessor)
+	prot.AddCreator(pltype.AriesProtocolConnection, connectionProcessor)
 	prot.AddStarter(pltype.CAPairwiseCreate, connectionProcessor)
 	prot.AddStatusProvider(pltype.AriesProtocolConnection, connectionProcessor)
 	comm.Proc.Add(pltype.AriesProtocolConnection, connectionProcessor)
@@ -66,21 +68,25 @@ func init() {
 func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createConnectionTask", &err)
 
-	assert.P.True(
-		protocol.GetDIDExchange() != nil,
-		"didExchange protocol data missing")
-
 	var invitation invitation.Invitation
-	dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
-	header.TaskID = invitation.ID
+	var label string
+	if protocol != nil {
+		assert.P.True(
+			protocol.GetDIDExchange() != nil,
+			"didExchange protocol data missing")
 
-	glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
+		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
+		header.TaskID = invitation.ID
+		label = protocol.GetDIDExchange().GetLabel()
+
+		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
+	}
 
 	return &taskDIDExchange{
 		TaskBase:     comm.TaskBase{TaskHeader: *header},
 		Invitation:   invitation,
 		InvitationID: invitation.ID,
-		Label:        protocol.GetDIDExchange().GetLabel(),
+		Label:        label,
 	}, nil
 }
 

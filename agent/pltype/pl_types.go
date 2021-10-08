@@ -1,5 +1,10 @@
 package pltype
 
+import (
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	"github.com/golang/glog"
+)
+
 // name constants
 const (
 	HandshakePairwiseName = "HANDSHAKE"
@@ -7,14 +12,16 @@ const (
 
 // Protocol constants
 const (
-	Terminate = ""
-	Nothing   = ""
-	Agent     = "urn:indy:sov:agent:message_type:findy.fi" // This will be for old and EA/CA PW
-	Aries     = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"      // This will be for all Aries protocols
-	CA        = "urn:indy:sov:agent_api:message_type:findy.fi"
-	SA        = "urn:indy:sov:service_agent_api:message_type:findy.fi"
+	Terminate   = ""
+	Nothing     = ""
+	Agent       = "urn:indy:sov:agent:message_type:findy.fi" // This will be for old and EA/CA PW
+	Aries       = "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec"      // This will be for all Aries protocols
+	DIDOrgAries = "https://didcomm.org"                      // This will be for all Aries protocols
+	CA          = "urn:indy:sov:agent_api:message_type:findy.fi"
+	SA          = "urn:indy:sov:service_agent_api:message_type:findy.fi"
 
-	LibindyPresentationID = "libindy-presentation-0"
+	LibindyRequestPresentationID = "libindy-request-presentation-0"
+	LibindyPresentationID        = "libindy-presentation-0"
 
 	UserAction = "user-action"
 
@@ -43,6 +50,10 @@ const (
 	ProblemReport             = Aries + "/" + ProtocolNotification
 	NotificationProblemReport = ProblemReport + "/1.0/" + HandlerProblemReport
 	NotificationAck           = ProblemReport + "/1.0/" + HandlerAck
+
+	DIDOrgProblemReport             = DIDOrgAries + "/" + ProtocolNotification
+	DIDOrgNotificationProblemReport = DIDOrgProblemReport + "/1.0/" + HandlerProblemReport
+	DIDOrgNotificationAck           = DIDOrgProblemReport + "/1.0/" + HandlerAck
 )
 
 // Issue Credential protocol constants
@@ -65,6 +76,16 @@ const (
 	IssueCredentialACK               = IssueCredential + "/1.0/" + HandlerIssueCredentialACK
 	IssueCredentialNACK              = IssueCredential + "/1.0/" + HandlerIssueCredentialNACK
 	IssueCredentialCredentialPreview = IssueCredential + "/1.0/" + ObjectTypeCredentialPreview
+
+	DIDOrgIssueCredential                  = DIDOrgAries + "/" + ProtocolIssueCredential
+	DIDOrgIssueCredentialPropose           = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialPropose
+	DIDOrgIssueCredentialOffer             = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialOffer
+	DIDOrgIssueCredentialUserAction        = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialUserAction
+	DIDOrgIssueCredentialRequest           = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialRequest
+	DIDOrgIssueCredentialIssue             = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialIssue
+	DIDOrgIssueCredentialACK               = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialACK
+	DIDOrgIssueCredentialNACK              = DIDOrgIssueCredential + "/1.0/" + HandlerIssueCredentialNACK
+	DIDOrgIssueCredentialCredentialPreview = DIDOrgIssueCredential + "/1.0/" + ObjectTypeCredentialPreview
 )
 
 // DID exchange aka Connection related constants
@@ -79,6 +100,12 @@ const (
 	AriesConnectionRequest    = AriesConnection + "/1.0/" + HandlerRequest
 	AriesConnectionOffer      = AriesConnection + "/1.0/" + HandlerOffer
 	AriesConnectionResponse   = AriesConnection + "/1.0/" + HandlerResponse
+
+	DIDOrgAriesConnection           = DIDOrgAries + "/" + AriesProtocolConnection
+	DIDOrgAriesConnectionInvitation = DIDOrgAriesConnection + "/1.0/" + Invitation
+	DIDOrgAriesConnectionRequest    = DIDOrgAriesConnection + "/1.0/" + HandlerRequest
+	DIDOrgAriesConnectionOffer      = DIDOrgAriesConnection + "/1.0/" + HandlerOffer
+	DIDOrgAriesConnectionResponse   = DIDOrgAriesConnection + "/1.0/" + HandlerResponse
 )
 
 // Present Proof protocol constants
@@ -99,6 +126,15 @@ const (
 	PresentProofACK                 = PresentProof + "/1.0/" + HandlerPresentProofACK
 	PresentProofNACK                = PresentProof + "/1.0/" + HandlerPresentProofNACK
 	PresentationPreviewObj          = PresentProof + "/1.0/" + ObjectTypePresentationPreview
+
+	DIDOrgPresentProof             = Aries + "/" + ProtocolPresentProof
+	DIDOrgPresentProofPropose      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPropose
+	DIDOrgPresentProofRequest      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofRequest
+	DIDOrgPresentProofPresentation = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPresentation
+	DIDOrgPresentProofUserAction   = DIDOrgPresentProof + "/1.0/" + HandlerPresentUserAction
+	DIDOrgPresentProofACK          = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofACK
+	DIDOrgPresentProofNACK         = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofNACK
+	DIDOrgPresentationPreviewObj   = DIDOrgPresentProof + "/1.0/" + ObjectTypePresentationPreview
 )
 
 // Basic Message protocol constants
@@ -107,6 +143,9 @@ const (
 	HandlerMessage       = "message"
 	BasicMessage         = Aries + "/" + ProtocolBasicMessage
 	BasicMessageSend     = BasicMessage + "/1.0/" + HandlerMessage
+
+	DIDOrgBasicMessage     = DIDOrgAries + "/" + ProtocolBasicMessage
+	DIDOrgBasicMessageSend = DIDOrgBasicMessage + "/1.0/" + HandlerMessage
 )
 
 // Trust Ping protocol constants
@@ -117,6 +156,10 @@ const (
 	TrustPing           = Aries + "/" + ProtocolTrustPing
 	TrustPingPing       = TrustPing + "/1.0/" + HandlerPing
 	TrustPingResponse   = TrustPing + "/1.0/" + HandlerPingResponse
+
+	DIDOrgTrustPing         = DIDOrgAries + "/" + ProtocolTrustPing
+	DIDOrgTrustPingPing     = DIDOrgTrustPing + "/1.0/" + HandlerPing
+	DIDOrgTrustPingResponse = DIDOrgTrustPing + "/1.0/" + HandlerPingResponse
 )
 
 // SA API msg types
@@ -149,12 +192,9 @@ const (
 	CAWalletGet = CAWallet + "/1.0/get"
 
 	// Protocol launchers - protocol string must match Aries protocol
-	CAPairwise             = CA + "/" + AriesProtocolConnection
-	CAPairwiseInvitation   = CAPairwise + "/1.0/invitation"
-	CAPairwiseCreate       = CAPairwise + "/1.0/create"
-	CAPairwiseAndCredReq   = CAPairwise + "/1.0/create_and_cred_req"
-	CAPairwiseAndProofProp = CAPairwise + "/1.0/create_and_proof_prop"
-	CAPairwiseAndTrustPing = CAPairwise + "/1.0/create_and_trust_ping"
+	CAPairwise           = CA + "/" + AriesProtocolConnection
+	CAPairwiseInvitation = CAPairwise + "/1.0/invitation"
+	CAPairwiseCreate     = CAPairwise + "/1.0/create"
 
 	// Protocol launcher - protocol string must match Aries protocol
 	CATrustPing = CA + "/" + ProtocolTrustPing + "/1.0/ping"
@@ -195,3 +235,19 @@ const (
 	CAContinuePresentProofProtocol    = CA + "/protocol/1.0/continue-present-proof"
 	CAContinueIssueCredentialProtocol = CA + "/protocol/1.0/continue-issue-credential"
 )
+
+var protocolType = map[string]pb.Protocol_Type{
+	AriesProtocolConnection: pb.Protocol_DIDEXCHANGE,
+	ProtocolIssueCredential: pb.Protocol_ISSUE_CREDENTIAL,
+	ProtocolPresentProof:    pb.Protocol_PRESENT_PROOF,
+	ProtocolTrustPing:       pb.Protocol_TRUST_PING,
+	ProtocolBasicMessage:    pb.Protocol_BASIC_MESSAGE,
+}
+
+func ProtocolTypeForFamily(family string) pb.Protocol_Type {
+	if protocol, ok := protocolType[family]; ok {
+		return protocol
+	}
+	glog.Warningf("no protocol type found for family %s", family)
+	return pb.Protocol_NONE
+}

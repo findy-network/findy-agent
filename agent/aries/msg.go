@@ -22,6 +22,7 @@ var MsgCreator = MsgFactor{}
 func init() {
 	gob.Register(&MsgImpl{})
 	didcomm.CreatorGod.AddMsgCreator(pltype.Aries, MsgCreator)
+	didcomm.CreatorGod.AddMsgCreator(pltype.DIDOrgAries, MsgCreator)
 }
 
 type MsgFactor struct{}
@@ -309,10 +310,6 @@ func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
 	f.SetChan(crypto.AnonDecrypt(wallet, did.VerKey(), msg))
 	msgJSON := f.Bytes()
 	return newMsgFrom(string(msgJSON))
-}
-
-func (m *Msg) anonDecrypt(wallet int, did *ssi.DID) *Msg {
-	return NewAnonDecryptedMsg(wallet, m.Encrypted, did)
 }
 
 func (m *Msg) AnonEncrypt(did *ssi.DID) *Msg {

@@ -32,6 +32,7 @@ func (f *PresentationFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&PresentationImpl{})
 	aries.Creator.Add(pltype.PresentProofPresentation, PresentationCreator)
+	aries.Creator.Add(pltype.DIDOrgPresentProofPresentation, PresentationCreator)
 }
 
 func NewPresentation(r *Presentation) *PresentationImpl {

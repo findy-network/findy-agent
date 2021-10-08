@@ -3,7 +3,7 @@ package cmds
 import "errors"
 
 type GrpcCmd struct {
-	TlsPath string
+	TLSPath string
 	Addr    string
 	Port    int
 	AdminID string

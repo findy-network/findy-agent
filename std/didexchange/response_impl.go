@@ -60,6 +60,7 @@ func (f *ResponseFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&ResponseImpl{})
 	aries.Creator.Add(pltype.AriesConnectionResponse, ResponseCreator)
+	aries.Creator.Add(pltype.DIDOrgAriesConnectionResponse, ResponseCreator)
 }
 
 func NewResponse(r *Response) *ResponseImpl {

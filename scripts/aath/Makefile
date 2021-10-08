@@ -34,6 +34,13 @@ test-check: prep
 			AGENT_DEFAULT=$(AGENT_DEFAULT) \
 			AGENT_BOB=$(AGENT_BOB)
 
+build:
+	cd ../dev/docker && \
+		docker-compose down && \
+		docker-compose up --build -d
+
+build-test: build test
+
 # test always with latest findy-AATH-bundle from master
 clone:
 	-rm -rf .docker/findy-agent-backchannel

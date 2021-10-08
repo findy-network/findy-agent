@@ -33,7 +33,7 @@ var trustPingProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskTrustPing{})
-	prot.AddCreator(pltype.CATrustPing, trustPingProcessor)
+	prot.AddCreator(pltype.ProtocolTrustPing, trustPingProcessor)
 	prot.AddStarter(pltype.CATrustPing, trustPingProcessor)
 	prot.AddStatusProvider(pltype.ProtocolTrustPing, trustPingProcessor)
 	comm.Proc.Add(pltype.ProtocolTrustPing, trustPingProcessor)
@@ -44,7 +44,7 @@ func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm
 
 	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnID)
 
-	if protocol.ConnectionID == "" {
+	if protocol != nil && protocol.ConnectionID == "" {
 		glog.Warningln("pinging first found connection, conn-id was empty")
 	}
 
@@ -74,7 +74,7 @@ func handleTrustPing(packet comm.Packet) (err error) {
 		SendNext:    pltype.TrustPingResponse,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			glog.V(3).Info("-- Nonce: ", im.Thread().ID)
+			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},
 	})
@@ -86,7 +86,7 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			glog.V(3).Info("-- Nonce: ", im.Thread().ID)
+			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},
 	})

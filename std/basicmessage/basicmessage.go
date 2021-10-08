@@ -34,6 +34,7 @@ func (f *Factor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&Impl{})
 	aries.Creator.Add(pltype.BasicMessageSend, Creator)
+	aries.Creator.Add(pltype.DIDOrgBasicMessageSend, Creator)
 }
 
 func NewBasicmessage(r *Basicmessage) *Impl {

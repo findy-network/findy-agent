@@ -47,7 +47,7 @@ func timeToBackup() bool {
 	if interval == 0 {
 		return false
 	}
-	return time.Now().Sub(lastBackup) >= interval
+	return time.Since(lastBackup) >= interval
 }
 
 func Backup() {

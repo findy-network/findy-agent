@@ -34,10 +34,12 @@ type statusIssueCredential struct {
 	Attributes []didcomm.CredentialAttribute `json:"attributes"`
 }
 
+type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
+
 var issueCredentialProcessor = comm.ProtProc{
 	Creator:     createIssueCredentialTask,
 	Starter:     startIssueCredentialByPropose,
-	Continuator: userActionCredential,
+	Continuator: continueProtocol,
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerIssueCredentialPropose: issuer.HandleCredentialPropose,
 		pltype.HandlerIssueCredentialOffer:   holder.HandleCredentialOffer,
@@ -51,8 +53,7 @@ var issueCredentialProcessor = comm.ProtProc{
 
 func init() {
 	gob.Register(&taskIssueCredential{})
-	prot.AddCreator(pltype.CACredRequest, issueCredentialProcessor)
-	prot.AddCreator(pltype.CACredOffer, issueCredentialProcessor)
+	prot.AddCreator(pltype.ProtocolIssueCredential, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredRequest, issueCredentialProcessor)
 	prot.AddStarter(pltype.CACredOffer, issueCredentialProcessor)
 	prot.AddContinuator(pltype.CAContinueIssueCredentialProtocol, issueCredentialProcessor)
@@ -63,37 +64,42 @@ func init() {
 func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createIssueCredentialTask", &err)
 
-	cred := protocol.GetIssueCredential()
-	assert.P.True(cred != nil, "issue credential data missing")
-	assert.P.True(
-		protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
-		"role is needed for issuing protocol")
-
 	var credAttrs []didcomm.CredentialAttribute
-	if cred.GetAttributesJSON() != "" {
-		dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
-		glog.V(3).Infoln("set cred attrs from json")
-	} else {
-		assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
-		credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
-		for i, attribute := range cred.GetAttributes().GetAttributes() {
-			credAttrs[i] = didcomm.CredentialAttribute{
-				Name:  attribute.Name,
-				Value: attribute.Value,
+	var credDefID string
+
+	if protocol != nil {
+		cred := protocol.GetIssueCredential()
+		assert.P.True(cred != nil, "issue credential data missing")
+		assert.P.True(
+			protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
+			"role is needed for issuing protocol")
+
+		if cred.GetAttributesJSON() != "" {
+			dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
+			glog.V(3).Infoln("set cred attrs from json")
+		} else {
+			assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
+			credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
+			for i, attribute := range cred.GetAttributes().GetAttributes() {
+				credAttrs[i] = didcomm.CredentialAttribute{
+					Name:  attribute.Name,
+					Value: attribute.Value,
+				}
 			}
+			glog.V(3).Infoln("set cred from attrs")
 		}
-		glog.V(3).Infoln("set cred from attrs")
+		glog.V(1).Infof(
+			"Create task for IssueCredential with connection id %s, role %s",
+			header.ConnID,
+			protocol.GetRole().String(),
+		)
+		credDefID = cred.CredDefID
 	}
-	glog.V(1).Infof(
-		"Create task for IssueCredential with connection id %s, role %s",
-		header.ConnID,
-		protocol.GetRole().String(),
-	)
 
 	return &taskIssueCredential{
 		TaskBase:        comm.TaskBase{TaskHeader: *header},
 		CredentialAttrs: credAttrs,
-		CredDefID:       cred.CredDefID,
+		CredDefID:       credDefID,
 	}, nil
 }
 
@@ -177,48 +183,6 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 	}
 }
 
-// todo lapi: im message is old legacy api type!!
-
-// userActionCredential is called when Holder has received a Cred_Offer and it's
-// transferred the question to user: if she accepts the credential.
-func userActionCredential(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error(err)
-	})
-
-	err2.Check(prot.ContinuePSM(prot.Again{
-		CA:          ca,
-		InMsg:       im,
-		SendNext:    pltype.IssueCredentialRequest,
-		WaitingNext: pltype.IssueCredentialACK,
-		SendOnNACK:  pltype.IssueCredentialNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("issuing user action handler", &err)
-
-			iMsg := im.(didcomm.Msg)
-			ack = iMsg.Ready()
-			if !ack {
-				glog.Warning("user doesn't accept the issuing")
-				return ack, nil
-			}
-
-			agent := wa
-			repK := psm.NewStateKey(agent, im.Thread().ID)
-
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
-			credRq := err2.String.Try(rep.BuildCredRequest(
-				comm.Packet{Receiver: agent}))
-
-			err2.Check(psm.AddIssueCredRep(rep))
-			req := om.FieldObj().(*issuecredential.Request)
-			req.RequestsAttach =
-				issuecredential.NewRequestAttach([]byte(credRq))
-
-			return true, nil
-		},
-	}))
-}
-
 // handleCredentialNACK is holder`s protocol function for now.
 func handleCredentialNACK(packet comm.Packet) (err error) {
 	return prot.ExecPSM(prot.Transition{
@@ -231,6 +195,38 @@ func handleCredentialNACK(packet comm.Packet) (err error) {
 			return false, nil
 		},
 	})
+}
+
+func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	assert.D.True(im.Thread().ID != "", "continue issue credential, packet thread ID missing")
+
+	var continuators = map[string]continuatorFunc{
+		pltype.SAIssueCredentialAcceptPropose: issuer.ContinueCredentialPropose,
+		pltype.CANotifyUserAction:             holder.UserActionCredential,
+	}
+
+	key := &psm.StateKey{
+		DID:   ca.WDID(),
+		Nonce: im.Thread().ID,
+	}
+
+	state, _ := psm.GetPSM(*key)
+	assert.D.True(state != nil, "continue issue credential, task not found")
+
+	credTask := state.LastState().T.(*taskIssueCredential)
+
+	continuator, ok := continuators[credTask.UserActionType()]
+	if !ok {
+		glog.Info(string(im.JSON()))
+		s := "no continuator in issue credential processor"
+		glog.Error(s)
+		panic(s)
+	}
+	continuator(ca, im)
 }
 
 func getIssueCredentialStatus(workerDID string, taskID string) interface{} {

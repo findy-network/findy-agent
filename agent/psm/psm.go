@@ -178,10 +178,6 @@ func (p *PSM) Data() []byte {
 	return dto.ToGOB(p)
 }
 
-func (p *PSM) key() []byte {
-	return p.Key.Data()
-}
-
 func (p *PSM) IsReady() bool {
 	if lastState := p.LastState(); lastState != nil {
 		return lastState.Sub.IsReady() ||

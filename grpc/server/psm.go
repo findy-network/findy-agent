@@ -270,6 +270,7 @@ func tryGetProofStatus(
 		a := &pb.Protocol_Proof_Attribute{
 			Name:      attr.Name,
 			CredDefID: attr.CredDefID,
+			Value:     attr.Value,
 			//Predicate: attr.Predicate,
 		}
 		attrs = append(attrs, a)

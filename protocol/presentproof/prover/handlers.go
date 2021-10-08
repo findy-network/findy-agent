@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
 	"github.com/findy-network/findy-agent/std/presentproof"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -34,6 +35,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
+		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("proof req handler", &err)
 
@@ -60,6 +62,45 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 			return true, nil
 		},
 	})
+}
+
+func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error(err)
+	})
+
+	err2.Check(prot.ContinuePSM(prot.Again{
+		CA:          ca,
+		InMsg:       im,
+		SendNext:    pltype.PresentProofPresentation,
+		WaitingNext: pltype.PresentProofACK,
+		SendOnNACK:  pltype.PresentProofNACK,
+		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+			defer err2.Annotate("proof user action handler", &err)
+
+			// Does user allow continue?
+			iMsg := im.(didcomm.Msg)
+			if !iMsg.Ready() {
+				glog.Warning("user doesn't accept proof")
+				return false, nil
+			}
+
+			// We continue, get previous data, create the proof and send it
+			agent := wa
+			repK := psm.NewStateKey(agent, im.Thread().ID)
+			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+
+			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
+			// save created proof to Representative
+			err2.Check(psm.AddPresentProofRep(rep))
+
+			pres := om.FieldObj().(*presentproof.Presentation)
+			pres.PresentationAttaches = presentproof.NewPresentationAttach(
+				pltype.LibindyPresentationID, []byte(rep.Proof))
+
+			return true, nil
+		},
+	}))
 }
 
 func checkAutoPermission(packet comm.Packet) (next string, wait string) {

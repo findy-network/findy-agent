@@ -32,6 +32,7 @@ func (f *OfferFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&OfferImpl{})
 	aries.Creator.Add(pltype.IssueCredentialOffer, OfferCreator)
+	aries.Creator.Add(pltype.DIDOrgIssueCredentialOffer, OfferCreator)
 }
 
 func NewOffer(r *Offer) *OfferImpl {

@@ -97,8 +97,11 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
 
-	if ourAddress == nil || !agency.IsHandlerInThisAgency(ourAddress.PlRcvr) ||
-		!saveIncoming(ourAddress, data) {
+	canContinue := ourAddress != nil &&
+		agency.IsHandlerInThisAgency(ourAddress.PlRcvr) &&
+		saveIncoming(ourAddress, data)
+
+	if !canContinue {
 		errorResponse(w)
 		return
 	}
@@ -189,6 +192,7 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 		Address:  ourAddress,
 		Receiver: ca.WEA(), // worker EA handles the packet
 	}
+
 	err2.Check(comm.Proc.Process(packet))
 
 	// no error, we can cleanup the received payload

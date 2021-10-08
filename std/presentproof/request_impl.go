@@ -32,6 +32,7 @@ func (f *RequestFactor) NewMessage(data []byte) didcomm.MessageHdr {
 func init() {
 	gob.Register(&RequestImpl{})
 	aries.Creator.Add(pltype.PresentProofRequest, RequestCreator)
+	aries.Creator.Add(pltype.DIDOrgPresentProofRequest, RequestCreator)
 }
 
 func NewRequest(r *Request) *RequestImpl {
