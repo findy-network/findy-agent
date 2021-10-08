@@ -31,7 +31,7 @@ func setUp() {
 	// We don't want logs on file with tests
 	err2.Check(flag.Set("logtostderr", "true"))
 
-	Open(dbPath)
+	err2.Check(Open(dbPath))
 }
 
 func tearDown() {

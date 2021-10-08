@@ -106,6 +106,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
 github.com/findy-network/findy-common-go v0.1.20-0.20211008123341-e7ab8ef3630b h1:WdrY2IrsEkYX6El0yPQxnkAKpDyWV1Tk4Q1ths/hY4E=
 github.com/findy-network/findy-common-go v0.1.20-0.20211008123341-e7ab8ef3630b/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
+github.com/findy-network/findy-common-go v0.1.21-0.20211008133432-2f1b655bf7b9 h1:77zkCCcyYX8ADWuHGtdXyBZ7815L7sRavT9DMbr1kZc=
+github.com/findy-network/findy-common-go v0.1.21-0.20211008133432-2f1b655bf7b9/go.mod h1:s+KdUrN3s2+XHZ70x3th0LFpMWX2UBofBprEwG5Rwak=
 github.com/findy-network/findy-wrapper-go v0.24.3 h1:rfA9G6h5G0coaqHguNnBu2f+nzccuEurRamURJqJCSs=
 github.com/findy-network/findy-wrapper-go v0.24.3/go.mod h1:t7HOvDp3OkQyPBx5+Q/epdTGl5b25nmn3vtlXweE+TM=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible h1:TcekIExNqud5crz4xD2pavyTgWiPvpYe4Xau31I0PRk=
