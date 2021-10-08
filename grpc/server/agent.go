@@ -239,11 +239,10 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 		answer.Ack,
 	)
 
-	state, err := psm.GetPSM(psm.StateKey{
+	state := e2.PSM.Try(psm.GetPSM(psm.StateKey{
 		DID:   caDID,
 		Nonce: answer.ID,
-	})
-	err2.Check(err)
+	}))
 
 	prot.Resume(
 		receiver,

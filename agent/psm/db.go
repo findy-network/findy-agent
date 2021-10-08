@@ -2,7 +2,6 @@ package psm
 
 import (
 	"crypto/md5"
-	"errors"
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -10,6 +9,7 @@ import (
 	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 const (
@@ -120,26 +120,19 @@ func getPSM(k StateKey) (m *PSM, err error) {
 		m = NewPSM(d)
 	})
 	if !found {
-		glog.Warningln("getPSM cannot find machine")
-		m = nil
+		assert.D.True(m == nil)
 	}
 	return m, err
 }
 
 func GetPSM(key StateKey) (s *PSM, err error) {
-	defer err2.Annotate("get last psm", &err)
-	m, _ := getPSM(key)
-	if m == nil {
-		return nil, errors.New("PSM with key " + key.DID + "/" + key.Nonce + " not found")
-	}
-	return m, nil
+	return getPSM(key)
 }
 
 func IsPSMReady(key StateKey) (yes bool, err error) {
 	defer err2.Annotate("is ready", &err)
 
-	m, err := GetPSM(key)
-	err2.Check(err)
+	m, _ := GetPSM(key)
 	if m == nil {
 		return false, err
 	}

@@ -3,6 +3,7 @@ package prot
 import (
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -31,8 +32,7 @@ func StatusForTask(workerDID string, taskID string) *TaskStatus {
 		Nonce: taskID,
 	}
 
-	state, err := psm.GetPSM(*key)
-	err2.Check(err)
+	state := e2.PSM.Try(psm.GetPSM(*key))
 
 	status := StatusReady
 	if !state.IsReady() {

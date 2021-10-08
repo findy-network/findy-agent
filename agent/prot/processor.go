@@ -118,11 +118,10 @@ func ContinuePSM(ts Again) (err error) {
 	wDID := ts.CA.WDID()
 	wa := ts.CA.WorkerEA()
 
-	PSM, err := psm.GetPSM(psm.StateKey{
+	PSM := e2.PSM.Try(psm.GetPSM(psm.StateKey{
 		DID:   wDID,
 		Nonce: ts.InMsg.SubLevelID(),
-	})
-	err2.Check(err)
+	}))
 
 	t := PSM.TaskFor(ts.InMsg.Info())
 
