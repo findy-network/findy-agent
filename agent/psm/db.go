@@ -1,185 +1,144 @@
 package psm
 
 import (
-	"bytes"
+	"crypto/md5"
 	"errors"
 
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-common-go/crypto"
+	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	bolt "go.etcd.io/bbolt"
 )
 
 const (
-	bucketPSM   = "PSM"
-	bucketRawPL = "RawPL"
-
-	bucketPairwise     = "Pairwise"
-	bucketDeviceID     = "DeviceID"
-	bucketBasicMessage = "BasicMessage"
-	bucketIssueCred    = "IssueCred"
-	bucketPresentProof = "PresentProof"
+	bucketPSM byte = 0 + iota
+	bucketRawPL
+	bucketPairwise
+	bucketDeviceID
+	bucketBasicMessage
+	bucketIssueCred
+	bucketPresentProof
 )
 
 var (
-	psmBucket   = []byte(bucketPSM)
-	rawPayloads = []byte(bucketRawPL)
+	buckets = [][]byte{
+		{bucketPSM},
+		{bucketRawPL},
+		{bucketPairwise},
+		{bucketDeviceID},
+		{bucketBasicMessage},
+		{bucketIssueCred},
+		{bucketPresentProof},
+	}
 
-	pairwiseReps     = []byte(bucketPairwise)
-	deviceIDReps     = []byte(bucketDeviceID)
-	basicMessageReps = []byte(bucketBasicMessage)
-	issueCredReps    = []byte(bucketIssueCred)
-	presentProofReps = []byte(bucketPresentProof)
+	theCipher *crypto.Cipher
+
+	mgdDB *db.Mgd
 )
-
-func toBytes(s string) []byte {
-	return []byte(s)
-}
-
-type DB struct {
-	db *bolt.DB
-}
-
-func OpenDb(filename string) (db *DB, err error) {
-	db = &DB{}
-	err = db.Open(filename)
-	return db, err
-}
 
 // Open opens the database by name of the file. If it is already open it returns
 // it, but it doesn't check the database name it isn't thread safe!
-func (b *DB) Open(filename string) (err error) {
-	if b.db != nil {
-		return nil
-	}
-	defer err2.Return(&err)
-	b.db, err = bolt.Open(filename, 0600, nil)
-	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
-		defer err2.Annotate("create bucket", &err)
-
-		// we could add bucket to agentBucket to store all of the REST api calls
-		err2.Try(tx.CreateBucketIfNotExists(psmBucket))
-		err2.Try(tx.CreateBucketIfNotExists(rawPayloads))
-		err2.Try(tx.CreateBucketIfNotExists(pairwiseReps))
-		err2.Try(tx.CreateBucketIfNotExists(deviceIDReps))
-		err2.Try(tx.CreateBucketIfNotExists(basicMessageReps))
-		err2.Try(tx.CreateBucketIfNotExists(issueCredReps))
-		err2.Try(tx.CreateBucketIfNotExists(presentProofReps))
-		return nil
-	}))
-	return err
+func Open(filename string) (err error) {
+	mgdDB = db.New(db.Cfg{
+		Filename:   filename,
+		Buckets:    buckets,
+		BackupName: filename + "_backup",
+	})
+	return nil
 }
 
-func (b *DB) addData(key []byte, value []byte, bucketName string) (err error) {
-	defer err2.Annotate("add "+bucketName, &err)
-	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
-		defer err2.Annotate("update "+bucketName+" bucket", &err)
-		b := tx.Bucket(toBytes(bucketName))
-		err2.Check(b.Put(key, value))
-		return err
-	}))
-	return err
+func addData(key []byte, value []byte, bucketID byte) (err error) {
+	return mgdDB.AddKeyValueToBucket(buckets[bucketID],
+		&db.Data{
+			Data: value,
+			Read: hash,
+		},
+		&db.Data{
+			Data: key,
+			Read: encrypt,
+		},
+	)
 }
 
 // get executes a read transaction by a key and a bucket. Instead of returning
 // the data, it uses lambda for the result transport to prevent cloning the byte
 // slice.
-func (b *DB) get(k StateKey, bucketName string,
-	use func(d []byte)) (err error) {
+func get(
+	k StateKey,
+	bucketID byte,
+	use func(d []byte),
+) (
+	found bool,
+	err error,
+) {
+	value := &db.Data{
+		Write: decrypt,
+		Use: func(d []byte) interface{} {
+			use(d)
+			return nil
+		},
+	}
+	found, err = mgdDB.GetKeyValueFromBucket(buckets[bucketID],
+		&db.Data{
+			Data: k.Data(),
+			Read: hash,
+		},
+		value)
 
-	defer err2.Annotate("get "+bucketName, &err)
-	err2.Check(b.db.View(func(tx *bolt.Tx) (err error) {
-		defer err2.Annotate("read "+bucketName, &err)
-		b := tx.Bucket(toBytes(bucketName))
-		got := b.Get(k.Data())
-		if got == nil {
-			return errors.New("Object was not found with id " + string(k.Data()))
-		}
-		// byte slices returned from Bolt are only valid during a transaction
-		// to prevent the copying it every time we use lambda here
-		use(got)
-		return err
-	}))
-	return err
+	return found, err
 }
 
-func (b *DB) rm(k StateKey, bucketName string) (err error) {
-	defer err2.Annotate("rm "+bucketName, &err)
-
-	glog.V(1).Infoln("-- rm", bucketName)
-	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
-		defer err2.Annotate("update "+bucketName, &err)
-		b := tx.Bucket(toBytes(bucketName))
-		err2.Check(b.Delete(k.Data()))
-		return err
-	}))
-	return err
+func rm(k StateKey, bucketID byte) (err error) {
+	return mgdDB.RmKeyValueFromBucket(buckets[bucketID],
+		&db.Data{
+			Data: k.Data(),
+			Read: hash,
+		})
 }
 
-func (b *DB) AddRawPL(addr *endp.Addr, data []byte) (err error) {
-	return b.addData(addr.Key(), data, bucketRawPL)
+func AddRawPL(addr *endp.Addr, data []byte) (err error) {
+	return addData(addr.Key(), data, bucketRawPL)
 }
 
-func (b *DB) RmRawPL(addr *endp.Addr) (err error) {
-	defer err2.Annotate("rm rawPL", &err)
-	err2.Check(b.db.Update(func(tx *bolt.Tx) (err error) {
-		defer err2.Annotate("update bucket", &err)
-		b := tx.Bucket(rawPayloads)
-		err2.Check(b.Delete(addr.Key()))
-		return nil
-	}))
-	return nil
+func RmRawPL(addr *endp.Addr) (err error) {
+	return mgdDB.RmKeyValueFromBucket(buckets[bucketRawPL],
+		&db.Data{
+			Data: addr.Key(),
+			Read: hash,
+		})
 }
 
-func (b *DB) addPSM(p *PSM) (err error) {
-	return b.addData(p.Key.Data(), p.Data(), bucketPSM)
+func AddPSM(p *PSM) (err error) {
+	return addData(p.Key.Data(), p.Data(), bucketPSM)
 }
 
-func (b *DB) getPSM(k StateKey) (m *PSM, err error) {
-	err = b.get(k, bucketPSM, func(d []byte) {
+func getPSM(k StateKey) (m *PSM, err error) {
+	found := false
+	found, err = get(k, bucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})
+	if !found {
+		glog.Warningln("getPSM cannot find machine")
+		m = nil
+	}
 	return m, err
 }
 
-func (b *DB) getAllPSM(did string, tsSinceNs *int64) (m *[]PSM, err error) {
-
-	// TODO: pagination logic
-
-	defer err2.Annotate("get all psm", &err)
-	err2.Check(b.db.View(func(tx *bolt.Tx) (err error) {
-		res := make([]PSM, 0)
-		defer err2.Annotate("read", &err)
-		c := tx.Bucket(psmBucket).Cursor()
-		prefix := []byte(did)
-		var vPsm *PSM
-		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			if v != nil {
-				vPsm = NewPSM(v)
-				if tsSinceNs == nil || vPsm.Timestamp() >= *tsSinceNs {
-					res = append(res, *vPsm)
-				}
-			}
-		}
-		m = &res
-		return nil
-	}))
-	return m, nil
-}
-
-func (b *DB) GetPSM(key StateKey) (s *PSM, err error) {
+func GetPSM(key StateKey) (s *PSM, err error) {
 	defer err2.Annotate("get last psm", &err)
-	m, _ := b.getPSM(key)
+	m, _ := getPSM(key)
 	if m == nil {
 		return nil, errors.New("PSM with key " + key.DID + "/" + key.Nonce + " not found")
 	}
 	return m, nil
 }
 
-func (b *DB) IsPSMReady(key StateKey) (yes bool, err error) {
+func IsPSMReady(key StateKey) (yes bool, err error) {
 	defer err2.Annotate("is ready", &err)
 
-	m, err := b.GetPSM(key)
+	m, err := GetPSM(key)
 	err2.Check(err)
 	if m == nil {
 		return false, err
@@ -188,84 +147,105 @@ func (b *DB) IsPSMReady(key StateKey) (yes bool, err error) {
 	return m.IsReady(), nil
 }
 
-func (b *DB) AllPSM(did string, tsSinceNs *int64) (m *[]PSM, err error) {
-	defer err2.Annotate("get all psm", &err)
-
-	m, err = b.getAllPSM(did, tsSinceNs)
-	err2.Check(err)
-	if m == nil {
-		return nil, errors.New("No PSMs found with " + did)
-	}
-	return m, nil
+func AddPairwiseRep(p *PairwiseRep) (err error) {
+	return addData(p.KData(), p.Data(), bucketPairwise)
 }
 
-func (b *DB) AddPairwiseRep(p *PairwiseRep) (err error) {
-	return b.addData(p.KData(), p.Data(), bucketPairwise)
-}
-
-func (b *DB) GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
-	err = b.get(k, bucketPairwise, func(d []byte) {
+func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
+	_, err = get(k, bucketPairwise, func(d []byte) {
 		m = NewPairwiseRep(d)
 	})
 	return m, err
 }
 
-func (b *DB) AddDeviceIDRep(d *DeviceIDRep) (err error) {
-	return b.addData(d.Key(), d.Data(), bucketDeviceID)
+func AddDeviceIDRep(d *DeviceIDRep) (err error) {
+	return addData(d.Key(), d.Data(), bucketDeviceID)
 }
 
-func (b *DB) GetAllDeviceIDRep(did string) (m *[]DeviceIDRep, err error) {
-
-	// TODO: pagination logic
-
-	defer err2.Annotate("get all device IDs", &err)
-	err2.Check(b.db.View(func(tx *bolt.Tx) (err error) {
-		res := make([]DeviceIDRep, 0)
-		defer err2.Annotate("read", &err)
-		c := tx.Bucket(deviceIDReps).Cursor()
-		prefix := []byte(did)
-		var vDeviceID *DeviceIDRep
-		for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-			if v != nil {
-				vDeviceID = NewDeviceIDRep(v)
-				res = append(res, *vDeviceID)
-			}
-		}
-		m = &res
-		return nil
-	}))
-	return m, nil
+func AddBasicMessageRep(p *BasicMessageRep) (err error) {
+	return addData(p.KData(), p.Data(), bucketBasicMessage)
 }
 
-func (b *DB) AddBasicMessageRep(p *BasicMessageRep) (err error) {
-	return b.addData(p.KData(), p.Data(), bucketBasicMessage)
-}
-
-func (b *DB) GetBasicMessageRep(k StateKey) (m *BasicMessageRep, err error) {
-	err = b.get(k, bucketBasicMessage, func(d []byte) {
+func GetBasicMessageRep(k StateKey) (m *BasicMessageRep, err error) {
+	_, err = get(k, bucketBasicMessage, func(d []byte) {
 		m = NewBasicMessageRep(d)
 	})
 	return m, err
 }
 
-func (b *DB) AddIssueCredRep(p *IssueCredRep) (err error) {
-	return b.addData(p.KData(), p.Data(), bucketIssueCred)
+func AddIssueCredRep(p *IssueCredRep) (err error) {
+	return addData(p.KData(), p.Data(), bucketIssueCred)
 }
 
-func (b *DB) GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
-	err = b.get(k, bucketIssueCred, func(d []byte) {
+func GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
+	_, err = get(k, bucketIssueCred, func(d []byte) {
 		m = NewIssueCredRep(d)
 	})
 	return m, err
 }
 
-func (b *DB) AddPresentProofRep(p *PresentProofRep) (err error) {
-	return b.addData(p.KData(), p.Data(), bucketPresentProof)
+func AddPresentProofRep(p *PresentProofRep) (err error) {
+	return addData(p.KData(), p.Data(), bucketPresentProof)
 }
 
-func (b *DB) GetPresentProofRep(k StateKey) (m *PresentProofRep, err error) {
-	err = b.get(k, bucketPresentProof, func(d []byte) {
+func GetPresentProofRep(k StateKey) (m *PresentProofRep, err error) {
+	_, err = get(k, bucketPresentProof, func(d []byte) {
 		m = NewPresentProofRep(d)
 	})
 	return m, err
+}
+
+func RmPSM(p *PSM) (err error) {
+	glog.V(1).Infoln("--- rm PSM:", p.Key)
+	switch p.Protocol() {
+	case pltype.ProtocolBasicMessage:
+		err = rm(p.Key, bucketBasicMessage)
+	case pltype.ProtocolConnection:
+		err = rm(p.Key, bucketPairwise)
+	case pltype.ProtocolIssueCredential:
+		err = rm(p.Key, bucketIssueCred)
+	case pltype.ProtocolPresentProof:
+		err = rm(p.Key, bucketPresentProof)
+	}
+	if err != nil {
+		return err
+	}
+	return rm(p.Key, bucketPSM)
+}
+
+// all of the following has same signature. They also panic on error
+
+// hash makes the cryptographic hash of the map key value. This prevents us to
+// store key value index (email, DID) to the DB aka sealed box as plain text.
+// Please use salt when implementing this.
+func hash(key []byte) (k []byte) {
+	if theCipher != nil {
+		h := md5.Sum(key)
+		return h[:]
+	}
+	return append(key[:0:0], key...)
+}
+
+// encrypt encrypts the actual wallet key value. This is used when data is
+// stored do the DB aka sealed box.
+func encrypt(value []byte) (k []byte) {
+	if theCipher != nil {
+		return theCipher.TryEncrypt(value)
+	}
+	return append(value[:0:0], value...)
+}
+
+// decrypt decrypts the actual wallet key value. This is used when data is
+// retrieved from the DB aka sealed box.
+func decrypt(value []byte) (k []byte) {
+	if theCipher != nil {
+		return theCipher.TryDecrypt(value)
+	}
+	return append(value[:0:0], value...)
+}
+
+// noop function if need e.g. tests
+func _(value []byte) (k []byte) {
+	println("noop called!")
+	return value
 }
