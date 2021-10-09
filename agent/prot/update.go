@@ -71,11 +71,10 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.ID())
 	}
 
-	machineKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
+	PSMKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
+	foundPSM := e2.PSM.Try(psm.FindPSM(PSMKey))
 
-	m := e2.PSM.Try(psm.GetPSM(machineKey))
-
-	var machine *psm.PSM
+	var currentPSM *psm.PSM
 	timestamp := time.Now().UnixNano()
 	s := psm.State{
 		Timestamp: timestamp,
@@ -83,12 +82,12 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
 		Sub:       subs,
 	}
-	if m != nil { // update existing one
+	if foundPSM != nil { // update existing one
 		if msgMe != "" {
-			m.InDID = msgMe
+			foundPSM.InDID = msgMe
 		}
-		m.States = append(m.States, s)
-		machine = m
+		foundPSM.States = append(foundPSM.States, s)
+		currentPSM = foundPSM
 	} else { // create a new one
 		ss := make([]psm.State, 1, 12)
 		ss[0] = s
@@ -109,14 +108,14 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		}
 		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
 
-		machine = &psm.PSM{Key: machineKey, InDID: msgMe,
+		currentPSM = &psm.PSM{Key: PSMKey, InDID: msgMe,
 			States: ss, Initiator: initiator}
 	}
-	err2.Check(psm.AddPSM(machine))
+	err2.Check(psm.AddPSM(currentPSM))
 
 	plType := opl.Type()
 	if plType == pltype.Nothing {
-		plType = machine.FirstState().PLInfo.Type
+		plType = currentPSM.FirstState().PLInfo.Type
 	}
 
 	// TODO: add machine to endingInfo to allow 'cheap' data access for
@@ -126,12 +125,12 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		subState:          subs,
 		nonce:             task.ID(),
 		meDID:             meDID,
-		pwName:            machine.PairwiseName(),
+		pwName:            currentPSM.PairwiseName(),
 		plType:            plType,
-		pendingUserAction: machine.PendingUserAction(),
-		initiator:         machine.Initiator,
+		pendingUserAction: currentPSM.PendingUserAction(),
+		initiator:         currentPSM.Initiator,
 		userActionType:    task.UserActionType(),
-		protocolFamily:    machine.Protocol(),
+		protocolFamily:    currentPSM.Protocol(),
 	})
 
 	return nil
@@ -239,6 +238,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				family:    info.protocolFamily,
 				initiator: info.initiator,
 			})
 		}
@@ -252,6 +252,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				family:    info.protocolFamily,
 				initiator: info.initiator,
 			})
 		}

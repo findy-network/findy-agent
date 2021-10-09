@@ -2,13 +2,13 @@ package psm
 
 import (
 	"crypto/md5"
+	"fmt"
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-common-go/crypto"
 	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 )
 
@@ -114,7 +114,23 @@ func AddPSM(p *PSM) (err error) {
 	return addData(p.Key.Data(), p.Data(), bucketPSM)
 }
 
-func getPSM(k StateKey) (m *PSM, err error) {
+// GetPSM get existing PSM from DB. If the PSM doesn't exist it returns error.
+// See FindPSM for version which doesn't return error if the PSM doesn't exist.
+func GetPSM(k StateKey) (m *PSM, err error) {
+	found := false
+	found, err = get(k, bucketPSM, func(d []byte) {
+		m = NewPSM(d)
+	})
+	if !found {
+		assert.D.True(m == nil)
+		return nil, fmt.Errorf("PSM with key %s/%s not found", k.DID, k.Nonce)
+	}
+	return m, err
+}
+
+// FindPSM doesn't return error if the PSM doesn't exist. Instead the returned
+// PSM is nil.
+func FindPSM(k StateKey) (m *PSM, err error) {
 	found := false
 	found, err = get(k, bucketPSM, func(d []byte) {
 		m = NewPSM(d)
@@ -123,21 +139,6 @@ func getPSM(k StateKey) (m *PSM, err error) {
 		assert.D.True(m == nil)
 	}
 	return m, err
-}
-
-func GetPSM(key StateKey) (s *PSM, err error) {
-	return getPSM(key)
-}
-
-func IsPSMReady(key StateKey) (yes bool, err error) {
-	defer err2.Annotate("is ready", &err)
-
-	m, _ := GetPSM(key)
-	if m == nil {
-		return false, err
-	}
-
-	return m.IsReady(), nil
 }
 
 func AddPairwiseRep(p *PairwiseRep) (err error) {
