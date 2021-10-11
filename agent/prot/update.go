@@ -8,6 +8,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -37,16 +38,12 @@ func NotifyEdge(ne notifyEdge) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
 
-			// todo: when CallEA() changes or removes we should get this
-			// information from some where performant place
-			taskStatus := StatusForTask(ne.did, ne.nonce)
-
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
 				AgentKeyType:     bus.AgentKeyType{AgentDID: ne.did},
 				ID:               utils.UUID(),
 				NotificationType: ne.plType,
 				ProtocolID:       ne.nonce,
-				ProtocolFamily:   taskStatus.Type,
+				ProtocolFamily:   mesg.ProtocolForType(ne.plType),
 				ConnectionID:     ne.pwName,
 				Timestamp:        ne.timestamp,
 				Initiator:        ne.initiator,
@@ -165,7 +162,7 @@ func AddAndSetFlagUpdatePSM(
 		m.States = append(m.States, s)
 		machine = m
 	} else {
-		return fmt.Errorf("previous PSM (%s) must exist", machineKey)
+		return fmt.Errorf("previous PSM (%s) must exist", machineKey.String())
 	}
 	err2.Check(psm.AddPSM(machine))
 
@@ -241,7 +238,7 @@ func triggerEnd(info endingInfo) {
 			}
 			NotifyEdge(notifyEdge{
 				did:       info.meDID,
-				plType:    pltype.CANotifyStatus,
+				plType:    info.plType,
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,

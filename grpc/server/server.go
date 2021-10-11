@@ -70,6 +70,13 @@ var notificationTypeID = map[string]pb.Notification_Type{
 	pltype.SAPresentProofAcceptValues:     pb.Notification_PROTOCOL_PAUSED,
 }
 
+func notificationForPayloadType(notificationType string) pb.Notification_Type {
+	if nType, ok := notificationTypeID[notificationType]; ok {
+		return nType
+	}
+	return pb.Notification_STATUS_UPDATE
+}
+
 var questionTypeID = map[string]pb.Question_Type{
 	pltype.CANotifyUserAction:             pb.Question_NONE,
 	pltype.SAPing:                         pb.Question_PING_WAITS,

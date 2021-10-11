@@ -367,12 +367,15 @@ loop:
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
 	defer err2.Annotate("processQuestion", &err)
 
-	notificationType := notificationTypeID[notify.NotificationType]
+	notificationType := notificationForPayloadType(notify.NotificationType)
 	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)
 
 	if notificationType != pb.Notification_PROTOCOL_PAUSED {
 		return nil, nil
 	}
+
+	glog.V(3).Infof("Sending question with id %s", notify.ProtocolID)
+
 	q2send := pb.Question{
 		TypeID: questionTypeID[notify.NotificationType],
 		Status: &pb.AgentStatus{
@@ -437,7 +440,7 @@ func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
 		ClientID: &pb.ClientID{ID: notify.AgentDID},
 		Notification: &pb.Notification{
 			ID:             notify.ID,
-			TypeID:         notificationTypeID[notify.NotificationType],
+			TypeID:         notificationForPayloadType(notify.NotificationType),
 			ConnectionID:   notify.ConnectionID,
 			ProtocolID:     notify.ProtocolID,
 			ProtocolFamily: notify.ProtocolFamily,
