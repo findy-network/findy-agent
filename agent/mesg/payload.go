@@ -143,21 +143,13 @@ func NewPayload(data []byte) (p *Payload) {
 }
 
 func (pl *Payload) Protocol() string {
-	return ProtocolForType(pl.Type)
+	return didcomm.FieldAtInd(pl.Type, 1)
 }
 
 func (pl *Payload) ProtocolMsg() string {
-	return ProtocolMsgForType(pl.Type)
+	return didcomm.FieldAtInd(pl.Type, 3)
 }
 
 func (pl *Payload) Namespace() string {
 	return didcomm.FieldAtInd(pl.Type, 0)
-}
-
-func ProtocolForType(typeStr string) string {
-	return didcomm.FieldAtInd(typeStr, 1)
-}
-
-func ProtocolMsgForType(typeStr string) string {
-	return didcomm.FieldAtInd(typeStr, 3)
 }

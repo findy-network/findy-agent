@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -152,7 +151,12 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	err2.Check(comm.SendPL(*secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
-	wpl := mesg.NewPayloadBase(task.ID(), pltype.AriesConnectionResponse)
+	//wpl := mesg.NewPayloadBase(task.ID(), pltype.AriesConnectionResponse)
+	wpl := aries.PayloadCreator.New(
+		didcomm.PayloadInit{
+			ID:   task.ID(),
+			Type: pltype.AriesConnectionResponse,
+		})
 	err2.Check(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
 }
 

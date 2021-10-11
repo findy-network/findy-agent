@@ -174,8 +174,3 @@ func SendAndWaitDIDComPayload(p didcomm.Payload, endpoint *endp.Addr, nonce uint
 	pl, err := PostRequest(endpoint.Address(), bytes.NewReader(p.JSON()), utils.Settings.Timeout())
 	return mesg.NewPayloadImpl(pl), err
 }
-
-func SendAndWaitPayload(p *mesg.Payload, endpoint *endp.Addr, nonce uint64) (rp *mesg.Payload, err error) {
-	// BLOCKING CALL to make endpoint request this time, proper for handshakes
-	return PostRequest(endpoint.Address(), bytes.NewReader(p.JSON()), utils.Settings.Timeout())
-}

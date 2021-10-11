@@ -136,3 +136,11 @@ func (pl *PayloadImpl) ProtocolMsg() string {
 func (pl *PayloadImpl) Namespace() string {
 	return didcomm.FieldAtInd(pl.Type(), 0)
 }
+
+func ProtocolForType(typeStr string) string {
+	return didcomm.FieldAtInd(typeStr, 1)
+}
+
+func ProtocolMsgForType(typeStr string) string {
+	return didcomm.FieldAtInd(typeStr, 3)
+}

@@ -3,7 +3,7 @@ package comm
 import (
 	"encoding/gob"
 
-	"github.com/findy-network/findy-agent/agent/mesg"
+	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -49,7 +49,7 @@ func (t *TaskBase) Type() string {
 }
 
 func (t *TaskBase) ProtocolType() pb.Protocol_Type {
-	return pltype.ProtocolTypeForFamily(mesg.ProtocolForType(t.TypeID))
+	return pltype.ProtocolTypeForFamily(aries.ProtocolForType(t.TypeID))
 }
 
 func (t *TaskBase) Role() pb.Protocol_Role {
