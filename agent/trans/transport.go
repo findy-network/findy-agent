@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 )
@@ -57,12 +56,4 @@ func (tr Transport) Endpoint() string {
 
 func (tr Transport) SetMessageOut(d *ssi.DID) {
 	tr.MsgPipe.Out = d
-}
-
-func (tr Transport) EncDIDComMsg(msg didcomm.Msg) didcomm.Msg {
-	return msg.Encr(tr.MsgPipe)
-}
-
-func (tr Transport) DecDIDComMsg(msg didcomm.Msg) didcomm.Msg {
-	return msg.Decr(tr.MsgPipe)
 }

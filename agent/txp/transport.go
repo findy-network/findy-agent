@@ -1,7 +1,6 @@
 package txp
 
 import (
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 )
@@ -34,9 +33,6 @@ type Trans interface {
 	MessagePipe() sec.Pipe
 
 	SetMessageOut(d *ssi.DID)
-
-	EncDIDComMsg(msg didcomm.Msg) didcomm.Msg
-	DecDIDComMsg(msg didcomm.Msg) didcomm.Msg
 
 	EndpAddr() string
 	String() string
