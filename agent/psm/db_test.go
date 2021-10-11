@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-common-go/crypto/db"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/go-test/deep"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
@@ -92,18 +93,26 @@ type TestRep struct {
 }
 
 func (t *TestRep) Type() byte {
-	return 1
+	return BucketPSM
+}
+
+func NewTestRep(d []byte) Rep {
+	p := &TestRep{}
+	dto.FromGOB(d, p)
+	return p
 }
 
 func Test_addBaseRep(t *testing.T) {
 	msgRep := &TestRep{
-		BaseRep: BaseRep{Key: StateKey{DID: mockStateDID, Nonce: mockStateNonce}},
+		BaseRep: BaseRep{Key: StateKey{DID: mockStateDID, Nonce: mockStateNonce, Type: BucketPSM}},
 	}
 	tests := []struct {
 		name string
 	}{
 		{"add"},
 	}
+	Creator.Add(BucketPSM, NewTestRep)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := AddRep(msgRep)

@@ -170,7 +170,7 @@ func AddAndSetFlagUpdatePSM(
 		m.States = append(m.States, s)
 		machine = m
 	} else {
-		return fmt.Errorf("previous PSM (%s) must exist", machineKey)
+		return fmt.Errorf("previous PSM (%s) must exist", machineKey.String())
 	}
 	err2.Check(psm.AddPSM(machine))
 

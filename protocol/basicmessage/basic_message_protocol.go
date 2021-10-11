@@ -144,14 +144,8 @@ func getBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatu
 
 	status := *ps
 
-	key := &psm.StateKey{
-		DID:   workerDID,
-		Nonce: taskID,
-	}
-	m, err := psm.GetRep(*key)
+	msg, err := getBasicMessageRep(workerDID, taskID)
 	err2.Check(err)
-
-	msg := m.(*basicMessageRep)
 
 	status.Status = &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
 		Content:       msg.Message,
