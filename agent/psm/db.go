@@ -16,7 +16,6 @@ const (
 	bucketPSM byte = 0 + iota
 	bucketRawPL
 	bucketPairwise
-	bucketDeviceID
 	bucketBasicMessage
 	bucketIssueCred
 	bucketPresentProof
@@ -27,7 +26,6 @@ var (
 		{bucketPSM},
 		{bucketRawPL},
 		{bucketPairwise},
-		{bucketDeviceID},
 		{bucketBasicMessage},
 		{bucketIssueCred},
 		{bucketPresentProof},
@@ -150,10 +148,6 @@ func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
 		m = NewPairwiseRep(d)
 	})
 	return m, err
-}
-
-func AddDeviceIDRep(d *DeviceIDRep) (err error) {
-	return addData(d.Key(), d.Data(), bucketDeviceID)
 }
 
 func AddBasicMessageRep(p *BasicMessageRep) (err error) {
