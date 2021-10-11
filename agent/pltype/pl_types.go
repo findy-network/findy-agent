@@ -167,7 +167,7 @@ const (
 	SAPing                         = SA + "/ping/1.0/ping"
 	SAIssueCredential              = SA + "/issue_credential"
 	SAIssueCredentialAcceptPropose = SAIssueCredential + "/1.0/accept_propose"
-	SAPresentProof                 = SA + "/present_proof"
+	SAPresentProof                 = SA + "/present-proof"
 	SAPresentProofAcceptPropose    = SAPresentProof + "/1.0/accept_propose"
 	SAPresentProofAcceptValues     = SAPresentProof + "/1.0/accept_values"
 )
