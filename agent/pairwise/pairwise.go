@@ -93,7 +93,8 @@ func NewCallerPairwise(msgFactor didcomm.MsgFactor, callerAgent ssi.Agent,
 }
 
 func (p *Caller) ReceiveResponse(encryptedResponse string) didcomm.PwMsg {
-	decryptedMsg := p.factor.NewAnonDecryptedMsg(p.agent.Wallet(), encryptedResponse, p.caller)
+	decryptedMsg := p.factor.NewAnonDecryptedMsg(
+		p.agent.Wallet(), encryptedResponse, p.caller)
 	p.processMessage(decryptedMsg)
 	return decryptedMsg
 }
