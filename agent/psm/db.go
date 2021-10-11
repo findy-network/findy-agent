@@ -182,13 +182,6 @@ func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
 	return m, err
 }
 
-<<<<<<< HEAD
-=======
-func AddDeviceIDRep(d *DeviceIDRep) (err error) {
-	return addData(d.Key(), d.Data(), BucketDeviceID)
-}
-
->>>>>>> fd8e1ab (Use rep IDs from psm package.)
 func AddRep(p Rep) (err error) {
 	return addData(p.KData(), p.Data(), p.Type())
 }
