@@ -163,7 +163,7 @@ type State struct {
 
 type PSM struct {
 	Key       StateKey
-	Initiator bool
+	Initiator bool // todo: rename StartedByUs
 	InDID     string
 	States    []State
 }
