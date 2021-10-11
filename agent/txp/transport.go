@@ -2,7 +2,6 @@ package txp
 
 import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 )
@@ -30,28 +29,15 @@ func (t Transport) SetMessageOut(d *ssi.DID) {
 	t.MsgPipe.Out = d
 }
 
-func (t Transport) EncMsg(msg *mesg.Msg) *mesg.Msg {
-	return msg.Encrypt(t.MsgPipe)
-}
-
-func (t Transport) DecMsg(msg *mesg.Msg) *mesg.Msg {
-	return msg.Decrypt(t.MsgPipe)
-}
-
 type Trans interface {
 	PayloadPipe() sec.Pipe
 	MessagePipe() sec.Pipe
 
 	SetMessageOut(d *ssi.DID)
 
-	EncMsg(msg *mesg.Msg) *mesg.Msg
-	DecMsg(msg *mesg.Msg) *mesg.Msg
-
 	EncDIDComMsg(msg didcomm.Msg) didcomm.Msg
 	DecDIDComMsg(msg didcomm.Msg) didcomm.Msg
 
-	Call(msgType string, msg *mesg.Msg) (rp *mesg.Payload, err error)
-	DIDComCallEndp(endp, msgType string, msg didcomm.Msg) (rp didcomm.Payload, err error)
 	EndpAddr() string
 	String() string
 }
