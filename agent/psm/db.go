@@ -129,13 +129,9 @@ func GetPSM(k StateKey) (m *PSM, err error) {
 // FindPSM doesn't return error if the PSM doesn't exist. Instead the returned
 // PSM is nil.
 func FindPSM(k StateKey) (m *PSM, err error) {
-	found := false
-	found, err = get(k, bucketPSM, func(d []byte) {
+	_, err = get(k, bucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})
-	if !found {
-		assert.D.True(m == nil)
-	}
 	return m, err
 }
 
