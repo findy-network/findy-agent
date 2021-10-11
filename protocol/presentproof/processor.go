@@ -303,11 +303,11 @@ func handleProofNACK(packet comm.Packet) (err error) {
 	})
 }
 
-func getPresentProofStatus(workerDID string, taskID string) interface{} {
+func getPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to set present proof status: ", err)
 	})
-	key := &psm.StateKey{
+	/*key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
@@ -319,7 +319,7 @@ func getPresentProofStatus(workerDID string, taskID string) interface{} {
 		return statusPresentProof{
 			Attributes: proofRep.Attributes,
 		}
-	}
+	}*/
 
-	return nil
+	return ps
 }

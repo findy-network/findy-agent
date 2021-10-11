@@ -407,6 +407,9 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 	if notificationType != pb.Notification_PROTOCOL_PAUSED {
 		return nil, nil
 	}
+
+	glog.V(3).Infof("Sending question with id %s", notify.ProtocolID)
+
 	q2send := pb.Question{
 		TypeID: questionTypeID[notify.NotificationType],
 		Status: &pb.AgentStatus{

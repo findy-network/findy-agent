@@ -92,9 +92,10 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 	})
 }
 
-func getTrustPingStatus(workerDID string, taskID string) interface{} {
+func getTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	// TODO:
-	return statusTrustPing{
+	/*return statusTrustPing{
 		Result: "NOT SUPPORTED",
-	}
+	}*/
+	return ps
 }

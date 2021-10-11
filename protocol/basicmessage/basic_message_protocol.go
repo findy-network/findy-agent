@@ -21,13 +21,6 @@ type taskBasicMessage struct {
 	Content string
 }
 
-type statusBasicMessage struct {
-	PwName    string `json:"pairwise"`
-	Message   string `json:"message"`
-	SentByMe  bool   `json:"sentByMe"`
-	Delivered bool   `json:"delivered"`
-}
-
 // basicMessageProcessor is a protocol processor for Basic Message protocol.
 var basicMessageProcessor = comm.ProtProc{
 	Creator: createBasicMessageTask,
@@ -82,15 +75,16 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 			bmTask, ok := t.(*taskBasicMessage)
 			assert.P.True(ok)
 
-			rep := &psm.BasicMessageRep{
-				Key:       key,
+			rep := &basicMessageRep{
+				BaseRep:   psm.BaseRep{Key: key},
 				PwName:    bmTask.ConnectionID(),
 				Message:   bmTask.Content,
 				Timestamp: time.Now().UnixNano(),
 				SentByMe:  true,
 				Delivered: true,
 			}
-			err2.Check(psm.AddBasicMessageRep(rep))
+			rep.Key.Type = rep.Type()
+			err2.Check(psm.AddRep(rep))
 
 			msg := om.FieldObj().(*basicmessage.Basicmessage)
 			msg.Content = bmTask.Content
@@ -119,8 +113,8 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 			Nonce: im.Thread().ID,
 		}
 
-		rep := &psm.BasicMessageRep{
-			Key:           key,
+		rep := &basicMessageRep{
+			BaseRep:       psm.BaseRep{Key: key},
 			PwName:        name,
 			Message:       bm.Content,
 			SendTimestamp: bm.SentTime.Time.UnixNano(),
@@ -128,7 +122,8 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 			SentByMe:      false,
 			Delivered:     true,
 		}
-		err2.Check(psm.AddBasicMessageRep(rep))
+		rep.Key.Type = rep.Type()
+		err2.Check(psm.AddRep(rep))
 
 		return true, nil
 	}
@@ -140,21 +135,30 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 	})
 }
 
-func getBasicMessageStatus(workerDID string, taskID string) interface{} {
+func getBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to set basic message status: ", err)
 	})
+
+	assert.D.True(ps != nil)
+
+	status := *ps
+
 	key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
-	msg, err := psm.GetBasicMessageRep(*key)
+	m, err := psm.GetRep(*key)
 	err2.Check(err)
 
-	return statusBasicMessage{
-		PwName:    msg.PwName,
-		Message:   msg.Message,
-		Delivered: msg.Delivered, // TODO?
-		SentByMe:  msg.SentByMe,
-	}
+	msg := m.(*basicMessageRep)
+
+	status.Status = &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
+		Content:       msg.Message,
+		SentByMe:      msg.SentByMe,
+		Delivered:     msg.Delivered,
+		SentTimestamp: msg.SendTimestamp,
+	}}
+
+	return &status
 }

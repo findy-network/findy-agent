@@ -138,7 +138,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
-	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeID], &key))
+	statusJSON := "" //dto.ToJSON(prot.GetStatus(protocolName[id.TypeID], &key))
 	m := e2.PSM.Try(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolID: id,
@@ -165,7 +165,9 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 	case pb.Protocol_TRUST_PING:
 		ps.Status = tryGetTrustPingStatus(id, key)
 	case pb.Protocol_BASIC_MESSAGE:
-		ps.Status = tryGetBasicMessageStatus(id, key)
+		ps = prot.GetStatus(protocolName[id.TypeID], &key, ps)
+		//tryGetBasicMessageStatus(id, key)
+
 	}
 	return ps, connID
 }
@@ -293,19 +295,4 @@ func tryGetTrustPingStatus(
 	return &pb.ProtocolStatus_TrustPing{
 		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
 	}
-}
-
-func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey,
-) *pb.ProtocolStatus_BasicMessage {
-
-	msg, err := psm.GetBasicMessageRep(key)
-	err2.Check(err)
-
-	glog.V(1).Infoln("Get BasicMsg for:", key, "sent by me:", msg.SentByMe)
-	return &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
-		Content:       msg.Message,
-		SentByMe:      msg.SentByMe,
-		Delivered:     msg.Delivered,
-		SentTimestamp: msg.SendTimestamp,
-	}}
 }

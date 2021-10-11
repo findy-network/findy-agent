@@ -133,6 +133,7 @@ func (ss SubState) Pure() SubState {
 type StateKey struct {
 	DID   string
 	Nonce string
+	Type  byte
 }
 
 func NewStateKey(agent comm.Receiver, nonce string) StateKey {

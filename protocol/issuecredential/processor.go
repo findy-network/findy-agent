@@ -6,7 +6,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -229,11 +228,11 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	continuator(ca, im)
 }
 
-func getIssueCredentialStatus(workerDID string, taskID string) interface{} {
+func getIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to set issue credential status: ", err)
 	})
-	key := &psm.StateKey{
+	/*key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
@@ -252,5 +251,6 @@ func getIssueCredentialStatus(workerDID string, taskID string) interface{} {
 		CredDefID:  credRep.CredDefID,
 		SchemaID:   schemaID,
 		Attributes: credRep.Attributes,
-	}
+	}*/
+	return ps
 }

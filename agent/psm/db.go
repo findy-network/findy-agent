@@ -2,12 +2,14 @@ package psm
 
 import (
 	"crypto/md5"
+	"errors"
 	"fmt"
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-common-go/crypto"
 	"github.com/findy-network/findy-common-go/crypto/db"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2/assert"
 )
@@ -35,6 +37,40 @@ var (
 
 	mgdDB *db.Mgd
 )
+
+type Rep interface {
+	Data() []byte
+	KData() []byte
+	Type() byte
+}
+
+type BaseRep struct {
+	Key StateKey
+}
+
+func (p *BaseRep) Data() []byte {
+	return dto.ToGOB(p)
+}
+
+func (p *BaseRep) KData() []byte {
+	return p.Key.Data()
+}
+
+type CreatorFunc func(d []byte) (rep Rep)
+
+var Creator = &Factor{factors: make(map[byte]CreatorFunc)}
+
+type Factor struct {
+	factors map[byte]CreatorFunc
+}
+
+func (f *Factor) Add(t byte, factor CreatorFunc) {
+	f.factors[t] = factor
+}
+
+func toBytes(s string) []byte {
+	return []byte(s)
+}
 
 // Open opens the database by name of the file. If it is already open it returns
 // it, but it doesn't check the database name it isn't thread safe!
@@ -146,13 +182,19 @@ func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
 	return m, err
 }
 
-func AddBasicMessageRep(p *BasicMessageRep) (err error) {
-	return addData(p.KData(), p.Data(), bucketBasicMessage)
+func AddRep(p Rep) (err error) {
+	fmt.Println(p.KData(), p.Data(), p.Type())
+	return addData(p.KData(), p.Data(), p.Type())
 }
 
-func GetBasicMessageRep(k StateKey) (m *BasicMessageRep, err error) {
-	_, err = get(k, bucketBasicMessage, func(d []byte) {
-		m = NewBasicMessageRep(d)
+func GetRep(k StateKey) (m Rep, err error) {
+	_, err = get(k, k.Type, func(d []byte) {
+		factor, ok := Creator.factors[k.Type]
+		if !ok {
+			err = errors.New(fmt.Sprintf("no factor found for rep type %d", k.Type))
+			return
+		}
+		m = factor(d)
 	})
 	return m, err
 }

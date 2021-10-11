@@ -352,7 +352,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	return nil
 }
 
-func getPairwiseStatus(workerDID string, taskID string) interface{} {
+func getPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to get connection status: ", err)
 	})
@@ -363,7 +363,7 @@ func getPairwiseStatus(workerDID string, taskID string) interface{} {
 	}
 	glog.V(4).Infoln("status for:", key)
 
-	pw, err := psm.GetPairwiseRep(*key)
+	/*pw, err := psm.GetPairwiseRep(*key)
 	err2.Check(err)
 
 	myDID := pw.Callee
@@ -382,5 +382,6 @@ func getPairwiseStatus(workerDID string, taskID string) interface{} {
 		TheirDID:      theirDID.DID,
 		TheirEndpoint: theirEndpoint,
 		TheirLabel:    pw.TheirLabel,
-	}
+	}*/
+	return ps
 }

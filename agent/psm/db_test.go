@@ -87,10 +87,17 @@ func Test_addPairwiseRep(t *testing.T) {
 	}
 }
 
-func Test_addBasicMessageRep(t *testing.T) {
-	msgRep := &BasicMessageRep{
-		Key:    StateKey{DID: mockStateDID, Nonce: mockStateNonce},
-		PwName: "pwName",
+type TestRep struct {
+	BaseRep
+}
+
+func (t *TestRep) Type() byte {
+	return 1
+}
+
+func Test_addBaseRep(t *testing.T) {
+	msgRep := &TestRep{
+		BaseRep: BaseRep{Key: StateKey{DID: mockStateDID, Nonce: mockStateNonce}},
 	}
 	tests := []struct {
 		name string
@@ -99,13 +106,13 @@ func Test_addBasicMessageRep(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := AddBasicMessageRep(msgRep)
+			err := AddRep(msgRep)
 			if err != nil {
-				t.Errorf("AddBasicMessageRep() %s error %v", tt.name, err)
+				t.Errorf("AddRep() %s error %v", tt.name, err)
 			}
-			got, err := GetBasicMessageRep(msgRep.Key)
+			got, err := GetRep(msgRep.Key)
 			if diff := deep.Equal(msgRep, got); err != nil || diff != nil {
-				t.Errorf("GetBasicMessageRep() diff %v, err %v", diff, err)
+				t.Errorf("GetRep() diff %v, err %v", diff, err)
 			}
 		})
 	}
