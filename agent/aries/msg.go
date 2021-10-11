@@ -223,10 +223,6 @@ func (m *MsgImpl) Endpoint() service.Addr {
 	}
 }
 
-func (m *MsgImpl) Encrypted() string {
-	return m.Msg.Encrypted
-}
-
 func (m *MsgImpl) FieldObj() interface{} {
 	return m.Msg
 }
@@ -244,14 +240,6 @@ func (m *MsgImpl) ReceiverEP() service.Addr {
 		Endp: m.RcvrEndp,
 		Key:  m.RcvrKey,
 	}
-}
-
-func (m *MsgImpl) Encr(cp sec.Pipe) didcomm.Msg {
-	return m
-}
-
-func (m *MsgImpl) Decr(cp sec.Pipe) didcomm.Msg {
-	return m
 }
 
 func (m *MsgImpl) AnonEncrypt(did *ssi.DID) didcomm.Msg {

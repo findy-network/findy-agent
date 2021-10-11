@@ -11,7 +11,6 @@ package didcomm
 import (
 	"strings"
 
-	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
@@ -204,10 +203,6 @@ type Msg interface {
 
 	Schema() *ssi.Schema
 	SetSchema(sch *ssi.Schema)
-
-	Encrypted() string
-	Encr(cp sec.Pipe) Msg
-	Decr(cp sec.Pipe) Msg
 
 	ReceiverEP() service.Addr
 
