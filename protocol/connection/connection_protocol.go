@@ -151,7 +151,6 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	err2.Check(comm.SendPL(*secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
-	//wpl := mesg.NewPayloadBase(task.ID(), pltype.AriesConnectionResponse)
 	wpl := aries.PayloadCreator.New(
 		didcomm.PayloadInit{
 			ID:   task.ID(),
