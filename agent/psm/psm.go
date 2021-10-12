@@ -260,17 +260,8 @@ func (p *PSM) Protocol() string {
 	return ""
 }
 
-// TaskFor returns Task of the PSM which corresponds PL.Type. If Type is not
+// PresentTask returns Task of the PSM which corresponds PL.Type. If Type is not
 // given it returns last state's Task.
-func (p *PSM) TaskFor(plType string) (t comm.Task) {
-	if plType == "" {
-		return p.LastState().T
-	}
-
-	for _, s := range p.States {
-		if s.PLInfo.Type == plType {
-			return s.T
-		}
-	}
-	return nil
+func (p *PSM) PresentTask() (t comm.Task) {
+	return p.LastState().T
 }
