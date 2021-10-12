@@ -51,12 +51,6 @@ func (f PayloadFactor) NewMsg(id, t string, m didcomm.MessageHdr) didcomm.Payloa
 	return &PayloadImpl{Payload: &Payload{ID: id, Type: t, Message: *msg}}
 }
 
-func (f PayloadFactor) NewError(pl didcomm.Payload, err error) didcomm.Payload {
-	msg := pl.Message().FieldObj().(*Msg)
-	msg.Error = err.Error()
-	return &PayloadImpl{Payload: &Payload{ID: pl.ID(), Type: pl.Type(), Message: *msg}}
-}
-
 type PayloadImpl struct {
 	*Payload
 }

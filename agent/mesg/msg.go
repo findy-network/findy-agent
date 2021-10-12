@@ -34,11 +34,6 @@ func (f MsgFactor) NewMessage(data []byte) didcomm.MessageHdr {
 	return &MsgImpl{Msg: newMsg(data)}
 }
 
-func (f MsgFactor) NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) didcomm.Msg {
-	m := NewAnonDecryptedMsg(wallet, cryptStr, did)
-	return &MsgImpl{Msg: m}
-}
-
 func (f MsgFactor) Create(d didcomm.MsgInit) didcomm.MessageHdr {
 	m := CreateMsg(d)
 	return &MsgImpl{Msg: &m}
@@ -299,17 +294,6 @@ func newMsg(bytes []byte) (msg *Msg) {
 		return nil
 	}
 	return
-}
-
-func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
-	f := ssi.Future{}
-	msg, err := base64.StdEncoding.DecodeString(cryptStr)
-	if err != nil {
-		panic(err)
-	}
-	f.SetChan(crypto.AnonDecrypt(wallet, did.VerKey(), msg))
-	msgJSON := f.Bytes()
-	return newMsgFrom(string(msgJSON))
 }
 
 func (m *Msg) AnonEncrypt(did *ssi.DID) *Msg {
