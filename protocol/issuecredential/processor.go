@@ -214,7 +214,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		Nonce: im.Thread().ID,
 	}
 
-	state, _ := psm.GetPSM(*key)
+	state := e2.PSM.Try(psm.GetPSM(*key))
 	assert.D.True(state != nil, "continue issue credential, task not found")
 
 	credTask := state.LastState().T.(*taskIssueCredential)

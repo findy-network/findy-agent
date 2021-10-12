@@ -8,6 +8,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -22,6 +23,7 @@ type notifyEdge struct {
 	nonce     string // protocol ID (not a Aries message ID but thead ID)
 	timestamp int64  // the timestamp of the PSM
 	pwName    string // connection ID (note!! not a pairwise Label)
+	family    string // protocol family
 
 	// TODO: change the name protocol starter and moved initiator and addressee
 	// other ways
@@ -37,16 +39,12 @@ func NotifyEdge(ne notifyEdge) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
 
-			// todo: when CallEA() changes or removes we should get this
-			// information from some where performant place
-			taskStatus := StatusForTask(ne.did, ne.nonce)
-
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
 				AgentKeyType:     bus.AgentKeyType{AgentDID: ne.did},
 				ID:               utils.UUID(),
 				NotificationType: ne.plType,
 				ProtocolID:       ne.nonce,
-				ProtocolFamily:   taskStatus.Type,
+				ProtocolFamily:   ne.family,
 				ConnectionID:     ne.pwName,
 				Timestamp:        ne.timestamp,
 				Initiator:        ne.initiator,
@@ -73,14 +71,10 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.ID())
 	}
 
-	machineKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
+	PSMKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
+	foundPSM := e2.PSM.Try(psm.FindPSM(PSMKey))
 
-	// NOTE!!! We cannot use error handling with the GetPSM because it reports
-	// not founding as an error. TODO: It must be fixed. Filtering errors by
-	// their values is a mistake, it brings more dependencies.
-	m, _ := psm.GetPSM(machineKey)
-
-	var machine *psm.PSM
+	var currentPSM *psm.PSM
 	timestamp := time.Now().UnixNano()
 	s := psm.State{
 		Timestamp: timestamp,
@@ -88,12 +82,12 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
 		Sub:       subs,
 	}
-	if m != nil { // update existing one
+	if foundPSM != nil { // update existing one
 		if msgMe != "" {
-			m.InDID = msgMe
+			foundPSM.InDID = msgMe
 		}
-		m.States = append(m.States, s)
-		machine = m
+		foundPSM.States = append(foundPSM.States, s)
+		currentPSM = foundPSM
 	} else { // create a new one
 		ss := make([]psm.State, 1, 12)
 		ss[0] = s
@@ -114,28 +108,29 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 		}
 		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
 
-		machine = &psm.PSM{Key: machineKey, InDID: msgMe,
+		currentPSM = &psm.PSM{Key: PSMKey, InDID: msgMe,
 			States: ss, Initiator: initiator}
 	}
-	err2.Check(psm.AddPSM(machine))
+	err2.Check(psm.AddPSM(currentPSM))
 
 	plType := opl.Type()
 	if plType == pltype.Nothing {
-		plType = machine.FirstState().PLInfo.Type
+		plType = currentPSM.FirstState().PLInfo.Type
 	}
 
 	// TODO: add machine to endingInfo to allow 'cheap' data access for
-	// notifications
+	// notifications, WIP: adding protocolFamily as first step
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
 		subState:          subs,
 		nonce:             task.ID(),
 		meDID:             meDID,
-		pwName:            machine.PairwiseName(),
+		pwName:            currentPSM.PairwiseName(),
 		plType:            plType,
-		pendingUserAction: machine.PendingUserAction(),
-		initiator:         machine.Initiator,
+		pendingUserAction: currentPSM.PendingUserAction(),
+		initiator:         currentPSM.Initiator,
 		userActionType:    task.UserActionType(),
+		protocolFamily:    currentPSM.Protocol(),
 	})
 
 	return nil
@@ -152,10 +147,7 @@ func AddAndSetFlagUpdatePSM(
 
 	defer err2.Annotate("mark archive psm", &err)
 
-	// NOTE!!! We cannot use error handling with the GetPSM because it reports
-	// not founding as an error. TODO: It must be fixed. Filtering errors by
-	// their values is a mistake, it brings more dependencies.
-	m, _ := psm.GetPSM(machineKey)
+	m := e2.PSM.Try(psm.GetPSM(machineKey))
 
 	clearedLastSubState := m.LastState().Sub &^ unsetSubState
 	var machine *psm.PSM
@@ -219,6 +211,7 @@ type endingInfo struct {
 	pendingUserAction bool
 	initiator         bool
 	userActionType    string
+	protocolFamily    string
 }
 
 func triggerEnd(info endingInfo) {
@@ -245,6 +238,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				family:    info.protocolFamily,
 				initiator: info.initiator,
 			})
 		}
@@ -258,6 +252,7 @@ func triggerEnd(info endingInfo) {
 				nonce:     info.nonce,
 				timestamp: info.timestamp,
 				pwName:    info.pwName,
+				family:    info.protocolFamily,
 				initiator: info.initiator,
 			})
 		}
