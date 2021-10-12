@@ -7,7 +7,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-wrapper-go/dto"
@@ -47,10 +46,6 @@ func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
 		},
 	}}
 	return resImpl
-}
-
-func (f *ResponseFactor) NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) didcomm.Msg {
-	panic("implement me")
 }
 
 func (f *ResponseFactor) NewMessage(data []byte) didcomm.MessageHdr {

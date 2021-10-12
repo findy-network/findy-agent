@@ -1,18 +1,14 @@
 package aries
 
 import (
-	"encoding/base64"
 	"encoding/gob"
-	"encoding/json"
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
-	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
-	"github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 )
@@ -34,11 +30,6 @@ func (f MsgFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 
 func (f MsgFactor) NewMessage(data []byte) didcomm.MessageHdr {
 	return NewMsg(data)
-}
-
-func (f MsgFactor) NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) didcomm.Msg {
-	m := NewAnonDecryptedMsg(wallet, cryptStr, did)
-	return &MsgImpl{Msg: m}
 }
 
 func (f MsgFactor) Create(d didcomm.MsgInit) didcomm.MessageHdr {
@@ -242,10 +233,6 @@ func (m *MsgImpl) ReceiverEP() service.Addr {
 	}
 }
 
-func (m *MsgImpl) AnonEncrypt(did *ssi.DID) didcomm.Msg {
-	return &MsgImpl{Msg: m.Msg.AnonEncrypt(did)}
-}
-
 type Msg struct {
 	Type string `json:"@type,omitempty"`
 	AID  string `json:"@id,omitempty"`
@@ -271,60 +258,6 @@ func NewMsg(data []byte) *MsgImpl {
 	var mImpl MsgImpl
 	dto.FromJSON(data, &mImpl)
 	return &mImpl
-}
-
-func newMsgFrom(js string) (msg *Msg) {
-	if js == "" {
-		js = "{}"
-	}
-	return newMsg([]byte(js))
-}
-
-func newMsg(bytes []byte) (msg *Msg) {
-	err := json.Unmarshal(bytes, &msg)
-	if err != nil {
-		glog.Error("Error marshalling from JSON: ", err.Error())
-		return nil
-	}
-	return
-}
-
-func NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) *Msg {
-	f := ssi.Future{}
-	msg, err := base64.StdEncoding.DecodeString(cryptStr)
-	if err != nil {
-		panic(err)
-	}
-	f.SetChan(crypto.AnonDecrypt(wallet, did.VerKey(), msg))
-	msgJSON := f.Bytes()
-	return newMsgFrom(string(msgJSON))
-}
-
-func (m *Msg) AnonEncrypt(did *ssi.DID) *Msg {
-	mb := dto.ToJSONBytes(m)
-	f := ssi.Future{}
-	ch := crypto.AnonCrypt(did.VerKey(), mb)
-	f.SetChan(ch)
-	msgBytes := f.Result().Bytes()
-	ec := base64.StdEncoding.EncodeToString(msgBytes)
-	return &Msg{Encrypted: ec}
-}
-
-func (m *Msg) Decrypt(cp sec.Pipe) *Msg {
-	msg, err := base64.StdEncoding.DecodeString(m.Encrypted)
-	if err != nil {
-		panic(err)
-	}
-	msgJSON := cp.Decrypt(msg)
-	return newMsgFrom(string(msgJSON))
-}
-
-func (m *Msg) Encrypt(cp sec.Pipe) *Msg {
-	mb := dto.ToJSONBytes(m)
-	msgBytes := cp.Encrypt(mb)
-	ec := base64.StdEncoding.EncodeToString(msgBytes)
-	return &Msg{Encrypted: ec}
-
 }
 
 func (m *Msg) SetEndpoint(ae service.Addr) {
