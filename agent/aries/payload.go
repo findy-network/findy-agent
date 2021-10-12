@@ -70,13 +70,6 @@ func (f PayloadFactor) NewMsg(id, t string, m didcomm.MessageHdr) didcomm.Payloa
 	return &PayloadImpl{MessageHdr: m}
 }
 
-// NewError is obsolete in aries protocol, but it's still implemented. Not use!
-func (f PayloadFactor) NewError(pl didcomm.Payload, err error) didcomm.Payload {
-	msg := pl.Message().FieldObj().(*Msg)
-	msg.Error = err.Error()
-	return pl
-}
-
 type PayloadImpl struct {
 	didcomm.MessageHdr
 }
@@ -135,4 +128,12 @@ func (pl *PayloadImpl) ProtocolMsg() string {
 
 func (pl *PayloadImpl) Namespace() string {
 	return didcomm.FieldAtInd(pl.Type(), 0)
+}
+
+func ProtocolForType(typeStr string) string {
+	return didcomm.FieldAtInd(typeStr, 1)
+}
+
+func ProtocolMsgForType(typeStr string) string {
+	return didcomm.FieldAtInd(typeStr, 3)
 }

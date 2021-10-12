@@ -1,8 +1,8 @@
 package psm
 
 import (
+	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
@@ -163,7 +163,7 @@ type State struct {
 
 type PSM struct {
 	Key       StateKey
-	Initiator bool
+	Initiator bool // todo: rename StartedByUs
 	InDID     string
 	States    []State
 }
@@ -219,7 +219,7 @@ func (p *PSM) Next() string {
 	if state := p.LastState(); state != nil {
 		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
-			return mesg.ProtocolMsgForType(state.PLInfo.Type)
+			return aries.ProtocolMsgForType(state.PLInfo.Type)
 		}
 	}
 	glog.Warning("no payload type found for PSM!", p.InDID)
@@ -231,7 +231,7 @@ func (p *PSM) PendingUserAction() bool {
 	if state := p.LastState(); state != nil {
 		// todo: when type is pltype.Termination or Nothing, len() returns 0
 		if len(state.PLInfo.Type) > 0 {
-			return pltype.UserAction == mesg.ProtocolMsgForType(state.PLInfo.Type)
+			return pltype.UserAction == aries.ProtocolMsgForType(state.PLInfo.Type)
 		}
 	}
 	return false
@@ -255,7 +255,7 @@ func (p *PSM) LastState() *State {
 
 func (p *PSM) Protocol() string {
 	if len(p.States) > 0 && p.States[0].PLInfo.Type != "" {
-		return mesg.ProtocolForType(p.States[0].PLInfo.Type)
+		return aries.ProtocolForType(p.States[0].PLInfo.Type)
 	}
 	return ""
 }

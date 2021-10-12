@@ -303,7 +303,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Return(&err)
 
-	protocolType := mesg.ProtocolForType(header.TypeID)
+	protocolType := aries.ProtocolForType(header.TypeID)
 	taskCreator, ok := creators[protocolType]
 	if !ok {
 		s := "!!!! No task creator !!! %s, %s"

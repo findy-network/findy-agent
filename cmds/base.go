@@ -1,7 +1,6 @@
 package cmds
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,13 +9,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/cloud"
-	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/mesg"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -148,34 +141,4 @@ func Progress(w io.Writer) chan<- struct{} {
 		}
 	}()
 	return done
-}
-
-func SendHandshake(msg *mesg.Msg, endpoint *endp.Addr) (payload *mesg.Payload, err error) {
-	p := mesg.Payload{ID: msg.Nonce, Type: pltype.ConnectionHandshake, Message: *msg}
-	// BLOCKING CALL to make endpoint request this time, proper for handshakes
-	return PostRequest(endpoint.Address(), bytes.NewReader(p.JSON()), utils.Settings.Timeout())
-}
-
-func PostRequest(urlStr string, msg io.Reader, timeout time.Duration) (p *mesg.Payload, err error) {
-	data, err := comm.SendAndWaitReq(urlStr, msg, timeout)
-	if err != nil {
-		return nil, fmt.Errorf("reading body: %s", err)
-	}
-	p = mesg.NewPayload(data)
-	if p.Message.Error != "" {
-		err = fmt.Errorf("http POST response: %s", p.Message.Error)
-	}
-
-	return
-}
-
-func SendAndWaitDIDComPayload(p didcomm.Payload, endpoint *endp.Addr, nonce uint64) (rp didcomm.Payload, err error) {
-	// BLOCKING CALL to make endpoint request this time, proper for handshakes
-	pl, err := PostRequest(endpoint.Address(), bytes.NewReader(p.JSON()), utils.Settings.Timeout())
-	return mesg.NewPayloadImpl(pl), err
-}
-
-func SendAndWaitPayload(p *mesg.Payload, endpoint *endp.Addr, nonce uint64) (rp *mesg.Payload, err error) {
-	// BLOCKING CALL to make endpoint request this time, proper for handshakes
-	return PostRequest(endpoint.Address(), bytes.NewReader(p.JSON()), utils.Settings.Timeout())
 }

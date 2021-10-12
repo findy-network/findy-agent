@@ -4,10 +4,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -90,32 +87,6 @@ func NewCallerPairwise(msgFactor didcomm.MsgFactor, callerAgent ssi.Agent,
 		},
 		callerRoot: callerRootDid,
 	}
-}
-
-func (p *Caller) ReceiveResponse(encryptedResponse string) didcomm.PwMsg {
-	decryptedMsg := p.factor.NewAnonDecryptedMsg(p.agent.Wallet(), encryptedResponse, p.caller)
-	p.processMessage(decryptedMsg)
-	return decryptedMsg
-}
-
-func (p *Caller) processMessage(decryptedMsg didcomm.PwMsg) {
-	defer err2.Catch(func(err error) {
-		glog.Errorln("error in finalizing a pairwise:", err)
-	})
-
-	// get the DID from decrypted msg data values
-	p.callee = ssi.NewDid(decryptedMsg.Did(), decryptedMsg.VerKey())
-
-	// This pairwise is now ready to be saved to agent's wallet
-	p.StartStore()
-
-	// Only a cloud agent can write to the ledger where we don't write on test mode
-	if p.agent.IsCA() && !utils.Settings.LocalTestMode() {
-		err2.Check(p.agent.SendNYM(p.callee, p.callerRoot.Did(), findy.NullString, findy.NullString))
-	}
-
-	// Check the result for error handling AND for consuming async's result
-	err2.Check(p.StoreResult())
 }
 
 func (p *Caller) StartStore() {

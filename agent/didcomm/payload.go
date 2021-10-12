@@ -11,7 +11,6 @@ package didcomm
 import (
 	"strings"
 
-	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
@@ -106,7 +105,6 @@ type PayloadFactor interface {
 	NewFromData(data []byte) Payload
 	New(pi PayloadInit) Payload
 	NewMsg(id, t string, m MessageHdr) Payload
-	NewError(pl Payload, err error) Payload
 }
 
 type PayloadInit struct {
@@ -205,10 +203,6 @@ type Msg interface {
 	Schema() *ssi.Schema
 	SetSchema(sch *ssi.Schema)
 
-	Encrypted() string
-	Encr(cp sec.Pipe) Msg
-	Decr(cp sec.Pipe) Msg
-
 	ReceiverEP() service.Addr
 
 	SetRcvrEndp(ae service.Addr)
@@ -223,7 +217,6 @@ type Msg interface {
 
 	Ready() bool
 	SubMsg() map[string]interface{}
-	AnonEncrypt(did *ssi.DID) Msg
 }
 
 // MsgInit is a helper struct for factors to construct new message instances.
@@ -253,7 +246,6 @@ type MsgFactor interface {
 	Factor
 
 	Create(mcd MsgInit) MessageHdr
-	NewAnonDecryptedMsg(wallet int, cryptStr string, did *ssi.DID) Msg
 }
 
 func FieldAtInd(s string, where int) string {
