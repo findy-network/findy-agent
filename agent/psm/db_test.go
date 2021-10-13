@@ -88,23 +88,31 @@ func Test_addPairwiseRep(t *testing.T) {
 	}
 }
 
-type TestRep struct {
-	BaseRep
+type testRep struct {
+	RepKey StateKey
 }
 
-func (t *TestRep) Type() byte {
-	return BucketPSM
+func (t *testRep) Key() *StateKey {
+	return &t.RepKey
+}
+
+func (p *testRep) Data() []byte {
+	return dto.ToGOB(p)
+}
+
+func (t *testRep) Type() byte {
+	return BucketPSM // just use any type
 }
 
 func NewTestRep(d []byte) Rep {
-	p := &TestRep{}
+	p := &testRep{}
 	dto.FromGOB(d, p)
 	return p
 }
 
 func Test_addBaseRep(t *testing.T) {
-	msgRep := &TestRep{
-		BaseRep: BaseRep{Key: StateKey{DID: mockStateDID, Nonce: mockStateNonce, Type: BucketPSM}},
+	msgRep := &testRep{
+		RepKey: StateKey{DID: mockStateDID, Nonce: mockStateNonce},
 	}
 	tests := []struct {
 		name string
@@ -119,7 +127,7 @@ func Test_addBaseRep(t *testing.T) {
 			if err != nil {
 				t.Errorf("AddRep() %s error %v", tt.name, err)
 			}
-			got, err := GetRep(msgRep.Key)
+			got, err := GetRep(msgRep.Type(), msgRep.RepKey)
 			if diff := deep.Equal(msgRep, got); err != nil || diff != nil {
 				t.Errorf("GetRep() diff %v, err %v", diff, err)
 			}

@@ -10,7 +10,7 @@ import (
 )
 
 type basicMessageRep struct {
-	psm.BaseRep
+	StateKey      psm.StateKey
 	PwName        string
 	Message       string
 	SendTimestamp int64
@@ -30,19 +30,27 @@ func NewBasicMessageRep(d []byte) psm.Rep {
 	return p
 }
 
+func (p *basicMessageRep) Key() *psm.StateKey {
+	return &p.StateKey
+}
+
+func (p *basicMessageRep) Data() []byte {
+	return dto.ToGOB(p)
+}
+
 func (p *basicMessageRep) Type() byte {
 	return psm.BucketBasicMessage
 }
 
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
 	err2.Return(&err)
+
 	key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
-		Type:  psm.BucketBasicMessage,
 	}
 	var res psm.Rep
-	res, err = psm.GetRep(*key)
+	res, err = psm.GetRep(psm.BucketBasicMessage, *key)
 	err2.Check(err)
 
 	var ok bool

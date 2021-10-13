@@ -76,14 +76,13 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 			assert.P.True(ok)
 
 			rep := &basicMessageRep{
-				BaseRep:   psm.BaseRep{Key: key},
+				StateKey:  key,
 				PwName:    bmTask.ConnectionID(),
 				Message:   bmTask.Content,
 				Timestamp: time.Now().UnixNano(),
 				SentByMe:  true,
 				Delivered: true,
 			}
-			rep.Key.Type = rep.Type()
 			err2.Check(psm.AddRep(rep))
 
 			msg := om.FieldObj().(*basicmessage.Basicmessage)
@@ -114,7 +113,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 		}
 
 		rep := &basicMessageRep{
-			BaseRep:       psm.BaseRep{Key: key},
+			StateKey:      key,
 			PwName:        name,
 			Message:       bm.Content,
 			SendTimestamp: bm.SentTime.Time.UnixNano(),
@@ -122,7 +121,6 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 			SentByMe:      false,
 			Delivered:     true,
 		}
-		rep.Key.Type = rep.Type()
 		err2.Check(psm.AddRep(rep))
 
 		return true, nil

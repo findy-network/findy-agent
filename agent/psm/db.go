@@ -2,14 +2,12 @@ package psm
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-common-go/crypto"
 	"github.com/findy-network/findy-common-go/crypto/db"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2/assert"
 )
@@ -39,21 +37,9 @@ var (
 )
 
 type Rep interface {
+	Key() *StateKey
 	Data() []byte
-	KData() []byte
 	Type() byte
-}
-
-type BaseRep struct {
-	Key StateKey
-}
-
-func (p *BaseRep) Data() []byte {
-	return dto.ToGOB(p)
-}
-
-func (p *BaseRep) KData() []byte {
-	return p.Key.Data()
 }
 
 type CreatorFunc func(d []byte) (rep Rep)
@@ -165,7 +151,7 @@ func GetPSM(k StateKey) (m *PSM, err error) {
 // FindPSM doesn't return error if the PSM doesn't exist. Instead the returned
 // PSM is nil.
 func FindPSM(k StateKey) (m *PSM, err error) {
-	_, err = get(k, bucketPSM, func(d []byte) {
+	_, err = get(k, BucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})
 	return m, err
@@ -183,14 +169,14 @@ func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
 }
 
 func AddRep(p Rep) (err error) {
-	return addData(p.KData(), p.Data(), p.Type())
+	return addData(p.Key().Data(), p.Data(), p.Type())
 }
 
-func GetRep(k StateKey) (m Rep, err error) {
-	_, err = get(k, k.Type, func(d []byte) {
-		factor, ok := Creator.factors[k.Type]
+func GetRep(repType byte, k StateKey) (m Rep, err error) {
+	_, err = get(k, repType, func(d []byte) {
+		factor, ok := Creator.factors[repType]
 		if !ok {
-			err = fmt.Errorf("no factor found for rep type %d", k.Type)
+			err = fmt.Errorf("no factor found for rep type %d", repType)
 			return
 		}
 		m = factor(d)
