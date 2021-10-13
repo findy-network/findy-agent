@@ -5,7 +5,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/e2"
-	"github.com/findy-network/findy-agent/agent/mesg"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -45,12 +44,13 @@ type Initial struct {
 type Setup func(key psm.StateKey, msg didcomm.MessageHdr) (err error)
 
 type Again struct {
-	CA          comm.Receiver // the start CA
-	InMsg       didcomm.Msg   // Client data
-	SendNext    string        // the type of the PL we will send next if any
-	WaitingNext string        // the type of the PL we will wait if any
-	SendOnNACK  string        // the type to send when we NACK
-	Transfer                  // input/output protocol msg
+	CA    comm.Receiver // the start CA
+	InMsg didcomm.Msg
+
+	SendNext    string // the type of the PL we will send next if any
+	WaitingNext string // the type of the PL we will wait if any
+	SendOnNACK  string // the type to send when we NACK
+	Transfer           // input/output protocol msg
 }
 
 type Transfer func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error)
@@ -112,18 +112,18 @@ func newPayload(ts Initial) didcomm.Payload {
 // to be verified by user if they can be continued. With this function user's
 // decision is given to the PSM. The PSM can continue or it can send NACK to
 // other end and terminate. All that's defined in Again struct.
-func ContinuePSM(ts Again) (err error) {
+func ContinuePSM(shift Again) (err error) {
 	defer err2.Annotate("continue PSM", &err)
 
-	wDID := ts.CA.WDID()
-	wa := ts.CA.WorkerEA()
+	wDID := shift.CA.WDID()
+	wa := shift.CA.WorkerEA()
 
 	PSM := e2.PSM.Try(psm.GetPSM(psm.StateKey{
 		DID:   wDID,
-		Nonce: ts.InMsg.SubLevelID(),
+		Nonce: shift.InMsg.SubLevelID(),
 	}))
 
-	t := PSM.TaskFor(ts.InMsg.Info())
+	presentTask := PSM.PresentTask()
 
 	msgMeDID := PSM.InDID
 	meDID := PSM.Key.DID
@@ -134,24 +134,24 @@ func ContinuePSM(ts Again) (err error) {
 	outDID.StartEndp(wa.Wallet())
 	pipe := sec.Pipe{In: inDID, Out: outDID}
 
-	sendBack := ts.SendNext != pltype.Terminate
-	plType := ts.SendNext
-	isLast := ts.WaitingNext == pltype.Terminate
+	sendBack := shift.SendNext != pltype.Terminate
+	plType := shift.SendNext
+	isLast := shift.WaitingNext == pltype.Terminate
 	ackFlag := psm.ACK
 
 	im := aries.MsgCreator.Create(didcomm.MsgInit{
-		Nonce: ts.InMsg.SubLevelID(), // Continue Task ID comes in as Msg.ID
-		Ready: ts.InMsg.Ready()},     // How we continue comes in Ready field
+		Nonce: shift.InMsg.SubLevelID(), // Continue Task ID comes in as Msg.ID
+		Ready: shift.InMsg.Ready()},     // How we continue comes in Ready field
 	)
 	om := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   plType,
-		Thread: decorator.NewThread(ts.InMsg.SubLevelID(), ""),
+		Thread: decorator.NewThread(shift.InMsg.SubLevelID(), ""),
 	})
 
-	if !err2.Bool.Try(ts.Transfer(wa, im, om)) { // if handler says NACK
-		if ts.SendOnNACK != "" {
-			sendBack = true        // set if we'll send NACK
-			plType = ts.SendOnNACK // NACK type to send
+	if !err2.Bool.Try(shift.Transfer(wa, im, om)) { // if handler says NACK
+		if shift.SendOnNACK != "" {
+			sendBack = true           // set if we'll send NACK
+			plType = shift.SendOnNACK // NACK type to send
 		}
 		isLast = true      // our current system NACK ends the PSM
 		ackFlag = psm.NACK // we are terminating PSM with NACK
@@ -160,17 +160,17 @@ func ContinuePSM(ts Again) (err error) {
 	if sendBack {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
 		agentEndp := e2.Public.Try(pipe.EA())
-		t.SetReceiverEndp(agentEndp)
+		presentTask.SetReceiverEndp(agentEndp)
 
-		err2.Check(UpdatePSM(meDID, msgMeDID, t, opl, psm.Sending))
-		err2.Check(comm.SendPL(pipe, t, opl))
+		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, opl, psm.Sending))
+		err2.Check(comm.SendPL(pipe, presentTask, opl))
 	}
 	if isLast {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.ID(), Type: plType})
-		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Ready|ackFlag))
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: plType})
+		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Ready|ackFlag))
 	} else {
-		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: t.ID(), Type: ts.WaitingNext})
-		err2.Check(UpdatePSM(meDID, msgMeDID, t, wpl, psm.Waiting))
+		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: shift.WaitingNext})
+		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Waiting))
 	}
 
 	return err
@@ -337,10 +337,10 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 		panic("no protocol continuator")
 	}
 
-	om := mesg.MsgCreator.Create(didcomm.MsgInit{
+	om := aries.MsgCreator.Create(didcomm.MsgInit{
 		Ready: ack,
-		ID:    protocolID,
-		Nonce: protocolID,
+		ID:    protocolID, // This Has the SubLevelID() Getter
+		Nonce: protocolID, // This makes the Thread decorator
 	}).(didcomm.Msg)
 
 	go proc.Continuator(rcvr, om)
