@@ -260,8 +260,7 @@ func (p *PSM) Protocol() string {
 	return ""
 }
 
-// PresentTask returns Task of the PSM which corresponds PL.Type. If Type is not
-// given it returns last state's Task.
+// PresentTask returns latest state's Task of the PSM.
 func (p *PSM) PresentTask() (t comm.Task) {
 	return p.LastState().T
 }
