@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
@@ -210,7 +211,21 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
 	ep := receiver.CAEndp(true)
-	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
+
+	// Build new DID for the pairwise and save it for the CONN_REQ??
+	wa := receiver.WorkerEA()
+	ssiWA := wa.(ssi.Agent)
+
+	ourPairwiseDID := ssiWA.CreateDID("")
+
+	// mark our pw DID with connection ID for future use
+	r := <-did.SetMeta(wa.Wallet(), ourPairwiseDID.Did(), id)
+	err2.Check(r.Err())
+
+	ep.RcvrDID = ourPairwiseDID.Did()
+	ssiWA.AddDIDCache(ourPairwiseDID)
+	glog.V(1).Infoln("---- Using preallocated PW DID ---")
+
 	ep.EdgeToken = id
 	label := base.Label
 	if base.Label == "" {
