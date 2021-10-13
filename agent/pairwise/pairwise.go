@@ -129,8 +129,11 @@ func NewCalleePairwise(msgFactor didcomm.MsgFactor, agent ssi.Agent,
 }
 
 func (p *Callee) ConnReqToRespWithSet(
-	f func(m didcomm.PwMsg)) (respMsg didcomm.PwMsg, err error) {
-
+	f func(m didcomm.PwMsg),
+) (
+	respMsg didcomm.PwMsg,
+	err error,
+) {
 	defer err2.Return(&err)
 
 	responseMsg := p.RespMsgAndOurDID()
@@ -154,7 +157,9 @@ func (p *Callee) ConnReqToRespWithSet(
 }
 
 func (p *Callee) RespMsgAndOurDID() (msg didcomm.PwMsg) {
-	p.Callee = p.agent.CreateDID("")
+	if p.Callee == nil {
+		p.Callee = p.agent.CreateDID("")
+	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,
 		Nonce:    p.Msg.Nonce(),
