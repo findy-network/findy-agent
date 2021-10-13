@@ -30,10 +30,6 @@ type taskPresentProof struct {
 	ProofPredicates []didcomm.ProofPredicate
 }
 
-type statusPresentProof struct {
-	Attributes []didcomm.ProofAttribute `json:"attributes"`
-}
-
 type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
 
 var presentProofProcessor = comm.ProtProc{

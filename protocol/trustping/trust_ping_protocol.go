@@ -17,10 +17,6 @@ type taskTrustPing struct {
 	comm.TaskBase
 }
 
-type statusTrustPing struct {
-	Result string `json:"result"`
-}
-
 var trustPingProcessor = comm.ProtProc{
 	Creator: createTrustPingTask,
 	Starter: startTrustPing,

@@ -54,10 +54,6 @@ func (f *Factor) Add(t byte, factor CreatorFunc) {
 	f.factors[t] = factor
 }
 
-func toBytes(s string) []byte {
-	return []byte(s)
-}
-
 // Open opens the database by name of the file. If it is already open it returns
 // it, but it doesn't check the database name it isn't thread safe!
 func Open(filename string) (err error) {

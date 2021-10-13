@@ -96,8 +96,8 @@ func (t *testRep) Key() *StateKey {
 	return &t.RepKey
 }
 
-func (p *testRep) Data() []byte {
-	return dto.ToGOB(p)
+func (t *testRep) Data() []byte {
+	return dto.ToGOB(t)
 }
 
 func (t *testRep) Type() byte {

@@ -36,14 +36,6 @@ type taskDIDExchange struct {
 	Label        string
 }
 
-type statusPairwise struct {
-	Name          string `json:"name"`
-	MyDID         string `json:"myDid"`
-	TheirDID      string `json:"theirDid"`
-	TheirEndpoint string `json:"theirEndpoint"`
-	TheirLabel    string `json:"theirLabel"`
-}
-
 var connectionProcessor = comm.ProtProc{
 	Creator: createConnectionTask,
 	Starter: startConnectionProtocol,

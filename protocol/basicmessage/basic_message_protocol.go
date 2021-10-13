@@ -140,7 +140,7 @@ func getBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatu
 
 	assert.D.True(ps != nil)
 
-	status := *ps
+	status := ps
 
 	msg, err := getBasicMessageRep(workerDID, taskID)
 	err2.Check(err)
@@ -152,5 +152,5 @@ func getBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatu
 		SentTimestamp: msg.SendTimestamp,
 	}}
 
-	return &status
+	return status
 }

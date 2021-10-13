@@ -28,12 +28,6 @@ type taskIssueCredential struct {
 	CredDefID       string
 }
 
-type statusIssueCredential struct {
-	CredDefID  string                        `json:"credDefId"`
-	SchemaID   string                        `json:"schemaId"`
-	Attributes []didcomm.CredentialAttribute `json:"attributes"`
-}
-
 type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
 
 var issueCredentialProcessor = comm.ProtProc{
