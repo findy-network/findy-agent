@@ -20,11 +20,11 @@ considered.
 */
 type Addr struct {
 	ID        uint64 // ID is used to save Payloads arriving into the Address
-	Service   string // Service name like findy for http and findyws for websockets
-	PlRcvr    string // PL receiver which can be Agency cmd: 'handshake', and others, or it can be CA-DID (our CA)
+	Service   string // Service name like findy for http
+	PlRcvr    string // PL receiver it is CA-DID (our CA) todo: CA or WA?
 	MsgRcvr   string // Receivers CA-DID which is used for Edge/Cloud communication
-	RcvrDID   string // This is the FINAL msg receiver which is the actual target of the msg, can decrypt the msg
-	EdgeToken string // Final communication endpoint like APNS Device Token
+	RcvrDID   string // This is the pairwise DID
+	EdgeToken string // Final communication endpoint, now used for invitation ID
 	BasePath  string // The base address of the URL
 	VerKey    string // Associated VerKey, used for sending Payloads to this address
 }
