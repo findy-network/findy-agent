@@ -1,8 +1,6 @@
 package basicmessage
 
 import (
-	"encoding/gob"
-
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2"
@@ -21,7 +19,6 @@ type basicMessageRep struct {
 
 func init() {
 	psm.Creator.Add(psm.BucketBasicMessage, NewBasicMessageRep)
-	gob.Register(&basicMessageRep{})
 }
 
 func NewBasicMessageRep(d []byte) psm.Rep {
