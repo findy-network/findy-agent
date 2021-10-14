@@ -163,7 +163,8 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 
 	// Most cases security pipe comes from wEA's pairwise endpoints
 	rcvrCA := agency.ReceiverCA(ourAddress).(*cloud.Agent)
-	pipe := rcvrCA.WEA().SecPipe(ourAddress.RcvrDID)
+	rcvrWA := rcvrCA.WEA()
+	pipe := rcvrWA.SecPipe(ourAddress.RcvrDID)
 
 	// In case of connection-invite, we use common EA/CA pipe
 	if pipe.IsNull() {
