@@ -1,10 +1,13 @@
 package pairwise
 
 import (
+	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
 
@@ -128,9 +131,25 @@ func NewCalleePairwise(msgFactor didcomm.MsgFactor, agent ssi.Agent,
 	}
 }
 
-func (p *Callee) ConnReqToRespWithSet(
-	f func(m didcomm.PwMsg)) (respMsg didcomm.PwMsg, err error) {
+func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
+	a := p.agent.(comm.Receiver)
+	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
+	r := <-did.Meta(a.Wallet(), calleeDID.Did())
+	err2.Check(r.Err())
+	if r.Str1() == cnxAddr.EdgeToken {
+		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
+		p.Callee = calleeDID
+	} else {
+		glog.V(1).Infoln("===== Cannot use pw DID, NO META =====")
+	}
+}
 
+func (p *Callee) ConnReqToRespWithSet(
+	f func(m didcomm.PwMsg),
+) (
+	respMsg didcomm.PwMsg,
+	err error,
+) {
 	defer err2.Return(&err)
 
 	responseMsg := p.RespMsgAndOurDID()
@@ -154,7 +173,9 @@ func (p *Callee) ConnReqToRespWithSet(
 }
 
 func (p *Callee) RespMsgAndOurDID() (msg didcomm.PwMsg) {
-	p.Callee = p.agent.CreateDID("")
+	if p.Callee == nil {
+		p.Callee = p.agent.CreateDID("")
+	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,
 		Nonce:    p.Msg.Nonce(),

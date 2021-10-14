@@ -13,24 +13,6 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
-// Helper code from Python Agent taken for a help. This is how it will write
-// DIDDoc JSON
-var python = `return {
-            "@context": DIDDoc.CONTEXT,
-            "id": canon_ref(self.did, self.did),
-            "publicKey": [pubkey.to_dict() for pubkey in self.pubkey.values()],
-            "authentication": [
-                {
-                    "type": pubkey.type.authn_type,
-                    "publicKey": canon_ref(self.did, pubkey.id),
-                }
-                for pubkey in self.pubkey.values()
-                if pubkey.authn
-            ],
-            "service": [service.to_dict() for service in self.service.values()],
-        }
-`
-
 // Connection request taken from Python Agent output for example json.
 var connectionRequest = `  {
     "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
@@ -92,7 +74,6 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
-	_ = python // remove warning of unused variable
 	var req Request
 
 	dto.FromJSONStr(connectionRequest, &req)

@@ -21,6 +21,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 /*
@@ -103,7 +104,7 @@ func NewEA() *Agent {
 // AttachAPIEndp sets the API endpoint for remove EA i.e. real EA not w-EA.
 func (a *Agent) AttachAPIEndp(endp service.Addr) error {
 	a.EAEndp = &endp
-	theirDid := a.Tr.PayloadPipe().Out.Did()
+	theirDid := a.WDID()
 	endpJSONStr := dto.ToJSON(endp)
 	r := <-did.SetMeta(a.Wallet(), theirDid, endpJSONStr)
 	return r.Err()
@@ -159,7 +160,7 @@ func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 	vk := a.Tr.PayloadPipe().In.VerKey()
 	serviceName := utils.Settings.ServiceName()
 	if wantWorker {
-		rcvrDID = a.Tr.PayloadPipe().Out.Did()
+		rcvrDID = a.WDID()
 		serviceName = utils.Settings.ServiceName2()
 		// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
 	}
@@ -201,18 +202,18 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 // is a pseudo EA which presents EA in the cloud and so it is always ONLINE. By
 // this other agents can connect to us even when all of our EAs are offline.
 // This is under construction.
-func (a *Agent) workerAgent(rcvrDID, suffix string) (wa *Agent) {
-	if a.worker == nil {
-		if rcvrDID != a.Tr.PayloadPipe().Out.Did() {
-			glog.Error("Agent URL doesn't match with Transport")
-			panic("Agent URL doesn't match with Transport")
-		}
-		cfg := a.WalletH.Config().(*ssi.Wallet)
+func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
+	ca := a // to help us to read the code, receiver is CA
+	if ca.worker == nil {
+		glog.V(2).Infoln("starting worker agent creation process")
+		assert.P.True(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
+
+		cfg := ca.WalletH.Config().(*ssi.Wallet)
 		aWallet := cfg.WorkerWalletBy(suffix)
 
 		// getting wallet credentials
 		// CA and EA wallets have same key, they have same root DID
-		key, err := enclave.WalletKeyByDID(a.RootDid().Did())
+		key, err := enclave.WalletKeyByDID(ca.RootDid().Did())
 		if err != nil {
 			glog.Error("cannot get wallet key:", err)
 			panic(err)
@@ -220,65 +221,68 @@ func (a *Agent) workerAgent(rcvrDID, suffix string) (wa *Agent) {
 		aWallet.Credentials.Key = key
 		walletInitializedBefore := aWallet.Create()
 
-		workerMeDID := a.LoadDID(rcvrDID)
-		workerYouDID := a.Tr.PayloadPipe().In
+		workerMeDID := ca.LoadDID(waDID)
+		workerYouDID := ca.Tr.PayloadPipe().In
 		cloudPipe := sec.Pipe{In: workerMeDID, Out: workerYouDID}
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
 
-		a.worker = &Agent{
+		ca.worker = &Agent{
 			DIDAgent: ssi.DIDAgent{
 				Type:     ssi.Edge | ssi.Worker,
-				Root:     a.RootDid(),
-				DidCache: a.DidCache,
+				Root:     ca.RootDid(),
+				DidCache: ca.DidCache,
 			},
 			Tr:      transport, // Transport for EA is created here!
-			ca:      a,
+			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
 		}
-		a.worker.OpenWallet(*aWallet)
+		ca.worker.OpenWallet(*aWallet)
 		// cleanup, secure enclave stuff, minimize time in memory
 		aWallet.Credentials.Key = ""
 
-		comm.ActiveRcvrs.Add(rcvrDID, a.worker)
+		comm.ActiveRcvrs.Add(waDID, ca.worker)
 
 		if !walletInitializedBefore {
 			glog.V(2).Info("Creating a master secret into worker's wallet")
-			masterSec, err := enclave.NewWalletMasterSecret(a.RootDid().Did())
+			masterSec, err := enclave.NewWalletMasterSecret(ca.RootDid().Did())
 			if err != nil {
 				glog.Error(err)
 				panic(err)
 			}
-			r := <-anoncreds.ProverCreateMasterSecret(a.worker.Wallet(), masterSec)
+			r := <-anoncreds.ProverCreateMasterSecret(ca.worker.Wallet(), masterSec)
 			if r.Err() != nil || masterSec != r.Str1() {
 				glog.Error(r.Err())
 				panic(r.Err())
 			}
 		}
 
-		a.worker.loadPWMap()
+		ca.worker.loadPWMap()
 	}
-	return a.worker
+	return ca.worker
 }
 
 func (a *Agent) MasterSecret() (string, error) {
 	return enclave.WalletMasterSecretByDID(a.RootDid().Did())
 }
 
-// WDID returns DID string of the WEA.
+// WDID returns DID string of the WA and CALLED from CA.
 func (a *Agent) WDID() string {
+	assert.D.True(a.IsCA())
 	return a.Tr.PayloadPipe().Out.Did()
 }
 
-// WEA returns CA's worker EA. It creates and inits it correctly if needed. The
-// w-EA is a cloud allocated EA. Note! The TR is attached to worker EA here!
+// WEA returns CA's worker agent. It creates and inits it correctly if needed.
+// The TR is attached to worker EA here!
 func (a *Agent) WEA() (wa *Agent) {
-	if a.worker != nil {
-		return a.worker
+	ca := a
+	if ca.worker != nil {
+		glog.V(1).Infoln("worker ready")
+		return ca.worker
 	}
-	rcvrDID := a.Tr.PayloadPipe().Out.Did()
-	return a.workerAgent(rcvrDID, "_worker")
+	waDID := ca.WDID()
+	return ca.workerAgent(waDID, "_worker")
 }
 
 func (a *Agent) WorkerEA() comm.Receiver {

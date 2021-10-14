@@ -111,7 +111,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID
 
-	// build a connection message to send to another agent
+	// build a connection request message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
@@ -157,6 +157,124 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 			Type: pltype.AriesConnectionResponse,
 		})
 	err2.Check(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
+}
+
+func handleConnectionRequest(packet comm.Packet) (err error) {
+	defer err2.Annotate("connection req", &err)
+
+	// The agent DID, the PW DID is msgMeDID below
+	meDID := packet.Receiver.Trans().MessagePipe().In.Did()
+	msgMeDID := "" // not known yet, will set it after pw is made
+
+	ipl := packet.Payload
+	cnxAddr := packet.Address
+	a := packet.Receiver
+
+	safeThreadID := ipl.ThreadID()
+	connectionID := safeThreadID
+	if cnxAddr.EdgeToken != "" {
+		glog.V(1).Infoln("=== using URL edge, safe is", cnxAddr.EdgeToken, safeThreadID)
+		connectionID = cnxAddr.EdgeToken
+	}
+
+	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
+	senderEP := service.Addr{
+		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
+		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
+	}
+	receiverEP := cnxAddr.AE()
+	task := &comm.TaskBase{
+		TaskHeader: comm.TaskHeader{
+			TaskID:   ipl.ThreadID(),
+			TypeID:   ipl.Type(),
+			Receiver: receiverEP,
+			Sender:   senderEP,
+		},
+	}
+
+	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
+
+	task.SwitchDirection()
+
+	// MARK: we must switch the Nonce for pairwise construction. We will return
+	//  it back after we are done. This is because AcaPy compatibility
+	ipl.MsgHdr().Thread().ID = connectionID
+
+	wca := a.(ssi.Agent)
+	calleePw := pairwise.NewCalleePairwise(
+		didexchange.ResponseCreator, wca, ipl.MsgHdr().(didcomm.PwMsg))
+
+	calleePw.CheckPreallocation(cnxAddr)
+
+	msg, err := calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
+		msgMeDID = m.Did() // set our pw DID
+
+		// calculate our endpoint for the pairwise
+		pubEndp := *cnxAddr         // set our agent's URL as a base addr
+		pubEndp.RcvrDID = m.Did()   // set our pw DID to actual agent DID in addr
+		pubEndp.VerKey = m.VerKey() // set our pw VerKey as well
+
+		m.SetEndpoint(service.Addr{
+			Endp: pubEndp.Address(),
+			Key:  pubEndp.VerKey,
+		})
+	})
+	err2.Check(err)
+
+	// MARK: we must switch the Nonce for pairwise construction back. NOW we
+	//  return it back after we are done. This is because AcaPy compatibility
+	ipl.MsgHdr().Thread().ID = safeThreadID
+	// MARK: very very important to rollback this as well
+	glog.V(1).Infoln("=== msg.Thread.ID", msg.Thread().ID, safeThreadID)
+	msg.Thread().ID = safeThreadID
+
+	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
+	caller := calleePw.Caller                     // the other end, we'r here the callee
+	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
+	callerAddress := callerEndp.Address()
+	pwr := &psm.PairwiseRep{
+		Key:        psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
+		Name:       connectionID,
+		TheirLabel: req.Label,
+		Callee:     psm.DIDRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
+		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
+	}
+	err2.Check(psm.AddPairwiseRep(pwr))
+
+	// SAVE ENDPOINT to wallet
+	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
+
+	err2.Check(r.Err())
+
+	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
+	// future routing. Everything goes thru CA. NOTE, only those DIDs
+	// which are created by us are written to the Ledger
+	ca := agency.RcvrCA(cnxAddr)
+	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey(), false))
+	err2.Check(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey(), true))
+
+	res := msg.FieldObj().(*didexchange.Response)
+	pipe := sec.Pipe{
+		In:  calleePw.Callee, // This is us
+		Out: caller,          // This is the other end, who sent the Request
+	}
+
+	err2.Check(res.Sign(pipe)) // we must sign the Response before send it
+
+	caller.SetAEndp(IncomingPWMsg.Endpoint())
+	a.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
+
+	// build the response payload, update PSM, and send the PL with sec.Pipe
+	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
+	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
+	err2.Check(comm.SendPL(pipe, task, opl))
+
+	// update the PSM, we are ready at this end for this protocol
+	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
+	wpl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionResponse, emptyMsg)
+	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, wpl, psm.ReadyACK))
+
+	return nil
 }
 
 func handleConnectionResponse(packet comm.Packet) (err error) {
@@ -230,120 +348,6 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, emptyMsg)
 	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.ReadyACK))
-
-	return nil
-}
-
-func handleConnectionRequest(packet comm.Packet) (err error) {
-	defer err2.Annotate("connection req", &err)
-
-	// The agent DID, the PW DID is msgMeDID below
-	meDID := packet.Receiver.Trans().MessagePipe().In.Did()
-	msgMeDID := "" // not known yet, will set it after pw is made
-
-	ipl := packet.Payload
-	cnxAddr := packet.Address
-	a := packet.Receiver
-
-	safeThreadID := ipl.ThreadID()
-	connectionID := safeThreadID
-	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("=== using URL edge, safe is", cnxAddr.EdgeToken, safeThreadID)
-		connectionID = cnxAddr.EdgeToken
-	}
-
-	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
-	senderEP := service.Addr{
-		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
-		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
-	}
-	receiverEP := cnxAddr.AE()
-	task := &comm.TaskBase{
-		TaskHeader: comm.TaskHeader{
-			TaskID:   ipl.ThreadID(),
-			TypeID:   ipl.Type(),
-			Receiver: receiverEP,
-			Sender:   senderEP,
-		},
-	}
-
-	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
-
-	task.SwitchDirection()
-
-	// MARK: we must switch the Nonce for pairwise construction. We will return
-	//  it back after we are done. This is because AcaPy compatibility
-	ipl.MsgHdr().Thread().ID = connectionID
-
-	calleePw := pairwise.NewCalleePairwise(
-		didexchange.ResponseCreator, a.(ssi.Agent), ipl.MsgHdr().(didcomm.PwMsg))
-
-	msg, err := calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
-		msgMeDID = m.Did() // set our pw DID
-
-		// calculate our endpoint for the pairwise
-		pubEndp := *cnxAddr         // set our agent's URL as a base addr
-		pubEndp.RcvrDID = m.Did()   // set our pw DID to actual agent DID in addr
-		pubEndp.VerKey = m.VerKey() // set our pw VerKey as well
-
-		m.SetEndpoint(service.Addr{
-			Endp: pubEndp.Address(),
-			Key:  pubEndp.VerKey,
-		})
-	})
-	err2.Check(err)
-
-	// MARK: we must switch the Nonce for pairwise construction back. NOW we
-	//  return it back after we are done. This is because AcaPy compatibility
-	ipl.MsgHdr().Thread().ID = safeThreadID
-	// MARK: very very important to rollback this as well
-	glog.V(1).Infoln("=== msg.Thread.ID", msg.Thread().ID, safeThreadID)
-	msg.Thread().ID = safeThreadID
-
-	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
-	caller := calleePw.Caller                     // the other end, we'r here the callee
-	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
-	callerAddress := callerEndp.Address()
-	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
-		Name:       connectionID,
-		TheirLabel: req.Label,
-		Callee:     psm.DIDRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
-		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
-	}
-	err2.Check(psm.AddPairwiseRep(pwr))
-
-	// SAVE ENDPOINT to wallet
-	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
-	err2.Check(r.Err())
-
-	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
-	// future routing. Everything goes thru CA. NOTE, only those DIDs
-	// which are created by us are written to the Ledger
-	ca := agency.RcvrCA(cnxAddr)
-	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey(), false))
-	err2.Check(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey(), true))
-
-	res := msg.FieldObj().(*didexchange.Response)
-	pipe := sec.Pipe{
-		In:  calleePw.Callee, // This is us
-		Out: caller,          // This is the other end, who sent the Request
-	}
-
-	err2.Check(res.Sign(pipe)) // we must sign the Response before send it
-
-	caller.SetAEndp(IncomingPWMsg.Endpoint())
-	a.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
-
-	// build the response payload, update PSM, and send the PL with sec.Pipe
-	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
-	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
-	err2.Check(comm.SendPL(pipe, task, opl))
-
-	// update the PSM, we are ready at this end for this protocol
-	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
-	wpl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionResponse, emptyMsg)
-	err2.Check(prot.UpdatePSM(meDID, msgMeDID, task, wpl, psm.ReadyACK))
 
 	return nil
 }

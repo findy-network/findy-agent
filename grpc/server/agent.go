@@ -6,6 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/e2"
+	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -16,6 +17,7 @@ import (
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
+	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
@@ -208,10 +210,8 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		glog.V(4).Infoln("generating connection id:", id)
 	}
 
-	_, receiver := e2.StrRcvr.Try(ca(ctx))
-	ep := receiver.CAEndp(true)
-	ep.RcvrDID = receiver.Trans().MessagePipe().Out.Did()
-	ep.EdgeToken = id
+	addr := e2.Addr.Try(preallocatePWDID(ctx, id))
+
 	label := base.Label
 	if base.Label == "" {
 		label = "empty-label"
@@ -219,8 +219,8 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 	invitation := didexchange.Invitation{
 		ID:              generatedConnID,
 		Type:            pltype.AriesConnectionInvitation,
-		ServiceEndpoint: ep.Address(),
-		RecipientKeys:   []string{receiver.Trans().PayloadPipe().In.VerKey()},
+		ServiceEndpoint: addr.Address(),
+		RecipientKeys:   []string{addr.VerKey},
 		Label:           label,
 	}
 
@@ -228,6 +228,37 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	return &pb.Invitation{JSON: jStr}, nil
+}
+
+func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
+	defer err2.Return(&err)
+
+	_, receiver := e2.StrRcvr.Try(ca(ctx))
+	ep = receiver.CAEndp(true)
+
+	wa := receiver.WorkerEA()
+	ssiWA := wa.(ssi.Agent)
+
+	// Build new DID for the pairwise and save it for the CONN_REQ??
+	ourPairwiseDID := ssiWA.CreateDID("")
+
+	// mark the preallocated pairwise DID with connection ID that we find it
+	r := <-did.SetMeta(wa.Wallet(), ourPairwiseDID.Did(), id)
+	err2.Check(r.Err())
+
+	ep.RcvrDID = ourPairwiseDID.Did()
+	ep.EdgeToken = id
+	ep.VerKey = ourPairwiseDID.VerKey()
+	ssiWA.AddDIDCache(ourPairwiseDID)
+
+	// map PW that the endpoint address get activated for the http server
+	// when connection request arrives
+	ourPairwiseDID.SetAEndp(ep.AE())
+	wa.AddToPWMap(ourPairwiseDID, ourPairwiseDID, id)
+
+	glog.V(1).Infoln("---- Using preallocated PW DID for Invitation ---")
+
+	return ep, nil
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
