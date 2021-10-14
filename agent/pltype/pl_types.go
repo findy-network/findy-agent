@@ -127,7 +127,7 @@ const (
 	PresentProofNACK                = PresentProof + "/1.0/" + HandlerPresentProofNACK
 	PresentationPreviewObj          = PresentProof + "/1.0/" + ObjectTypePresentationPreview
 
-	DIDOrgPresentProof             = Aries + "/" + ProtocolPresentProof
+	DIDOrgPresentProof             = DIDOrgAries + "/" + ProtocolPresentProof
 	DIDOrgPresentProofPropose      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPropose
 	DIDOrgPresentProofRequest      = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofRequest
 	DIDOrgPresentProofPresentation = DIDOrgPresentProof + "/1.0/" + HandlerPresentProofPresentation
