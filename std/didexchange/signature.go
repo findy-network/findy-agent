@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -46,14 +47,24 @@ func (cs *ConnectionSignature) verifySignature(pipe *sec.Pipe) (c *Connection, e
 		pipe = &sec.Pipe{Out: did}
 	}
 
-	data := err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.SignedData))
+	var data []byte
+	if strings.HasSuffix(cs.SignedData, "=") {
+		data = err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.SignedData))
+	} else {
+		data = err2.Bytes.Try(base64.RawURLEncoding.DecodeString(cs.SignedData))
+	}
 	if len(data) == 0 {
 		s := "missing or invalid signature data"
 		glog.Error(s)
 		return nil, fmt.Errorf(s)
 	}
 
-	signature := err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.Signature))
+	var signature []byte
+	if strings.HasSuffix(cs.Signature, "=") {
+		signature = err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.Signature))
+	} else {
+		signature = err2.Bytes.Try(base64.RawURLEncoding.DecodeString(cs.Signature))
+	}
 
 	ok, _ := pipe.Verify(data, signature)
 	if !ok {
