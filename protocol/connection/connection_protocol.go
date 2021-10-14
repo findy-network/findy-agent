@@ -204,15 +204,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, wca, ipl.MsgHdr().(didcomm.PwMsg))
 
-	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
-	r := <-did.Meta(a.Wallet(), calleeDID.Did())
-	err2.Check(r.Err())
-	if r.Str1() == cnxAddr.EdgeToken {
-		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
-		calleePw.Callee = calleeDID
-	} else {
-		glog.V(1).Infoln("===== Cannot use pw DID, NO META =====")
-	}
+	calleePw.CheckPreallocation(cnxAddr)
 
 	msg, err := calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
 		msgMeDID = m.Did() // set our pw DID
@@ -250,7 +242,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	err2.Check(psm.AddPairwiseRep(pwr))
 
 	// SAVE ENDPOINT to wallet
-	r = <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
+	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
+
 	err2.Check(r.Err())
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
