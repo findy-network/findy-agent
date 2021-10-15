@@ -46,14 +46,14 @@ func (cs *ConnectionSignature) verifySignature(pipe *sec.Pipe) (c *Connection, e
 		pipe = &sec.Pipe{Out: did}
 	}
 
-	data := err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.SignedData))
+	data := err2.Bytes.Try(decodeB64(cs.SignedData))
 	if len(data) == 0 {
 		s := "missing or invalid signature data"
 		glog.Error(s)
 		return nil, fmt.Errorf(s)
 	}
 
-	signature := err2.Bytes.Try(base64.URLEncoding.DecodeString(cs.Signature))
+	signature := err2.Bytes.Try(decodeB64(cs.Signature))
 
 	ok, _ := pipe.Verify(data, signature)
 	if !ok {
@@ -76,4 +76,12 @@ func (cs *ConnectionSignature) verifySignature(pipe *sec.Pipe) (c *Connection, e
 	dto.FromJSON(connectionJSON, &connection)
 
 	return &connection, nil
+}
+
+func decodeB64(str string) ([]byte, error) {
+	data, err := base64.URLEncoding.DecodeString(str)
+	if err != nil {
+		data, err = base64.RawURLEncoding.DecodeString(str)
+	}
+	return data, err
 }
