@@ -100,6 +100,7 @@ var (
 
 func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	c := make(AgentStateChan, 1)
+
 	AgentMaps[m].Lock()
 	_, alreadyExists := AgentMaps[m].agentStationMap[key]
 	assert.D.Truef(!alreadyExists, "key: %s, already exists", key)
@@ -107,7 +108,7 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	AgentMaps[m].agentStationMap[key] = c
 	AgentMaps[m].Unlock()
 
-	glog.V(3).Infoln(key.AgentDID, " notify add for:", key.ClientID)
+	glog.V(4).Infoln(key.AgentDID, "notify ADD for: ", key.ClientID)
 
 	if m == WantAllAgentActions {
 		go m.checkBuffered()
@@ -127,9 +128,9 @@ func (m mapIndex) checkBuffered() {
 	for e := l.Front(); e != nil; {
 
 		notif := e.Value.(*AgentNotify)
-		glog.V(13).Infoln(notif.ClientID,
-			"+++ trying to broadcast buffered notification",
-			notif.NotificationType)
+		glog.V(14).Infoln(notif.ClientID,
+			"+++ trying to broadcast buffered notif for:\n",
+			notif.AgentKeyType)
 
 		// save current element and iterate for safe removal during loop
 		old := e
@@ -138,9 +139,11 @@ func (m mapIndex) checkBuffered() {
 		// broadcast sends notifications only those agent's ctrls that listen
 		if m.lockedBroadcast(notif) {
 			// now it's safe to remove during the for loop
+			glog.V(14).Infoln("removing: ", notif.ClientID)
 			l.Remove(old)
 		}
 	}
+	glog.V(3).Infoln("checkBuffered done")
 }
 
 // AgentRmListener removes the listener.
@@ -148,7 +151,7 @@ func (m mapIndex) AgentRmListener(key AgentKeyType) {
 	AgentMaps[m].Lock()
 	defer AgentMaps[m].Unlock()
 
-	if glog.V(3) {
+	if glog.V(4) {
 		glog.Infoln(key.AgentDID, " notify RM for:", key.ClientID)
 	}
 	ch, ok := AgentMaps[m].agentStationMap[key]
@@ -183,7 +186,7 @@ func (m mapIndex) pushBufferedNotify(state *AgentNotify) {
 	defer AgentMaps[m].Lock()
 
 	if AgentMaps[m].buffer.buf != nil {
-		glog.V(3).Infoln(state.ClientID, "+++ push buffered", state.AgentDID)
+		glog.V(13).Infoln(state.ClientID, "+++ push buffered", state.AgentDID)
 		AgentMaps[m].buffer.buf.PushBack(state)
 	}
 }
@@ -215,7 +218,7 @@ func (m mapIndex) broadcast(state *AgentNotify) (found bool) {
 		if hit {
 			found = hit
 			glog.V(3).Infoln(broadcastKey.AgentDID,
-				"agent broadcast notify:", listenKey.ClientID)
+				"agent broadcast notify: ", listenKey.ClientID)
 			sendState := *state
 			sendState.ClientID = listenKey.ClientID
 			ch <- sendState
