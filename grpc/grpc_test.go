@@ -1045,7 +1045,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	// start listeners for grpc SA
 	for i, ca := range agents {
 		if i == 0 {
-			go doListen(t, ca.DID, intCh, readyCh, waitCh, handleStatusProoReq)
+			go doListenResume(t, ca.DID, intCh, readyCh, waitCh, handleStatusProoReq)
 		}
 	}
 	i := 0
@@ -1071,6 +1071,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
 				if status.State == agency2.ProtocolState_WAIT_ACTION {
+					glog.V(1).Infoln("our listener should take care of this")
 					continue
 				}
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
@@ -1201,6 +1202,7 @@ loop:
 
 				// this a question
 			} else if status.TypeID != agency2.Question_NONE {
+				glog.V(1).Infoln("--- THIS a question")
 				switch status.TypeID {
 				case agency2.Question_PING_WAITS:
 					reply(conn.ClientConn, status, true)
@@ -1211,6 +1213,73 @@ loop:
 				case agency2.Question_PROOF_VERIFY_WAITS:
 					reply(conn.ClientConn, status, true)
 				}
+			} else {
+				glog.V(1).Infoln("======= both notification types are None")
+			}
+		case <-time.After(time.Second):
+			readyCh <- struct{}{}
+			glog.V(0).Infoln("--- TIMEOUT in Listen with readyCh")
+			break loop
+		}
+	}
+
+	<-intCh
+	cancel()
+	glog.V(0).Infoln("interrupted by user, cancel() called")
+}
+
+func doListenResume(
+	t *testing.T,
+	caDID string,
+	intCh chan struct{},
+	readyCh chan struct{},
+	wait chan struct{},
+	handleStatus handleStatusFn,
+) {
+	conn := client.TryOpen(caDID, baseCfg)
+	//defer conn.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch, err := conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()})
+	err2.Check(err)
+	glog.V(3).Info("***********************************\n",
+		"********** start to listen Status *******\n",
+		"***********************************\n")
+	wait <- struct{}{}
+	count := 0
+loop:
+	for {
+		select {
+		case status, ok := <-ch:
+			if !ok {
+				glog.V(1).Infoln("closed from server")
+				break loop
+			}
+			glog.V(3).Infoln(status.String())
+
+			// If this is not a Question but normal status notification
+			if status.Notification.TypeID != agency2.Notification_NONE {
+
+				switch status.Notification.TypeID {
+				case agency2.Notification_STATUS_UPDATE:
+					glog.V(3).Infoln("listen resume got status")
+					if count > 0 {
+						glog.V(3).Infoln("breaking out of loop")
+						break loop
+					}
+				case agency2.Notification_PROTOCOL_PAUSED:
+					resume(conn.ClientConn, status, true)
+
+					// there will be one notification with current
+					// implementation, just cleaning it off even not
+					// mandatory
+					count++
+
+					glog.V(3).Info("------- handleStop:  sending readyCh signal")
+					readyCh <- struct{}{}
+					glog.V(3).Infoln(".. signaled readyCh")
+				}
+
 			} else {
 				glog.V(1).Infoln("======= both notification types are None")
 			}
@@ -1314,7 +1383,8 @@ func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
 }
 
 func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
-	glog.V(1).Infoln("---- resume protocol w/ ack =", ack)
+	glog.V(1).Infoln("---- resume protocol w/ ack =", ack,
+		status.Notification.TypeID)
 
 	ctx := context.Background()
 	didComm := agency2.NewProtocolServiceClient(conn)
