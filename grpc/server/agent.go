@@ -350,7 +350,11 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
-	waitClientID := "Wait" + clientID.ID // avoid collisions
+	// avoid collisions by renaming part of the clientID that we can listen it
+	// as well and this is cheap way to do it
+	// TODO: Wait/Give question pattern will be obsolete soon
+	waitClientID := "WaitAllowSame_" + clientID.ID
+
 	listenKey := bus.AgentKeyType{
 		AgentDID: receiver.WDID(),
 		ClientID: waitClientID,

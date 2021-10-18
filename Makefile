@@ -82,7 +82,7 @@ testr:
 	go test -timeout 50s -p 1 -failfast -race ./... | tee ../testr.log
 
 testrv:
-	go test -v -timeout 50s -p 1 -failfast -race ./... | tee ../testr.log
+	go test -v -timeout 50s -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
 
 testv:
 	go test -v -p 1 -failfast ./...

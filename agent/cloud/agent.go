@@ -278,9 +278,9 @@ func (a *Agent) WDID() string {
 func (a *Agent) WEA() (wa *Agent) {
 	ca := a
 	if ca.worker != nil {
-		glog.V(1).Infoln("worker ready")
 		return ca.worker
 	}
+	glog.V(4).Infoln("worker NOT ready, starting creation process")
 	waDID := ca.WDID()
 	return ca.workerAgent(waDID, "_worker")
 }
