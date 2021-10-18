@@ -39,6 +39,7 @@ func (s *didCommServer) Run(
 
 	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+
 	task := e2.Task.Try(taskFrom(protocol))
 	glog.V(3).Infoln(caDID, "-agent starts protocol:",
 		pb.Protocol_Type_name[int32(protocol.TypeID)])
@@ -145,7 +146,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 	}
 	connID = m.PairwiseName()
 	if m != nil {
-		state.ProtocolID.Role = roleType[m.Initiator]
+		state.ProtocolID.Role = m.Role
 	} else {
 		glog.Warningf("cannot get protocol role for %s", key)
 		state.ProtocolID.Role = pb.Protocol_UNKNOWN
@@ -165,7 +166,6 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		ps.Status = tryGetTrustPingStatus(id, key)
 	case pb.Protocol_BASIC_MESSAGE:
 		ps.Status = tryGetBasicMessageStatus(id, key)
-
 	}
 	return ps, connID
 }

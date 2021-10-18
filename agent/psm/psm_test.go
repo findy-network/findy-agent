@@ -51,8 +51,8 @@ func Test_newPSM(t *testing.T) {
 			DID:   mockStateDID,
 			Nonce: mockStateNonce,
 		},
-		InDID:  "TEST",
-		States: nil,
+		ConnDID: "TEST",
+		States:  nil,
 	}
 	b := p.Data()
 	type args struct {
@@ -65,7 +65,7 @@ func Test_newPSM(t *testing.T) {
 	}{
 		{"1st",
 			args{d: b},
-			&PSM{Key: StateKey{DID: "TEST", Nonce: "1234"}, InDID: "TEST"}},
+			&PSM{Key: StateKey{DID: "TEST", Nonce: "1234"}, ConnDID: "TEST"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2/assert"
 )
@@ -31,8 +32,8 @@ type AgentNotify struct {
 	ProtocolID       string
 	ProtocolFamily   string
 	Timestamp        int64
-	Initiator        bool
 	UserActionType   string
+	Role             pb.Protocol_Role
 	*IssuePropose
 	*ProofVerify
 }

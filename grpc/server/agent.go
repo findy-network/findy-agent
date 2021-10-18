@@ -419,14 +419,14 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 				ProtocolFamily: notify.ProtocolFamily,
 				ProtocolType:   notificationProtocolType,
 				Timestamp:      notify.Timestamp,
-				Role:           roleType[notify.Initiator],
+				Role:           notify.Role,
 			},
 		},
 	}
 
 	id := &pb.ProtocolID{
 		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
-		Role:   roleType[notify.Initiator],
+		Role:   notify.Role,
 		ID:     notify.ProtocolID,
 	}
 
@@ -477,7 +477,7 @@ func processNofity(notify bus.AgentNotify) (as *pb.AgentStatus) {
 			ProtocolFamily: notify.ProtocolFamily,
 			ProtocolType:   pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
 			Timestamp:      notify.Timestamp,
-			Role:           roleType[notify.Initiator],
+			Role:           notify.Role,
 		},
 	}
 	return &agentStatus

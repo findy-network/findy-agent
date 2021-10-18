@@ -98,7 +98,7 @@ const (
 	AriesConnection           = Aries + "/" + AriesProtocolConnection
 	AriesConnectionInvitation = AriesConnection + "/1.0/" + Invitation
 	AriesConnectionRequest    = AriesConnection + "/1.0/" + HandlerRequest
-	AriesConnectionOffer      = AriesConnection + "/1.0/" + HandlerOffer
+	AriesConnectionOffer      = AriesConnection + "/1.0/" + HandlerOffer // todo: not used anymore
 	AriesConnectionResponse   = AriesConnection + "/1.0/" + HandlerResponse
 
 	DIDOrgAriesConnection           = DIDOrgAries + "/" + AriesProtocolConnection
@@ -250,4 +250,22 @@ func ProtocolTypeForFamily(family string) pb.Protocol_Type {
 	}
 	glog.Warningf("no protocol type found for family %s", family)
 	return pb.Protocol_NONE
+}
+
+func ProtocolRoleForType(handlerID string) pb.Protocol_Role {
+	glog.V(10).Infoln(handlerID, " ---> ", receiversRoleFromType[handlerID])
+	return receiversRoleFromType[handlerID]
+}
+
+// receiversRoleFromType is a lookup table for internal protocol starter types and their
+// relation to gRPC API's protocol role. Note! This protocol message receiver
+// side.
+var receiversRoleFromType = map[string]pb.Protocol_Role{
+	HandlerRequest:                pb.Protocol_ADDRESSEE,
+	HandlerIssueCredentialOffer:   pb.Protocol_ADDRESSEE,
+	HandlerIssueCredentialPropose: pb.Protocol_INITIATOR,
+	HandlerPresentProofRequest:    pb.Protocol_ADDRESSEE,
+	HandlerPresentProofPropose:    pb.Protocol_INITIATOR,
+	HandlerPing:                   pb.Protocol_ADDRESSEE,
+	HandlerMessage:                pb.Protocol_ADDRESSEE,
 }

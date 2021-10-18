@@ -78,6 +78,8 @@ var questionTypeID = map[string]pb.Question_Type{
 	pltype.SAPresentProofAcceptValues:     pb.Question_PROOF_VERIFY_WAITS,
 }
 
+// uniqueTypeID returns safely (asserts) agency's internal type ID for protocol
+// starting.
 func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 	i := int32(10*role) + int32(id)
 	glog.V(5).Infoln("unique id:", i, typeID[i])
@@ -110,11 +112,6 @@ var protocolName = [...]string{
 	pltype.ProtocolPresentProof,    // "PROOF",
 	pltype.ProtocolTrustPing,       // "TRUST_PING",
 	pltype.ProtocolBasicMessage,    // "BASIC_MESSAGE",
-}
-
-var roleType = map[bool]pb.Protocol_Role{
-	true:  pb.Protocol_INITIATOR, // is Initiator
-	false: pb.Protocol_ADDRESSEE, //
 }
 
 func ca(ctx context.Context) (caDID string, r comm.Receiver, err error) {

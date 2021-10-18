@@ -4,6 +4,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -58,7 +59,7 @@ state ready {
 // SubState is enumeration for the state transitions PSM will have during its
 // execution. The above PUML diagram illustrates what transitions are currently
 // recognized. The Ready state should have 2 internal states: ACK/NACK
-type SubState uint
+type SubState uint // TODO: rename State or StateType
 
 // States of the PSM`s individual state can be.
 const (
@@ -154,6 +155,7 @@ type PayloadInfo struct {
 	Type string
 }
 
+// todo: new idea StateEvent, rename atleast T
 type State struct {
 	Timestamp int64
 	T         comm.Task
@@ -161,11 +163,25 @@ type State struct {
 	Sub       SubState
 }
 
+// PSM is Protocol State Machine that works in event sourcing principle, i.e.
+// every state transition is saved to its State field. Other fields are
+// calculated ASAP and kept that way until to the end.
 type PSM struct {
-	Key       StateKey
-	Initiator bool // todo: rename StartedByUs
-	InDID     string
-	States    []State
+	// Key is the primary key of the protocol state machine: it's pointed by
+	// CA's DID and the current connection ID
+	Key StateKey
+
+	// SendByUs tells if Our CA is the one who sent the first protocol msg
+	SendByUs bool
+
+	// Role is a protocol role in the current DID protocol
+	Role pb.Protocol_Role
+
+	// ConnDID stores our end's pairwise/connection DID
+	ConnDID string
+
+	// States has all ouf the state history of this PSM in timestamp order
+	States []State
 }
 
 func NewPSM(d []byte) *PSM {
@@ -194,12 +210,12 @@ func (p *PSM) PairwiseName() string {
 	if state := p.FirstState(); state != nil && state.T.ConnectionID() != "" {
 		return state.T.ConnectionID()
 	}
-	if p.InDID != "" {
+	if p.ConnDID != "" {
 		r := comm.ActiveRcvrs.Get(p.Key.DID)
 		if r == nil {
 			return ""
 		}
-		_, pwName := err2.StrStr.Try(r.FindPW(p.InDID))
+		_, pwName := err2.StrStr.Try(r.FindPW(p.ConnDID))
 		return pwName
 	}
 	return ""
@@ -222,7 +238,7 @@ func (p *PSM) Next() string {
 			return aries.ProtocolMsgForType(state.PLInfo.Type)
 		}
 	}
-	glog.Warning("no payload type found for PSM!", p.InDID)
+	glog.Warning("no payload type found for PSM!", p.ConnDID)
 	return ""
 }
 
