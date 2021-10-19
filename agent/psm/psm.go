@@ -171,13 +171,16 @@ type PSM struct {
 	// CA's DID and the current connection ID
 	Key StateKey
 
-	// SendByUs tells if Our CA is the one who sent the first protocol msg
-	SendByUs bool
+	// StartedByUs tells if Our CA is the one who sent the first protocol msg.
+	// It' false if we are the receving part. Please note that Role is a
+	// protocol specific and not directly correlate with StartedByUs flag.
+	StartedByUs bool
 
 	// Role is a protocol role in the current DID protocol
 	Role pb.Protocol_Role
 
-	// ConnDID stores our end's pairwise/connection DID
+	// ConnDID stores our end's pairwise/connection DID. Please note that the
+	// connection ID can be found from Key.
 	ConnDID string
 
 	// States has all ouf the state history of this PSM in timestamp order

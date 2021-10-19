@@ -25,8 +25,8 @@ type notifyEdge struct {
 	pwName    string // connection ID (note!! not a pairwise Label)
 	family    string // protocol family
 
-	// true if we are to one who started the protocol aka sent the first message
-	sendByUs bool
+	// startedByUs if we are the one who sent the first message
+	startedByUs bool
 
 	role pb.Protocol_Role
 }
@@ -101,26 +101,26 @@ func UpdatePSM(
 		states := make([]psm.State, 1, 12)
 		states[0] = currentState
 
-		sendByUs := true
+		startedByUs := true
 		role := task.Role()
 
 		if task.Role() == pb.Protocol_UNKNOWN {
-			sendByUs = false
+			startedByUs = false
 			role = pltype.ProtocolRoleForType(opl.ProtocolMsg())
 		}
 
 		glog.V(3).Infof("----- We (send by us: %v) are %s (%s) ----",
-			sendByUs,
+			startedByUs,
 			agentDID,
 			role,
 		)
 
 		currentPSM = &psm.PSM{
-			Key:      PSMKey,
-			ConnDID:  connDID,
-			States:   states,
-			SendByUs: sendByUs,
-			Role:     role,
+			Key:         PSMKey,
+			ConnDID:     connDID,
+			States:      states,
+			StartedByUs: startedByUs,
+			Role:        role,
 		}
 	}
 	err2.Check(psm.AddPSM(currentPSM))
@@ -140,7 +140,7 @@ func UpdatePSM(
 		pwName:            currentPSM.PairwiseName(),
 		plType:            plType,
 		pendingUserAction: currentPSM.PendingUserAction(),
-		sendByUs:          currentPSM.SendByUs,
+		startedByUs:       currentPSM.StartedByUs,
 		userActionType:    task.UserActionType(),
 		protocolFamily:    currentPSM.Protocol(),
 		role:              currentPSM.Role,
@@ -183,7 +183,7 @@ func AddAndSetFlagUpdatePSM(
 			pwName:            machine.PairwiseName(),
 			plType:            machine.FirstState().T.Type(),
 			pendingUserAction: machine.PendingUserAction(),
-			sendByUs:          machine.SendByUs,
+			startedByUs:       machine.StartedByUs,
 			role:              machine.Role,
 		})
 	}
@@ -223,7 +223,7 @@ type endingInfo struct {
 	plType            string
 	timestamp         int64
 	pendingUserAction bool
-	sendByUs          bool
+	startedByUs       bool
 	userActionType    string
 	protocolFamily    string
 	role              pb.Protocol_Role
@@ -248,14 +248,14 @@ func triggerEnd(info endingInfo) {
 				glog.Warning("PL type is empty on Notify")
 			}
 			NotifyEdge(notifyEdge{
-				did:       info.meDID,
-				plType:    pltype.CANotifyStatus,
-				nonce:     info.nonce,
-				timestamp: info.timestamp,
-				pwName:    info.pwName,
-				family:    info.protocolFamily,
-				sendByUs:  info.sendByUs,
-				role:      info.role,
+				did:         info.meDID,
+				plType:      pltype.CANotifyStatus,
+				nonce:       info.nonce,
+				timestamp:   info.timestamp,
+				pwName:      info.pwName,
+				family:      info.protocolFamily,
+				startedByUs: info.startedByUs,
+				role:        info.role,
 			})
 		}
 	case psm.Waiting:
@@ -263,14 +263,14 @@ func triggerEnd(info endingInfo) {
 		if info.pendingUserAction {
 			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(notifyEdge{
-				did:       info.meDID,
-				plType:    info.userActionType,
-				nonce:     info.nonce,
-				timestamp: info.timestamp,
-				pwName:    info.pwName,
-				family:    info.protocolFamily,
-				sendByUs:  info.sendByUs,
-				role:      info.role,
+				did:         info.meDID,
+				plType:      info.userActionType,
+				nonce:       info.nonce,
+				timestamp:   info.timestamp,
+				pwName:      info.pwName,
+				family:      info.protocolFamily,
+				startedByUs: info.startedByUs,
+				role:        info.role,
 			})
 		}
 	}
