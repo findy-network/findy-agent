@@ -11,6 +11,7 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type taskTrustPing struct {
@@ -89,9 +90,18 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 }
 
 func getTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	// TODO:
-	/*return statusTrustPing{
-		Result: "NOT SUPPORTED",
-	}*/
-	return ps
+	defer err2.CatchTrace(func(err error) {
+		glog.Error("Failed to set basic message status: ", err)
+	})
+
+	assert.D.True(ps != nil)
+
+	status := ps
+
+	// TODO
+	status.Status = &pb.ProtocolStatus_TrustPing{
+		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
+	}
+
+	return status
 }

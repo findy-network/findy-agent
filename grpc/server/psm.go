@@ -137,7 +137,6 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
-	statusJSON := "" //dto.ToJSON(prot.GetStatus(protocolName[id.TypeID], &key))
 	m := e2.PSM.Try(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolID: id,
@@ -151,15 +150,10 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		state.ProtocolID.Role = pb.Protocol_UNKNOWN
 	}
 	ps = &pb.ProtocolStatus{
-		State:      state,
-		StatusJSON: statusJSON,
+		State: state,
 	}
-	switch id.TypeID {
-	case pb.Protocol_TRUST_PING:
-		ps.Status = tryGetTrustPingStatus(id, key)
-	default:
-		ps = prot.GetStatus(protocolName[id.TypeID], &key, ps)
-	}
+	// protocol implementors fill the status information
+	ps = prot.GetStatus(protocolName[id.TypeID], &key, ps)
 	return ps, connID
 }
 
@@ -181,15 +175,4 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 		}
 	}
 	return pb.ProtocolState_RUNNING
-}
-
-func tryGetTrustPingStatus(
-	_ *pb.ProtocolID,
-	_ psm.StateKey,
-) *pb.ProtocolStatus_TrustPing {
-
-	// TODO: add TrustPingRep to DB if we need to track Replied status
-	return &pb.ProtocolStatus_TrustPing{
-		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
-	}
 }
