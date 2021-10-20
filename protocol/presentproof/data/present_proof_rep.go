@@ -34,15 +34,15 @@ func NewPresentProofRep(d []byte) psm.Rep {
 	return p
 }
 
-func (p *PresentProofRep) Key() *psm.StateKey {
-	return &p.StateKey
+func (rep *PresentProofRep) Key() *psm.StateKey {
+	return &rep.StateKey
 }
 
 func (rep *PresentProofRep) Data() []byte {
 	return dto.ToGOB(rep)
 }
 
-func (p *PresentProofRep) Type() byte {
+func (rep *PresentProofRep) Type() byte {
 	return bucketType
 }
 

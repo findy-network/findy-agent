@@ -35,15 +35,15 @@ func NewIssueCredRep(d []byte) psm.Rep {
 	return p
 }
 
-func (p *IssueCredRep) Key() *psm.StateKey {
-	return &p.StateKey
+func (rep *IssueCredRep) Key() *psm.StateKey {
+	return &rep.StateKey
 }
 
 func (rep *IssueCredRep) Data() []byte {
 	return dto.ToGOB(rep)
 }
 
-func (p *IssueCredRep) Type() byte {
+func (rep *IssueCredRep) Type() byte {
 	return bucketType
 }
 
