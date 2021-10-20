@@ -1,9 +1,9 @@
-package psm
+package connection
 
-type DIDRep struct {
+type didRep struct {
 	DID    string
 	VerKey string
-	Wallet WalletRep
+	Wallet walletRep
 	My     bool
 	Endp   string
 }

@@ -121,14 +121,14 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey(), true))
 
 	// Save needed data to PSM related Pairwise Representative
-	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: me, Nonce: deTask.ID()},
+	pwr := &pairwiseRep{
+		StateKey:   psm.StateKey{DID: me, Nonce: deTask.ID()},
 		Name:       deTask.ID(),
 		TheirLabel: deTask.Invitation.Label,
-		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
-		Callee:     psm.DIDRep{},
+		Caller:     didRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
+		Callee:     didRep{},
 	}
-	err2.Check(psm.AddPairwiseRep(pwr))
+	err2.Check(psm.AddRep(pwr))
 
 	// Create payload to send
 	opl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionRequest, msg)
@@ -224,14 +224,14 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	caller := calleePw.Caller                     // the other end, we'r here the callee
 	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
 	callerAddress := callerEndp.Address()
-	pwr := &psm.PairwiseRep{
-		Key:        psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
+	pwr := &pairwiseRep{
+		StateKey:   psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
 		Name:       connectionID,
 		TheirLabel: req.Label,
-		Callee:     psm.DIDRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
-		Caller:     psm.DIDRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
+		Callee:     didRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
+		Caller:     didRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
 	}
-	err2.Check(psm.AddPairwiseRep(pwr))
+	err2.Check(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
 	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
@@ -297,7 +297,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	err2.Check(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
-	pwr, err := psm.GetPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce})
+	pwr, err := getPairwiseRep(&psm.StateKey{DID: meDID, Nonce: nonce})
 	err2.Check(err)
 	msgMeDID := pwr.Caller.DID
 	caller := a.LoadDID(pwr.Caller.DID)
@@ -318,14 +318,14 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	err2.Check(r.Err())
 
 	// Save Rep and PSM
-	newPwr := &psm.PairwiseRep{
-		Key:        pwr.Key,
+	newPwr := &pairwiseRep{
+		StateKey:   pwr.StateKey,
 		Name:       pwr.Name,
 		TheirLabel: pwr.TheirLabel,
-		Callee:     psm.DIDRep{DID: callee.Did(), VerKey: calleeEndp.VerKey, Endp: calleeEndp.Address(), My: false},
+		Callee:     didRep{DID: callee.Did(), VerKey: calleeEndp.VerKey, Endp: calleeEndp.Address(), My: false},
 		Caller:     pwr.Caller,
 	}
-	err2.Check(psm.AddPairwiseRep(newPwr)) // updates the previously created
+	err2.Check(psm.AddRep(newPwr)) // updates the previously created
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
@@ -349,13 +349,17 @@ func getPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *
 		glog.Error("Failed to get connection status: ", err)
 	})
 
+	assert.D.True(ps != nil)
+
 	key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
 	glog.V(4).Infoln("status for:", key)
 
-	/*pw, err := psm.GetPairwiseRep(*key)
+	status := ps
+
+	pw, err := getPairwiseRep(key)
 	err2.Check(err)
 
 	myDID := pw.Callee
@@ -368,12 +372,13 @@ func getPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *
 		theirEndpoint = pw.Callee.Endp
 	}
 
-	return statusPairwise{
-		Name:          pw.Name,
+	status.Status = &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_DIDExchangeStatus{
+		ID:            pw.Name,
 		MyDID:         myDID.DID,
 		TheirDID:      theirDID.DID,
 		TheirEndpoint: theirEndpoint,
 		TheirLabel:    pw.TheirLabel,
-	}*/
-	return ps
+	}}
+
+	return status
 }

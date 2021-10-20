@@ -153,17 +153,6 @@ func FindPSM(k StateKey) (m *PSM, err error) {
 	return m, err
 }
 
-func AddPairwiseRep(p *PairwiseRep) (err error) {
-	return addData(p.KData(), p.Data(), BucketPairwise)
-}
-
-func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
-	_, err = get(k, BucketPairwise, func(d []byte) {
-		m = NewPairwiseRep(d)
-	})
-	return m, err
-}
-
 func AddRep(p Rep) (err error) {
 	return addData(p.Key().Data(), p.Data(), p.Type())
 }

@@ -64,30 +64,6 @@ func Test_addPSM(t *testing.T) {
 	}
 }
 
-func Test_addPairwiseRep(t *testing.T) {
-	pwRep := &PairwiseRep{
-		Key:  StateKey{DID: mockStateDID, Nonce: mockStateNonce},
-		Name: "name",
-	}
-	tests := []struct {
-		name string
-	}{
-		{"add"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := AddPairwiseRep(pwRep)
-			if err != nil {
-				t.Errorf("AddPairwiseRep() %s error %v", tt.name, err)
-			}
-			got, err := GetPairwiseRep(pwRep.Key)
-			if diff := deep.Equal(pwRep, got); err != nil || diff != nil {
-				t.Errorf("GetPairwiseRep() diff %v, err %v", diff, err)
-			}
-		})
-	}
-}
-
 type testRep struct {
 	RepKey StateKey
 }

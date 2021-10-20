@@ -155,8 +155,6 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		StatusJSON: statusJSON,
 	}
 	switch id.TypeID {
-	case pb.Protocol_DIDEXCHANGE:
-		ps.Status = tryGetConnectStatus(id, key)
 	case pb.Protocol_TRUST_PING:
 		ps.Status = tryGetTrustPingStatus(id, key)
 	default:
@@ -183,31 +181,6 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 		}
 	}
 	return pb.ProtocolState_RUNNING
-}
-
-func tryGetConnectStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey) *pb.ProtocolStatus_DIDExchange {
-	pw, err := psm.GetPairwiseRep(key)
-	err2.Check(err)
-
-	myDID := pw.Callee
-	theirDID := pw.Caller
-	theirEndpoint := pw.Caller.Endp
-
-	if !myDID.My {
-		myDID = pw.Caller
-		theirDID = pw.Callee
-		theirEndpoint = pw.Callee.Endp
-	}
-
-	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_DIDExchangeStatus{
-		ID:            pw.Name,
-		MyDID:         myDID.DID,
-		TheirDID:      theirDID.DID,
-		TheirEndpoint: theirEndpoint,
-		TheirLabel:    pw.TheirLabel,
-	}}
 }
 
 func tryGetTrustPingStatus(
