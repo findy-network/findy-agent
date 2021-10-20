@@ -8,8 +8,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
-	"github.com/findy-network/findy-agent/protocol/presentproof/rep"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -20,14 +20,14 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 	defer err2.Return(&err)
 
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
-	proofRep, _ := rep.GetPresentProofRep(&key) // ignore not found error
+	rep, _ := data.GetPresentProofRep(&key) // ignore not found error
 
-	if proofRep == nil {
-		proofRep := &rep.PresentProofRep{
+	if rep == nil {
+		rep := &data.PresentProofRep{
 			StateKey:   key,
 			WeProposed: false,
 		}
-		err2.Check(psm.AddRep(proofRep))
+		err2.Check(psm.AddRep(rep))
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
@@ -42,7 +42,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(rep.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
 
 			req := im.FieldObj().(*presentproof.Request)
 			data := err2.Bytes.Try(presentproof.ProofReqData(req))
@@ -89,15 +89,15 @@ func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
 			// We continue, get previous data, create the proof and send it
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			proofRep := e2.PresentProofRep.Try(rep.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
 
-			err2.Check(proofRep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
+			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
 			// save created proof to Representative
-			err2.Check(psm.AddRep(proofRep))
+			err2.Check(psm.AddRep(rep))
 
 			pres := om.FieldObj().(*presentproof.Presentation)
 			pres.PresentationAttaches = presentproof.NewPresentationAttach(
-				pltype.LibindyPresentationID, []byte(proofRep.Proof))
+				pltype.LibindyPresentationID, []byte(rep.Proof))
 
 			return true, nil
 		},

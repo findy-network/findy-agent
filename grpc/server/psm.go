@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -158,8 +157,6 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 	switch id.TypeID {
 	case pb.Protocol_DIDEXCHANGE:
 		ps.Status = tryGetConnectStatus(id, key)
-	case pb.Protocol_ISSUE_CREDENTIAL:
-		ps.Status = tryGetIssueStatus(id, key)
 	case pb.Protocol_TRUST_PING:
 		ps.Status = tryGetTrustPingStatus(id, key)
 	default:
@@ -211,39 +208,6 @@ func tryGetConnectStatus(
 		TheirEndpoint: theirEndpoint,
 		TheirLabel:    pw.TheirLabel,
 	}}
-}
-
-func tryGetIssueStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey,
-) *pb.ProtocolStatus_IssueCredential {
-
-	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
-
-	// TODO: save schema id parsed to db? copied from original implementation
-	var credOfferMap map[string]interface{}
-	dto.FromJSONStr(credRep.CredOffer, &credOfferMap)
-
-	schemaID := credOfferMap["schema_id"].(string)
-
-	attrs := make([]*pb.Protocol_IssuingAttributes_Attribute,
-		0, len(credRep.Attributes))
-	for _, credAttr := range credRep.Attributes {
-		a := &pb.Protocol_IssuingAttributes_Attribute{
-			Name:  credAttr.Name,
-			Value: credAttr.Value,
-		}
-		attrs = append(attrs, a)
-	}
-	return &pb.ProtocolStatus_IssueCredential{
-		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
-			CredDefID: credRep.CredDefID,
-			SchemaID:  schemaID,
-			Attributes: &pb.Protocol_IssuingAttributes{
-				Attributes: attrs,
-			},
-		},
-	}
 }
 
 func tryGetTrustPingStatus(

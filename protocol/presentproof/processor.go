@@ -12,8 +12,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/findy-network/findy-agent/protocol/presentproof/prover"
-	"github.com/findy-network/findy-agent/protocol/presentproof/rep"
 	"github.com/findy-network/findy-agent/protocol/presentproof/verifier"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -189,12 +189,12 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 				propose.PresentationProposal = pp
 				propose.Comment = proofTask.Comment
 
-				proofRep := &rep.PresentProofRep{
+				rep := &data.PresentProofRep{
 					StateKey:   key,
 					Values:     proofTask.Comment, // TODO: serialize values here?
 					WeProposed: true,
 				}
-				return psm.AddRep(proofRep)
+				return psm.AddRep(rep)
 			},
 		}))
 	case pltype.CAProofRequest: // ----- verifier will start -----
@@ -221,13 +221,13 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 					pltype.LibindyRequestPresentationID, []byte(proofReqStr))
 
 				// create Rep and save it for PSM to run protocol
-				proofRep := &rep.PresentProofRep{
+				rep := &data.PresentProofRep{
 					StateKey: key,
 					Values:   proofTask.Comment, // TODO: serialize attributes here?,
 					// Verifier cannot provide this..
 					ProofReq: proofReqStr, //  .. but it gives this one.
 				}
-				return psm.AddRep(proofRep)
+				return psm.AddRep(rep)
 			},
 		}))
 	default:
@@ -309,7 +309,7 @@ func getPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatu
 
 	status := ps
 
-	proofRep, err := rep.GetPresentProofRep(&psm.StateKey{
+	proofRep, err := data.GetPresentProofRep(&psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	})

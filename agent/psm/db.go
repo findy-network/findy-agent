@@ -180,17 +180,6 @@ func GetRep(repType byte, k StateKey) (m Rep, err error) {
 	return m, err
 }
 
-func AddIssueCredRep(p *IssueCredRep) (err error) {
-	return addData(p.KData(), p.Data(), BucketIssueCred)
-}
-
-func GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
-	_, err = get(k, BucketIssueCred, func(d []byte) {
-		m = NewIssueCredRep(d)
-	})
-	return m, err
-}
-
 func RmPSM(p *PSM) (err error) {
 	glog.V(1).Infoln("--- rm PSM:", p.Key)
 	switch p.Protocol() {

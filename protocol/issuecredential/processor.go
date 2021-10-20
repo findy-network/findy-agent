@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/data"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/holder"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/issuer"
 	"github.com/findy-network/findy-agent/std/issuecredential"
@@ -128,14 +129,14 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				codedValues := issuecredential.PreviewCredentialToCodedValues(pc)
-				rep := &psm.IssueCredRep{
-					Key:        key,
+				rep := &data.IssueCredRep{
+					StateKey:   key,
 					CredDefID:  credTask.CredDefID,
 					Values:     codedValues,
 					CredOffer:  credOffer,
 					Attributes: credTask.CredentialAttrs,
 				}
-				err2.Check(psm.AddIssueCredRep(rep))
+				err2.Check(psm.AddRep(rep))
 
 				offer := msg.FieldObj().(*issuecredential.Offer)
 				offer.CredentialPreview = pc
@@ -164,13 +165,13 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 				propose.CredentialProposal = pc
 				propose.Comment = credTask.Comment
 
-				rep := &psm.IssueCredRep{
-					Key:        key,
+				rep := &data.IssueCredRep{
+					StateKey:   key,
 					CredDefID:  credTask.CredDefID,
 					Attributes: credTask.CredentialAttrs,
 					Values:     issuecredential.PreviewCredentialToCodedValues(pc),
 				}
-				err2.Check(psm.AddIssueCredRep(rep))
+				err2.Check(psm.AddRep(rep))
 				return nil
 			},
 		}))
@@ -227,25 +228,42 @@ func getIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolSt
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to set issue credential status: ", err)
 	})
-	/*key := &psm.StateKey{
+
+	assert.D.True(ps != nil)
+
+	status := ps
+
+	key := &psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}
+	credRep := e2.IssueCredRep.Try(data.GetIssueCredRep(key))
 
-	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(*key))
+	// TODO: save schema id parsed to db? copied from original implementation
+	var credOfferMap map[string]interface{}
+	dto.FromJSONStr(credRep.CredOffer, &credOfferMap)
 
-	// TODO: save schema id parsed to db?
-	var credOffer interface{}
-	err := json.Unmarshal([]byte(credRep.CredOffer), &credOffer)
-	err2.Check(err)
-
-	credOfferMap := credOffer.(map[string]interface{})
 	schemaID := credOfferMap["schema_id"].(string)
 
-	return statusIssueCredential{
-		CredDefID:  credRep.CredDefID,
-		SchemaID:   schemaID,
-		Attributes: credRep.Attributes,
-	}*/
-	return ps
+	attrs := make([]*pb.Protocol_IssuingAttributes_Attribute,
+		0, len(credRep.Attributes))
+	for _, credAttr := range credRep.Attributes {
+		a := &pb.Protocol_IssuingAttributes_Attribute{
+			Name:  credAttr.Name,
+			Value: credAttr.Value,
+		}
+		attrs = append(attrs, a)
+	}
+
+	status.Status = &pb.ProtocolStatus_IssueCredential{
+		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
+			CredDefID: credRep.CredDefID,
+			SchemaID:  schemaID,
+			Attributes: &pb.Protocol_IssuingAttributes{
+				Attributes: attrs,
+			},
+		},
+	}
+
+	return status
 }

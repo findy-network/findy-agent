@@ -1,7 +1,7 @@
 package e2
 
 import (
-	"github.com/findy-network/findy-agent/protocol/presentproof/rep"
+	ppData "github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/lainio/err2"
 )
 
@@ -13,7 +13,7 @@ var PresentProofRep _PresentProofRep
 
 // Try is a helper method to call func() (*psm.PresentProofRep, error) functions
 // with it and be as fast as Check(err).
-func (o _PresentProofRep) Try(v *rep.PresentProofRep, err error) *rep.PresentProofRep {
+func (o _PresentProofRep) Try(v *ppData.PresentProofRep, err error) *ppData.PresentProofRep {
 	err2.Check(err)
 	return v
 }

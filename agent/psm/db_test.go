@@ -134,27 +134,3 @@ func Test_addBaseRep(t *testing.T) {
 		})
 	}
 }
-
-func Test_addIssueCredRep(t *testing.T) {
-	credRep := &IssueCredRep{
-		Key:       StateKey{DID: mockStateDID, Nonce: mockStateNonce},
-		Timestamp: 123,
-	}
-	tests := []struct {
-		name string
-	}{
-		{"add"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := AddIssueCredRep(credRep)
-			if err != nil {
-				t.Errorf("AddIssueCredRep() %s error %v", tt.name, err)
-			}
-			got, err := GetIssueCredRep(credRep.Key)
-			if diff := deep.Equal(credRep, got); err != nil || diff != nil {
-				t.Errorf("GetIssueCredRep() diff %v, err %v", diff, err)
-			}
-		})
-	}
-}

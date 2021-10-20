@@ -1,4 +1,4 @@
-package rep
+package data
 
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -241,6 +241,11 @@ func GetPresentProofRep(key *psm.StateKey) (rep *PresentProofRep, err error) {
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, *key)
 	err2.Check(err)
+
+	// Allow not found
+	if res == nil {
+		return
+	}
 
 	var ok bool
 	rep, ok = res.(*PresentProofRep)
