@@ -41,8 +41,7 @@ func (s *didCommServer) Run(
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 
 	task := e2.Task.Try(taskFrom(protocol))
-	glog.V(3).Infoln(caDID, "-agent starts protocol:",
-		pb.Protocol_Type_name[int32(protocol.TypeID)])
+	glog.V(3).Infoln(caDID, "-agent starts protocol:", protocol.TypeID)
 
 	key := psm.NewStateKey(receiver.WorkerEA(), task.ID())
 	statusChan := bus.WantAll.AddListener(key)
@@ -122,7 +121,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	task := e2.Task.Try(taskFrom(protocol))
-	glog.V(1).Infoln(caDID, "-agent starts protocol:", pb.Protocol_Type_name[int32(protocol.TypeID)])
+	glog.V(1).Infoln(caDID, "-agent starts protocol:", protocol.TypeID)
 	prot.FindAndStartTask(receiver, task)
 	return &pb.ProtocolID{ID: task.ID()}, nil
 }
@@ -132,7 +131,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 
 	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
-	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeID)], protocolName[id.TypeID])
+	glog.V(1).Infoln(caDID, "-agent protocol status:", id.TypeID, protocolName[id.TypeID])
 	ps, _ = tryProtocolStatus(id, key)
 	return ps, nil
 }

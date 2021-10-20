@@ -449,6 +449,76 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 	}
 }
 
+func connect(invitation string, ready chan struct{}) {
+	i := 1
+	ca := agents[i]
+
+	conn := client.TryOpen(ca.DID, baseCfg)
+	ctx := context.Background()
+
+	agency2.NewProtocolServiceClient(conn)
+	pairwise := &client.Pairwise{
+		Conn:  conn,
+		Label: "OtherEndsTestLabel",
+	}
+	connID, ch, err := pairwise.Connection(ctx, invitation)
+	err2.Check(err)
+
+	for status := range ch {
+		glog.V(1).Infof("==> WaitConnection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+	}
+	glog.V(1).Infoln("connection ok, connID:", connID)
+	ready <- struct{}{}
+}
+
+func TestWaitConnection_NoOneRun(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+
+	i := 0
+	ca := agents[i]
+
+	conn := client.TryOpen(ca.DID, baseCfg)
+
+	ctx := context.Background()
+	c := agency2.NewAgentServiceClient(conn)
+	r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+	if !assert.NoError(t, err) {
+		t.Fatal("ERROR: ", err)
+	}
+
+	assert.NotEmpty(t, r.JSON)
+	glog.V(1).Infoln(r.JSON)
+	invitation := r.JSON
+
+	agency2.NewProtocolServiceClient(conn)
+	pairwise := &client.Pairwise{
+		Conn:  conn,
+		Label: "TestLabel_InvitationWait",
+	}
+
+	connID, ch, err := pairwise.WaitConnection(ctx, invitation)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, connID)
+
+	ready := make(chan struct{})
+	go connect(invitation, ready)
+
+	glog.V(1).Infoln("starting WaitInvitation loop, connID:", connID)
+	for status := range ch {
+		glog.V(1).Infof(">>>> WaitInvitation status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
+		assert.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+	glog.V(1).Infoln("connID:", connID)
+
+	glog.V(3).Infoln("Waiting Connection part..")
+	<-ready
+	glog.V(3).Infoln("Connection part is ready as well")
+
+	assert.NoError(t, conn.Close())
+}
+
 func TestInvitation_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return

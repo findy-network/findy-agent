@@ -94,6 +94,7 @@ func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 // typeID is look up table for
 var typeID = map[int32]string{
 	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_DIDEXCHANGE):      pltype.CAPairwiseCreate,
+	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_DIDEXCHANGE):      pltype.CAPairwiseInvitation,
 	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredOffer,
 	int32(10*pb.Protocol_ADDRESSEE) + int32(pb.Protocol_ISSUE_CREDENTIAL): pltype.CACredRequest,
 	int32(10*pb.Protocol_INITIATOR) + int32(pb.Protocol_PRESENT_PROOF):    pltype.CAProofRequest,
