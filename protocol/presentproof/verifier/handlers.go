@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
+	"github.com/findy-network/findy-agent/protocol/presentproof/rep"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
@@ -93,12 +94,12 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 				})
 			}
 
-			rep := &psm.PresentProofRep{
-				Key:        key,
+			proofRep := &rep.PresentProofRep{
+				StateKey:   key,
 				ProofReq:   reqStr,
 				Attributes: attributes,
 			}
-			err2.Check(psm.AddPresentProofRep(rep))
+			err2.Check(psm.AddRep(proofRep))
 
 			req, autoAccept := om.FieldObj().(*presentproof.Request)
 			if autoAccept {
@@ -135,11 +136,11 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 			// TODO: support changing proof req
 
 			repK := psm.NewStateKey(ca, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+			proofRep := e2.PresentProofRep.Try(rep.GetPresentProofRep(&repK))
 
 			req := om.FieldObj().(*presentproof.Request) // query interface
 			req.RequestPresentations = presentproof.NewRequestPresentation(
-				pltype.LibindyRequestPresentationID, []byte(rep.ProofReq))
+				pltype.LibindyRequestPresentationID, []byte(proofRep.ProofReq))
 
 			return true, nil
 		},
@@ -169,27 +170,27 @@ func HandlePresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+			proofRep := e2.PresentProofRep.Try(rep.GetPresentProofRep(&repK))
 
 			// 1st, verify the proof by our selves
 			pres := im.FieldObj().(*presentproof.Presentation)
 			data := err2.Bytes.Try(presentproof.Proof(pres))
-			rep.Proof = string(data)
+			proofRep.Proof = string(data)
 
-			if !err2.Bool.Try(rep.VerifyProof(packet)) {
+			if !err2.Bool.Try(proofRep.VerifyProof(packet)) {
 				glog.Errorf("Cannot verify proof (nonce:%v) terminating presentation protocol", im.Thread().ID)
 				return false, nil
 			}
 
-			preview.StoreProofData([]byte(rep.ProofReq), rep)
+			preview.StoreProofData([]byte(proofRep.ProofReq), proofRep)
 
 			var proof anoncreds.Proof
 			dto.FromJSON(data, &proof)
-			for index, attr := range rep.Attributes {
-				rep.Attributes[index].Value = proof.RequestedProof.RevealedAttrs[attr.ID].Raw
+			for index, attr := range proofRep.Attributes {
+				proofRep.Attributes[index].Value = proof.RequestedProof.RevealedAttrs[attr.ID].Raw
 			}
 
-			err2.Check(psm.AddPresentProofRep(rep))
+			err2.Check(psm.AddRep(proofRep))
 
 			// Autoaccept -> all checks done, let's send ACK
 			ackMsg, autoAccept := om.FieldObj().(*common.Ack)

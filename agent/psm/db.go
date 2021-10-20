@@ -191,17 +191,6 @@ func GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
 	return m, err
 }
 
-func AddPresentProofRep(p *PresentProofRep) (err error) {
-	return addData(p.KData(), p.Data(), BucketPresentProof)
-}
-
-func GetPresentProofRep(k StateKey) (m *PresentProofRep, err error) {
-	_, err = get(k, BucketPresentProof, func(d []byte) {
-		m = NewPresentProofRep(d)
-	})
-	return m, err
-}
-
 func RmPSM(p *PSM) (err error) {
 	glog.V(1).Infoln("--- rm PSM:", p.Key)
 	switch p.Protocol() {

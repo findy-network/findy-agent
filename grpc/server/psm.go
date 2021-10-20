@@ -160,14 +160,10 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		ps.Status = tryGetConnectStatus(id, key)
 	case pb.Protocol_ISSUE_CREDENTIAL:
 		ps.Status = tryGetIssueStatus(id, key)
-	case pb.Protocol_PRESENT_PROOF:
-		ps.Status = tryGetProofStatus(id, key)
 	case pb.Protocol_TRUST_PING:
 		ps.Status = tryGetTrustPingStatus(id, key)
-	case pb.Protocol_BASIC_MESSAGE:
+	default:
 		ps = prot.GetStatus(protocolName[id.TypeID], &key, ps)
-		//tryGetBasicMessageStatus(id, key)
-
 	}
 	return ps, connID
 }
@@ -244,42 +240,6 @@ func tryGetIssueStatus(
 			CredDefID: credRep.CredDefID,
 			SchemaID:  schemaID,
 			Attributes: &pb.Protocol_IssuingAttributes{
-				Attributes: attrs,
-			},
-		},
-	}
-}
-
-func tryGetProofStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey,
-) *pb.ProtocolStatus_PresentProof {
-
-	proofRep, err := psm.GetPresentProofRep(key)
-	err2.Check(err)
-	if proofRep == nil {
-		return &pb.ProtocolStatus_PresentProof{
-			PresentProof: &pb.ProtocolStatus_PresentProofStatus{
-				Proof: &pb.Protocol_Proof{
-					Attributes: nil,
-				},
-			},
-		}
-	}
-	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
-
-	for _, attr := range proofRep.Attributes {
-		a := &pb.Protocol_Proof_Attribute{
-			Name:      attr.Name,
-			CredDefID: attr.CredDefID,
-			Value:     attr.Value,
-			//Predicate: attr.Predicate,
-		}
-		attrs = append(attrs, a)
-	}
-	return &pb.ProtocolStatus_PresentProof{
-		PresentProof: &pb.ProtocolStatus_PresentProofStatus{
-			Proof: &pb.Protocol_Proof{
 				Attributes: attrs,
 			},
 		},

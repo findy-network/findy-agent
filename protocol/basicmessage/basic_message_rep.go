@@ -7,6 +7,8 @@ import (
 	"github.com/lainio/err2/assert"
 )
 
+const bucketType = psm.BucketBasicMessage
+
 type basicMessageRep struct {
 	StateKey      psm.StateKey
 	PwName        string
@@ -18,7 +20,7 @@ type basicMessageRep struct {
 }
 
 func init() {
-	psm.Creator.Add(psm.BucketBasicMessage, NewBasicMessageRep)
+	psm.Creator.Add(bucketType, NewBasicMessageRep)
 }
 
 func NewBasicMessageRep(d []byte) psm.Rep {
@@ -36,7 +38,7 @@ func (p *basicMessageRep) Data() []byte {
 }
 
 func (p *basicMessageRep) Type() byte {
-	return psm.BucketBasicMessage
+	return bucketType
 }
 
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
@@ -47,7 +49,7 @@ func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err err
 		Nonce: taskID,
 	}
 	var res psm.Rep
-	res, err = psm.GetRep(psm.BucketBasicMessage, *key)
+	res, err = psm.GetRep(bucketType, *key)
 	err2.Check(err)
 
 	var ok bool

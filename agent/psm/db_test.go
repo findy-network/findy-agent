@@ -158,27 +158,3 @@ func Test_addIssueCredRep(t *testing.T) {
 		})
 	}
 }
-
-func Test_addPresentProofRep(t *testing.T) {
-	proofRep := &PresentProofRep{
-		Key:      StateKey{DID: mockStateDID, Nonce: mockStateNonce},
-		ProofReq: "proofReq",
-	}
-	tests := []struct {
-		name string
-	}{
-		{"add"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := AddPresentProofRep(proofRep)
-			if err != nil {
-				t.Errorf("AddPresentProofRep() %s error %v", tt.name, err)
-			}
-			got, err := GetPresentProofRep(proofRep.Key)
-			if diff := deep.Equal(proofRep, got); err != nil || diff != nil {
-				t.Errorf("GetPresentProofRep() diff %v, err %v", diff, err)
-			}
-		})
-	}
-}
