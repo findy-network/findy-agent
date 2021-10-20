@@ -168,7 +168,7 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
 	pid := &pb.ProtocolID{
 		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
-		Role:   roleType[notify.Initiator],
+		Role:   notify.Role,
 		ID:     notify.ProtocolID,
 	}
 

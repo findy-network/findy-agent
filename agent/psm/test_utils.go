@@ -48,7 +48,7 @@ func testPSM(ts int64) *PSM {
 			DID:   mockStateDID,
 			Nonce: nonce,
 		},
-		InDID:  mockStateDID,
-		States: states,
+		ConnDID: mockStateDID,
+		States:  states,
 	}
 }

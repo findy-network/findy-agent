@@ -125,7 +125,7 @@ func ContinuePSM(shift Again) (err error) {
 
 	presentTask := PSM.PresentTask()
 
-	msgMeDID := PSM.InDID
+	msgMeDID := PSM.ConnDID
 	meDID := PSM.Key.DID
 
 	inDID := wa.LoadDID(msgMeDID)

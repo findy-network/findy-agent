@@ -25,9 +25,10 @@ type notifyEdge struct {
 	pwName    string // connection ID (note!! not a pairwise Label)
 	family    string // protocol family
 
-	// TODO: change the name protocol starter and moved initiator and addressee
-	// other ways
-	initiator bool // true if we are to one who started the protocol
+	// startedByUs if we are the one who sent the first message
+	startedByUs bool
+
+	role pb.Protocol_Role
 }
 
 // NotifyEdge sends notification to CA's controllores.
@@ -47,7 +48,7 @@ func NotifyEdge(ne notifyEdge) {
 				ProtocolFamily:   ne.family,
 				ConnectionID:     ne.pwName,
 				Timestamp:        ne.timestamp,
-				Initiator:        ne.initiator,
+				Role:             ne.role,
 			})
 		}()
 	} else {
@@ -59,57 +60,68 @@ func NotifyEdge(ne notifyEdge) {
 // The PSM key is meDID (worker agent) and the task.Nonce. The PSM includes all
 // state history.
 //  meDID = handling agent DID i.e. worker agent DID
-//  msgMe = our end's connection aka pairwise DID (important!)
+//  connDID = our end's connection aka pairwise DID (important!)
 //  task  = current comm.Task struct for additional protocol information
 //  opl   = output payload we are building to send, state by state
 //  subs  = current sub state of the protocol state machine (PSM)
-func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs psm.SubState) (err error) {
+func UpdatePSM(
+	agentDID,
+	connDID string,
+	task comm.Task,
+	opl didcomm.Payload,
+	stateType psm.SubState,
+) (
+	err error,
+) {
 	defer err2.Annotate("create psm", &err)
 
 	if glog.V(5) {
 		glog.Infof("-- %s->%s[%s:%s]",
-			strings.ToUpper(opl.ProtocolMsg()), subs, meDID, task.ID())
+			strings.ToUpper(opl.ProtocolMsg()), stateType, agentDID, task.ID())
 	}
 
-	PSMKey := psm.StateKey{DID: meDID, Nonce: task.ID()}
+	PSMKey := psm.StateKey{DID: agentDID, Nonce: task.ID()}
 	foundPSM := e2.PSM.Try(psm.FindPSM(PSMKey))
 
 	var currentPSM *psm.PSM
 	timestamp := time.Now().UnixNano()
-	s := psm.State{
+	currentState := psm.State{
 		Timestamp: timestamp,
 		T:         task,
 		PLInfo:    psm.PayloadInfo{Type: opl.Type()},
-		Sub:       subs,
+		Sub:       stateType,
 	}
 	if foundPSM != nil { // update existing one
-		if msgMe != "" {
-			foundPSM.InDID = msgMe
+		if connDID != "" {
+			foundPSM.ConnDID = connDID
 		}
-		foundPSM.States = append(foundPSM.States, s)
+		foundPSM.States = append(foundPSM.States, currentState)
 		currentPSM = foundPSM
 	} else { // create a new one
-		ss := make([]psm.State, 1, 12)
-		ss[0] = s
+		states := make([]psm.State, 1, 12)
+		states[0] = currentState
 
-		initiator := false
+		startedByUs := true
+		role := task.Role()
 
-		if task.Role() != pb.Protocol_UNKNOWN { // let task define role when it is set
-			initiator = task.Role() == pb.Protocol_INITIATOR
-		} else { // otherwise try to detect role from state
-			// TODO: in propose cases the actor starting the flow is currently addressee
-			// so the role is reported incorrectly for the "receiving" side
-			initiator = subs&(psm.Sending|psm.Failure) != 0
+		if task.Role() == pb.Protocol_UNKNOWN {
+			startedByUs = false
+			role = pltype.ProtocolRoleForType(opl.ProtocolMsg())
 		}
 
-		role := pb.Protocol_INITIATOR.String()
-		if initiator {
-			role = pb.Protocol_ADDRESSEE.String()
-		}
-		glog.V(3).Infof("----- We (%s) are %s (%s) ----", meDID, role, task.Role())
+		glog.V(3).Infof("----- We (send by us: %v) are %s (%s) ----",
+			startedByUs,
+			agentDID,
+			role,
+		)
 
-		currentPSM = &psm.PSM{Key: PSMKey, InDID: msgMe,
-			States: ss, Initiator: initiator}
+		currentPSM = &psm.PSM{
+			Key:         PSMKey,
+			ConnDID:     connDID,
+			States:      states,
+			StartedByUs: startedByUs,
+			Role:        role,
+		}
 	}
 	err2.Check(psm.AddPSM(currentPSM))
 
@@ -122,15 +134,16 @@ func UpdatePSM(meDID, msgMe string, task comm.Task, opl didcomm.Payload, subs ps
 	// notifications, WIP: adding protocolFamily as first step
 	go triggerEnd(endingInfo{
 		timestamp:         timestamp,
-		subState:          subs,
+		subState:          stateType,
 		nonce:             task.ID(),
-		meDID:             meDID,
+		meDID:             agentDID,
 		pwName:            currentPSM.PairwiseName(),
 		plType:            plType,
 		pendingUserAction: currentPSM.PendingUserAction(),
-		initiator:         currentPSM.Initiator,
+		startedByUs:       currentPSM.StartedByUs,
 		userActionType:    task.UserActionType(),
 		protocolFamily:    currentPSM.Protocol(),
+		role:              currentPSM.Role,
 	})
 
 	return nil
@@ -170,7 +183,8 @@ func AddAndSetFlagUpdatePSM(
 			pwName:            machine.PairwiseName(),
 			plType:            machine.FirstState().T.Type(),
 			pendingUserAction: machine.PendingUserAction(),
-			initiator:         machine.Initiator,
+			startedByUs:       machine.StartedByUs,
+			role:              machine.Role,
 		})
 	}
 	return nil
@@ -189,7 +203,7 @@ func notifyArchiving(machine *psm.PSM, info endingInfo) {
 		ProtocolFamily:   machine.Protocol(),
 		ConnectionID:     info.pwName,
 		Timestamp:        info.timestamp,
-		Initiator:        info.initiator,
+		Role:             machine.Role,
 	}
 	if info.subState&psm.Archiving != 0 {
 		glog.V(1).Infoln("archiving:", key)
@@ -209,9 +223,10 @@ type endingInfo struct {
 	plType            string
 	timestamp         int64
 	pendingUserAction bool
-	initiator         bool
+	startedByUs       bool
 	userActionType    string
 	protocolFamily    string
+	role              pb.Protocol_Role
 }
 
 func triggerEnd(info endingInfo) {
@@ -233,13 +248,14 @@ func triggerEnd(info endingInfo) {
 				glog.Warning("PL type is empty on Notify")
 			}
 			NotifyEdge(notifyEdge{
-				did:       info.meDID,
-				plType:    pltype.CANotifyStatus,
-				nonce:     info.nonce,
-				timestamp: info.timestamp,
-				pwName:    info.pwName,
-				family:    info.protocolFamily,
-				initiator: info.initiator,
+				did:         info.meDID,
+				plType:      pltype.CANotifyStatus,
+				nonce:       info.nonce,
+				timestamp:   info.timestamp,
+				pwName:      info.pwName,
+				family:      info.protocolFamily,
+				startedByUs: info.startedByUs,
+				role:        info.role,
 			})
 		}
 	case psm.Waiting:
@@ -247,13 +263,14 @@ func triggerEnd(info endingInfo) {
 		if info.pendingUserAction {
 			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(notifyEdge{
-				did:       info.meDID,
-				plType:    info.userActionType,
-				nonce:     info.nonce,
-				timestamp: info.timestamp,
-				pwName:    info.pwName,
-				family:    info.protocolFamily,
-				initiator: info.initiator,
+				did:         info.meDID,
+				plType:      info.userActionType,
+				nonce:       info.nonce,
+				timestamp:   info.timestamp,
+				pwName:      info.pwName,
+				family:      info.protocolFamily,
+				startedByUs: info.startedByUs,
+				role:        info.role,
 			})
 		}
 	}
