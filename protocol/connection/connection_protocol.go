@@ -52,6 +52,7 @@ func init() {
 	prot.AddCreator(pltype.ProtocolConnection, connectionProcessor)
 	prot.AddCreator(pltype.AriesProtocolConnection, connectionProcessor)
 	prot.AddStarter(pltype.CAPairwiseCreate, connectionProcessor)
+	prot.AddStarter(pltype.CAPairwiseInvitation, connectionProcessor)
 	prot.AddStatusProvider(pltype.AriesProtocolConnection, connectionProcessor)
 	comm.Proc.Add(pltype.AriesProtocolConnection, connectionProcessor)
 }
@@ -86,18 +87,31 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
+	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
+	me := ca.WDID()
+	wa := ca.WorkerEA()
+	ssiWA := wa.(ssi.Agent)
+
 	deTask, ok := task.(*taskDIDExchange)
 	assert.P.True(ok)
+
+	if task.Role() == pb.Protocol_ADDRESSEE {
+		glog.V(3).Infof("it's us who wait connection (%v) to invitation",
+			deTask.InvitationID)
+
+		wpl := aries.PayloadCreator.New(
+			didcomm.PayloadInit{
+				ID:   task.ID(),
+				Type: pltype.AriesConnectionRequest,
+			})
+		err2.Check(prot.UpdatePSM(me, "", task, wpl, psm.Waiting))
+		return
+	}
 
 	deTask.SetReceiverEndp(service.Addr{
 		Endp: deTask.Invitation.ServiceEndpoint,
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
-
-	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
-	me := ca.WDID()
-	wa := ca.WorkerEA()
-	ssiWA := wa.(ssi.Agent)
 
 	caller := ssiWA.CreateDID("")  // Create a new DID for our end
 	pubEndp := *meAddr             // and build an endpoint for..
