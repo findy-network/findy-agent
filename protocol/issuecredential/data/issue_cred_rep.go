@@ -15,7 +15,7 @@ import (
 const bucketType = psm.BucketIssueCred
 
 type IssueCredRep struct {
-	StateKey    psm.StateKey
+	psm.StateKey
 	Timestamp   int64
 	CredDefID   string
 	CredDef     string

@@ -10,7 +10,7 @@ import (
 const bucketType = psm.BucketBasicMessage
 
 type basicMessageRep struct {
-	StateKey      psm.StateKey
+	psm.StateKey
 	PwName        string
 	Message       string
 	SendTimestamp int64

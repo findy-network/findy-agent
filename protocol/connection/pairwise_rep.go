@@ -10,7 +10,7 @@ import (
 const bucketType = psm.BucketPairwise
 
 type pairwiseRep struct {
-	StateKey   psm.StateKey
+	psm.StateKey
 	Name       string // In our implementation this is connection id!
 	TheirLabel string
 	Caller     didRep

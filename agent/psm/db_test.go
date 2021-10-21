@@ -65,11 +65,11 @@ func Test_addPSM(t *testing.T) {
 }
 
 type testRep struct {
-	RepKey StateKey
+	StateKey
 }
 
 func (t *testRep) Key() StateKey {
-	return t.RepKey
+	return t.StateKey
 }
 
 func (t *testRep) Data() []byte {
@@ -88,7 +88,7 @@ func NewTestRep(d []byte) Rep {
 
 func Test_addBaseRep(t *testing.T) {
 	msgRep := &testRep{
-		RepKey: StateKey{DID: mockStateDID, Nonce: mockStateNonce},
+		StateKey: StateKey{DID: mockStateDID, Nonce: mockStateNonce},
 	}
 	tests := []struct {
 		name string
@@ -103,7 +103,7 @@ func Test_addBaseRep(t *testing.T) {
 			if err != nil {
 				t.Errorf("AddRep() %s error %v", tt.name, err)
 			}
-			got, err := GetRep(msgRep.Type(), msgRep.RepKey)
+			got, err := GetRep(msgRep.Type(), msgRep.StateKey)
 			if diff := deep.Equal(msgRep, got); err != nil || diff != nil {
 				t.Errorf("GetRep() diff %v, err %v", diff, err)
 			}

@@ -16,7 +16,7 @@ import (
 const bucketType = psm.BucketPresentProof
 
 type PresentProofRep struct {
-	StateKey   psm.StateKey
+	psm.StateKey
 	ProofReq   string
 	Proof      string
 	Values     string // currently only used for Task API to get data
