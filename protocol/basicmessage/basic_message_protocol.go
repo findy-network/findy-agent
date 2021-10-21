@@ -28,7 +28,7 @@ var basicMessageProcessor = comm.ProtProc{
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerMessage: handleBasicMessage,
 	},
-	Status: getBasicMessageStatus,
+	FillStatus: fillBasicMessageStatus,
 }
 
 func init() {
@@ -133,9 +133,9 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 	})
 }
 
-func getBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set basic message status: ", err)
+		glog.Error("Failed to fill basic message status: ", err)
 	})
 
 	assert.D.True(ps != nil)

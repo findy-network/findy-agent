@@ -153,7 +153,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		State: state,
 	}
 	// protocol implementors fill the status information
-	ps = prot.GetStatus(protocolName[id.TypeID], &key, ps)
+	ps = prot.FillStatus(protocolName[id.TypeID], &key, ps)
 	return ps, connID
 }
 

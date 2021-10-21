@@ -43,7 +43,7 @@ var issueCredentialProcessor = comm.ProtProc{
 		pltype.HandlerIssueCredentialACK:     issuer.HandleCredentialACK,
 		pltype.HandlerIssueCredentialNACK:    handleCredentialNACK,
 	},
-	Status: getIssueCredentialStatus,
+	FillStatus: fillIssueCredentialStatus,
 }
 
 func init() {
@@ -224,9 +224,9 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	continuator(ca, im)
 }
 
-func getIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set issue credential status: ", err)
+		glog.Error("Failed to fill issue credential status: ", err)
 	})
 
 	assert.D.True(ps != nil)

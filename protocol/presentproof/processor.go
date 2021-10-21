@@ -44,7 +44,7 @@ var presentProofProcessor = comm.ProtProc{
 		pltype.HandlerPresentProofACK:          handleProofACK,
 		pltype.HandlerPresentProofNACK:         handleProofNACK,
 	},
-	Status: getPresentProofStatus,
+	FillStatus: fillPresentProofStatus,
 }
 
 func init() {
@@ -300,9 +300,9 @@ func handleProofNACK(packet comm.Packet) (err error) {
 	})
 }
 
-func getPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set present proof status: ", err)
+		glog.Error("Failed to fill present proof status: ", err)
 	})
 
 	assert.D.True(ps != nil)

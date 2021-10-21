@@ -43,7 +43,7 @@ var connectionProcessor = comm.ProtProc{
 		pltype.HandlerResponse: handleConnectionResponse,
 		pltype.HandlerRequest:  handleConnectionRequest,
 	},
-	Status: getPairwiseStatus,
+	FillStatus: fillPairwiseStatus,
 }
 
 func init() {
@@ -344,7 +344,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	return nil
 }
 
-func getPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error("Failed to get connection status: ", err)
 	})

@@ -25,7 +25,7 @@ var trustPingProcessor = comm.ProtProc{
 		pltype.HandlerPing:         handleTrustPing,
 		pltype.HandlerPingResponse: handleTrustPingResponse,
 	},
-	Status: getTrustPingStatus,
+	FillStatus: fillTrustPingStatus,
 }
 
 func init() {
@@ -89,9 +89,9 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 	})
 }
 
-func getTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set basic message status: ", err)
+		glog.Error("Failed to fill trust ping status: ", err)
 	})
 
 	assert.D.True(ps != nil)
