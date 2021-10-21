@@ -3,12 +3,12 @@ package preview
 
 import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
-func StoreProofData(requestData []byte, rep *psm.PresentProofRep) {
+func StoreProofData(requestData []byte, rep *data.PresentProofRep) {
 	var proofReq anoncreds.ProofRequest
 	dto.FromJSON(requestData, &proofReq)
 	rep.Attributes = make([]didcomm.ProofAttribute, 0)

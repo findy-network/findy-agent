@@ -346,12 +346,12 @@ func Resume(rcvr comm.Receiver, typeID, protocolID string, ack bool) {
 	go proc.Continuator(rcvr, om)
 }
 
-func GetStatus(protocol string, key *psm.StateKey) interface{} {
+func FillStatus(protocol string, key psm.StateKey, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	proc, ok := statusProviders[protocol]
 	if !ok {
 		glog.Error("!!!! No protocol status getter for " + protocol + " !!!")
 		panic("no protocol status getter")
 	}
 
-	return proc.Status(key.DID, key.Nonce)
+	return proc.FillStatus(key.DID, key.Nonce, ps)
 }

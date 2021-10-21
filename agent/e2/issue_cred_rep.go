@@ -1,7 +1,7 @@
 package e2
 
 import (
-	"github.com/findy-network/findy-agent/agent/psm"
+	icData "github.com/findy-network/findy-agent/protocol/issuecredential/data"
 	"github.com/lainio/err2"
 )
 
@@ -13,7 +13,7 @@ var IssueCredRep _IssueCredRep
 
 // Try is a helper method to call func() (*psm.IssueCredRep, error) functions
 // with it and be as fast as Check(err).
-func (o _IssueCredRep) Try(v *psm.IssueCredRep, err error) *psm.IssueCredRep {
+func (o _IssueCredRep) Try(v *icData.IssueCredRep, err error) *icData.IssueCredRep {
 	err2.Check(err)
 	return v
 }

@@ -61,7 +61,7 @@ type ProtProc struct {
 	Starter
 	Handlers map[string]HandlerFunc
 	Continuator
-	Status
+	FillStatus
 }
 
 type Creator func(header *TaskHeader, protocol *pb.Protocol) (Task, error)
@@ -70,7 +70,7 @@ type Starter func(ca Receiver, t Task)
 
 type Continuator func(ca Receiver, im didcomm.Msg)
 
-type Status func(workerDID string, taskID string) interface{}
+type FillStatus func(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus
 
 // Process delivers the protocol message inside the packet to correct protocol
 // function.

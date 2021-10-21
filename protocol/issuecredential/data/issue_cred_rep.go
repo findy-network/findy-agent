@@ -1,17 +1,21 @@
-package psm
+package data
 
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
+const bucketType = psm.BucketIssueCred
+
 type IssueCredRep struct {
-	Key         StateKey
+	psm.StateKey
 	Timestamp   int64
 	CredDefID   string
 	CredDef     string
@@ -21,18 +25,26 @@ type IssueCredRep struct {
 	Attributes  []didcomm.CredentialAttribute
 }
 
-func NewIssueCredRep(d []byte) *IssueCredRep {
+func init() {
+	psm.Creator.Add(bucketType, NewIssueCredRep)
+}
+
+func NewIssueCredRep(d []byte) psm.Rep {
 	p := &IssueCredRep{}
 	dto.FromGOB(d, p)
 	return p
+}
+
+func (rep *IssueCredRep) Key() psm.StateKey {
+	return rep.StateKey
 }
 
 func (rep *IssueCredRep) Data() []byte {
 	return dto.ToGOB(rep)
 }
 
-func (rep *IssueCredRep) KData() []byte {
-	return rep.Key.Data()
+func (rep *IssueCredRep) Type() byte {
+	return bucketType
 }
 
 // BuildCredRequest builds credential request which is PROVER/HOLDER SIDE
@@ -78,4 +90,24 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 	w := a.Wallet()
 	r := <-anoncreds.ProverStoreCredential(w, findy.NullString, rep.CredReqMeta, cred, rep.CredDef, findy.NullString)
 	return r.Err()
+}
+
+func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
+	err2.Return(&err)
+
+	var res psm.Rep
+	res, err = psm.GetRep(bucketType, key)
+	err2.Check(err)
+
+	// Allow not found
+	if res == nil {
+		return
+	}
+
+	var ok bool
+	rep, ok = res.(*IssueCredRep)
+
+	assert.D.True(ok, "issue cred type mismatch")
+
+	return rep, nil
 }

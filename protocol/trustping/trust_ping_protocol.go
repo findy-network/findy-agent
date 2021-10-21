@@ -11,14 +11,11 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 type taskTrustPing struct {
 	comm.TaskBase
-}
-
-type statusTrustPing struct {
-	Result string `json:"result"`
 }
 
 var trustPingProcessor = comm.ProtProc{
@@ -28,7 +25,7 @@ var trustPingProcessor = comm.ProtProc{
 		pltype.HandlerPing:         handleTrustPing,
 		pltype.HandlerPingResponse: handleTrustPingResponse,
 	},
-	Status: getTrustPingStatus,
+	FillStatus: fillTrustPingStatus,
 }
 
 func init() {
@@ -92,9 +89,19 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 	})
 }
 
-func getTrustPingStatus(workerDID string, taskID string) interface{} {
-	// TODO:
-	return statusTrustPing{
-		Result: "NOT SUPPORTED",
+func fillTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+	defer err2.CatchTrace(func(err error) {
+		glog.Error("Failed to fill trust ping status: ", err)
+	})
+
+	assert.D.True(ps != nil)
+
+	status := ps
+
+	// TODO
+	status.Status = &pb.ProtocolStatus_TrustPing{
+		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
 	}
+
+	return status
 }

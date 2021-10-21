@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -138,7 +137,6 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
-	statusJSON := dto.ToJSON(prot.GetStatus(protocolName[id.TypeID], &key))
 	m := e2.PSM.Try(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolID: id,
@@ -152,21 +150,10 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		state.ProtocolID.Role = pb.Protocol_UNKNOWN
 	}
 	ps = &pb.ProtocolStatus{
-		State:      state,
-		StatusJSON: statusJSON,
+		State: state,
 	}
-	switch id.TypeID {
-	case pb.Protocol_DIDEXCHANGE:
-		ps.Status = tryGetConnectStatus(id, key)
-	case pb.Protocol_ISSUE_CREDENTIAL:
-		ps.Status = tryGetIssueStatus(id, key)
-	case pb.Protocol_PRESENT_PROOF:
-		ps.Status = tryGetProofStatus(id, key)
-	case pb.Protocol_TRUST_PING:
-		ps.Status = tryGetTrustPingStatus(id, key)
-	case pb.Protocol_BASIC_MESSAGE:
-		ps.Status = tryGetBasicMessageStatus(id, key)
-	}
+	// protocol implementors fill the status information
+	ps = prot.FillStatus(protocolName[id.TypeID], key, ps)
 	return ps, connID
 }
 
@@ -188,124 +175,4 @@ func calcProtocolState(m *psm.PSM) pb.ProtocolState_State {
 		}
 	}
 	return pb.ProtocolState_RUNNING
-}
-
-func tryGetConnectStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey) *pb.ProtocolStatus_DIDExchange {
-	pw, err := psm.GetPairwiseRep(key)
-	err2.Check(err)
-
-	myDID := pw.Callee
-	theirDID := pw.Caller
-	theirEndpoint := pw.Caller.Endp
-
-	if !myDID.My {
-		myDID = pw.Caller
-		theirDID = pw.Callee
-		theirEndpoint = pw.Callee.Endp
-	}
-
-	return &pb.ProtocolStatus_DIDExchange{DIDExchange: &pb.ProtocolStatus_DIDExchangeStatus{
-		ID:            pw.Name,
-		MyDID:         myDID.DID,
-		TheirDID:      theirDID.DID,
-		TheirEndpoint: theirEndpoint,
-		TheirLabel:    pw.TheirLabel,
-	}}
-}
-
-func tryGetIssueStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey,
-) *pb.ProtocolStatus_IssueCredential {
-
-	credRep := e2.IssueCredRep.Try(psm.GetIssueCredRep(key))
-
-	// TODO: save schema id parsed to db? copied from original implementation
-	var credOfferMap map[string]interface{}
-	dto.FromJSONStr(credRep.CredOffer, &credOfferMap)
-
-	schemaID := credOfferMap["schema_id"].(string)
-
-	attrs := make([]*pb.Protocol_IssuingAttributes_Attribute,
-		0, len(credRep.Attributes))
-	for _, credAttr := range credRep.Attributes {
-		a := &pb.Protocol_IssuingAttributes_Attribute{
-			Name:  credAttr.Name,
-			Value: credAttr.Value,
-		}
-		attrs = append(attrs, a)
-	}
-	return &pb.ProtocolStatus_IssueCredential{
-		IssueCredential: &pb.ProtocolStatus_IssueCredentialStatus{
-			CredDefID: credRep.CredDefID,
-			SchemaID:  schemaID,
-			Attributes: &pb.Protocol_IssuingAttributes{
-				Attributes: attrs,
-			},
-		},
-	}
-}
-
-func tryGetProofStatus(
-	_ *pb.ProtocolID,
-	key psm.StateKey,
-) *pb.ProtocolStatus_PresentProof {
-
-	proofRep, err := psm.GetPresentProofRep(key)
-	err2.Check(err)
-	if proofRep == nil {
-		return &pb.ProtocolStatus_PresentProof{
-			PresentProof: &pb.ProtocolStatus_PresentProofStatus{
-				Proof: &pb.Protocol_Proof{
-					Attributes: nil,
-				},
-			},
-		}
-	}
-	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
-
-	for _, attr := range proofRep.Attributes {
-		a := &pb.Protocol_Proof_Attribute{
-			Name:      attr.Name,
-			CredDefID: attr.CredDefID,
-			Value:     attr.Value,
-			//Predicate: attr.Predicate,
-		}
-		attrs = append(attrs, a)
-	}
-	return &pb.ProtocolStatus_PresentProof{
-		PresentProof: &pb.ProtocolStatus_PresentProofStatus{
-			Proof: &pb.Protocol_Proof{
-				Attributes: attrs,
-			},
-		},
-	}
-}
-
-func tryGetTrustPingStatus(
-	_ *pb.ProtocolID,
-	_ psm.StateKey,
-) *pb.ProtocolStatus_TrustPing {
-
-	// TODO: add TrustPingRep to DB if we need to track Replied status
-	return &pb.ProtocolStatus_TrustPing{
-		TrustPing: &pb.ProtocolStatus_TrustPingStatus{Replied: false},
-	}
-}
-
-func tryGetBasicMessageStatus(_ *pb.ProtocolID, key psm.StateKey,
-) *pb.ProtocolStatus_BasicMessage {
-
-	msg, err := psm.GetBasicMessageRep(key)
-	err2.Check(err)
-
-	glog.V(1).Infoln("Get BasicMsg for:", key, "sent by me:", msg.SentByMe)
-	return &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
-		Content:       msg.Message,
-		SentByMe:      msg.SentByMe,
-		Delivered:     msg.Delivered,
-		SentTimestamp: msg.SendTimestamp,
-	}}
 }

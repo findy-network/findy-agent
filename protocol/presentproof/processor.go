@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/findy-network/findy-agent/protocol/presentproof/prover"
 	"github.com/findy-network/findy-agent/protocol/presentproof/verifier"
 	"github.com/findy-network/findy-agent/std/presentproof"
@@ -30,10 +31,6 @@ type taskPresentProof struct {
 	ProofPredicates []didcomm.ProofPredicate
 }
 
-type statusPresentProof struct {
-	Attributes []didcomm.ProofAttribute `json:"attributes"`
-}
-
 type continuatorFunc func(ca comm.Receiver, im didcomm.Msg)
 
 var presentProofProcessor = comm.ProtProc{
@@ -47,7 +44,7 @@ var presentProofProcessor = comm.ProtProc{
 		pltype.HandlerPresentProofACK:          handleProofACK,
 		pltype.HandlerPresentProofNACK:         handleProofNACK,
 	},
-	Status: getPresentProofStatus,
+	FillStatus: fillPresentProofStatus,
 }
 
 func init() {
@@ -192,12 +189,12 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 				propose.PresentationProposal = pp
 				propose.Comment = proofTask.Comment
 
-				rep := &psm.PresentProofRep{
-					Key:        key,
+				rep := &data.PresentProofRep{
+					StateKey:   key,
 					Values:     proofTask.Comment, // TODO: serialize values here?
 					WeProposed: true,
 				}
-				return psm.AddPresentProofRep(rep)
+				return psm.AddRep(rep)
 			},
 		}))
 	case pltype.CAProofRequest: // ----- verifier will start -----
@@ -224,13 +221,13 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 					pltype.LibindyRequestPresentationID, []byte(proofReqStr))
 
 				// create Rep and save it for PSM to run protocol
-				rep := &psm.PresentProofRep{
-					Key:    key,
-					Values: proofTask.Comment, // TODO: serialize attributes here?,
+				rep := &data.PresentProofRep{
+					StateKey: key,
+					Values:   proofTask.Comment, // TODO: serialize attributes here?,
 					// Verifier cannot provide this..
 					ProofReq: proofReqStr, //  .. but it gives this one.
 				}
-				return psm.AddPresentProofRep(rep)
+				return psm.AddRep(rep)
 			},
 		}))
 	default:
@@ -303,23 +300,39 @@ func handleProofNACK(packet comm.Packet) (err error) {
 	})
 }
 
-func getPresentProofStatus(workerDID string, taskID string) interface{} {
+func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.CatchTrace(func(err error) {
-		glog.Error("Failed to set present proof status: ", err)
+		glog.Error("Failed to fill present proof status: ", err)
 	})
-	key := &psm.StateKey{
+
+	assert.D.True(ps != nil)
+
+	status := ps
+
+	proofRep, err := data.GetPresentProofRep(psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
-	}
-
-	proofRep, err := psm.GetPresentProofRep(*key)
+	})
 	err2.Check(err)
 
-	if proofRep != nil {
-		return statusPresentProof{
-			Attributes: proofRep.Attributes,
+	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
+
+	for _, attr := range proofRep.Attributes {
+		a := &pb.Protocol_Proof_Attribute{
+			Name:      attr.Name,
+			CredDefID: attr.CredDefID,
+			Value:     attr.Value,
 		}
+		attrs = append(attrs, a)
 	}
 
-	return nil
+	status.Status = &pb.ProtocolStatus_PresentProof{
+		PresentProof: &pb.ProtocolStatus_PresentProofStatus{
+			Proof: &pb.Protocol_Proof{
+				Attributes: attrs,
+			},
+		},
+	}
+
+	return status
 }

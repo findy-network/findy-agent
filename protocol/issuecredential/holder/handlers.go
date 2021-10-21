@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/protocol/issuecredential/data"
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
@@ -25,17 +26,17 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 	// Make a PSM key and find protocol representative Rep
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
-	rep, _ := psm.GetIssueCredRep(key) // if rep not found, ignore error
+	rep, _ := data.GetIssueCredRep(key) // if rep not found, ignore error
 
 	// If we didn't start the Issuing protocol, we must ask user does she want
 	// to reply i.e. send a cred request
 
 	// Do we have a Rep?
 	if rep == nil {
-		rep := &psm.IssueCredRep{
-			Key: key,
+		rep := &data.IssueCredRep{
+			StateKey: key,
 		}
-		err2.Check(psm.AddIssueCredRep(rep))
+		err2.Check(psm.AddRep(rep))
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
@@ -54,7 +55,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 
 			attach := err2.Bytes.Try(issuecredential.OfferAttach(offer))
 			rep.CredOffer = string(attach)
@@ -77,7 +78,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			// Save the rep with the offer and with the request if
 			// auto accept
-			err2.Check(psm.AddIssueCredRep(rep))
+			err2.Check(psm.AddRep(rep))
 
 			return true, nil
 		},
@@ -112,11 +113,11 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 			credRq := err2.String.Try(rep.BuildCredRequest(
 				comm.Packet{Receiver: agent}))
 
-			err2.Check(psm.AddIssueCredRep(rep))
+			err2.Check(psm.AddRep(rep))
 			req := om.FieldObj().(*issuecredential.Request)
 			req.RequestsAttach =
 				issuecredential.NewRequestAttach([]byte(credRq))
@@ -151,7 +152,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(psm.GetIssueCredRep(repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 			cred := err2.Bytes.Try(issuecredential.CredentialAttach(issue))
 			err2.Check(rep.StoreCred(packet, string(cred)))
 

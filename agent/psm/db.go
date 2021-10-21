@@ -13,28 +13,46 @@ import (
 )
 
 const (
-	bucketPSM byte = 0 + iota
-	bucketRawPL
-	bucketPairwise
-	bucketBasicMessage
-	bucketIssueCred
-	bucketPresentProof
+	BucketPSM byte = 0 + iota
+	BucketRawPL
+	BucketPairwise
+	BucketBasicMessage
+	BucketIssueCred
+	BucketPresentProof
 )
 
 var (
 	buckets = [][]byte{
-		{bucketPSM},
-		{bucketRawPL},
-		{bucketPairwise},
-		{bucketBasicMessage},
-		{bucketIssueCred},
-		{bucketPresentProof},
+		{BucketPSM},
+		{BucketRawPL},
+		{BucketPairwise},
+		{BucketBasicMessage},
+		{BucketIssueCred},
+		{BucketPresentProof},
 	}
 
 	theCipher *crypto.Cipher
 
 	mgdDB *db.Mgd
 )
+
+type Rep interface {
+	Key() StateKey
+	Data() []byte
+	Type() byte
+}
+
+type CreatorFunc func(d []byte) (rep Rep)
+
+var Creator = &Factor{factors: make(map[byte]CreatorFunc)}
+
+type Factor struct {
+	factors map[byte]CreatorFunc
+}
+
+func (f *Factor) Add(t byte, factor CreatorFunc) {
+	f.factors[t] = factor
+}
 
 // Open opens the database by name of the file. If it is already open it returns
 // it, but it doesn't check the database name it isn't thread safe!
@@ -97,11 +115,11 @@ func rm(k StateKey, bucketID byte) (err error) {
 }
 
 func AddRawPL(addr *endp.Addr, data []byte) (err error) {
-	return addData(addr.Key(), data, bucketRawPL)
+	return addData(addr.Key(), data, BucketRawPL)
 }
 
 func RmRawPL(addr *endp.Addr) (err error) {
-	return mgdDB.RmKeyValueFromBucket(buckets[bucketRawPL],
+	return mgdDB.RmKeyValueFromBucket(buckets[BucketRawPL],
 		&db.Data{
 			Data: addr.Key(),
 			Read: hash,
@@ -109,14 +127,14 @@ func RmRawPL(addr *endp.Addr) (err error) {
 }
 
 func AddPSM(p *PSM) (err error) {
-	return addData(p.Key.Data(), p.Data(), bucketPSM)
+	return addData(p.Key.Data(), p.Data(), BucketPSM)
 }
 
 // GetPSM get existing PSM from DB. If the PSM doesn't exist it returns error.
 // See FindPSM for version which doesn't return error if the PSM doesn't exist.
 func GetPSM(k StateKey) (m *PSM, err error) {
 	found := false
-	found, err = get(k, bucketPSM, func(d []byte) {
+	found, err = get(k, BucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})
 	if !found {
@@ -129,52 +147,24 @@ func GetPSM(k StateKey) (m *PSM, err error) {
 // FindPSM doesn't return error if the PSM doesn't exist. Instead the returned
 // PSM is nil.
 func FindPSM(k StateKey) (m *PSM, err error) {
-	_, err = get(k, bucketPSM, func(d []byte) {
+	_, err = get(k, BucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})
 	return m, err
 }
 
-func AddPairwiseRep(p *PairwiseRep) (err error) {
-	return addData(p.KData(), p.Data(), bucketPairwise)
+func AddRep(p Rep) (err error) {
+	return addData(p.Key().Data(), p.Data(), p.Type())
 }
 
-func GetPairwiseRep(k StateKey) (m *PairwiseRep, err error) {
-	_, err = get(k, bucketPairwise, func(d []byte) {
-		m = NewPairwiseRep(d)
-	})
-	return m, err
-}
-
-func AddBasicMessageRep(p *BasicMessageRep) (err error) {
-	return addData(p.KData(), p.Data(), bucketBasicMessage)
-}
-
-func GetBasicMessageRep(k StateKey) (m *BasicMessageRep, err error) {
-	_, err = get(k, bucketBasicMessage, func(d []byte) {
-		m = NewBasicMessageRep(d)
-	})
-	return m, err
-}
-
-func AddIssueCredRep(p *IssueCredRep) (err error) {
-	return addData(p.KData(), p.Data(), bucketIssueCred)
-}
-
-func GetIssueCredRep(k StateKey) (m *IssueCredRep, err error) {
-	_, err = get(k, bucketIssueCred, func(d []byte) {
-		m = NewIssueCredRep(d)
-	})
-	return m, err
-}
-
-func AddPresentProofRep(p *PresentProofRep) (err error) {
-	return addData(p.KData(), p.Data(), bucketPresentProof)
-}
-
-func GetPresentProofRep(k StateKey) (m *PresentProofRep, err error) {
-	_, err = get(k, bucketPresentProof, func(d []byte) {
-		m = NewPresentProofRep(d)
+func GetRep(repType byte, k StateKey) (m Rep, err error) {
+	_, err = get(k, repType, func(d []byte) {
+		factor, ok := Creator.factors[repType]
+		if !ok {
+			err = fmt.Errorf("no factor found for rep type %d", repType)
+			return
+		}
+		m = factor(d)
 	})
 	return m, err
 }
@@ -183,18 +173,18 @@ func RmPSM(p *PSM) (err error) {
 	glog.V(1).Infoln("--- rm PSM:", p.Key)
 	switch p.Protocol() {
 	case pltype.ProtocolBasicMessage:
-		err = rm(p.Key, bucketBasicMessage)
+		err = rm(p.Key, BucketBasicMessage)
 	case pltype.ProtocolConnection:
-		err = rm(p.Key, bucketPairwise)
+		err = rm(p.Key, BucketPairwise)
 	case pltype.ProtocolIssueCredential:
-		err = rm(p.Key, bucketIssueCred)
+		err = rm(p.Key, BucketIssueCred)
 	case pltype.ProtocolPresentProof:
-		err = rm(p.Key, bucketPresentProof)
+		err = rm(p.Key, BucketPresentProof)
 	}
 	if err != nil {
 		return err
 	}
-	return rm(p.Key, bucketPSM)
+	return rm(p.Key, BucketPSM)
 }
 
 // all of the following has same signature. They also panic on error

@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/protocol/presentproof/data"
 	"github.com/findy-network/findy-agent/protocol/presentproof/preview"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/presentproof"
@@ -93,12 +94,12 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 				})
 			}
 
-			rep := &psm.PresentProofRep{
-				Key:        key,
+			rep := &data.PresentProofRep{
+				StateKey:   key,
 				ProofReq:   reqStr,
 				Attributes: attributes,
 			}
-			err2.Check(psm.AddPresentProofRep(rep))
+			err2.Check(psm.AddRep(rep))
 
 			req, autoAccept := om.FieldObj().(*presentproof.Request)
 			if autoAccept {
@@ -135,7 +136,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 			// TODO: support changing proof req
 
 			repK := psm.NewStateKey(ca, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			req := om.FieldObj().(*presentproof.Request) // query interface
 			req.RequestPresentations = presentproof.NewRequestPresentation(
@@ -169,7 +170,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(psm.GetPresentProofRep(repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			// 1st, verify the proof by our selves
 			pres := im.FieldObj().(*presentproof.Presentation)
@@ -189,7 +190,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 				rep.Attributes[index].Value = proof.RequestedProof.RevealedAttrs[attr.ID].Raw
 			}
 
-			err2.Check(psm.AddPresentProofRep(rep))
+			err2.Check(psm.AddRep(rep))
 
 			// Autoaccept -> all checks done, let's send ACK
 			ackMsg, autoAccept := om.FieldObj().(*common.Ack)

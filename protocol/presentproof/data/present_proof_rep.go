@@ -1,18 +1,22 @@
-package psm
+package data
 
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
+const bucketType = psm.BucketPresentProof
+
 type PresentProofRep struct {
-	Key        StateKey
+	psm.StateKey
 	ProofReq   string
 	Proof      string
 	Values     string // currently only used for Task API to get data
@@ -20,18 +24,26 @@ type PresentProofRep struct {
 	Attributes []didcomm.ProofAttribute
 }
 
-func NewPresentProofRep(d []byte) *PresentProofRep {
+func init() {
+	psm.Creator.Add(bucketType, NewPresentProofRep)
+}
+
+func NewPresentProofRep(d []byte) psm.Rep {
 	p := &PresentProofRep{}
 	dto.FromGOB(d, p)
 	return p
+}
+
+func (rep *PresentProofRep) Key() psm.StateKey {
+	return rep.StateKey
 }
 
 func (rep *PresentProofRep) Data() []byte {
 	return dto.ToGOB(rep)
 }
 
-func (rep *PresentProofRep) KData() []byte {
-	return rep.Key.Data()
+func (rep *PresentProofRep) Type() byte {
+	return bucketType
 }
 
 const fetchMax = 2
@@ -41,7 +53,7 @@ func (rep *PresentProofRep) CreateProof(packet comm.Packet, rootDID string) (err
 	defer err2.Annotate("create proof", &err)
 
 	if glog.V(6) {
-		glog.Info(rep.Key, rootDID)
+		glog.Info(rep.Key(), rootDID)
 		glog.Info("+++ proof req:\n", rep.ProofReq)
 	}
 
@@ -221,4 +233,24 @@ func getCredDefIDs(identifiers []anoncreds.IdentifiersObj) map[string]struct{} {
 		IDs[v.CredDefID] = struct{}{}
 	}
 	return IDs
+}
+
+func GetPresentProofRep(key psm.StateKey) (rep *PresentProofRep, err error) {
+	err2.Return(&err)
+
+	var res psm.Rep
+	res, err = psm.GetRep(bucketType, key)
+	err2.Check(err)
+
+	// Allow not found
+	if res == nil {
+		return
+	}
+
+	var ok bool
+	rep, ok = res.(*PresentProofRep)
+
+	assert.D.True(ok, "present proof type mismatch")
+
+	return rep, nil
 }
