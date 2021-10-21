@@ -34,8 +34,8 @@ func NewPresentProofRep(d []byte) psm.Rep {
 	return p
 }
 
-func (rep *PresentProofRep) Key() *psm.StateKey {
-	return &rep.StateKey
+func (rep *PresentProofRep) Key() psm.StateKey {
+	return rep.StateKey
 }
 
 func (rep *PresentProofRep) Data() []byte {
@@ -235,11 +235,11 @@ func getCredDefIDs(identifiers []anoncreds.IdentifiersObj) map[string]struct{} {
 	return IDs
 }
 
-func GetPresentProofRep(key *psm.StateKey) (rep *PresentProofRep, err error) {
+func GetPresentProofRep(key psm.StateKey) (rep *PresentProofRep, err error) {
 	err2.Return(&err)
 
 	var res psm.Rep
-	res, err = psm.GetRep(bucketType, *key)
+	res, err = psm.GetRep(bucketType, key)
 	err2.Check(err)
 
 	// Allow not found

@@ -204,12 +204,12 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		pltype.CANotifyUserAction:             holder.UserActionCredential,
 	}
 
-	key := &psm.StateKey{
+	key := psm.StateKey{
 		DID:   ca.WDID(),
 		Nonce: im.Thread().ID,
 	}
 
-	state := e2.PSM.Try(psm.GetPSM(*key))
+	state := e2.PSM.Try(psm.GetPSM(key))
 	assert.D.True(state != nil, "continue issue credential, task not found")
 
 	credTask := state.LastState().T.(*taskIssueCredential)
@@ -233,7 +233,7 @@ func fillIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolS
 
 	status := ps
 
-	key := &psm.StateKey{
+	key := psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}

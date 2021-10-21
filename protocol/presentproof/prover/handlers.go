@@ -20,7 +20,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 	defer err2.Return(&err)
 
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
-	rep, _ := data.GetPresentProofRep(&key) // ignore not found error
+	rep, _ := data.GetPresentProofRep(key) // ignore not found error
 
 	if rep == nil {
 		rep := &data.PresentProofRep{
@@ -42,7 +42,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			req := im.FieldObj().(*presentproof.Request)
 			data := err2.Bytes.Try(presentproof.ProofReqData(req))
@@ -89,7 +89,7 @@ func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
 			// We continue, get previous data, create the proof and send it
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
 			// save created proof to Representative

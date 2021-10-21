@@ -68,8 +68,8 @@ type testRep struct {
 	RepKey StateKey
 }
 
-func (t *testRep) Key() *StateKey {
-	return &t.RepKey
+func (t *testRep) Key() StateKey {
+	return t.RepKey
 }
 
 func (t *testRep) Data() []byte {

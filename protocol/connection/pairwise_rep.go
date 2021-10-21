@@ -27,8 +27,8 @@ func NewPairwiseRep(d []byte) psm.Rep {
 	return p
 }
 
-func (p *pairwiseRep) Key() *psm.StateKey {
-	return &p.StateKey
+func (p *pairwiseRep) Key() psm.StateKey {
+	return p.StateKey
 }
 
 func (p *pairwiseRep) Data() []byte {
@@ -39,11 +39,11 @@ func (p *pairwiseRep) Type() byte {
 	return bucketType
 }
 
-func getPairwiseRep(key *psm.StateKey) (rep *pairwiseRep, err error) {
+func getPairwiseRep(key psm.StateKey) (rep *pairwiseRep, err error) {
 	err2.Return(&err)
 
 	var res psm.Rep
-	res, err = psm.GetRep(bucketType, *key)
+	res, err = psm.GetRep(bucketType, key)
 	err2.Check(err)
 
 	var ok bool

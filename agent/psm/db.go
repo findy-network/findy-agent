@@ -37,7 +37,7 @@ var (
 )
 
 type Rep interface {
-	Key() *StateKey
+	Key() StateKey
 	Data() []byte
 	Type() byte
 }

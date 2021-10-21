@@ -35,8 +35,8 @@ func NewIssueCredRep(d []byte) psm.Rep {
 	return p
 }
 
-func (rep *IssueCredRep) Key() *psm.StateKey {
-	return &rep.StateKey
+func (rep *IssueCredRep) Key() psm.StateKey {
+	return rep.StateKey
 }
 
 func (rep *IssueCredRep) Data() []byte {
@@ -92,11 +92,11 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 	return r.Err()
 }
 
-func GetIssueCredRep(key *psm.StateKey) (rep *IssueCredRep, err error) {
+func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
 	err2.Return(&err)
 
 	var res psm.Rep
-	res, err = psm.GetRep(bucketType, *key)
+	res, err = psm.GetRep(bucketType, key)
 	err2.Check(err)
 
 	// Allow not found

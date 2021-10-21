@@ -136,7 +136,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 			// TODO: support changing proof req
 
 			repK := psm.NewStateKey(ca, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			req := om.FieldObj().(*presentproof.Request) // query interface
 			req.RequestPresentations = presentproof.NewRequestPresentation(
@@ -170,7 +170,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(&repK))
+			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
 
 			// 1st, verify the proof by our selves
 			pres := im.FieldObj().(*presentproof.Presentation)

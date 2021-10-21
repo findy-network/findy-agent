@@ -26,7 +26,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 	// Make a PSM key and find protocol representative Rep
 	key := psm.NewStateKey(packet.Receiver, packet.Payload.ThreadID())
-	rep, _ := data.GetIssueCredRep(&key) // if rep not found, ignore error
+	rep, _ := data.GetIssueCredRep(key) // if rep not found, ignore error
 
 	// If we didn't start the Issuing protocol, we must ask user does she want
 	// to reply i.e. send a cred request
@@ -55,7 +55,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(&repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 
 			attach := err2.Bytes.Try(issuecredential.OfferAttach(offer))
 			rep.CredOffer = string(attach)
@@ -113,7 +113,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(&repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 			credRq := err2.String.Try(rep.BuildCredRequest(
 				comm.Packet{Receiver: agent}))
 
@@ -152,7 +152,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(&repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 			cred := err2.Bytes.Try(issuecredential.CredentialAttach(issue))
 			err2.Check(rep.StoreCred(packet, string(cred)))
 

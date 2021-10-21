@@ -297,7 +297,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	err2.Check(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
-	pwr, err := getPairwiseRep(&psm.StateKey{DID: meDID, Nonce: nonce})
+	pwr, err := getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce})
 	err2.Check(err)
 	msgMeDID := pwr.Caller.DID
 	caller := a.LoadDID(pwr.Caller.DID)
@@ -351,7 +351,7 @@ func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) 
 
 	assert.D.True(ps != nil)
 
-	key := &psm.StateKey{
+	key := psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}

@@ -29,8 +29,8 @@ func NewBasicMessageRep(d []byte) psm.Rep {
 	return p
 }
 
-func (p *basicMessageRep) Key() *psm.StateKey {
-	return &p.StateKey
+func (p *basicMessageRep) Key() psm.StateKey {
+	return p.StateKey
 }
 
 func (p *basicMessageRep) Data() []byte {
@@ -44,12 +44,11 @@ func (p *basicMessageRep) Type() byte {
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
 	err2.Return(&err)
 
-	key := &psm.StateKey{
+	var res psm.Rep
+	res, err = psm.GetRep(bucketType, psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
-	}
-	var res psm.Rep
-	res, err = psm.GetRep(bucketType, *key)
+	})
 	err2.Check(err)
 
 	var ok bool

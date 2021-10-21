@@ -108,7 +108,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 
 			repK := psm.NewStateKey(ca, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(&repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 
 			offer := om.FieldObj().(*issuecredential.Offer)
 			offer.OffersAttach =
@@ -137,7 +137,7 @@ func HandleCredentialRequest(packet comm.Packet) (err error) {
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(&repK))
+			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
 			attach := err2.Bytes.Try(issuecredential.RequestAttach(req))
 			credReq := string(attach)
 			cred := err2.String.Try(rep.IssuerBuildCred(packet, credReq))
