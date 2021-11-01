@@ -1,7 +1,7 @@
 # findy-agent
 
-![test](https://github.com/findy-network/findy-agent/workflows/test/badge.svg?branch=dev)
-![interop](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml/badge.svg?branch=dev)
+[![test](https://github.com/findy-network/findy-agent/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/findy-network/findy-agent/actions/workflows/test.yml)
+[![interop](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml/badge.svg?branch=dev)](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml)
 
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
@@ -37,8 +37,8 @@ You can use Findy Agency roughly for these purposes:
    existing wallet. For command line use it offers all the same features as
    `indy cli`.
 
-3. As a high-performing SDK to implement all types SSI Agents like *holders*,
-   *issuers* and *verifiers* with any programming language you chose which is
+3. As a high-performing SDK to implement all types SSI Agents like _holders_,
+   _issuers_ and _verifiers_ with any programming language you chose which is
    supported by gRPC.
 
 The Findy Agency is very fast and it is extremely resource efficient; and of
@@ -55,15 +55,17 @@ tool](https://github.com/findy-network/findy-agent-cli) as well.
 To setup running Findy Agency and all of its fellow services like
 [Findy WebAuthn](https://github.com/findy-network/findy-agent-auth) and
 [Findy Vault](https://github.com/findy-network/findy-agent-vault) can be done
-just entering *one* command after downloading the proper docker compose file and
+just entering _one_ command after downloading the proper docker compose file and
 setting up few folders for docker volumes. Please enter these commands in the
 dedicated directory of your selection to run the whole stack:
+
 ```console
 curl -s -o "./docker-compose.yaml" \
  https://raw.githubusercontent.com/findy-network/findy-agent-cli/master/scripts/fullstack/docker-compose.yml
 mkdir -p .data/agent .data/auth .data/vault
 docker compose up
 ```
+
 Please follow the
 [documentation](https://github.com/findy-network/findy-agent-cli#running-full-stack-agency)
 and samples from
@@ -73,10 +75,11 @@ examples how to allocate new agents and their wallets, make connection between
 agents and execute Aries protocols for them.
 
 ## Development
+
 Ubuntu 20.04 is preferred development environment but macOS is also an option.
 Please make sure that Go and git are both installed and working properly.
 
-*Note!* Go modules must be on.
+_Note!_ Go modules must be on.
 
 ### Linux and Ubuntu
 
@@ -104,7 +107,7 @@ helper Bash script to perform installation. Follow these steps **in
    ```
    $ cd scripts/mac-libindy
    ```
-3. Execute the installation script. 
+3. Execute the installation script.
    ```
    $ ./install.sh
    ```
@@ -114,8 +117,8 @@ helper Bash script to perform installation. Follow these steps **in
    $ ./install.sh /my/own/location
    ```
 4. Follow the instructions of the `install.sh` i.e. **source the env.sh** which
-is generated to installation directory and is in your clipboard after successful
-installation.
+   is generated to installation directory and is in your clipboard after successful
+   installation.
    ```
    $ source /usr/local/opt/libindy/env.sh
    ```
@@ -123,10 +126,10 @@ installation.
    ```
    make test
    ```
-6. Then follow instructions from previous section *Linux and Ubuntu* from step
+6. Then follow instructions from previous section _Linux and Ubuntu_ from step
    2 to complete `findy-agent` repo's setup.
 
-The problem solving tip: `source env.sh` in your dev session. 
+The problem solving tip: `source env.sh` in your dev session.
 
 ## Run The Agency
 
@@ -141,22 +144,25 @@ your test network.
 ### Create Test Steward
 
 To create new steward DID and wallet run the following commands:
+
 ```
 $ cd scripts/test
 $ findy-agent ledger steward create --config create-steward-to-mem-ledger.yaml
 ```
 
 The `create-steward-to-mem-ledger.yaml` includes following data.
+
 ```
 pool-name: "FINDY_MEM_LEDGER"
 seed: "000000000000000000000000Steward1"
 wallet-name: "sovrin_steward_wallet"
 wallet-key: "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
 ```
+
 You can edit it for your purpose. Please note to use same `wallet-key` in it and
 the start script like `mem-server` script in the same directory.
 
-### Run with Memory Ledger 
+### Run with Memory Ledger
 
 Memory ledger is available as long as the agency is running but after that data
 is lost. It's very good for tests and short demos.
@@ -164,7 +170,7 @@ is lost. It's very good for tests and short demos.
 1. `cd scripts/test`
 2. `./mem-server`
 
-### Run with File Ledger 
+### Run with File Ledger
 
 File ledger is a test ledger where ledger data is persistently stored into a
 JSON file. It's convenient for cases where you don't want to run all ledger
@@ -192,8 +198,8 @@ approach is preferable. Please see the scrips in the `tools` directory.
 
 ## Agent On-boarding
 
-Findy-agent serves all types of cloud agents (CA) like *holder*, *issuer* and
-*verifier*. Cloud agents must be allocated before they can be used. CA
+Findy-agent serves all types of cloud agents (CA) like _holder_, _issuer_ and
+_verifier_. Cloud agents must be allocated before they can be used. CA
 allocation is called on-boarding. In most cases it's done thru `WebAuthn` server
 like `findy-agent-auth` but you can allocate them directly from the agency.
 
@@ -283,7 +289,7 @@ another node (grey).
 ![main-components](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/findy-network/findy-agent/master/docs/puml/architecture/main_components.puml)
 
 As the diagram shows, the main wallet of each agent is on the server, our we
-could say it is in the cloud.  That simplifies things a lot. We can have cloud
+could say it is in the cloud. That simplifies things a lot. We can have cloud
 backups, recovery, and most importantly, it makes it possible to 24/7 presence
 in the cloud for each agent.
 
