@@ -276,8 +276,7 @@ func (c *Cmd) checkSteward() {
 		assert.P.True(c.WalletName != "", "Steward wallet name must be given")
 		assert.P.True(c.WalletPwd != "", "Steward wallet key must be given")
 
-		var steward *cloud.Agent
-		steward = openStewardWallet(c.StewardDid, c)
+		steward := openStewardWallet(c.StewardDid, c)
 		handshake.SetSteward(steward)
 	}
 }
