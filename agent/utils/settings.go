@@ -166,16 +166,3 @@ func (h *Hub) WalletExportPath(filename string) (exportPath, url string) {
 	return filepath.Join(h.exportPath, filename),
 		h.hostAddr + filepath.Join("/static", filename)
 }
-
-// WebOnboardWalletName returns wallet name for web boarding wallet
-func (h *Hub) WebOnboardWalletName() string {
-	return "findy_web_wallet"
-}
-
-// WebOnboardWalletKey returns wallet key for web boarding wallet
-func (h *Hub) WebOnboardWalletKey() string {
-	// todo: we should get this from secrets. However, the whole wallet
-	//  isn't important because it has only EA/CA pairwise we could remove
-	//  it every time or ...
-	return "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp"
-}

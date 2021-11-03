@@ -70,7 +70,7 @@ type Agency struct{}
 // AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
-func AnchorAgent(email string) (agent *cloud.Agent, err error) {
+func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	defer err2.Annotate("create archor", &err)
 
 	key := err2.String.Try(enclave.NewWalletKey(email))
@@ -86,13 +86,12 @@ func AnchorAgent(email string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	// Bind pairwise Steward <-> New Agent
-	stewardDID := steward.RootDid()
-
-	// Promote new agent by Trusted Anchor DID
-	anchorDid := agent.CreateDID("")
-	err2.Check(steward.SendNYM(anchorDid, stewardDID.Did(),
-		findy.NullString, "TRUST_ANCHOR"))
+	anchorDid := agent.CreateDID(seed)
+	if steward != nil {
+		// Promote new agent by Trusted Anchor DID if steward is available
+		err2.Check(steward.SendNYM(anchorDid, steward.RootDid().Did(),
+			findy.NullString, "TRUST_ANCHOR"))
+	}
 
 	// Use the anchor DID as a submitter/root DID to Ledger
 	agent.SetRootDid(anchorDid)
