@@ -82,13 +82,13 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	// Build new agent with wallet
 	agent = new(cloud.Agent)
 	aw := ssi.NewRawWalletCfg(rippedEmail, key)
-	walletAlreadyEsists := aw.Create()
-	assert.P.True(!walletAlreadyEsists, "wallet cannot exist when onboarding")
+	walletAlreadyExists := aw.Create()
+	assert.P.True(!walletAlreadyExists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
 	anchorDid := agent.CreateDID(seed)
 	if steward != nil {
-		assert.P.True(seed == "")
+		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
 
 		// Promote new agent by Trusted Anchor DID if steward is available
 		err2.Check(steward.SendNYM(anchorDid, steward.RootDid().Did(),
