@@ -88,6 +88,8 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 
 	anchorDid := agent.CreateDID(seed)
 	if steward != nil {
+		assert.P.True(seed == "")
+
 		// Promote new agent by Trusted Anchor DID if steward is available
 		err2.Check(steward.SendNYM(anchorDid, steward.RootDid().Did(),
 			findy.NullString, "TRUST_ANCHOR"))
