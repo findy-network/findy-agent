@@ -637,7 +637,6 @@ loop:
 				break loop
 			}
 			if glog.V(1) {
-				glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJSON)
 				glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolID.ID, status.DID)
 				glog.Infoln("status DID (CA DID):", status.DID)
 				glog.Infoln("protocol Initiator:", status.ProtocolStatus.State.ProtocolID.Role)

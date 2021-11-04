@@ -270,13 +270,15 @@ func (c *Cmd) startLoadingAgents() {
 }
 
 func (c *Cmd) checkSteward() {
-	var steward *cloud.Agent
-	if c.StewardSeed != "" && c.StewardDid == "" {
-		glog.Fatal("cannot start without steward")
-	} else if c.WalletName != "" && c.WalletPwd != "" {
-		steward = openStewardWallet(c.StewardDid, c)
+	if c.StewardDid == "" {
+		glog.Infoln("Steward is not configured, skipping steward initialisation.")
+	} else {
+		assert.P.True(c.WalletName != "", "Steward wallet name must be given")
+		assert.P.True(c.WalletPwd != "", "Steward wallet key must be given")
+
+		steward := openStewardWallet(c.StewardDid, c)
+		handshake.SetSteward(steward)
 	}
-	handshake.SetSteward(steward)
 }
 
 func (c *Cmd) setRuntimeSettings() {
