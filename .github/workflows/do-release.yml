@@ -13,4 +13,4 @@ jobs:
         with:
           # use personal access token so that events are created for tag push
           token: ${{ secrets.RELEASER_PAT }}
-          gate: test,interop
+          gate: test,iop
