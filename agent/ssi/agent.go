@@ -6,8 +6,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
@@ -200,7 +198,7 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 	return
 }
 
-func (a *DIDAgent) SaveTheirDID(did, vk string, writeNYM bool) (err error) {
+func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 	defer err2.Return(&err)
 
 	newDID := NewDid(did, vk)
@@ -208,13 +206,8 @@ func (a *DIDAgent) SaveTheirDID(did, vk string, writeNYM bool) (err error) {
 	newDID.Store(a.Wallet())
 
 	// Previous is an async func so make sure results are ready
-	// check the errors now before writing to the ledger
 	err2.Check(newDID.StoreResult())
 
-	if writeNYM && !utils.Settings.LocalTestMode() {
-		err2.Check(a.SendNYM(newDID, a.RootDid().Did(),
-			findy.NullString, findy.NullString))
-	}
 	return nil
 }
 

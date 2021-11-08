@@ -26,7 +26,7 @@ type Receiver interface {
 	AttachAPIEndp(endp service.Addr) error
 	AttachSAImpl(implID string, persistent bool)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
-	SaveTheirDID(did, vk string, writeNYM bool) (err error)
+	SaveTheirDID(did, vk string) (err error)
 	CAEndp(wantWorker bool) (endP *endp.Addr)
 	AddPipeToPWMap(p sec.Pipe, name string)
 	MasterSecret() (string, error)
