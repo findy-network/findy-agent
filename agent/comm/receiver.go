@@ -27,7 +27,7 @@ type Receiver interface {
 	AttachSAImpl(implID string, persistent bool)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)
-	CAEndp(wantWorker bool) (endP *endp.Addr)
+	CAEndp() (endP *endp.Addr)
 	AddPipeToPWMap(p sec.Pipe, name string)
 	MasterSecret() (string, error)
 	AutoPermission() bool

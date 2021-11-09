@@ -20,7 +20,7 @@ func TestCmd_Build(t *testing.T) {
 		WalletPwd:         "test-key",
 		StewardSeed:       "",
 		ServiceName:       "findy",
-		ServiceName2:      "findy2",
+		ServiceName:      "findy2",
 		HostAddr:          "localhost",
 		HostPort:          80,
 		ServerPort:        80,

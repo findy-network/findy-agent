@@ -87,7 +87,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
+	meAddr := ca.CAEndp() // CA can give us w-EA's endpoint
 	me := ca.WDID()
 	wa := ca.WorkerEA()
 	ssiWA := wa.(ssi.Agent)

@@ -26,11 +26,11 @@ import (
 // path (serviceName), and a host port, a server port as an argument. The server
 // port is the port to listen, and the host port is the actual port on the
 // Internet, the port the world sees, and is assigned to endpoints.
-func StartHTTPServer(serviceName string, serverPort uint) error {
+func StartHTTPServer(serverPort uint) error {
 	sp := fmt.Sprintf(":%v", serverPort)
 	mux := http.NewServeMux()
 
-	pattern := setHandler(utils.Settings.ServiceName2(), mux, protocolTransport)
+	pattern := setHandler(utils.Settings.ServiceName(), mux, protocolTransport)
 
 	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
 		if glog.V(5) {
@@ -46,6 +46,7 @@ func StartHTTPServer(serviceName string, serverPort uint) error {
 		_, _ = w.Write([]byte(utils.Version))
 	})
 
+	// TODO: potential security hole - should remove?
 	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
