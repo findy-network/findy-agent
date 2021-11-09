@@ -91,12 +91,12 @@ func (h *Hub) SetTimeout(to time.Duration) {
 	h.timeout = to
 }
 
+// SetServiceName sets the service name for a2a communication
 func (h *Hub) SetServiceName(n string) {
 	h.serviceName = n
 }
 
-// ServiceName2 returns service name to new worker EA based endpoints. This is
-// something that will be refactored later.
+// ServiceName returns service name for a2a communication
 func (h *Hub) ServiceName() string {
 	return h.serviceName
 }

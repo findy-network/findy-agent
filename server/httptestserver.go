@@ -19,13 +19,13 @@ import (
 	"github.com/lainio/err2"
 )
 
-const TestServiceName2 = agency.ProtocolPath
+const TestServiceName = agency.ProtocolPath
 
 var mux *http.ServeMux
 
 func StartTestHTTPServer() {
 	mux = http.NewServeMux()
-	pattern := fmt.Sprintf("/%s/", TestServiceName2)
+	pattern := fmt.Sprintf("/%s/", TestServiceName)
 	mux.HandleFunc(pattern, protocolTransport)
 
 	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
@@ -37,7 +37,7 @@ func StartTestHTTPServer() {
 
 func StartTestHTTPServer2() *httptest.Server {
 	mux = http.NewServeMux()
-	pattern := fmt.Sprintf("/%s/", TestServiceName2)
+	pattern := fmt.Sprintf("/%s/", TestServiceName)
 	mux.HandleFunc(pattern, protocolTransport)
 
 	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
