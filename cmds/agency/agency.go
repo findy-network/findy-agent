@@ -40,7 +40,7 @@ type Cmd struct {
 	WalletName        string
 	WalletPwd         string
 	StewardSeed       string
-	ServiceName      string
+	ServiceName       string
 	HostAddr          string
 	HostScheme        string
 	HostPort          uint
@@ -80,7 +80,7 @@ var (
 		WalletName:             "",
 		WalletPwd:              "",
 		StewardSeed:            "000000000000000000000000Steward1",
-		ServiceName:           "a2a",
+		ServiceName:            "a2a",
 		HostAddr:               "localhost",
 		HostScheme:             "http",
 		HostPort:               8080,
