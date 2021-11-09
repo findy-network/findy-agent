@@ -149,7 +149,7 @@ func (a *Agent) MyCA() comm.Receiver {
 }
 
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
-func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
+func (a *Agent) CAEndp() (endP *endp.Addr) {
 	hostname := utils.Settings.HostAddr()
 	if !a.IsCA() {
 		return nil
@@ -158,12 +158,9 @@ func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 
 	rcvrDID := caDID
 	vk := a.Tr.PayloadPipe().In.VerKey()
+	rcvrDID = a.WDID()
 	serviceName := utils.Settings.ServiceName()
-	if wantWorker {
-		rcvrDID = a.WDID()
-		serviceName = utils.Settings.ServiceName2()
-		// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
-	}
+	// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
 	return &endp.Addr{
 		BasePath: hostname,
 		Service:  serviceName,

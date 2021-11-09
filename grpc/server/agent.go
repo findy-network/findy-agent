@@ -234,7 +234,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	defer err2.Return(&err)
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
-	ep = receiver.CAEndp(true)
+	ep = receiver.CAEndp()
 
 	wa := receiver.WorkerEA()
 	ssiWA := wa.(ssi.Agent)

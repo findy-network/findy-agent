@@ -41,7 +41,6 @@ type Cmd struct {
 	WalletPwd         string
 	StewardSeed       string
 	ServiceName       string
-	ServiceName2      string
 	HostAddr          string
 	HostScheme        string
 	HostPort          uint
@@ -81,8 +80,7 @@ var (
 		WalletName:             "",
 		WalletPwd:              "",
 		StewardSeed:            "000000000000000000000000Steward1",
-		ServiceName:            "ca-api",
-		ServiceName2:           "a2a",
+		ServiceName:            "a2a",
 		HostAddr:               "localhost",
 		HostScheme:             "http",
 		HostPort:               8080,
@@ -119,8 +117,7 @@ func (c *Cmd) Validate() (err error) {
 	assert.P.True(c.WalletName != "" && c.WalletPwd != "", "wallet identification cannot be empty")
 	assert.P.True(!(c.StewardDid == "" && c.StewardSeed == ""), "steward identification cannot be empty")
 	assert.P.NotEmpty(c.PoolName, "pool name cannot be empty")
-	assert.P.NotEmpty(c.ServiceName, "service name  cannot be empty")
-	assert.P.NotEmpty(c.ServiceName2, "service name 2 cannot be empty")
+	assert.P.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
 	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
 	assert.P.True(c.HostPort != 0, "host port cannot be zero")
 	assert.P.NotEmpty(c.PsmDb, "psmd database location must be given")
@@ -171,7 +168,7 @@ func (c *Cmd) Run() (err error) {
 
 	c.startBackupTasks()
 	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
-	err2.Check(server.StartHTTPServer(c.ServiceName, c.ServerPort))
+	err2.Check(server.StartHTTPServer(c.ServerPort))
 
 	return nil
 }
@@ -283,7 +280,6 @@ func (c *Cmd) checkSteward() {
 
 func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetServiceName(c.ServiceName)
-	utils.Settings.SetServiceName2(c.ServiceName2)
 	utils.Settings.SetHostAddr(c.HostAddr)
 	utils.Settings.SetExportPath(c.ExportPath)
 	utils.Settings.SetWalletBackupPath(c.WalletBackupPath)
