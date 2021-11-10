@@ -29,8 +29,6 @@ RUN apt-get update && apt-get install -y curl
 COPY --from=agent-builder /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 
-RUN echo "{}" > /root/findy.json
-
 EXPOSE 8080
 EXPOSE 50051
 

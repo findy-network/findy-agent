@@ -13,7 +13,6 @@ clean() {
   echo -e "${GREEN}*** dev - clean ***${NC}"
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
   rm -rf ~/.indy_client/
-  echo "{}" >findy.json
   set +e
   rm findy.bolt
   docker stop findy-pool
