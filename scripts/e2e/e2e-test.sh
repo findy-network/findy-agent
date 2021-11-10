@@ -35,7 +35,6 @@ clean() {
   echo -e "${BLUE}*** dev - clean ***${NC}"
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
   rm -rf ~/.indy_client/
-  echo "{}" >findy.json
   set +e
   rm findy.bolt
   set -e
@@ -50,7 +49,6 @@ init_agency(){
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
   set +e
   rm -rf ~/.indy_client/
-  echo "{}" >findy.json
   rm findy.bolt
   set -e
 }

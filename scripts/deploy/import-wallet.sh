@@ -17,5 +17,4 @@ if [ -d "$FOLDER" ]; then
 else
   echo "$FOLDER does not exist, importing wallet"
   ./findy-agent tools import
-  echo "{}" > /root/findy.json
 fi
