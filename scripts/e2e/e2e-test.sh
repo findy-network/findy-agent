@@ -259,6 +259,25 @@ other_cases() {
     echo "$f does not exist."
     exit 1
   fi
+
+  # run agency - no steward
+
+  echo -e "${BLUE}*** other - run agency - no steward ***${NC}"
+  stop_agency
+  sleep 2
+  $CLI agency start \
+    --pool-name=FINDY_FILE_LEDGER \
+    --steward-wallet-name="" \
+    --steward-wallet-key="" \
+    --steward-did="" \
+    --host-port=8090 \
+    --server-port=8090 \
+    --grpc-cert-path=./grpc/cert &
+  sleep 2
+  curl -f localhost:8090
+
+
+
   stop_agency
 }
 "$@"
