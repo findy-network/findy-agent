@@ -199,14 +199,11 @@ func (a *agentServer) GetCredDef(
 func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
 	defer err2.Annotate("create invitation", &err)
 
-	// in the future we might have generatedConnID as argument in the API
 	id := base.ID
-	generatedConnID := utils.UUID()
-	// if connection is not given from the caller we generate a new one and use
-	// it for both one
+
+	// if connection is not given from the caller we generate a new one
 	if id == "" {
 		id = utils.UUID()
-		generatedConnID = id
 		glog.V(4).Infoln("generating connection id:", id)
 	}
 
@@ -217,7 +214,7 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		label = "empty-label"
 	}
 	invitation := didexchange.Invitation{
-		ID:              generatedConnID,
+		ID:              id,
 		Type:            pltype.AriesConnectionInvitation,
 		ServiceEndpoint: addr.Address(),
 		RecipientKeys:   []string{addr.VerKey},
@@ -227,6 +224,8 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 	jStr := dto.ToJSON(invitation)
 
 	// TODO: add connection id to return struct as well, gRPC API Change
+	// Note: most of the old and current *our* clients parse connectionID from
+	// the invitation
 	return &pb.Invitation{JSON: jStr}, nil
 }
 
