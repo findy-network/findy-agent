@@ -135,6 +135,7 @@ func init() {
 	flags.Uint64Var(&aCmd.PoolProtocol, "pool-protocol", 2, flagInfo("pool protocol", AgencyCmd.Name(), agencyStartEnvs["pool-protocol"]))
 	flags.StringVar(&aCmd.StewardSeed, "steward-seed", "000000000000000000000000Steward1", flagInfo("steward seed", AgencyCmd.Name(), agencyStartEnvs["steward-seed"]))
 	flags.StringVar(&aCmd.PsmDb, "psm-database-file", "findy.bolt", flagInfo("state machine database's filename", AgencyCmd.Name(), agencyStartEnvs["psm-database-file"]))
+	flags.DurationVar(&aCmd.HTTPReqTimeout, "request-timeout", utils.HTTPReqTimeout, flagInfo("HTTP client request timeout (a2a comms)", AgencyCmd.Name(), agencyStartEnvs["request-timeout"]))
 	flags.BoolVar(&aCmd.ResetData, "reset-register", false, flagInfo("reset handshake register", AgencyCmd.Name(), agencyStartEnvs["reset-register"]))
 	flags.StringVar(&aCmd.HandshakeRegister, "register-file", "findy.json", flagInfo("handshake registry's filename", AgencyCmd.Name(), agencyStartEnvs["register-file"]))
 	flags.StringVar(&aCmd.WalletName, "steward-wallet-name", "", flagInfo("steward wallet name", AgencyCmd.Name(), agencyStartEnvs["steward-wallet-name"]))
