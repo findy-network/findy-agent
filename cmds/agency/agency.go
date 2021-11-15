@@ -50,6 +50,7 @@ type Cmd struct {
 	StewardDid        string
 	HandshakeRegister string
 	PsmDb             string
+	HTTPReqTimeout    time.Duration
 	ResetData         bool
 	URL               string
 	VersionInfo       string
@@ -90,6 +91,7 @@ var (
 		StewardDid:             "",
 		HandshakeRegister:      "findy.json",
 		PsmDb:                  "findy.bolt",
+		HTTPReqTimeout:         utils.HTTPReqTimeout,
 		ResetData:              false,
 		URL:                    "",
 		VersionInfo:            "",
@@ -280,6 +282,7 @@ func (c *Cmd) checkSteward() {
 func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetServiceName(c.ServiceName)
 	utils.Settings.SetHostAddr(c.HostAddr)
+	utils.Settings.SetTimeout(c.HTTPReqTimeout)
 	utils.Settings.SetExportPath(c.ExportPath)
 	utils.Settings.SetWalletBackupPath(c.WalletBackupPath)
 	utils.Settings.SetWalletBackupTime(c.WalletBackupTime)
