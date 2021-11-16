@@ -97,6 +97,7 @@ func (p Pipe) DecryptGiveKey(src []byte) (dst []byte, vk string) {
 	vk = p.In.VerKey()
 	r := <-crypto.AnonDecrypt(wallet, vk, src)
 	err2.Check(r.Err())
+
 	return r.Bytes(), vk
 }
 
@@ -112,6 +113,11 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 	if glog.V(5) {
 		glog.Infof("<== Pack: %s/%s, w(%d)\n", p.Out.Did(), vk, wallet)
+
+		// TODO: do not log sensitive data in production
+		if glog.V(6) {
+			glog.Infof("<== Pack data: %s\n", string(src))
+		}
 	}
 
 	senderKey := p.In.VerKey()
@@ -138,7 +144,14 @@ func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
 		return nil, "", r.Err()
 	}
 
-	return crypto.NewUnpacked(r.Bytes()).Bytes(), vk, nil
+	res := crypto.NewUnpacked(r.Bytes()).Bytes()
+
+	// TODO: do not log sensitive data in production
+	if glog.V(6) {
+		glog.Infof("<== Unpacked: %s\n", string(res))
+	}
+
+	return res, vk, nil
 }
 
 // IsNull returns true if pipe is null.

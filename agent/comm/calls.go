@@ -39,6 +39,8 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 	URL, err := url.Parse(urlStr)
 	err2.Check(err)
 
+	glog.V(1).Infof("Posting message to %s\n", urlStr)
+
 	request, _ := http.NewRequest("POST", URL.String(), msg)
 
 	// TODO: make configurable when there is support for application/didcomm-envelope-enc
