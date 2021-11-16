@@ -48,11 +48,30 @@ and CLI Go clients.
 type Agent struct {
 	ssi.DIDAgent
 	Tr      txp.Trans  // Our transport layer for communication
-	worker  *Agent     // worker agent to perform tasks when corresponding EA is not available
+	worker  agentPtr   // worker agent to perform tasks when corresponding EA is not available
 	ca      *Agent     // if this is worker agent (see prev) this is the CA
 	pwLock  sync.Mutex // pw map lock, see below:
 	pws     PipeMap    // Map of pairwise secure pipes by DID
 	pwNames PipeMap    // Map of pairwise secure pipes by name
+}
+
+type agentPtr struct {
+	sync.RWMutex
+	agent *Agent // private & named that you cannot use default dispatching
+}
+
+func (ap *agentPtr) get() *Agent {
+	ap.RLock()
+	defer ap.RUnlock()
+
+	return ap.agent
+}
+
+func (ap *agentPtr) set(a *Agent) {
+	ap.Lock()
+	defer ap.Unlock()
+
+	ap.agent = a
 }
 
 func (a *Agent) AutoPermission() bool {
@@ -201,7 +220,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 // This is under construction.
 func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 	ca := a // to help us to read the code, receiver is CA
-	if ca.worker == nil {
+	if ca.worker.get() == nil {
 		glog.V(2).Infoln("starting worker agent creation process")
 		assert.P.True(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
 
@@ -224,7 +243,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
 
-		ca.worker = &Agent{
+		ca.worker.set(&Agent{
 			DIDAgent: ssi.DIDAgent{
 				Type:     ssi.Edge | ssi.Worker,
 				Root:     ca.RootDid(),
@@ -234,12 +253,13 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
-		}
-		ca.worker.OpenWallet(*aWallet)
+		})
+
+		ca.worker.get().OpenWallet(*aWallet)
 		// cleanup, secure enclave stuff, minimize time in memory
 		aWallet.Credentials.Key = ""
 
-		comm.ActiveRcvrs.Add(waDID, ca.worker)
+		comm.ActiveRcvrs.Add(waDID, ca.worker.get())
 
 		if !walletInitializedBefore {
 			glog.V(2).Info("Creating a master secret into worker's wallet")
@@ -248,16 +268,16 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 				glog.Error(err)
 				panic(err)
 			}
-			r := <-anoncreds.ProverCreateMasterSecret(ca.worker.Wallet(), masterSec)
+			r := <-anoncreds.ProverCreateMasterSecret(ca.worker.get().Wallet(), masterSec)
 			if r.Err() != nil || masterSec != r.Str1() {
 				glog.Error(r.Err())
 				panic(r.Err())
 			}
 		}
 
-		ca.worker.loadPWMap()
+		ca.worker.get().loadPWMap()
 	}
-	return ca.worker
+	return ca.worker.get()
 }
 
 func (a *Agent) MasterSecret() (string, error) {
@@ -274,8 +294,8 @@ func (a *Agent) WDID() string {
 // The TR is attached to worker EA here!
 func (a *Agent) WEA() (wa *Agent) {
 	ca := a
-	if ca.worker != nil {
-		return ca.worker
+	if ca.worker.get() != nil {
+		return ca.worker.get()
 	}
 	glog.V(4).Infoln("worker NOT ready, starting creation process")
 	waDID := ca.WDID()
