@@ -73,15 +73,15 @@ func (a *agentServer) Enter(
 			switch mode.GetAcceptMode().GetMode() {
 			case pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT:
 				glog.V(3).Infoln("--- Setting auto accept mode")
-				receiver.AttachSAImpl("permissive_sa", false)
+				receiver.AttachSAImpl("permissive_sa")
 				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT)
 			case pb.ModeCmd_AcceptModeCmd_GRPC_CONTROL:
 				glog.V(3).Infoln("--- Setting default mode")
-				receiver.AttachSAImpl("grpc", false)
+				receiver.AttachSAImpl("grpc")
 				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_GRPC_CONTROL)
 			default:
 				glog.V(3).Infoln("--- Setting default mode")
-				receiver.AttachSAImpl("grpc", false)
+				receiver.AttachSAImpl("grpc")
 			}
 		case pb.ModeCmd_NONE:
 			rm = setPingModeFn()

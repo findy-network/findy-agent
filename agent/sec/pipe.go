@@ -28,17 +28,6 @@ func NewPipeByVerkey(did *ssi.DID, verkey string) *Pipe {
 	}
 }
 
-// Encrypt encrypts the byte slice. Note! It throws err2 type of an error and
-// needs an error handler in the call stack.
-func (p Pipe) Encrypt(src []byte) (dst []byte) {
-	if glog.V(5) {
-		glog.Info("<== Encrypt: ", p.Out.Did())
-	}
-	r := <-crypto.AnonCrypt(p.Out.VerKey(), src)
-	err2.Check(r.Err())
-	return r.Bytes()
-}
-
 // Decrypt decrypts the byte slice.
 func (p Pipe) Decrypt(src []byte) (dst []byte) {
 	dst, _ = p.DecryptGiveKey(src)

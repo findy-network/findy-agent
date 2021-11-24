@@ -228,10 +228,6 @@ const (
 
 	CAPingOwnCA = CA + "/ping/1.0/own_ca"
 
-	CAPingAPIEndp     = CA + "/ping/1.0/api_endp"
-	CAAttachAPIEndp   = CA + "/attach/1.0/api_endp"
-	CAAttachEADefImpl = CA + "/attach/1.0/ea_def_impl"
-
 	CAContinuePresentProofProtocol    = CA + "/protocol/1.0/continue-present-proof"
 	CAContinueIssueCredentialProtocol = CA + "/protocol/1.0/continue-issue-credential"
 )

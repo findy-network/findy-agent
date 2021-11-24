@@ -5,7 +5,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/sec"
-	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 )
 
@@ -22,8 +21,7 @@ type Receiver interface {
 	Wallet() int
 	Pool() int
 	FindPW(my string) (their string, pwname string, err error)
-	AttachAPIEndp(endp service.Addr) error
-	AttachSAImpl(implID string, persistent bool)
+	AttachSAImpl(implID string)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)
 	CAEndp() (endP *endp.Addr)
