@@ -145,7 +145,7 @@ func LoadRegistered(filename string) (err error) {
 				key, err := enclave.WalletKeyByEmail(email)
 				keyByDid, error2 := enclave.WalletKeyByDID(rootDid)
 				if err != nil || error2 != nil {
-					glog.Warningln("cannot get wallet key:", err, email)
+					glog.Warningln("cannot get wallet key:", err, email, caDid)
 					return true
 				}
 				if key != keyByDid {
