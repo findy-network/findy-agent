@@ -280,6 +280,10 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 	return ca.worker.get()
 }
 
+func (a *Agent) ID() string {
+	return a.WalletH.Config().ID()
+}
+
 func (a *Agent) MasterSecret() (string, error) {
 	return enclave.WalletMasterSecretByDID(a.RootDid().Did())
 }

@@ -31,6 +31,7 @@ type Receiver interface {
 	AddPipeToPWMap(p sec.Pipe, name string)
 	MasterSecret() (string, error)
 	AutoPermission() bool
+	ID() string
 }
 
 type Receivers struct {
