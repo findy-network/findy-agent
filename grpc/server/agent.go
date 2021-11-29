@@ -45,6 +45,15 @@ func (a *agentServer) Enter(
 
 	retMode := pb.ModeCmd_AcceptModeCmd_DEFAULT
 
+	setPingModeFn := func() *pb.ModeCmd {
+		// let's treat none mode as ping cmd
+		glog.V(3).Infoln("None Cmd: treated as ping")
+		return &pb.ModeCmd{
+			TypeID: pb.ModeCmd_NONE,
+			Info:   receiver.ID(),
+		}
+	}
+
 	setModeFn := func(m pb.ModeCmd_AcceptModeCmd_Mode) *pb.ModeCmd {
 		glog.V(3).Infoln("setModeFn:", m)
 		return &pb.ModeCmd{
@@ -74,12 +83,17 @@ func (a *agentServer) Enter(
 				glog.V(3).Infoln("--- Setting default mode")
 				receiver.AttachSAImpl("grpc", false)
 			}
+		case pb.ModeCmd_NONE:
+			rm = setPingModeFn()
 		}
 	} else {
-		if mode.TypeID == pb.ModeCmd_ACCEPT_MODE {
+		switch mode.TypeID {
+		case pb.ModeCmd_ACCEPT_MODE:
 			if receiver.AutoPermission() {
 				rm = setModeFn(pb.ModeCmd_AcceptModeCmd_AUTO_ACCEPT)
 			}
+		case pb.ModeCmd_NONE:
+			rm = setPingModeFn()
 		}
 	}
 
