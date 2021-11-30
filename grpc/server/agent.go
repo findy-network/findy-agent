@@ -12,13 +12,13 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
-	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
+	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
+	didexchange "github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -210,7 +210,13 @@ func (a *agentServer) GetCredDef(
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 
-func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationBase) (inv *pb.Invitation, err error) {
+func (a *agentServer) CreateInvitation(
+	ctx context.Context,
+	base *pb.InvitationBase,
+) (
+	i *pb.Invitation,
+	err error,
+) {
 	defer err2.Annotate("create invitation", &err)
 
 	id := base.ID
@@ -235,12 +241,16 @@ func (a *agentServer) CreateInvitation(ctx context.Context, base *pb.InvitationB
 		Label:           label,
 	}
 
+	// just JSON for our own clients
 	jStr := dto.ToJSON(invitation)
+	// .. and build a URL which contains the invitation
+	urlStr, err := didexchange.Build(invitation)
+	err2.Check(err)
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from
 	// the invitation
-	return &pb.Invitation{JSON: jStr}, nil
+	return &pb.Invitation{JSON: jStr, URL: urlStr}, nil
 }
 
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {

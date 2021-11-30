@@ -20,9 +20,8 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
-	"github.com/findy-network/findy-agent/std/didexchange/invitation"
-	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -60,24 +59,29 @@ func init() {
 func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createConnectionTask", &err)
 
-	var invitation invitation.Invitation
+	var inv invitation.Invitation
 	var label string
 	if protocol != nil {
 		assert.P.True(
 			protocol.GetDIDExchange() != nil,
 			"didExchange protocol data missing")
 
-		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
-		header.TaskID = invitation.ID
+		// Let's let invitation package translate incoming invitation. It will
+		// handle two different type formats even the field name ends with
+		// JSON.
+		inv, err = invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON())
+		err2.Check(err)
+
+		header.TaskID = inv.ID
 		label = protocol.GetDIDExchange().GetLabel()
 
-		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
+		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", inv.ID)
 	}
 
 	return &taskDIDExchange{
 		TaskBase:     comm.TaskBase{TaskHeader: *header},
-		Invitation:   invitation,
-		InvitationID: invitation.ID,
+		Invitation:   inv,
+		InvitationID: inv.ID,
 		Label:        label,
 	}, nil
 }
