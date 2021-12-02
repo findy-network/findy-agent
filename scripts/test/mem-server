@@ -1,12 +1,29 @@
 #!/bin/bash
 
+agency=${FCLI_AGENCY:-"go run ../.."}
+pool=${FCLI_POOL:-"FINDY_MEM_LEDGER,"}
+
+enclaveFile="mem/enclave.bolt"
+register="mem/findy.json"
+
+if [[ -z ${no_clean} ]]; then
+	echo "cleaning..."
+	mv "$enclaveFile" "$enclaveFile".bak
+	echo -n "{}" > "$register"
+fi
+
 echo $@
 
-go run ../.. agency start "$@" \
---steward-wallet-name "sovrin_steward_wallet" \
---steward-wallet-key "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE" \
---pool-name "FINDY_MEM_LEDGER" \
---steward-did "Th7MpTaRZVRYnPiabds81Y" \
---register-file "findy.json" \
---host-address "localhost"
+read -r -d '' myCmd << EOM
+$agency agency start $@ \
+--steward-wallet-name sovrin_steward_wallet \
+--steward-wallet-key 4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE \
+--pool-name $pool \
+--steward-did Th7MpTaRZVRYnPiabds81Y \
+--register-file "$register" \
+--register-backup-interval 300h \
+--enclave-path $enclaveFile \
+--host-address localhost
+EOM
 
+eval $myCmd
