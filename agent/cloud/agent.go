@@ -110,15 +110,6 @@ func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
 	agent.SetRootDid(rd)
 
 	// TODO: obsolete because we don't have EA communication anymore!
-	caDID := agent.LoadDID(s.CADID)
-	meDID := caDID  // we use the same for both ...
-	youDID := caDID // ... because we haven't pairwise here anymore
-	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	caDid := agent.Tr.PayloadPipe().In.Did()
-	if caDid != s.CADID {
-		glog.Warning("cloud agent DID is not correct")
-	}
 	return agent, nil
 }
 
