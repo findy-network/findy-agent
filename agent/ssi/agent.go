@@ -75,8 +75,10 @@ type DIDAgent struct {
 
 	// the Root DID which gives us rights to write ledger
 	Root *DID
+
 	// keep 'all' DIDs for performance reasons as well as better usability of our APIs
 	DidCache Cache
+
 	// Agent type: CA, EA, Worker, etc.
 	Type Type
 
