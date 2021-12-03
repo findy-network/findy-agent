@@ -52,7 +52,7 @@ update-deps:
 
 cli:
 	@echo "building new CLI by name: fa"
-	$(eval VERSION = $(shell cat ./VERSION))
+	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
 	@go build \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
@@ -112,7 +112,7 @@ e2e_ci: install
 check: check_fmt vet shadow
 
 install:
-	$(eval VERSION = $(shell cat ./VERSION))
+	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
 	go install \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
