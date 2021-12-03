@@ -202,7 +202,7 @@ func tryCaDID(psmKey psm.StateKey) string {
 	waReceiver := comm.ActiveRcvrs.Get(psmKey.DID)
 	myCA := waReceiver.MyCA()
 	assert.D.True(myCA != nil, "we must have CA for our WA")
-	caDID := myCA.Trans().PayloadPipe().In.Did()
+	caDID := myCA.MyDID()
 	assert.D.True(caDID != "", "we must get CA DID for API caller")
 	return caDID
 }

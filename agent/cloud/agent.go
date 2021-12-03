@@ -47,9 +47,22 @@ and CLI Go clients.
 */
 type Agent struct {
 	ssi.DIDAgent
-	Tr      txp.Trans  // Our transport layer for communication
-	worker  agentPtr   // worker agent to perform tasks when corresponding EA is not available
-	ca      *Agent     // if this is worker agent (see prev) this is the CA
+
+	// Was our transport layer for communication between EA in CA level.
+	// Remember that this same type can be a Worker CA.
+	// If this is a CA this should be nil and myDID should be used for DID.
+	Tr txp.Trans
+
+	// replace transport with caDID
+	myDID string
+
+	// worker agent performs the actual protocol tasks
+	worker agentPtr
+
+	// if this is worker agent (see worker field) this is the pointer to CA
+	ca *Agent
+
+	// all connections (pairwise) are cached by the Agent
 	pwLock  sync.Mutex // pw map lock, see below:
 	pws     PipeMap    // Map of pairwise secure pipes by DID
 	pwNames PipeMap    // Map of pairwise secure pipes by name
@@ -90,12 +103,13 @@ type SeedAgent struct {
 }
 
 func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
-	agent := &Agent{}
+	agent := &Agent{myDID: s.CADID}
 	agent.OpenWallet(*s.Wallet)
 
 	rd := agent.LoadDID(s.RootDID)
 	agent.SetRootDid(rd)
 
+	// TODO: obsolete because we don't have EA communication anymore!
 	caDID := agent.LoadDID(s.CADID)
 	meDID := caDID  // we use the same for both ...
 	youDID := caDID // ... because we haven't pairwise here anymore
@@ -157,7 +171,13 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 }
 
 func (a *Agent) Trans() txp.Trans {
+	assert.D.True(a.IsEA())
+
 	return a.Tr
+}
+
+func (a *Agent) MyDID() string {
+	return a.myDID
 }
 
 func (a *Agent) MyCA() comm.Receiver {

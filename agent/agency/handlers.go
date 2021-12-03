@@ -14,7 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/txp"
 	"github.com/golang/glog"
 )
 
@@ -46,12 +45,6 @@ var (
 		m: make(map[Endpoint]comm.SeedHandler),
 	}
 )
-
-// CurrentTr returns current Transport according the PL receiver.
-func CurrentTr(addr *endp.Addr) txp.Trans {
-	// We return CA's Transport which is transport between CA and its EA
-	return ReceiverCA(addr).Trans()
-}
 
 // ReceiverCA returns the CA which decrypts PL.
 func ReceiverCA(cnxAddr *endp.Addr) comm.Receiver {

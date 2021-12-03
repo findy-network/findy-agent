@@ -11,6 +11,7 @@ import (
 )
 
 type Receiver interface {
+	MyDID() string
 	Trans() txp.Trans
 	MyCA() Receiver
 	WorkerEA() Receiver
