@@ -256,7 +256,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	state := e2.PSM.Try(psm.GetPSM(*key))
 	assert.D.True(state != nil, "continue present proof, task not found")
 
-	proofTask := state.LastState().T.(*taskPresentProof)
+	proofTask := state.LastState().T
 
 	continuator, ok := continuators[proofTask.UserActionType()]
 	if !ok {
