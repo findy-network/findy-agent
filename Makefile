@@ -52,7 +52,11 @@ update-deps:
 
 cli:
 	@echo "building new CLI by name: fa"
-	@go build -o $(GOPATH)/bin/fa
+	$(eval VERSION = $(shell cat ./VERSION))
+	@echo "Installing version $(VERSION)"
+	@go build \
+		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
+		-o $(GOPATH)/bin/fa 
 
 build:
 	go build -v ./...
