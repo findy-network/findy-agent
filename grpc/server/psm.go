@@ -53,8 +53,7 @@ loop:
 	for {
 		select {
 		case status := <-statusChan:
-			glog.V(1).Infof("grpc %s state in %s",
-				status, task.ID())
+			glog.V(3).Infof("grpc %s state in %s", status, task.ID())
 			switch status {
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
@@ -78,7 +77,7 @@ loop:
 			}
 		}
 	}
-	glog.V(1).Infoln("out from grpc state:", statusCode)
+	glog.V(3).Infoln("out from grpc state:", statusCode)
 	bus.WantAll.RmListener(key)
 	bus.WantUserActions.RmListener(key)
 
