@@ -36,11 +36,11 @@ modules_comm: drop_comm
 	@echo Syncing modules: findy-common-go/$(GRPC_BRANCH)
 	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
 
-modules_wrap:
+modules_wrap: drop_wrap
 	@echo Syncing modules: findy-wrapper-go/$(WRAP_BRANCH)
 	go get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
 
-modules_api: 
+modules_api: drop_api
 	@echo Syncing modules: findy-agent-api/$(API_BRANCH)
 	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
 
