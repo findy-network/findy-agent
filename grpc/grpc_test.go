@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -160,7 +161,7 @@ func setUp() {
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
-	utils.Settings.SetServiceName2(server.TestServiceName2)
+	utils.Settings.SetServiceName(server.TestServiceName)
 	utils.Settings.SetHostAddr("http://localhost:8080")
 	utils.Settings.SetVersionInfo("testing testing")
 	utils.Settings.SetTimeout(1 * time.Hour)
@@ -637,7 +638,6 @@ loop:
 				break loop
 			}
 			if glog.V(1) {
-				glog.Infoln("\n\t===== listen status:\n\t", status.ProtocolStatus.StatusJSON)
 				glog.Infoln("protocol ID:", status.ProtocolStatus.State.ProtocolID.ID, status.DID)
 				glog.Infoln("status DID (CA DID):", status.DID)
 				glog.Infoln("protocol Initiator:", status.ProtocolStatus.State.ProtocolID.Role)
@@ -1491,4 +1491,48 @@ func strLiteral(prefix string, suffix string, i int) string {
 	default:
 		panic("not implemented")
 	}
+}
+
+func TestInvitation_Multiple(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+	caDID := ""
+	{
+		// first onboard a new agent that we can start all over
+		conn := client.TryOpen("findy-root", baseCfg)
+		ctx := context.Background()
+		agencyClient := pb.NewAgencyServiceClient(conn)
+
+		oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+			Email: strLiteral("email", "", 5),
+		})
+		assert.NoError(t, err)
+		err2.Check(err)
+		caDID = oReply.Result.CADID
+	}
+
+	conn := client.TryOpen(caDID, baseCfg)
+	c := agency2.NewAgentServiceClient(conn)
+
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+			if !assert.NoError(t, err) {
+				panic(err)
+			}
+
+			assert.NotEmpty(t, r.JSON)
+			glog.V(1).Infoln(r.JSON)
+			cancel()
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	assert.NoError(t, conn.Close())
 }

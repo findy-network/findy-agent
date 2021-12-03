@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/golang/glog"
@@ -45,17 +46,24 @@ func (r *Reg) Add(key keyDID, value ...string) {
 	r.r[key] = value
 }
 
-func (r *Reg) Load(filename string) error {
+func (r *Reg) Load(filename string) (err error) {
+	defer err2.Return(&err)
+
 	r.l.Lock()
 	defer r.l.Unlock()
+
 	if filename == "" {
 		r.r = make(regMapType)
 		return nil
 	}
+
 	data, err := readJSONFile(filename)
-	if err != nil {
-		return err
+	if err != nil && os.IsNotExist(err) {
+		err2.Check(writeJSONFile(filename, []byte("{}")))
+		data, err = readJSONFile(filename)
 	}
+	err2.Check(err)
+
 	r.r = *newReg(data)
 	return nil
 }

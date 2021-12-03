@@ -21,13 +21,11 @@ type Hub struct {
 
 	gRPCAdmin string
 
-	serviceName   string        // name of the this service which is used in URLs, etc.
-	serviceName2  string        // name of the this service which is used in URLs, etc.
-	hostAddr      string        // Ip host name of the server's host seen from internet
-	versionInfo   string        // Version number etc. in free format as a string
-	wsServiceName string        // web socket service name, mostly for the ws CLI clients to use
-	timeout       time.Duration // timeout setting for http requests and connections
-	exportPath    string        // wallet export path
+	serviceName string        // name of the this service which is used in URLs, etc.
+	hostAddr    string        // Ip host name of the server's host seen from internet
+	versionInfo string        // Version number etc. in free format as a string
+	timeout     time.Duration // timeout setting for http requests and connections
+	exportPath  string        // wallet export path
 
 	localTestMode bool // tells if are running unit tests, will be obsolete
 }
@@ -93,25 +91,14 @@ func (h *Hub) SetTimeout(to time.Duration) {
 	h.timeout = to
 }
 
-// SetServiceName sets the service name of this agency. Service name is used in the
-// URLs and endpoint addresses.
+// SetServiceName sets the service name for a2a communication
 func (h *Hub) SetServiceName(n string) {
 	h.serviceName = n
 }
 
-func (h *Hub) SetServiceName2(n string) {
-	h.serviceName2 = n
-}
-
-// ServiceName2 returns service name to new worker EA based endpoints. This is
-// something that will be refactored later.
-func (h *Hub) ServiceName2() string {
-	return h.serviceName2
-}
-
-// SetWsName sets web socket service name. It's in the different URL than HTTP.
-func (h *Hub) SetWsName(n string) {
-	h.wsServiceName = n
+// ServiceName returns service name for a2a communication
+func (h *Hub) ServiceName() string {
+	return h.serviceName
 }
 
 // SetVersionInfo sets current version info of this agency. The info is shown in
@@ -136,13 +123,6 @@ func (h *Hub) HostAddr() string {
 	return h.hostAddr
 }
 
-func (h *Hub) ServiceName() string {
-	if h.serviceName == "" && glog.V(3) {
-		glog.Info("warning service name is empty")
-	}
-	return h.serviceName
-}
-
 func (h *Hub) VersionInfo() string {
 	return h.versionInfo
 }
@@ -154,10 +134,6 @@ func (h *Hub) Timeout() time.Duration {
 	return h.timeout
 }
 
-func (h *Hub) WsServiceName() string {
-	return h.wsServiceName
-}
-
 func (h *Hub) ExportPath() string {
 	return h.exportPath
 }
@@ -165,17 +141,4 @@ func (h *Hub) ExportPath() string {
 func (h *Hub) WalletExportPath(filename string) (exportPath, url string) {
 	return filepath.Join(h.exportPath, filename),
 		h.hostAddr + filepath.Join("/static", filename)
-}
-
-// WebOnboardWalletName returns wallet name for web boarding wallet
-func (h *Hub) WebOnboardWalletName() string {
-	return "findy_web_wallet"
-}
-
-// WebOnboardWalletKey returns wallet key for web boarding wallet
-func (h *Hub) WebOnboardWalletKey() string {
-	// todo: we should get this from secrets. However, the whole wallet
-	//  isn't important because it has only EA/CA pairwise we could remove
-	//  it every time or ...
-	return "6cih1cVgRH8yHD54nEYyPKLmdv67o8QbufxaTHot3Qxp"
 }

@@ -20,9 +20,8 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
-	"github.com/findy-network/findy-agent/std/didexchange/invitation"
-	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
+	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -60,24 +59,29 @@ func init() {
 func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
 	defer err2.Annotate("createConnectionTask", &err)
 
-	var invitation invitation.Invitation
+	var inv invitation.Invitation
 	var label string
 	if protocol != nil {
 		assert.P.True(
 			protocol.GetDIDExchange() != nil,
 			"didExchange protocol data missing")
 
-		dto.FromJSONStr(protocol.GetDIDExchange().GetInvitationJSON(), &invitation)
-		header.TaskID = invitation.ID
+		// Let's let invitation package translate incoming invitation. It will
+		// handle two different type formats even the field name ends with
+		// JSON.
+		inv, err = invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON())
+		err2.Check(err)
+
+		header.TaskID = inv.ID
 		label = protocol.GetDIDExchange().GetLabel()
 
-		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", invitation.ID)
+		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", inv.ID)
 	}
 
 	return &taskDIDExchange{
 		TaskBase:     comm.TaskBase{TaskHeader: *header},
-		Invitation:   invitation,
-		InvitationID: invitation.ID,
+		Invitation:   inv,
+		InvitationID: inv.ID,
 		Label:        label,
 	}, nil
 }
@@ -87,7 +91,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	meAddr := ca.CAEndp(true) // CA can give us w-EA's endpoint
+	meAddr := ca.CAEndp() // CA can give us w-EA's endpoint
 	me := ca.WDID()
 	wa := ca.WorkerEA()
 	ssiWA := wa.(ssi.Agent)
@@ -131,8 +135,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// add to the cache until all lazy fetches are called
 	ssiWA.AddDIDCache(caller)
 
-	// Write EA's new DID (caller) to CA's wallet (e.g. routing) and to ledger
-	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey(), true))
+	// Write EA's new DID (caller) to CA's wallet (e.g. routing)
+	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &pairwiseRep{
@@ -253,11 +257,10 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	err2.Check(r.Err())
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
-	// future routing. Everything goes thru CA. NOTE, only those DIDs
-	// which are created by us are written to the Ledger
+	// future routing. Everything goes thru CA.
 	ca := agency.RcvrCA(cnxAddr)
-	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey(), false))
-	err2.Check(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey(), true))
+	err2.Check(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
+	err2.Check(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey()))
 
 	res := msg.FieldObj().(*didexchange.Response)
 	pipe := sec.Pipe{
@@ -344,7 +347,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
 	ca := agency.RcvrCA(cnxAddr)
-	err2.Check(ca.SaveTheirDID(callee.Did(), callee.VerKey(), false))
+	err2.Check(ca.SaveTheirDID(callee.Did(), callee.VerKey()))
 	// Caller DID saved when we sent Conn_Req, in case both parties are us
 
 	callee.SetAEndp(im.Endpoint())

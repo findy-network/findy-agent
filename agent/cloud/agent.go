@@ -60,18 +60,21 @@ type agentPtr struct {
 	agent *Agent // private & named that you cannot use default dispatching
 }
 
+func (ap *agentPtr) testAndSet(set func() *Agent) *Agent {
+	ap.Lock()
+	defer ap.Unlock()
+
+	if ap.agent == nil {
+		ap.agent = set()
+	}
+	return ap.agent
+}
+
 func (ap *agentPtr) get() *Agent {
 	ap.RLock()
 	defer ap.RUnlock()
 
 	return ap.agent
-}
-
-func (ap *agentPtr) set(a *Agent) {
-	ap.Lock()
-	defer ap.Unlock()
-
-	ap.agent = a
 }
 
 func (a *Agent) AutoPermission() bool {
@@ -168,7 +171,7 @@ func (a *Agent) MyCA() comm.Receiver {
 }
 
 // CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
-func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
+func (a *Agent) CAEndp() (endP *endp.Addr) {
 	hostname := utils.Settings.HostAddr()
 	if !a.IsCA() {
 		return nil
@@ -177,12 +180,9 @@ func (a *Agent) CAEndp(wantWorker bool) (endP *endp.Addr) {
 
 	rcvrDID := caDID
 	vk := a.Tr.PayloadPipe().In.VerKey()
+	rcvrDID = a.WDID()
 	serviceName := utils.Settings.ServiceName()
-	if wantWorker {
-		rcvrDID = a.WDID()
-		serviceName = utils.Settings.ServiceName2()
-		// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
-	}
+	// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
 	return &endp.Addr{
 		BasePath: hostname,
 		Service:  serviceName,
@@ -223,7 +223,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 // This is under construction.
 func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 	ca := a // to help us to read the code, receiver is CA
-	if ca.worker.get() == nil {
+	return ca.worker.testAndSet(func() *Agent {
 		glog.V(2).Infoln("starting worker agent creation process")
 		assert.P.True(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
 
@@ -246,23 +246,23 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
 
-		ca.worker.set(&Agent{
+		wca := &Agent{
 			DIDAgent: ssi.DIDAgent{
 				Type:     ssi.Edge | ssi.Worker,
 				Root:     ca.RootDid(),
-				DidCache: ca.DidCache,
+				DidCache: ca.DidCache.Clone(),
 			},
 			Tr:      transport, // Transport for EA is created here!
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
-		})
+		}
 
-		ca.worker.get().OpenWallet(*aWallet)
+		wca.OpenWallet(*aWallet)
 		// cleanup, secure enclave stuff, minimize time in memory
 		aWallet.Credentials.Key = ""
 
-		comm.ActiveRcvrs.Add(waDID, ca.worker.get())
+		comm.ActiveRcvrs.Add(waDID, wca)
 
 		if !walletInitializedBefore {
 			glog.V(2).Info("Creating a master secret into worker's wallet")
@@ -271,16 +271,20 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 				glog.Error(err)
 				panic(err)
 			}
-			r := <-anoncreds.ProverCreateMasterSecret(ca.worker.get().Wallet(), masterSec)
+			r := <-anoncreds.ProverCreateMasterSecret(wca.Wallet(), masterSec)
 			if r.Err() != nil || masterSec != r.Str1() {
 				glog.Error(r.Err())
 				panic(r.Err())
 			}
 		}
+		wca.loadPWMap()
 
-		ca.worker.get().loadPWMap()
-	}
-	return ca.worker.get()
+		return wca
+	})
+}
+
+func (a *Agent) ID() string {
+	return a.WalletH.Config().ID()
 }
 
 func (a *Agent) MasterSecret() (string, error) {

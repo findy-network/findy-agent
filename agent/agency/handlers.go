@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	ProtocolPath = "a2a" // default for A2A Protocols (Aries), serviceName2
+	ProtocolPath = "a2a" // default for A2A Protocols (Aries), serviceName
 )
 
 type Endpoint = string

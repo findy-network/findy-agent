@@ -52,7 +52,7 @@ func (a agencyService) Onboard(
 	}
 
 	rippedEmail := strings.Replace(onboarding.Email, "@", "_", -1)
-	ac, err := handshake.AnchorAgent(onboarding.Email)
+	ac, err := handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed)
 	err2.Check(err)
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()

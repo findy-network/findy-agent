@@ -35,7 +35,6 @@ clean() {
   echo -e "${BLUE}*** dev - clean ***${NC}"
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
   rm -rf ~/.indy_client/
-  echo "{}" >findy.json
   set +e
   rm findy.bolt
   set -e
@@ -50,7 +49,6 @@ init_agency(){
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
   set +e
   rm -rf ~/.indy_client/
-  echo "{}" >findy.json
   rm findy.bolt
   set -e
 }
@@ -259,6 +257,25 @@ other_cases() {
     echo "$f does not exist."
     exit 1
   fi
+
+  # run agency - no steward
+
+  echo -e "${BLUE}*** other - run agency - no steward ***${NC}"
+  stop_agency
+  sleep 2
+  $CLI agency start \
+    --pool-name=FINDY_FILE_LEDGER \
+    --steward-wallet-name="" \
+    --steward-wallet-key="" \
+    --steward-did="" \
+    --host-port=8090 \
+    --server-port=8090 \
+    --grpc-cert-path=./grpc/cert &
+  sleep 2
+  curl -f localhost:8090
+
+
+
   stop_agency
 }
 "$@"
