@@ -162,6 +162,8 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	}
 }
 
+// Trans returns transport layer for EA i.e. workers EA. Note! gRPC API version
+// doesn't need transport layer anymore for the CA.
 func (a *Agent) Trans() txp.Trans {
 	assert.D.True(a.IsEA())
 
@@ -186,15 +188,13 @@ func (a *Agent) MyCA() comm.Receiver {
 	return a.ca
 }
 
-// CAEndp returns endpoint of the CA
+// CAEndp returns endpoint of the CA.
 func (a *Agent) CAEndp() (endP *endp.Addr) {
 	assert.D.True(a.IsCA())
 
 	hostname := utils.Settings.HostAddr()
-	//caDID := a.Tr.PayloadPipe().In.Did()
 	caDID := a.MyDID().Did()
 	rcvrDID := caDID
-	//vk := a.Tr.PayloadPipe().In.VerKey()
 	vk := a.MyDID().VerKey()
 	rcvrDID = a.WDID()
 	serviceName := utils.Settings.ServiceName()
@@ -257,9 +257,9 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		walletInitializedBefore := aWallet.Create()
 
 		workerMeDID := ca.LoadDID(waDID)
-		workerYouDID := ca.Tr.PayloadPipe().In
-		assert.D.True(workerYouDID.Did() == ca.MyDID().Did())
+		workerYouDID := ca.MyDID()
 
+		// Transport for EA is created here!
 		cloudPipe := sec.Pipe{In: workerMeDID, Out: workerYouDID}
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
@@ -270,7 +270,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 				Root:     ca.RootDid(),
 				DidCache: ca.DidCache.Clone(),
 			},
-			Tr:      transport, // Transport for EA is created here!
+			Tr:      transport,
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
@@ -314,7 +314,8 @@ func (a *Agent) MasterSecret() (string, error) {
 func (a *Agent) WDID() string {
 	assert.D.True(a.IsCA())
 
-	wDID := a.Tr.PayloadPipe().Out.Did()
+	// in the gRPC API version both DIDs are same
+	wDID := a.myDID.Did()
 
 	return wDID
 }
