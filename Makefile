@@ -1,3 +1,5 @@
+TEST_TIMEOUT:="70s"
+
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
 
@@ -83,13 +85,22 @@ test:
 	go test -p 1 -failfast ./...
 
 testr:
-	go test -timeout 50s -p 1 -failfast -race ./... | tee ../testr.log
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... | tee ../testr.log
+
+test_grpcv:
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+
+test_grpc:
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+
+test_grpc_rv:
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 test_grpc_r:
-	go test -timeout 50s -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 testrv:
-	go test -v -timeout 50s -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
 
 testv:
 	go test -v -p 1 -failfast ./...
