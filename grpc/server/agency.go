@@ -14,8 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec"
-	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -62,11 +60,6 @@ func (a agencyService) Onboard(
 	agency.AddHandler(DIDStr, ac)
 	agency.Register.Add(ac.RootDid().Did(), agentName, DIDStr, caVerKey)
 
-	meDID := caDID  // we use the same for both ...
-	youDID := caDID // ... because we haven't pairwise here anymore
-	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-	transport := &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	ac.Tr = transport
 	ac.SetMyDID(caDID)
 
 	agency.SaveRegistered()
