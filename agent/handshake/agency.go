@@ -139,6 +139,10 @@ func LoadRegistered(filename string) (err error) {
 
 			email := values[0]
 			caDID := values[1]
+			caVerKey := ""
+			if len(values) == 3 {
+				caVerKey = values[2]
+			}
 			name := strings.Replace(email, "@", "_", -1)
 
 			// don't let crash on panics
@@ -168,8 +172,8 @@ func LoadRegistered(filename string) (err error) {
 
 				alreadyRegistered[name] = true
 
-				agency.AddSeedHandler(caDID, cloud.NewSeedAgent(rootDid,
-					caDID, aw))
+				agency.AddSeedHandler(caDID,
+					cloud.NewSeedAgent(rootDid, caDID, caVerKey, aw))
 			} else {
 				glog.Fatal("Duplicate registered wallet!")
 			}

@@ -54,7 +54,7 @@ type Agent struct {
 	Tr txp.Trans
 
 	// replace transport with caDID
-	myDID string
+	myDID *ssi.DID
 
 	// worker agent performs the actual protocol tasks
 	worker agentPtr
@@ -97,27 +97,28 @@ func (a *Agent) AutoPermission() bool {
 }
 
 type SeedAgent struct {
-	RootDID string
-	CADID   string
+	RootDID  string
+	CADID    string
+	CAVerKey string
 	*ssi.Wallet
 }
 
 func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
-	agent := &Agent{myDID: s.CADID}
+	agent := &Agent{myDID: ssi.NewDid(s.CADID, s.CAVerKey)}
 	agent.OpenWallet(*s.Wallet)
 
 	rd := agent.LoadDID(s.RootDID)
 	agent.SetRootDid(rd)
 
-	// TODO: obsolete because we don't have EA communication anymore!
 	return agent, nil
 }
 
-func NewSeedAgent(rootDid, caDid string, cfg *ssi.Wallet) *SeedAgent {
+func NewSeedAgent(rootDid, caDid, caVerKey string, cfg *ssi.Wallet) *SeedAgent {
 	return &SeedAgent{
-		RootDID: rootDid,
-		CADID:   caDid,
-		Wallet:  cfg,
+		RootDID:  rootDid,
+		CADID:    caDid,
+		CAVerKey: caVerKey,
+		Wallet:   cfg,
 	}
 }
 
@@ -167,7 +168,11 @@ func (a *Agent) Trans() txp.Trans {
 	return a.Tr
 }
 
-func (a *Agent) MyDID() string {
+func (a *Agent) SetMyDID(myDID *ssi.DID) {
+	a.myDID = myDID
+}
+
+func (a *Agent) MyDID() *ssi.DID {
 	return a.myDID
 }
 
@@ -181,19 +186,19 @@ func (a *Agent) MyCA() comm.Receiver {
 	return a.ca
 }
 
-// CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
+// CAEndp returns endpoint of the CA
 func (a *Agent) CAEndp() (endP *endp.Addr) {
-	hostname := utils.Settings.HostAddr()
-	if !a.IsCA() {
-		return nil
-	}
-	caDID := a.Tr.PayloadPipe().In.Did()
+	assert.D.True(a.IsCA())
 
+	hostname := utils.Settings.HostAddr()
+	//caDID := a.Tr.PayloadPipe().In.Did()
+	caDID := a.MyDID().Did()
 	rcvrDID := caDID
-	vk := a.Tr.PayloadPipe().In.VerKey()
+	//vk := a.Tr.PayloadPipe().In.VerKey()
+	vk := a.MyDID().VerKey()
 	rcvrDID = a.WDID()
 	serviceName := utils.Settings.ServiceName()
-	// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
+
 	return &endp.Addr{
 		BasePath: hostname,
 		Service:  serviceName,
@@ -253,6 +258,8 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 
 		workerMeDID := ca.LoadDID(waDID)
 		workerYouDID := ca.Tr.PayloadPipe().In
+		assert.D.True(workerYouDID.Did() == ca.MyDID().Did())
+
 		cloudPipe := sec.Pipe{In: workerMeDID, Out: workerYouDID}
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
@@ -267,6 +274,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
+			myDID:   ca.myDID,
 		}
 
 		wca.OpenWallet(*aWallet)
@@ -305,7 +313,10 @@ func (a *Agent) MasterSecret() (string, error) {
 // WDID returns DID string of the WA and CALLED from CA.
 func (a *Agent) WDID() string {
 	assert.D.True(a.IsCA())
-	return a.Tr.PayloadPipe().Out.Did()
+
+	wDID := a.Tr.PayloadPipe().Out.Did()
+
+	return wDID
 }
 
 // WEA returns CA's worker agent. It creates and inits it correctly if needed.

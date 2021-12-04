@@ -51,21 +51,27 @@ func (a agencyService) Onboard(
 		return st, errors.New("invalid user")
 	}
 
-	rippedEmail := strings.Replace(onboarding.Email, "@", "_", -1)
+	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
 	ac, err := handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed)
 	err2.Check(err)
+
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()
+	caVerKey := caDID.Did()
+
 	agency.AddHandler(DIDStr, ac)
-	agency.Register.Add(ac.RootDid().Did(), rippedEmail, DIDStr)
+	agency.Register.Add(ac.RootDid().Did(), agentName, DIDStr, caVerKey)
+
 	meDID := caDID  // we use the same for both ...
 	youDID := caDID // ... because we haven't pairwise here anymore
 	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
 	transport := &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 	ac.Tr = transport
-	glog.V(1).Infoln("build onboarding grpc result:",
-		rippedEmail, DIDStr)
+	ac.SetMyDID(caDID)
+
 	agency.SaveRegistered()
+	glog.V(2).Infoln("build onboarding grpc result:",
+		agentName, DIDStr)
 
 	return &ops.OnboardResult{
 		Ok: true,
@@ -202,7 +208,7 @@ func tryCaDID(psmKey psm.StateKey) string {
 	waReceiver := comm.ActiveRcvrs.Get(psmKey.DID)
 	myCA := waReceiver.MyCA()
 	assert.D.True(myCA != nil, "we must have CA for our WA")
-	caDID := myCA.MyDID()
+	caDID := myCA.MyDID().Did()
 	assert.D.True(caDID != "", "we must get CA DID for API caller")
 	return caDID
 }
