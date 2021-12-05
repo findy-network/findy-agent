@@ -55,7 +55,7 @@ func (a agencyService) Onboard(
 
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()
-	caVerKey := caDID.Did()
+	caVerKey := caDID.VerKey()
 
 	agency.AddHandler(DIDStr, ac)
 	agency.Register.Add(ac.RootDid().Did(), agentName, DIDStr, caVerKey)
