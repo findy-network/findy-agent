@@ -184,7 +184,11 @@ func (a *DIDAgent) SetRootDid(rootDid *DID) {
 // MARK: App logic
 
 func (a *DIDAgent) SendNYM(
-	targetDid *DID, submitterDid, alias, role string) (err error) {
+	targetDid *DID,
+	submitterDid,
+	alias,
+	role string,
+) (err error) {
 
 	a.AssertWallet()
 	a.assertPool()

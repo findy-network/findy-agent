@@ -9,7 +9,17 @@ import (
 	"github.com/golang/glog"
 )
 
-var maxOpened = 100
+var maxOpened = 10
+
+// SetWalletMgrPoolSize sets pool size, i.e. how many wallets can kept open in
+// the same time. This should be set at the startup of the application or
+// service.
+func SetWalletMgrPoolSize(s int) {
+	Wallets.l.Lock() // Precaution
+	defer Wallets.l.Unlock()
+
+	maxOpened = s
+}
 
 // Handle implements ManagedWallet interface. These types together offer an API
 // to use SSI wallets conveniently. They hide closing and opening logic which is

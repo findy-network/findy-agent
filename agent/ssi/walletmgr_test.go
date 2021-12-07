@@ -64,9 +64,7 @@ func TestMgr_NewOpen(t *testing.T) {
 		{"open size 3", 3},
 	}
 	for _, tt := range tests {
-		Wallets.l.Lock()
-		maxOpened = tt.count
-		Wallets.l.Unlock()
+		SetWalletMgrPoolSize(tt.count)
 
 		cfg := NewRawWalletCfg(walletName1, key)
 		w := Wallets.Open(cfg)

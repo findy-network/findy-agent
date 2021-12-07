@@ -69,7 +69,8 @@ type Cmd struct {
 	WalletBackupPath string
 	WalletBackupTime string
 
-	GRPCAdmin string
+	GRPCAdmin      string
+	WalletPoolSize int
 }
 
 var (
@@ -107,6 +108,7 @@ var (
 		WalletBackupPath:       "",
 		WalletBackupTime:       "",
 		GRPCAdmin:              "findy-root",
+		WalletPoolSize:         10,
 	}
 )
 
@@ -256,7 +258,9 @@ func (c *Cmd) printStartupArgs() {
 		"\nState machine db path:", c.PsmDb,
 		"\nHost address:", c.HostAddr,
 		"\nHost port:", c.HostPort,
-		"\nServer port:", c.ServerPort)
+		"\nServer port:", c.ServerPort,
+		"\nWallet pool:", c.WalletPoolSize,
+	)
 }
 
 func (c *Cmd) startLoadingAgents() {
@@ -289,6 +293,8 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
 	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
 	utils.Settings.SetGRPCAdmin(c.GRPCAdmin)
+
+	ssi.SetWalletMgrPoolSize(c.WalletPoolSize)
 
 	if c.HostPort == 0 {
 		c.HostPort = c.ServerPort
