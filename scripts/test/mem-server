@@ -1,7 +1,8 @@
 #!/bin/bash
 
-agency=${FCLI_AGENCY:-"go run ../.."}
-pool=${FCLI_POOL:-"FINDY_MEM_LEDGER,"}
+agency=${fcli_agency:-"go run ../.."}
+pool=${fcli_pool:-"FINDY_MEM_LEDGER,"}
+wpool_size=${fcli_wsize:-"50"}
 
 enclaveFile="mem/enclave.bolt"
 register="mem/findy.json"
@@ -23,7 +24,8 @@ $agency agency start $@ \
 --register-file "$register" \
 --register-backup-interval 300h \
 --enclave-path $enclaveFile \
---host-address localhost
+--host-address localhost \
+--wallet-pool $wpool_size
 EOM
 
 eval $myCmd
