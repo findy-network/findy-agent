@@ -130,8 +130,6 @@ func (a *DIDAgent) assertPool() {
 	}
 }
 
-// MARK: Wallet --
-
 func (a *DIDAgent) OpenWallet(aw Wallet) {
 	a.WalletH = Wallets.Open(&aw)
 	if glog.V(5) {
@@ -150,8 +148,6 @@ func (a *DIDAgent) CloseWallet() {
 func (a *DIDAgent) Wallet() (h int) {
 	return a.WalletH.Handle()
 }
-
-// MARK: Pool --
 
 func (a *DIDAgent) OpenPool(name string) {
 	OpenPool(name)
