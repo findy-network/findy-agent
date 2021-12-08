@@ -47,10 +47,12 @@ func (h *Handle) Config() managed.WalletCfg {
 func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
+
 	f := h.cfg.Close(h.f.Int())
 	if glog.V(10) {
 		glog.Info("closing wallet: ", h.cfg.Config.ID)
 	}
+
 	if h.h != h.f.Int() {
 		glog.Warning("handle mismatch!!")
 	}
@@ -73,22 +75,20 @@ func (h *Handle) timestamp() int64 {
 // optimization is needed.
 func (h *Handle) Handle() int {
 	h.l.Lock()
+	defer h.l.Unlock()
+
 	if handle := h.h; handle != 0 {
 		h.ts = time.Now().UnixNano()
-		h.l.Unlock()
 		return handle
 	}
-	h.l.Unlock()
 
-	// reopen with the Manager
+	// reopen with the Manager. Note! They know that handle is locked
 	return Wallets.reopen(h)
 }
 
-// open opens the wallet by its configuration. Open is always called by Wallet
+// reopen opens the wallet by its configuration. Open is always called by Wallet
 // Manager because it will keep track of wallet handles and max amount of them.
-func (h *Handle) open() int {
-	h.l.Lock()
-	defer h.l.Unlock()
+func (h *Handle) reopen() int {
 	h.f = h.cfg.Open()
 	if glog.V(10) {
 		glog.Info("opening wallet: ", h.cfg.Config.ID)
@@ -148,7 +148,7 @@ func (m *Mgr) reopen(h *Handle) int {
 
 	if len(m.opened) < maxOpened {
 		m.opened[h.cfg.UniqueID()] = h
-		return h.open()
+		return h.reopen()
 	}
 
 	return m.closeOldestAndReopen(h)
@@ -161,7 +161,7 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	delete(m.opened, oldest)
 	m.opened[h.cfg.UniqueID()] = h
 
-	return h.open()
+	return h.reopen()
 }
 
 func (m *Mgr) closeOldestAndOpen(cfg *Wallet) managed.Wallet {
