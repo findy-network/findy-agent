@@ -181,17 +181,15 @@ func (a *DIDAgent) SetRootDid(rootDid *DID) {
 	a.Root = rootDid
 }
 
-// MARK: App logic
-
 func (a *DIDAgent) SendNYM(
 	targetDid *DID,
 	submitterDid,
 	alias,
 	role string,
 ) (err error) {
-
 	a.AssertWallet()
 	a.assertPool()
+
 	targetDID := targetDid.Did()
 	verkey := targetDid.VerKey()
 	return ledger.WriteDID(a.Pool(), a.Wallet(), submitterDid, targetDID, verkey, alias, role)
