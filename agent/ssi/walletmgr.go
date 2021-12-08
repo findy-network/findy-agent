@@ -30,7 +30,7 @@ type Handle struct {
 	ts  int64        // last access timestamp
 	h   int          // wallet handle
 	f   *Future      // wallet handle future
-	cfg *Wallet      // wallet file information
+	cfg Wallet       // wallet file information
 	l   sync.RWMutex // lock
 }
 
@@ -38,7 +38,7 @@ type Handle struct {
 func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
-	return h.cfg
+	return &h.cfg
 }
 
 // Close frees the wallet handle to reuse by WalletMgr. Please note that it's
@@ -110,7 +110,7 @@ var Wallets = &Mgr{
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
-func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
+func (m *Mgr) Open(cfg Wallet) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -122,7 +122,7 @@ func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
+func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
 	h := &Handle{
 		ts:  time.Now().UnixNano(),
 		h:   0,
@@ -164,7 +164,7 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	return h.reopen()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg *Wallet) managed.Wallet {
+func (m *Mgr) closeOldestAndOpen(cfg Wallet) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
