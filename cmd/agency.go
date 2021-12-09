@@ -128,7 +128,7 @@ Example
 		defer err2.Return(&err)
 
 		migrateCmd.InputReg = args[0]
-		migrateCmd.OuputReg = args[1]
+		migrateCmd.OutputReg = args[1]
 		if len(args) > 2 {
 			migrateCmd.EnclaveKey = args[2]
 		}

@@ -19,8 +19,8 @@ import (
 type MigrateCmd struct {
 	EnclaveKey string
 
-	InputReg string
-	OuputReg string
+	InputReg  string
+	OutputReg string
 }
 
 type seedAgent struct {
@@ -34,7 +34,7 @@ func (c MigrateCmd) Validate() (err error) {
 	defer err2.Return(&err)
 
 	assert.P.NotEmpty(c.InputReg, "need the input file")
-	assert.P.NotEmpty(c.InputReg, "need the output file")
+	assert.P.NotEmpty(c.OutputReg, "need the output file")
 
 	return nil
 }
@@ -101,7 +101,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	for _, sa := range registeredWallets {
 		ag.Register.Add(sa.RootDID, sa.Name, sa.CADID, sa.CAVerKey)
 	}
-	err2.Check(ag.Register.Save(c.OuputReg))
+	err2.Check(ag.Register.Save(c.OutputReg))
 	cmds.Fprintln(w, "All ready")
 
 	return nil, nil
