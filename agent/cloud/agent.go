@@ -113,6 +113,25 @@ func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
 	return agent, nil
 }
 
+func (s *SeedAgent) Migrate() (h comm.Handler, err error) {
+	agent := &Agent{}
+	agent.OpenWallet(*s.Wallet)
+
+	rd := agent.LoadDID(s.RootDID)
+	agent.SetRootDid(rd)
+
+	caDID := agent.LoadDID(s.CADID)
+	meDID := caDID  // we use the same for both ...
+	youDID := caDID // ... because we haven't pairwise here anymore
+	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
+	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
+	caDid := agent.Tr.PayloadPipe().In.Did()
+	if caDid != s.CADID {
+		glog.Warning("cloud agent DID is not correct")
+	}
+	return agent, nil
+}
+
 func NewSeedAgent(rootDid, caDid, caVerKey string, cfg *ssi.Wallet) *SeedAgent {
 	return &SeedAgent{
 		RootDID:  rootDid,
