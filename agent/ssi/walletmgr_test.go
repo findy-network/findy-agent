@@ -64,11 +64,9 @@ func TestMgr_NewOpen(t *testing.T) {
 		{"open size 3", 3},
 	}
 	for _, tt := range tests {
-		Wallets.l.Lock()
-		maxOpened = tt.count
-		Wallets.l.Unlock()
+		SetWalletMgrPoolSize(tt.count)
 
-		cfg := NewRawWalletCfg(walletName1, key)
+		cfg := *NewRawWalletCfg(walletName1, key)
 		w := Wallets.Open(cfg)
 		glog.V(3).Info("read handle 1")
 		assert.Greater(t, w.Handle(), 0)
@@ -78,7 +76,7 @@ func TestMgr_NewOpen(t *testing.T) {
 		w.Handle()
 		w.Handle()
 
-		cfg = NewRawWalletCfg(walletName2, key)
+		cfg = *NewRawWalletCfg(walletName2, key)
 		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
 		w2 := Wallets.Open(cfg)
@@ -97,7 +95,7 @@ func TestMgr_NewOpen(t *testing.T) {
 		w.Handle()
 		w.Handle()
 
-		cfg = NewRawWalletCfg(walletName3, key)
+		cfg = *NewRawWalletCfg(walletName3, key)
 		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 		w3 := Wallets.Open(cfg)
 		glog.V(3).Info("read handle 3")

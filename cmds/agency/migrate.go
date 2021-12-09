@@ -76,7 +76,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 				return true
 			}
 
-			seed := cloud.NewSeedAgent(rootDid, caDid, aw)
+			seed := cloud.NewSeedAgent(rootDid, caDid, "", aw)
 			h, err := seed.Migrate()
 			err2.Check(err)
 

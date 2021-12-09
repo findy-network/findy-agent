@@ -169,7 +169,9 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 
 	// In case of connection-invite, we use common EA/CA pipe
 	if pipe.IsNull() {
-		pipe = agency.CurrentTr(ourAddress).PayloadPipe()
+		// TODO: this should never happen
+		panic("invitations aren't transported thru these anymore")
+		//pipe = agency.CurrentTr(ourAddress).PayloadPipe()
 	}
 
 	d, vk, err := pipe.Unpack(data)

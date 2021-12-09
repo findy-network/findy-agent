@@ -75,8 +75,10 @@ type DIDAgent struct {
 
 	// the Root DID which gives us rights to write ledger
 	Root *DID
+
 	// keep 'all' DIDs for performance reasons as well as better usability of our APIs
 	DidCache Cache
+
 	// Agent type: CA, EA, Worker, etc.
 	Type Type
 
@@ -128,10 +130,8 @@ func (a *DIDAgent) assertPool() {
 	}
 }
 
-// MARK: Wallet --
-
 func (a *DIDAgent) OpenWallet(aw Wallet) {
-	a.WalletH = Wallets.Open(&aw)
+	a.WalletH = Wallets.Open(aw)
 	if glog.V(5) {
 		glog.Info("Opening wallet: ", aw.Config.ID)
 	}
@@ -148,8 +148,6 @@ func (a *DIDAgent) CloseWallet() {
 func (a *DIDAgent) Wallet() (h int) {
 	return a.WalletH.Handle()
 }
-
-// MARK: Pool --
 
 func (a *DIDAgent) OpenPool(name string) {
 	OpenPool(name)
@@ -179,13 +177,15 @@ func (a *DIDAgent) SetRootDid(rootDid *DID) {
 	a.Root = rootDid
 }
 
-// MARK: App logic
-
 func (a *DIDAgent) SendNYM(
-	targetDid *DID, submitterDid, alias, role string) (err error) {
-
+	targetDid *DID,
+	submitterDid,
+	alias,
+	role string,
+) (err error) {
 	a.AssertWallet()
 	a.assertPool()
+
 	targetDID := targetDid.Did()
 	verkey := targetDid.VerKey()
 	return ledger.WriteDID(a.Pool(), a.Wallet(), submitterDid, targetDID, verkey, alias, role)

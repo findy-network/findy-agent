@@ -241,6 +241,8 @@ func (a *agentServer) CreateInvitation(
 		Label:           label,
 	}
 
+	glog.V(5).Infoln("final phase")
+
 	// just JSON for our own clients
 	jStr := dto.ToJSON(invitation)
 	// .. and build a URL which contains the invitation
@@ -255,6 +257,8 @@ func (a *agentServer) CreateInvitation(
 
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
 	defer err2.Return(&err)
+
+	glog.V(5).Infoln("start prealloc", id)
 
 	_, receiver := e2.StrRcvr.Try(ca(ctx))
 	ep = receiver.CAEndp()

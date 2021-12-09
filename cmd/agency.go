@@ -52,6 +52,7 @@ var agencyStartEnvs = map[string]string{
 	"register-backup-interval": "REGISTER_BACKUP_INTERVAL",
 	"wallet-backup":            "WALLET_BACKUP",
 	"wallet-backup-time":       "WALLET_BACKUP_TIME",
+	"wallet-pool":              "WALLET_POOL",
 }
 
 // startAgencyCmd represents the agency start subcommand
@@ -188,6 +189,7 @@ func init() {
 	flags.DurationVar(&aCmd.RegisterBackupInterval, "register-backup-interval", registerBackupInterval, flagInfo("Duration between handshake registry backups", AgencyCmd.Name(), agencyStartEnvs["register-backup-interval"]))
 	flags.StringVar(&aCmd.WalletBackupPath, "wallet-backup", "", flagInfo("Path for wallet backups", AgencyCmd.Name(), agencyStartEnvs["wallet-backup"]))
 	flags.StringVar(&aCmd.WalletBackupTime, "wallet-backup-time", "04:00", flagInfo("Time to start wallet backups for dirty ones", AgencyCmd.Name(), agencyStartEnvs["wallet-backup-time"]))
+	flags.IntVar(&aCmd.WalletPoolSize, "wallet-pool", aCmd.WalletPoolSize, flagInfo("Amount wallets open in same time", AgencyCmd.Name(), agencyStartEnvs["wallet-pool"]))
 
 	p := pingAgencyCmd.Flags()
 	p.StringVar(&paCmd.BaseAddr, "base-address", "http://localhost:8080", flagInfo("base address of agency", AgencyCmd.Name(), agencyPingEnvs["base-address"]))
