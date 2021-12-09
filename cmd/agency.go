@@ -113,9 +113,40 @@ Example
 	},
 }
 
+// migrateAgencyCmd represents the agency migrate subcommand
+var migrateAgencyCmd = &cobra.Command{
+	Use:   "migrate",
+	Short: "Command for migrate agency's register",
+	Long: `
+Migrate agency registry for the version which doesn't need to open wallets
+at the start up.
+
+Example
+	findy-agent agency migrate <old-reg> <new-reg> [enclave-key]
+	`,
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		defer err2.Return(&err)
+
+		migrateCmd.InputReg = args[0]
+		migrateCmd.OuputReg = args[1]
+		if len(args) > 2 {
+			migrateCmd.EnclaveKey = args[2]
+		}
+
+		err2.Check(migrateCmd.Validate())
+
+		if !rootFlags.dryRun {
+			cmd.SilenceUsage = true
+			err2.Try(migrateCmd.Exec(os.Stdout))
+		}
+		return nil
+	},
+}
+
 var (
-	aCmd  = agency.DefaultValues
-	paCmd = agency.PingCmd{}
+	aCmd       = agency.DefaultValues
+	paCmd      = agency.PingCmd{}
+	migrateCmd = agency.MigrateCmd{}
 )
 
 const registerBackupInterval = 12 * time.Hour
@@ -164,4 +195,5 @@ func init() {
 	rootCmd.AddCommand(AgencyCmd)
 	AgencyCmd.AddCommand(startAgencyCmd)
 	AgencyCmd.AddCommand(pingAgencyCmd)
+	AgencyCmd.AddCommand(migrateAgencyCmd)
 }
