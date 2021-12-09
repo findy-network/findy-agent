@@ -1,3 +1,5 @@
+TEST_TIMEOUT:="70s"
+
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
 
@@ -36,11 +38,11 @@ modules_comm: drop_comm
 	@echo Syncing modules: findy-common-go/$(GRPC_BRANCH)
 	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
 
-modules_wrap:
+modules_wrap: drop_wrap
 	@echo Syncing modules: findy-wrapper-go/$(WRAP_BRANCH)
 	go get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
 
-modules_api: 
+modules_api: drop_api
 	@echo Syncing modules: findy-agent-api/$(API_BRANCH)
 	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
 
@@ -52,7 +54,11 @@ update-deps:
 
 cli:
 	@echo "building new CLI by name: fa"
-	@go build -o $(GOPATH)/bin/fa
+	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
+	@echo "Installing version $(VERSION)"
+	@go build \
+		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
+		-o $(GOPATH)/bin/fa 
 
 build:
 	go build -v ./...
@@ -79,13 +85,22 @@ test:
 	go test -p 1 -failfast ./...
 
 testr:
-	go test -timeout 50s -p 1 -failfast -race ./... | tee ../testr.log
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... | tee ../testr.log
+
+test_grpcv:
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+
+test_grpc:
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+
+test_grpc_rv:
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 test_grpc_r:
-	go test -timeout 50s -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 testrv:
-	go test -v -timeout 50s -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
+	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
 
 testv:
 	go test -v -p 1 -failfast ./...
@@ -108,7 +123,7 @@ e2e_ci: install
 check: check_fmt vet shadow
 
 install:
-	$(eval VERSION = $(shell cat ./VERSION))
+	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
 	go install \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \

@@ -14,8 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec"
-	"github.com/findy-network/findy-agent/agent/trans"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -38,7 +36,7 @@ func (a agencyService) Onboard(
 	st *ops.OnboardResult,
 	err error,
 ) {
-	defer err2.Return(&err)
+	defer err2.Annotate("CA Onboard API", &err)
 	st = &ops.OnboardResult{Ok: false}
 
 	user := jwt.User(ctx)
@@ -51,21 +49,22 @@ func (a agencyService) Onboard(
 		return st, errors.New("invalid user")
 	}
 
-	rippedEmail := strings.Replace(onboarding.Email, "@", "_", -1)
+	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
 	ac, err := handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed)
 	err2.Check(err)
+
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()
+	caVerKey := caDID.VerKey()
+
 	agency.AddHandler(DIDStr, ac)
-	agency.Register.Add(ac.RootDid().Did(), rippedEmail, DIDStr)
-	meDID := caDID  // we use the same for both ...
-	youDID := caDID // ... because we haven't pairwise here anymore
-	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-	transport := &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	ac.Tr = transport
-	glog.V(1).Infoln("build onboarding grpc result:",
-		rippedEmail, DIDStr)
+	agency.Register.Add(ac.RootDid().Did(), agentName, DIDStr, caVerKey)
+
+	ac.SetMyDID(caDID)
+
 	agency.SaveRegistered()
+	glog.V(2).Infoln("build onboarding grpc result:",
+		agentName, DIDStr)
 
 	return &ops.OnboardResult{
 		Ok: true,
@@ -202,7 +201,7 @@ func tryCaDID(psmKey psm.StateKey) string {
 	waReceiver := comm.ActiveRcvrs.Get(psmKey.DID)
 	myCA := waReceiver.MyCA()
 	assert.D.True(myCA != nil, "we must have CA for our WA")
-	caDID := myCA.Trans().PayloadPipe().In.Did()
+	caDID := myCA.MyDID().Did()
 	assert.D.True(caDID != "", "we must get CA DID for API caller")
 	return caDID
 }

@@ -47,9 +47,22 @@ and CLI Go clients.
 */
 type Agent struct {
 	ssi.DIDAgent
-	Tr      txp.Trans  // Our transport layer for communication
-	worker  agentPtr   // worker agent to perform tasks when corresponding EA is not available
-	ca      *Agent     // if this is worker agent (see prev) this is the CA
+
+	// Was our transport layer for communication between EA in CA level.
+	// Remember that this same type can be a Worker CA.
+	// If this is a CA this should be nil and myDID should be used for DID.
+	Tr txp.Trans
+
+	// replace transport with caDID
+	myDID *ssi.DID
+
+	// worker agent performs the actual protocol tasks
+	worker agentPtr
+
+	// if this is worker agent (see worker field) this is the pointer to CA
+	ca *Agent
+
+	// all connections (pairwise) are cached by the Agent
 	pwLock  sync.Mutex // pw map lock, see below:
 	pws     PipeMap    // Map of pairwise secure pipes by DID
 	pwNames PipeMap    // Map of pairwise secure pipes by name
@@ -84,35 +97,28 @@ func (a *Agent) AutoPermission() bool {
 }
 
 type SeedAgent struct {
-	RootDID string
-	CADID   string
+	RootDID  string
+	CADID    string
+	CAVerKey string
 	*ssi.Wallet
 }
 
 func (s *SeedAgent) Prepare() (h comm.Handler, err error) {
-	agent := &Agent{}
+	agent := &Agent{myDID: ssi.NewDid(s.CADID, s.CAVerKey)}
 	agent.OpenWallet(*s.Wallet)
 
 	rd := agent.LoadDID(s.RootDID)
 	agent.SetRootDid(rd)
 
-	caDID := agent.LoadDID(s.CADID)
-	meDID := caDID  // we use the same for both ...
-	youDID := caDID // ... because we haven't pairwise here anymore
-	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	caDid := agent.Tr.PayloadPipe().In.Did()
-	if caDid != s.CADID {
-		glog.Warning("cloud agent DID is not correct")
-	}
 	return agent, nil
 }
 
-func NewSeedAgent(rootDid, caDid string, cfg *ssi.Wallet) *SeedAgent {
+func NewSeedAgent(rootDid, caDid, caVerKey string, cfg *ssi.Wallet) *SeedAgent {
 	return &SeedAgent{
-		RootDID: rootDid,
-		CADID:   caDid,
-		Wallet:  cfg,
+		RootDID:  rootDid,
+		CADID:    caDid,
+		CAVerKey: caVerKey,
+		Wallet:   cfg,
 	}
 }
 
@@ -156,8 +162,20 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 	}
 }
 
+// Trans returns transport layer for EA i.e. workers EA. Note! gRPC API version
+// doesn't need transport layer anymore for the CA.
 func (a *Agent) Trans() txp.Trans {
+	assert.D.True(a.IsEA())
+
 	return a.Tr
+}
+
+func (a *Agent) SetMyDID(myDID *ssi.DID) {
+	a.myDID = myDID
+}
+
+func (a *Agent) MyDID() *ssi.DID {
+	return a.myDID
 }
 
 func (a *Agent) MyCA() comm.Receiver {
@@ -170,19 +188,17 @@ func (a *Agent) MyCA() comm.Receiver {
 	return a.ca
 }
 
-// CAEndp returns endpoint of the CA or CA's w-EA's endp when wantWorker = true.
+// CAEndp returns endpoint of the CA.
 func (a *Agent) CAEndp() (endP *endp.Addr) {
-	hostname := utils.Settings.HostAddr()
-	if !a.IsCA() {
-		return nil
-	}
-	caDID := a.Tr.PayloadPipe().In.Did()
+	assert.D.True(a.IsCA())
 
+	hostname := utils.Settings.HostAddr()
+	caDID := a.MyDID().Did()
 	rcvrDID := caDID
-	vk := a.Tr.PayloadPipe().In.VerKey()
+	vk := a.MyDID().VerKey()
 	rcvrDID = a.WDID()
 	serviceName := utils.Settings.ServiceName()
-	// NOTE!! the VK is same 'because it's CA who decrypts invite PLs!
+
 	return &endp.Addr{
 		BasePath: hostname,
 		Service:  serviceName,
@@ -241,7 +257,9 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		walletInitializedBefore := aWallet.Create()
 
 		workerMeDID := ca.LoadDID(waDID)
-		workerYouDID := ca.Tr.PayloadPipe().In
+		workerYouDID := ca.MyDID()
+
+		// Transport for EA is created here!
 		cloudPipe := sec.Pipe{In: workerMeDID, Out: workerYouDID}
 		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
 		glog.V(3).Info("Create worker transport: ", transport)
@@ -252,10 +270,11 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 				Root:     ca.RootDid(),
 				DidCache: ca.DidCache.Clone(),
 			},
-			Tr:      transport, // Transport for EA is created here!
+			Tr:      transport,
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),
+			myDID:   ca.myDID,
 		}
 
 		wca.OpenWallet(*aWallet)
@@ -294,7 +313,11 @@ func (a *Agent) MasterSecret() (string, error) {
 // WDID returns DID string of the WA and CALLED from CA.
 func (a *Agent) WDID() string {
 	assert.D.True(a.IsCA())
-	return a.Tr.PayloadPipe().Out.Did()
+
+	// in the gRPC API version both DIDs are same
+	wDID := a.myDID.Did()
+
+	return wDID
 }
 
 // WEA returns CA's worker agent. It creates and inits it correctly if needed.

@@ -128,40 +128,52 @@ func LoadRegistered(filename string) (err error) {
 			glog.Fatal(exception)
 		})
 
-		registeredWallets := make(map[string]bool) // no duplicates
+		// for book keeping we don't allow duplicates and because registry is
+		// still JSON file there is possibility for a human error.
+		alreadyRegistered := make(map[string]bool)
 
 		agency.Register.EnumValues(func(rootDid string, values []string) (next bool) {
-			// dont let crash on panics
-			defer err2.Catch(func(err error) {
-				glog.Error("agency load: ", err)
-			})
-			next = true // default is to continue even on error
+			// default is to continue even on cached errors, set this that
+			// even on panics we will continue
+			next = true
+
 			email := values[0]
-			caDid := values[1]
+			caDID := values[1]
+			caVerKey := ""
+			if len(values) == 3 {
+				caVerKey = values[2]
+			}
+			name := strings.Replace(email, "@", "_", -1)
 
-			rippedEmail := strings.Replace(email, "@", "_", -1)
-			walletExist := registeredWallets[rippedEmail]
-			if !walletExist {
-				key, err := enclave.WalletKeyByEmail(email)
-				keyByDid, error2 := enclave.WalletKeyByDID(rootDid)
-				if err != nil || error2 != nil {
-					glog.Warningln("cannot get wallet key:", err, email, caDid)
-					return true
-				}
+			// don't let crash on panics
+			defer err2.Catch(func(err error) {
+				glog.Errorf("error: %s in agency load (email %s,DID:%s)",
+					err, email, caDID)
+			})
+
+			if !alreadyRegistered[name] {
+				key := err2.String.Try(enclave.WalletKeyByEmail(email))
+				keyByDid := err2.String.Try(enclave.WalletKeyByDID(rootDid))
+
 				if key != keyByDid {
-					glog.Warningln("keys don't match", key, keyByDid)
+					// key values are left out from logs in purpose
+					glog.Warningf("-------------------------------\n"+
+						"key by email (%s) don't match key by rootDid\n"+
+						"using key by email", email)
 				}
 
-				aw := ssi.NewRawWalletCfg(rippedEmail, key)
-				if !aw.Exists(false) {
-					glog.Warningf("wallet %s not exist", rippedEmail)
+				aw := ssi.NewRawWalletCfg(name, key)
+				wantToSeeWorker := false
+				if !aw.Exists(wantToSeeWorker) {
+					glog.Warningf("wallet '%s' not exist. Skipping this"+
+						" agent allocation and move to next", name)
 					return true
 				}
 
-				registeredWallets[rippedEmail] = true
+				alreadyRegistered[name] = true
 
-				agency.AddSeedHandler(caDid, cloud.NewSeedAgent(rootDid,
-					caDid, aw))
+				agency.AddSeedHandler(caDID,
+					cloud.NewSeedAgent(rootDid, caDID, caVerKey, aw))
 			} else {
 				glog.Fatal("Duplicate registered wallet!")
 			}

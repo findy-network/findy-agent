@@ -9,7 +9,17 @@ import (
 	"github.com/golang/glog"
 )
 
-var maxOpened = 100
+var maxOpened = 10
+
+// SetWalletMgrPoolSize sets pool size, i.e. how many wallets can kept open in
+// the same time. This should be set at the startup of the application or
+// service.
+func SetWalletMgrPoolSize(s int) {
+	Wallets.l.Lock() // Precaution
+	defer Wallets.l.Unlock()
+
+	maxOpened = s
+}
 
 // Handle implements ManagedWallet interface. These types together offer an API
 // to use SSI wallets conveniently. They hide closing and opening logic which is
@@ -20,7 +30,7 @@ type Handle struct {
 	ts  int64        // last access timestamp
 	h   int          // wallet handle
 	f   *Future      // wallet handle future
-	cfg *Wallet      // wallet file information
+	cfg Wallet       // wallet file information
 	l   sync.RWMutex // lock
 }
 
@@ -28,7 +38,7 @@ type Handle struct {
 func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
-	return h.cfg
+	return &h.cfg
 }
 
 // Close frees the wallet handle to reuse by WalletMgr. Please note that it's
@@ -37,10 +47,12 @@ func (h *Handle) Config() managed.WalletCfg {
 func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
+
 	f := h.cfg.Close(h.f.Int())
 	if glog.V(10) {
 		glog.Info("closing wallet: ", h.cfg.Config.ID)
 	}
+
 	if h.h != h.f.Int() {
 		glog.Warning("handle mismatch!!")
 	}
@@ -63,22 +75,20 @@ func (h *Handle) timestamp() int64 {
 // optimization is needed.
 func (h *Handle) Handle() int {
 	h.l.Lock()
+	defer h.l.Unlock()
+
 	if handle := h.h; handle != 0 {
 		h.ts = time.Now().UnixNano()
-		h.l.Unlock()
 		return handle
 	}
-	h.l.Unlock()
 
-	// reopen with the Manager
+	// reopen with the Manager. Note! They know that handle is locked
 	return Wallets.reopen(h)
 }
 
-// open opens the wallet by its configuration. Open is always called by Wallet
+// reopen opens the wallet by its configuration. Open is always called by Wallet
 // Manager because it will keep track of wallet handles and max amount of them.
-func (h *Handle) open() int {
-	h.l.Lock()
-	defer h.l.Unlock()
+func (h *Handle) reopen() int {
 	h.f = h.cfg.Open()
 	if glog.V(10) {
 		glog.Info("opening wallet: ", h.cfg.Config.ID)
@@ -100,7 +110,7 @@ var Wallets = &Mgr{
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
-func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
+func (m *Mgr) Open(cfg Wallet) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -112,7 +122,7 @@ func (m *Mgr) Open(cfg *Wallet) managed.Wallet {
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg *Wallet) managed.Wallet {
+func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
 	h := &Handle{
 		ts:  time.Now().UnixNano(),
 		h:   0,
@@ -138,7 +148,7 @@ func (m *Mgr) reopen(h *Handle) int {
 
 	if len(m.opened) < maxOpened {
 		m.opened[h.cfg.UniqueID()] = h
-		return h.open()
+		return h.reopen()
 	}
 
 	return m.closeOldestAndReopen(h)
@@ -151,10 +161,10 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	delete(m.opened, oldest)
 	m.opened[h.cfg.UniqueID()] = h
 
-	return h.open()
+	return h.reopen()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg *Wallet) managed.Wallet {
+func (m *Mgr) closeOldestAndOpen(cfg Wallet) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
