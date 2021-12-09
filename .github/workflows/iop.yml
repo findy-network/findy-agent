@@ -1,12 +1,11 @@
 name: interop
 
-on:  
+on:
   push:
     branches:
-      - 'dev'
+      - "dev"
 
 jobs:
-
   iop:
     runs-on: ubuntu-latest
     steps:
@@ -26,7 +25,7 @@ jobs:
           NO_TTY: "1"
       - name: store agency logs
         if: ${{ always() }}
-        run: 	|
+        run: |
           docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
       - name: archive logs
         if: ${{ always() }}
@@ -34,4 +33,10 @@ jobs:
         with:
           name: iop-logs
           path: scripts/aath/.logs
-
+      - uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          fields: repo,action,eventName,ref,workflow,job,took
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: ${{ failure() }}
