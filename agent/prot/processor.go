@@ -184,7 +184,7 @@ func ExecPSM(ts Transition) (err error) {
 	defer err2.Annotate("PSM transition", &err)
 
 	ackFlag := psm.ACK
-	meDID := ts.Receiver.Trans().MessagePipe().In.Did()
+	meDID := ts.Receiver.MyDID().Did()
 	sendBack := ts.SendNext != pltype.Terminate && ts.InOut != nil
 	plType := ts.SendNext
 	isLast := ts.WaitingNext == pltype.Terminate

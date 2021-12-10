@@ -136,9 +136,8 @@ type StateKey struct {
 }
 
 func NewStateKey(agent comm.Receiver, nonce string) StateKey {
-	meDID := agent.Trans().MessagePipe().In.Did()
 	return StateKey{
-		DID:   meDID,
+		DID:   agent.MyDID().Did(),
 		Nonce: nonce,
 	}
 }

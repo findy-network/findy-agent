@@ -79,7 +79,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 			defer err2.Annotate("proof propose handler", &err)
 
 			agent := packet.Receiver
-			meDID := agent.Trans().MessagePipe().In.Did()
+			meDID := agent.MyDID().Did()
 			key := psm.StateKey{DID: meDID, Nonce: im.Thread().ID}
 
 			propose := im.FieldObj().(*presentproof.Propose)

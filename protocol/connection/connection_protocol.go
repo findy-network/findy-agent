@@ -173,7 +173,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	defer err2.Annotate("connection req", &err)
 
 	// The agent DID, the PW DID is msgMeDID below
-	meDID := packet.Receiver.Trans().MessagePipe().In.Did()
+	meDID := packet.Receiver.MyDID().Did()
 	msgMeDID := "" // not known yet, will set it after pw is made
 
 	ipl := packet.Payload
@@ -289,7 +289,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 func handleConnectionResponse(packet comm.Packet) (err error) {
 	defer err2.Annotate("connection response", &err)
 
-	meDID := packet.Receiver.Trans().MessagePipe().In.Did()
+	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
 	cnxAddr := packet.Address
 	a := packet.Receiver
