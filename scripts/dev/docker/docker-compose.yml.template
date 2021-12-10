@@ -8,6 +8,7 @@ services:
       - ./conf/genesis.txt:/genesis.txt
       - ./conf/steward.exported:/steward.exported
       - ./cert:/grpc
+      - .data/agent:/root
     environment:
       FCLI_POOL_GENESIS_TXN_FILE: '/genesis.txt'
       FCLI_POOL_NAME: 'iop'
@@ -25,7 +26,7 @@ services:
     image: ghcr.io/findy-network/findy-agent-auth:latest
     volumes:
       - ./cert:/grpc
-      - .data:/data
+      - .data/auth:/data
     depends_on:
       - core
     environment:

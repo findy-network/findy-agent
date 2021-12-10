@@ -26,6 +26,7 @@ Session.vim
 .docker
 .secrets
 .vscode
+.data
 
 __debug_bin
 
