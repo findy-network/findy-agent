@@ -81,7 +81,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 			err2.Check(err)
 
 			a := h.(comm.Receiver)
-			vk := a.Trans().MessagePipe().In.VerKey()
+			vk := a.MyDID().VerKey()
 
 			registeredWallets[rippedEmail] = seedAgent{
 				Name:     rippedEmail,

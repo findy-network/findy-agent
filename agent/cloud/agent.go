@@ -129,6 +129,9 @@ func (s *SeedAgent) Migrate() (h comm.Handler, err error) {
 	if caDid != s.CADID {
 		glog.Warning("cloud agent DID is not correct")
 	}
+
+	agent.SetMyDID(caDID)
+
 	return agent, nil
 }
 
