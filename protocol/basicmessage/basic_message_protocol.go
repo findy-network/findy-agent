@@ -108,7 +108,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 		}
 
 		key := psm.StateKey{
-			DID:   packet.Receiver.Trans().MessagePipe().In.Did(),
+			DID:   packet.Receiver.MyDID().Did(),
 			Nonce: im.Thread().ID,
 		}
 
