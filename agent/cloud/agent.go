@@ -10,8 +10,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/trans"
-	"github.com/findy-network/findy-agent/agent/txp"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
@@ -47,11 +45,6 @@ and CLI Go clients.
 */
 type Agent struct {
 	ssi.DIDAgent
-
-	// Was our transport layer for communication between EA in CA level.
-	// Remember that this same type can be a Worker CA.
-	// If this is a CA this should be nil and myDID should be used for DID.
-	Tr txp.Trans
 
 	// replace transport with caDID
 	myDID *ssi.DID
@@ -121,15 +114,6 @@ func (s *SeedAgent) Migrate() (h comm.Handler, err error) {
 	agent.SetRootDid(rd)
 
 	caDID := agent.LoadDID(s.CADID)
-	meDID := caDID  // we use the same for both ...
-	youDID := caDID // ... because we haven't pairwise here anymore
-	cloudPipe := sec.Pipe{In: meDID, Out: youDID}
-	agent.Tr = &trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-	caDid := agent.Tr.PayloadPipe().In.Did()
-	if caDid != s.CADID {
-		glog.Warning("cloud agent DID is not correct")
-	}
-
 	agent.SetMyDID(caDID)
 
 	return agent, nil
@@ -182,14 +166,6 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 		}
 		wa.SetSAImplID(implID)
 	}
-}
-
-// Trans returns transport layer for EA i.e. workers EA. Note! gRPC API version
-// doesn't need transport layer anymore for the CA.
-func (a *Agent) Trans() txp.Trans {
-	assert.D.True(a.IsEA())
-
-	return a.Tr
 }
 
 func (a *Agent) SetMyDID(myDID *ssi.DID) {
@@ -278,21 +254,12 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		aWallet.Credentials.Key = key
 		walletInitializedBefore := aWallet.Create()
 
-		workerMeDID := ca.LoadDID(waDID)
-		workerYouDID := ca.MyDID()
-
-		// Transport for EA is created here!
-		cloudPipe := sec.Pipe{In: workerMeDID, Out: workerYouDID}
-		transport := trans.Transport{PLPipe: cloudPipe, MsgPipe: cloudPipe}
-		glog.V(3).Info("Create worker transport: ", transport)
-
 		wca := &Agent{
 			DIDAgent: ssi.DIDAgent{
 				Type:     ssi.Edge | ssi.Worker,
 				Root:     ca.RootDid(),
 				DidCache: ca.DidCache.Clone(),
 			},
-			Tr:      transport,
 			ca:      ca,
 			pws:     make(PipeMap),
 			pwNames: make(PipeMap),

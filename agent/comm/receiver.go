@@ -7,12 +7,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/txp"
 )
 
 type Receiver interface {
 	MyDID() *ssi.DID
-	Trans() txp.Trans
 	MyCA() Receiver
 	WorkerEA() Receiver
 	ExportWallet(key string, exportPath string) (url string)
