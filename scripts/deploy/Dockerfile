@@ -57,8 +57,6 @@ ENV FCLI_AGENCY_STEWARD_DID "Th7MpTaRZVRYnPiabds81Y"
 ENV FCLI_AGENCY_GRPC_TLS "false"
 ENV FCLI_AGENCY_REQUEST_TIMEOUT "3m"
 
-ENV FCLI_AGENCY_APNS_P12_FILE ""
-
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
     echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' >> /start.sh && \
     echo './import-wallet.sh' >> /start.sh && \
