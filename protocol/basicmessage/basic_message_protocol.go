@@ -96,13 +96,15 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Annotate("basic message", &err)
 
-		_, name := err2.StrStr.Try(packet.Receiver.FindPWByDID(packet.Address.RcvrDID))
+		pw, err := packet.Receiver.FindPWByDID(packet.Address.RcvrDID)
+		err2.Check(err)
+		assert.D.True(pw != nil, "pairwise is nil")
 
 		bm := im.FieldObj().(*basicmessage.Basicmessage)
 
 		if glog.V(3) {
 			glog.Info("-- Thread id: ", im.Thread().ID)
-			glog.Info("Basic msg from:", name)
+			glog.Info("Basic msg from:", pw.Meta.Name)
 			glog.Info("Sent time:", bm.SentTime)
 			glog.Info("Content: ", bm.Content)
 		}
@@ -114,7 +116,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 
 		rep := &basicMessageRep{
 			StateKey:      key,
-			PwName:        name,
+			PwName:        pw.Meta.Name,
 			Message:       bm.Content,
 			SendTimestamp: bm.SentTime.Time.UnixNano(),
 			Timestamp:     time.Now().UnixNano(),

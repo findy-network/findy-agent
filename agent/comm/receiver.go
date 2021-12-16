@@ -20,7 +20,7 @@ type Receiver interface {
 	PwPipe(pw string) (cp sec.Pipe, err error)
 	Wallet() int
 	Pool() int
-	FindPWByDID(my string) (their string, pwname string, err error)
+	FindPWByDID(my string) (pw *ssi.Pairwise, err error)
 	AttachSAImpl(implID string)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)

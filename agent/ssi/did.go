@@ -1,6 +1,7 @@
 package ssi
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sync"
 
@@ -43,6 +44,20 @@ type DID struct {
 	endp   *Future // When endpoint is started to fetch it's here
 
 	sync.Mutex // when setting Future ptrs making sure that happens atomically
+
+	pwMeta *PairwiseMeta // Meta data for pairwise
+
+}
+
+type PairwiseMeta struct {
+	Name  string
+	Route []string
+}
+
+type Pairwise struct {
+	MyDID    string
+	TheirDID string
+	Meta     PairwiseMeta
 }
 
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
@@ -150,12 +165,17 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, meta string) {
+func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, name string) {
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
 		//log.Println("**** pairwise name: ", meta)
 		f := &Future{}
+		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(PairwiseMeta{
+			Name:  name,
+			Route: theirDID.Route(),
+		}))
+
 		f.SetChan(pairwise.Create(wallet, theirDID.Did(), d.Did(), meta))
 		theirDID.pw = f
 	} else {
@@ -174,6 +194,10 @@ func (d *DID) StartEndp(wallet int) {
 	d.Lock()
 	d.endp = f
 	d.Unlock()
+}
+
+func (d *DID) SetPairwise(meta PairwiseMeta) {
+	d.pwMeta = &meta
 }
 
 func (d *DID) Endpoint() string {
@@ -217,5 +241,8 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 }
 
 func (d *DID) Route() []string {
+	if d.pwMeta != nil {
+		return d.pwMeta.Route
+	}
 	return []string{}
 }

@@ -129,6 +129,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 			MsgBytes: res,
 		})
 		fwdMsg := aries.PayloadCreator.NewMsg(utils.UUID(), msgType, msg)
+		// use anon-crypt for routing
 		r := <-crypto.Pack(wallet, "", fwdMsg.JSON(), rKey)
 		if r.Err() != nil {
 			return nil, "", r.Err()

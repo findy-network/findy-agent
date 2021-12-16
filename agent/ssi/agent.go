@@ -1,6 +1,8 @@
 package ssi
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -232,34 +234,55 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 	return d
 }
 
-func (a *DIDAgent) FindPWByName(name string) (my string, their string, err error) {
-	a.AssertWallet()
-	r := <-pairwise.List(a.Wallet())
-	if r.Err() != nil {
-		return "", "", fmt.Errorf("agent pairwise: %s", r.Err())
+func FromIndyPairwise(pw pairwise.Data) Pairwise {
+	itemName := pw.Metadata
+	metaData := PairwiseMeta{}
+	bytes, err := base64.StdEncoding.DecodeString(pw.Metadata)
+	if err == nil {
+		err = json.Unmarshal(bytes, &metaData) // meta data is stored to wallet as an object
 	}
-	pwd := pairwise.NewData(r.Str1())
+	if err != nil {
+		metaData.Name = itemName // meta data is only connection name
+		metaData.Route = make([]string, 0)
+	}
 
-	for _, d := range pwd {
-		if d.Metadata == name || name == "" {
-			return d.MyDid, d.TheirDid, nil
-		}
+	return Pairwise{
+		MyDID:    pw.MyDid,
+		TheirDID: pw.TheirDid,
+		Meta:     metaData,
 	}
-	return "", "", nil
 }
 
-// FindPW finds pairwise by name. This is a ReceiverEndp interface method.
-func (a *DIDAgent) FindPWByDID(my string) (their string, pwname string, err error) {
+func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
 	a.AssertWallet()
 	r := <-pairwise.List(a.Wallet())
 	if r.Err() != nil {
-		return "", "", fmt.Errorf("agent pairwise: %s", r.Err())
+		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
 	}
 	pwd := pairwise.NewData(r.Str1())
-	for _, d := range pwd {
-		if d.MyDid == my {
-			return d.TheirDid, d.Metadata, nil
+
+	for _, item := range pwd {
+		pwData := FromIndyPairwise(item)
+		if pwData.Meta.Name == name || name == "" {
+			return &pwData, nil
 		}
 	}
-	return "", "", nil
+	return nil, nil
+}
+
+// FindPWByDID finds pairwise by name. This is a ReceiverEndp interface method.
+func (a *DIDAgent) FindPWByDID(my string) (pw *Pairwise, err error) {
+	a.AssertWallet()
+	r := <-pairwise.List(a.Wallet())
+	if r.Err() != nil {
+		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
+	}
+	pwd := pairwise.NewData(r.Str1())
+	for _, item := range pwd {
+		if item.MyDid == my {
+			pwData := FromIndyPairwise(item)
+			return &pwData, nil
+		}
+	}
+	return nil, nil
 }
