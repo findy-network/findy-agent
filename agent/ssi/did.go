@@ -20,6 +20,7 @@ type DidComm interface {
 type Out interface {
 	DidComm
 	VerKey() string
+	Route() []string
 	Endpoint() string                      // refactor
 	AEndp() (ae service.Addr, error error) // refactor
 }
@@ -213,4 +214,8 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
 	return service.Addr{}, fmt.Errorf("no data")
+}
+
+func (d *DID) Route() []string {
+	return []string{}
 }

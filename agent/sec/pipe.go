@@ -4,8 +4,12 @@ import (
 	"encoding/binary"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -116,7 +120,24 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 		return nil, "", r.Err()
 	}
 
-	return r.Bytes(), vk, nil
+	res := r.Bytes()
+	for _, rKey := range p.Out.Route() {
+		msgType := pltype.RoutingForward
+		msg := aries.MsgCreator.Create(didcomm.MsgInit{
+			Type:     msgType,
+			To:       vk,
+			MsgBytes: res,
+		})
+		fwdMsg := aries.PayloadCreator.NewMsg(utils.UUID(), msgType, msg)
+		r := <-crypto.Pack(wallet, "", fwdMsg.JSON(), rKey)
+		if r.Err() != nil {
+			return nil, "", r.Err()
+		}
+		res = r.Bytes()
+		vk = rKey
+	}
+
+	return res, vk, nil
 }
 
 // Unpack unpacks the source bytes and returns our verification key as well.
