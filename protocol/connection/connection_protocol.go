@@ -327,7 +327,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 
-	caller.Pairwise(a.Wallet(), callee, pwName)
+	caller.SavePairwiseForDID(a.Wallet(), callee, pwName)
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())

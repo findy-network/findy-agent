@@ -129,7 +129,7 @@ func ContinuePSM(shift Again) (err error) {
 	meDID := PSM.Key.DID
 
 	inDID := wa.LoadDID(msgMeDID)
-	outStr, _ := err2.StrStr.Try(wa.FindPW(inDID.Did()))
+	outStr, _ := err2.StrStr.Try(wa.FindPWByDID(inDID.Did()))
 	outDID := wa.LoadDID(outStr)
 	outDID.StartEndp(wa.Wallet())
 	pipe := sec.Pipe{In: inDID, Out: outDID}
@@ -215,7 +215,7 @@ func ExecPSM(ts Transition) (err error) {
 	var ep sec.Pipe
 	if ts.InOut != nil {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
-		outStr, connID := err2.StrStr.Try(ts.Receiver.FindPW(inDID.Did()))
+		outStr, connID := err2.StrStr.Try(ts.Receiver.FindPWByDID(inDID.Did()))
 		outDID := ts.Receiver.LoadDID(outStr)
 		outDID.StartEndp(ts.Receiver.Wallet())
 		ep = sec.Pipe{In: inDID, Out: outDID}

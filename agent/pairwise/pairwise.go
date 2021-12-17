@@ -11,14 +11,6 @@ import (
 	"github.com/lainio/err2"
 )
 
-type Saver interface {
-	StartStore()
-	StoreResult() error
-	SaveEndpoint(addr string)
-	MeDID() string
-	YouDID() string
-}
-
 type Pairwise struct {
 	agent    ssi.Agent     // agent which is the controller of this pairwise: caller or callee
 	Msg      didcomm.PwMsg // payload's inner message which will build by multiple functions
@@ -28,92 +20,23 @@ type Pairwise struct {
 	factor   didcomm.MsgFactor
 }
 
-type Caller struct {
-	Pairwise
-	caller     *ssi.DID
-	callerRoot *ssi.DID
-	callee     *ssi.DID
-}
-
-func (p *Caller) MeDID() string {
-	if p.callee == nil || p.caller == nil {
-		return ""
-	}
-	return p.caller.Did()
-}
-
-func (p *Caller) YouDID() string {
-	if p.callee == nil || p.caller == nil {
-		return ""
-	}
-	return p.callee.Did()
-}
-
-func (p *Caller) SaveEndpoint(addr string) {
-	theirDID := p.callee
-	p.saveEndpoint(theirDID.Did(), addr, theirDID.VerKey())
-}
-
 type Callee struct {
 	Pairwise
 	Caller *ssi.DID
 	Callee *ssi.DID
 }
 
-func (p *Callee) MeDID() string {
-	if p.Callee == nil || p.Caller == nil {
-		return ""
-	}
-	return p.Callee.Did()
-}
-
-func (p *Callee) YouDID() string {
-	if p.Callee == nil || p.Caller == nil {
-		return ""
-	}
-	return p.Caller.Did()
-}
-
-func (p *Callee) SaveEndpoint(addr string) {
-	theirDID := p.Caller
-	p.saveEndpoint(theirDID.Did(), addr, theirDID.VerKey())
-}
-
-func NewCallerPairwise(msgFactor didcomm.MsgFactor, callerAgent ssi.Agent,
-	callerRootDid *ssi.DID, connType string) (p *Caller) {
-
-	return &Caller{
-		Pairwise: Pairwise{
-			factor:   msgFactor,
-			agent:    callerAgent,
-			connType: connType,
-		},
-		callerRoot: callerRootDid,
-	}
-}
-
-func (p *Caller) StartStore() {
-	wallet := p.agent.Wallet()
-	p.callee.Store(wallet)
-	pwName := p.pairwiseName()
-	p.caller.Pairwise(wallet, p.callee, pwName)
-}
-
-func (p *Caller) StoreResult() error {
-	return p.callee.StoreResult()
-}
-
 // MARK: Callee ---
 
-func (p *Callee) StartStore() {
+func (p *Callee) startStore() {
 	//log.Println("CalleePw StartStore()")
 	wallet := p.agent.Wallet()
 	p.Caller.Store(wallet)
 	pwName := p.pairwiseName()
-	p.Callee.Pairwise(wallet, p.Caller, pwName)
+	p.Callee.SavePairwiseForDID(wallet, p.Caller, pwName)
 }
 
-func (p *Callee) StoreResult() error {
+func (p *Callee) storeResult() error {
 	return p.Caller.StoreResult()
 }
 
@@ -152,7 +75,7 @@ func (p *Callee) ConnReqToRespWithSet(
 ) {
 	defer err2.Return(&err)
 
-	responseMsg := p.RespMsgAndOurDID()
+	responseMsg := p.respMsgAndOurDID()
 	p.Name = p.Msg.Nonce()
 	connReqDID := p.Msg.Did()
 	connReqVK := p.Msg.VerKey()
@@ -162,17 +85,17 @@ func (p *Callee) ConnReqToRespWithSet(
 	f(responseMsg) // let caller set msg values
 
 	p.Caller = callerDID // this MUST be before next line!
-	p.StartStore()       // Save their DID and pairwise info
+	p.startStore()       // Save their DID and pairwise info
 
 	respMsg = responseMsg
 
 	// Check the result for error handling AND for consuming async's result
-	err2.Check(p.StoreResult())
+	err2.Check(p.storeResult())
 
 	return respMsg, nil
 }
 
-func (p *Callee) RespMsgAndOurDID() (msg didcomm.PwMsg) {
+func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
 		p.Callee = p.agent.CreateDID("")
 	}
@@ -195,12 +118,5 @@ func (p *Pairwise) pairwiseName() string {
 		return pltype.HandshakePairwiseName
 	default:
 		return p.Name
-	}
-}
-
-func (p *Pairwise) saveEndpoint(DID, addr, key string) {
-	r := <-did.SetEndpoint(p.agent.Wallet(), DID, addr, key)
-	if r.Err() != nil {
-		panic(r.Err())
 	}
 }

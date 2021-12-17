@@ -8,38 +8,38 @@ import (
 )
 
 func (r *Response) Sign(pipe sec.Pipe) (err error) {
-	r.ConnectionSignature, err = r.connection.buildConnectionSignature(pipe)
+	r.ConnectionSignature, err = r.Connection.buildConnectionSignature(pipe)
 	return err
 }
 
 func (r *Response) Verify() (ok bool, err error) {
-	r.connection, err = r.ConnectionSignature.verifySignature(nil)
-	ok = r.connection != nil
+	r.Connection, err = r.ConnectionSignature.verifySignature(nil)
+	ok = r.Connection != nil
 
 	if ok {
-		rawDID := r.connection.DIDDoc.ID
-		r.connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
+		rawDID := r.Connection.DIDDoc.ID
+		r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
 	}
 
 	return ok, err
 }
 
 func (r *Response) Endpoint() service.Addr {
-	if len(r.connection.DIDDoc.Service) == 0 {
+	if len(r.Connection.DIDDoc.Service) == 0 {
 		return service.Addr{}
 	}
 
-	addr := r.connection.DIDDoc.Service[0].ServiceEndpoint
-	key := r.connection.DIDDoc.Service[0].RecipientKeys[0]
+	addr := r.Connection.DIDDoc.Service[0].ServiceEndpoint
+	key := r.Connection.DIDDoc.Service[0].RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
 }
 
 func (r *Response) SetEndpoint(ae service.Addr) {
-	if len(r.connection.DIDDoc.Service) == 0 {
+	if len(r.Connection.DIDDoc.Service) == 0 {
 		panic("we should not be here")
 	}
 
-	r.connection.DIDDoc.Service[0].ServiceEndpoint = ae.Endp
-	r.connection.DIDDoc.Service[0].RecipientKeys[0] = ae.Key
+	r.Connection.DIDDoc.Service[0].ServiceEndpoint = ae.Endp
+	r.Connection.DIDDoc.Service[0].RecipientKeys[0] = ae.Key
 }

@@ -217,7 +217,7 @@ func (p *PSM) PairwiseName() string {
 		if r == nil {
 			return ""
 		}
-		_, pwName := err2.StrStr.Try(r.FindPW(p.ConnDID))
+		_, pwName := err2.StrStr.Try(r.FindPWByDID(p.ConnDID))
 		return pwName
 	}
 	return ""

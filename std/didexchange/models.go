@@ -28,7 +28,7 @@ type Response struct {
 	ConnectionSignature *ConnectionSignature `json:"connection~sig,omitempty"`
 	Thread              *decorator.Thread    `json:"~thread,omitempty"`
 
-	connection *Connection // Actual data, to be signed or verified
+	Connection *Connection `json:"-"` // Actual data, to be signed or verified
 }
 
 // ConnectionSignature connection signature

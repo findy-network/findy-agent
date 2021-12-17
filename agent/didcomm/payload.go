@@ -221,25 +221,22 @@ type Msg interface {
 
 // MsgInit is a helper struct for factors to construct new message instances.
 type MsgInit struct {
-	AID         string
-	Type        string
-	Nonce       string
-	Error       string
-	Encrypted   string
-	Did         string
-	VerKey      string
-	Endpoint    string
-	EndpVerKey  string
-	RcvrEndp    service.Addr
-	Name        string
-	Info        string
-	ID          string
-	Ready       bool
-	Msg         map[string]interface{}
-	Body        interface{}
-	ProofValues *[]ProofValue
-	Thread      *decorator.Thread
-	DIDObj      *ssi.DID
+	AID        string
+	Type       string
+	Nonce      string
+	Error      string
+	Did        string
+	VerKey     string
+	Endpoint   string
+	EndpVerKey string
+	RcvrEndp   service.Addr
+	Name       string
+	Info       string
+	ID         string
+	Ready      bool
+	Msg        map[string]interface{}
+	Thread     *decorator.Thread
+	DIDObj     *ssi.DID
 }
 
 type MsgFactor interface {

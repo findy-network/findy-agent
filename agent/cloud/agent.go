@@ -2,19 +2,15 @@ package cloud
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/sec"
-	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	indypw "github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
@@ -135,17 +131,8 @@ func NewEA() *Agent {
 	return &Agent{DIDAgent: ssi.DIDAgent{Type: ssi.Edge}}
 }
 
-// AttachAPIEndp sets the API endpoint for remove EA i.e. real EA not w-EA.
-func (a *Agent) AttachAPIEndp(endp service.Addr) error {
-	a.EAEndp = &endp
-	theirDid := a.WDID()
-	endpJSONStr := dto.ToJSON(endp)
-	r := <-did.SetMeta(a.Wallet(), theirDid, endpJSONStr)
-	return r.Err()
-}
-
 // AttachSAImpl sets implementation ID for SA to use for mocks and auto accepts.
-func (a *Agent) AttachSAImpl(implID string, persistent bool) {
+func (a *Agent) AttachSAImpl(implID string) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("attach sa impl:", err)
 	})
@@ -156,13 +143,6 @@ func (a *Agent) AttachSAImpl(implID string, persistent bool) {
 		if !ok {
 			glog.Errorf("type assert, wrong agent type for %s",
 				a.RootDid().Did())
-		}
-		if persistent {
-			implEndp := fmt.Sprintf("%s://localhost", implID)
-			glog.V(3).Infoln("setting impl endp:", implEndp)
-			err2.Check(a.AttachAPIEndp(service.Addr{
-				Endp: implEndp,
-			}))
 		}
 		wa.SetSAImplID(implID)
 	}
@@ -217,7 +197,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 		return secPipe, nil
 	}
 
-	in, out, err := a.Pairwise(pw)
+	in, out, err := a.FindPWByName(pw)
 	err2.Check(err)
 
 	if in == "" || out == "" {

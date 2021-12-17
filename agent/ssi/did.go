@@ -149,7 +149,7 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) Pairwise(wallet int, theirDID *DID, meta string) {
+func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, meta string) {
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
