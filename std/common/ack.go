@@ -1,5 +1,5 @@
 /*
-copied from aries-frakework-go
+copied from aries-framework-go
 
 */
 

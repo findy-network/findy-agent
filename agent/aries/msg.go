@@ -49,7 +49,6 @@ func createMsg(d didcomm.MsgInit) Msg {
 	m := Msg{
 		AID:        d.AID,
 		Type:       d.Type,
-		Encrypted:  d.Encrypted,
 		Did:        d.Did,
 		Thread:     th,
 		Error:      d.Error,
@@ -240,7 +239,6 @@ type Msg struct {
 	Thread *decorator.Thread `json:"~thread,omitempty"`
 
 	Error      string                 `json:"error,omitempty"`        // If error happens includes error msg
-	Encrypted  string                 `json:"encrypted,omitempty"`    // If the whole msg is encrypted is transferred in this field
 	Did        string                 `json:"did,omitempty"`          // Usually senders DID and corresponding VerKey
 	VerKey     string                 `json:"verkey,omitempty"`       // Senders Verkey for DID
 	RcvrEndp   string                 `json:"rcvr_endp,omitempty"`    // Receivers own endpoint, usually the public URL

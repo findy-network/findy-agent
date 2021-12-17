@@ -40,7 +40,7 @@ func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
 		Type:   init.Type,
 		ID:     init.ID,
 		Thread: &decorator.Thread{ID: init.Nonce},
-		connection: &Connection{
+		Connection: &Connection{
 			DID:    DID,
 			DIDDoc: doc,
 		},
@@ -115,14 +115,14 @@ func (m *ResponseImpl) Nonce() string {
 }
 
 func (m *ResponseImpl) Did() string {
-	return m.connection.DID
+	return m.Connection.DID
 }
 
 func (m *ResponseImpl) VerKey() string {
-	if len(m.connection.DIDDoc.PublicKey) == 0 {
+	if len(m.Connection.DIDDoc.PublicKey) == 0 {
 		return ""
 	}
-	return m.connection.DIDDoc.PublicKey[0].PublicKeyBase58
+	return m.Connection.DIDDoc.PublicKey[0].PublicKeyBase58
 }
 
 func (m *ResponseImpl) Name() string { // Todo: names should be Label
