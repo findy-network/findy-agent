@@ -197,7 +197,7 @@ func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
 		return secPipe, nil
 	}
 
-	in, out, err := a.Pairwise(pw)
+	in, out, err := a.FindPWByName(pw)
 	err2.Check(err)
 
 	if in == "" || out == "" {

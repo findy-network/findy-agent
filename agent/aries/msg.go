@@ -16,7 +16,7 @@ import (
 var MsgCreator = MsgFactor{}
 
 func init() {
-	gob.Register(&MsgImpl{})
+	gob.Register(&msgImpl{})
 	didcomm.CreatorGod.AddMsgCreator(pltype.Aries, MsgCreator)
 	didcomm.CreatorGod.AddMsgCreator(pltype.DIDOrgAries, MsgCreator)
 }
@@ -24,24 +24,24 @@ func init() {
 type MsgFactor struct{}
 
 func (f MsgFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
-	m := CreateMsg(init)
-	return &MsgImpl{Msg: &m}
+	m := createMsg(init)
+	return &msgImpl{Msg: &m}
 }
 
 func (f MsgFactor) NewMessage(data []byte) didcomm.MessageHdr {
-	return NewMsg(data)
+	return newMsg(data)
 }
 
 func (f MsgFactor) Create(d didcomm.MsgInit) didcomm.MessageHdr {
 	factor, ok := Creator.factors[d.Type]
 	if !ok {
-		m := CreateMsg(d)
-		return &MsgImpl{Msg: &m}
+		m := createMsg(d)
+		return &msgImpl{Msg: &m}
 	}
 	return factor.NewMsg(d)
 }
 
-func CreateMsg(d didcomm.MsgInit) Msg {
+func createMsg(d didcomm.MsgInit) Msg {
 	th := d.Thread
 	if th == nil {
 		th = decorator.NewThread(d.Nonce, "")
@@ -71,115 +71,115 @@ func CreateMsg(d didcomm.MsgInit) Msg {
 	return m
 }
 
-type MsgImpl struct {
+type msgImpl struct {
 	*Msg
 }
 
-func (m *MsgImpl) Thread() *decorator.Thread {
+func (m *msgImpl) Thread() *decorator.Thread {
 	return m.Msg.Thread
 }
 
-func (m *MsgImpl) ID() string {
+func (m *msgImpl) ID() string {
 	return m.Msg.AID
 }
 
-func (m *MsgImpl) SetID(id string) {
+func (m *msgImpl) SetID(id string) {
 	m.Msg.AID = id
 }
 
-func (m *MsgImpl) Type() string {
+func (m *msgImpl) Type() string {
 	return m.Msg.Type
 }
 
-func (m *MsgImpl) SetType(t string) {
+func (m *msgImpl) SetType(t string) {
 	m.Msg.Type = t
 }
 
-func (m *MsgImpl) JSON() []byte {
+func (m *msgImpl) JSON() []byte {
 	return dto.ToJSONBytes(m.Msg)
 }
 
-func (m *MsgImpl) Error() string {
+func (m *msgImpl) Error() string {
 	return m.Msg.Error
 }
 
-func (m *MsgImpl) SetInfo(s string) {
+func (m *msgImpl) SetInfo(s string) {
 	m.Msg.Info = s
 }
 
-func (m *MsgImpl) SubLevelID() string {
+func (m *msgImpl) SubLevelID() string {
 	return m.Msg.ID
 }
 
-func (m *MsgImpl) SetSubLevelID(s string) {
+func (m *msgImpl) SetSubLevelID(s string) {
 	m.Msg.ID = s
 }
 
-func (m *MsgImpl) Schema() *ssi.Schema {
+func (m *msgImpl) Schema() *ssi.Schema {
 	panic("not in use in old API messages")
 }
 
-func (m *MsgImpl) SetSchema(sch *ssi.Schema) {
+func (m *msgImpl) SetSchema(sch *ssi.Schema) {
 	panic("not in use in old API messages")
 }
 
-func (m *MsgImpl) SetReady(yes bool) {
+func (m *msgImpl) SetReady(yes bool) {
 	m.Msg.Ready = yes
 }
 
-func (m *MsgImpl) SetBody(b interface{}) {
+func (m *msgImpl) SetBody(b interface{}) {
 	panic("not in use in old API messages")
 }
 
-func (m *MsgImpl) SetInvitation(i *didexchange.Invitation) {
+func (m *msgImpl) SetInvitation(i *didexchange.Invitation) {
 	panic("not in use in old API messages")
 }
 
-func (m *MsgImpl) SetSubMsg(sm map[string]interface{}) {
+func (m *msgImpl) SetSubMsg(sm map[string]interface{}) {
 	m.Msg.Msg = sm
 }
 
-func (m *MsgImpl) SetDid(s string) {
+func (m *msgImpl) SetDid(s string) {
 	m.Msg.Did = s
 }
 
-func (m *MsgImpl) SetVerKey(s string) {
+func (m *msgImpl) SetVerKey(s string) {
 	m.Msg.VerKey = s
 }
 
-func (m *MsgImpl) Ready() bool {
+func (m *msgImpl) Ready() bool {
 	return m.Msg.Ready
 }
 
-func (m *MsgImpl) Info() string {
+func (m *msgImpl) Info() string {
 	return m.Msg.Info
 }
 
-func (m *MsgImpl) TimestampMs() *uint64 {
+func (m *msgImpl) TimestampMs() *uint64 {
 	return nil
 }
 
-func (m *MsgImpl) ConnectionInvitation() *didexchange.Invitation {
+func (m *msgImpl) ConnectionInvitation() *didexchange.Invitation {
 	return nil
 }
 
-func (m *MsgImpl) CredentialAttributes() *[]didcomm.CredentialAttribute {
+func (m *msgImpl) CredentialAttributes() *[]didcomm.CredentialAttribute {
 	return nil
 }
 
-func (m *MsgImpl) CredDefID() *string {
+func (m *msgImpl) CredDefID() *string {
 	return nil
 }
 
-func (m *MsgImpl) ProofAttributes() *[]didcomm.ProofAttribute {
+func (m *msgImpl) ProofAttributes() *[]didcomm.ProofAttribute {
 	return nil
 }
 
-func (m *MsgImpl) ProofValues() *[]didcomm.ProofValue {
+func (m *msgImpl) ProofValues() *[]didcomm.ProofValue {
 	return nil
 }
 
-func (m *MsgImpl) SetNonce(n string) {
+func (m *msgImpl) SetNonce(n string) {
 	if th := m.Msg.Thread; th != nil {
 		th.ID = n
 		return
@@ -187,19 +187,19 @@ func (m *MsgImpl) SetNonce(n string) {
 	m.Msg.Thread = &decorator.Thread{ID: n}
 }
 
-func (m *MsgImpl) SetError(s string) {
+func (m *msgImpl) SetError(s string) {
 	m.Msg.Error += s
 }
 
-func (m *MsgImpl) Did() string {
+func (m *msgImpl) Did() string {
 	return m.Msg.Did
 }
 
-func (m *MsgImpl) VerKey() string {
+func (m *msgImpl) VerKey() string {
 	return m.Msg.VerKey
 }
 
-func (m *MsgImpl) Nonce() string {
+func (m *msgImpl) Nonce() string {
 	if th := m.Msg.Thread; th != nil {
 		return th.ID
 	}
@@ -207,26 +207,26 @@ func (m *MsgImpl) Nonce() string {
 	return m.ID()
 }
 
-func (m *MsgImpl) Endpoint() service.Addr {
+func (m *msgImpl) Endpoint() service.Addr {
 	return service.Addr{
 		Endp: m.Msg.Endpoint,
 		Key:  m.Msg.EndpVerKey,
 	}
 }
 
-func (m *MsgImpl) FieldObj() interface{} {
+func (m *msgImpl) FieldObj() interface{} {
 	return m.Msg
 }
 
-func (m *MsgImpl) Name() string {
+func (m *msgImpl) Name() string {
 	return m.Msg.Name
 }
 
-func (m *MsgImpl) SubMsg() map[string]interface{} {
+func (m *msgImpl) SubMsg() map[string]interface{} {
 	return m.Msg.Msg
 }
 
-func (m *MsgImpl) ReceiverEP() service.Addr {
+func (m *msgImpl) ReceiverEP() service.Addr {
 	return service.Addr{
 		Endp: m.RcvrEndp,
 		Key:  m.RcvrKey,
@@ -254,8 +254,8 @@ type Msg struct {
 	Msg        map[string]interface{} `json:"msg,omitempty"`          // Generic sub message to transport JSON between Indy SDK and EAs
 }
 
-func NewMsg(data []byte) *MsgImpl {
-	var mImpl MsgImpl
+func newMsg(data []byte) *msgImpl {
+	var mImpl msgImpl
 	dto.FromJSON(data, &mImpl)
 	return &mImpl
 }

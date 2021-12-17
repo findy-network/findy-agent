@@ -42,7 +42,7 @@ type PayloadFactor struct{}
 // associated to Go struct type which is registered to this Factor, it's used.
 // If not a generic type is used.
 func (f PayloadFactor) NewFromData(data []byte) didcomm.Payload {
-	pl := &PayloadImpl{MessageHdr: NewMsg(data)}
+	pl := &PayloadImpl{MessageHdr: newMsg(data)}
 	t, id := pl.Type(), pl.ID()
 
 	factor, ok := Creator.factors[pl.Type()]

@@ -33,7 +33,7 @@ func (p *Callee) startStore() {
 	wallet := p.agent.Wallet()
 	p.Caller.Store(wallet)
 	pwName := p.pairwiseName()
-	p.Callee.Pairwise(wallet, p.Caller, pwName)
+	p.Callee.SavePairwiseForDID(wallet, p.Caller, pwName)
 }
 
 func (p *Callee) storeResult() error {
