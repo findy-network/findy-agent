@@ -153,7 +153,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	secPipe := sec.NewPipeByVerkey(caller, receiverKey)
+	secPipe := sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(*secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -327,6 +327,11 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 
+	resp := ipl.MsgHdr().FieldObj().(*didexchange.Response)
+	callee.SetPairwise(ssi.PairwiseMeta{
+		Name:  pwName,
+		Route: resp.Connection.DIDDoc.Service[0].RoutingKeys,
+	})
 	caller.SavePairwiseForDID(a.Wallet(), callee, pwName)
 
 	// SAVE ENDPOINT to wallet

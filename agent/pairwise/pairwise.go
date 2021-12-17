@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -33,6 +34,12 @@ func (p *Callee) startStore() {
 	wallet := p.agent.Wallet()
 	p.Caller.Store(wallet)
 	pwName := p.pairwiseName()
+	req := p.Msg.FieldObj().(*didexchange.Request)
+	p.Caller.SetPairwise(ssi.PairwiseMeta{
+		Name:  pwName,
+		Route: req.Connection.DIDDoc.Service[0].RoutingKeys,
+	})
+
 	p.Callee.SavePairwiseForDID(wallet, p.Caller, pwName)
 }
 

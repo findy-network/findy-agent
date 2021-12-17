@@ -25,10 +25,12 @@ type Pipe struct {
 
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public
 // key.
-func NewPipeByVerkey(did *ssi.DID, verkey string) *Pipe {
+func NewPipeByVerkey(did *ssi.DID, verkey string, route []string) *Pipe {
+	out := ssi.NewDid("", verkey) // we know verkey only
+	out.SetPairwise(ssi.PairwiseMeta{Route: route})
 	return &Pipe{
 		In:  did,
-		Out: ssi.NewDid("", verkey), // we know verkey only
+		Out: out,
 	}
 }
 
