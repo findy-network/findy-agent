@@ -11,70 +11,70 @@ import (
 	"github.com/lainio/err2/assert"
 )
 
-var ForwardCreator = &ForwardFactor{}
+var forwardCreator = &forwardFactor{}
 
-type ForwardFactor struct{}
+type forwardFactor struct{}
 
-func (f *ForwardFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
+func (f *forwardFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 	m := &Forward{
 		Type: init.Type,
 		ID:   init.AID,
 		To:   init.To,
-		Msg:  init.MsgBytes,
+		Msg:  init.Msg,
 	}
 	return NewForward(m)
 }
 
-func (f *ForwardFactor) NewMessage(data []byte) didcomm.MessageHdr {
+func (f *forwardFactor) NewMessage(data []byte) didcomm.MessageHdr {
 	return NewForwardMsg(data)
 }
 
 func init() {
-	gob.Register(&ForwardImpl{})
-	aries.Creator.Add(pltype.RoutingForward, ForwardCreator)
-	aries.Creator.Add(pltype.DIDOrgRoutingForward, ForwardCreator)
+	gob.Register(&forwardImpl{})
+	aries.Creator.Add(pltype.RoutingForward, forwardCreator)
+	aries.Creator.Add(pltype.DIDOrgRoutingForward, forwardCreator)
 }
 
-func NewForward(r *Forward) *ForwardImpl {
-	return &ForwardImpl{Forward: r}
+func NewForward(r *Forward) *forwardImpl {
+	return &forwardImpl{Forward: r}
 }
 
-func NewForwardMsg(data []byte) *ForwardImpl {
-	var mImpl ForwardImpl
+func NewForwardMsg(data []byte) *forwardImpl {
+	var mImpl forwardImpl
 	dto.FromJSON(data, &mImpl)
 	return &mImpl
 }
 
 // MARK: Struct
-type ForwardImpl struct {
+type forwardImpl struct {
 	*Forward
 }
 
-func (p *ForwardImpl) ID() string {
+func (p *forwardImpl) ID() string {
 	return p.Forward.ID
 }
 
-func (p *ForwardImpl) Type() string {
+func (p *forwardImpl) Type() string {
 	return p.Forward.Type
 }
 
-func (p *ForwardImpl) SetID(id string) {
+func (p *forwardImpl) SetID(id string) {
 	p.Forward.ID = id
 }
 
-func (p *ForwardImpl) SetType(t string) {
+func (p *forwardImpl) SetType(t string) {
 	p.Forward.Type = t
 }
 
-func (p *ForwardImpl) JSON() []byte {
+func (p *forwardImpl) JSON() []byte {
 	return dto.ToJSONBytes(p)
 }
 
-func (p *ForwardImpl) Thread() *decorator.Thread {
+func (p *forwardImpl) Thread() *decorator.Thread {
 	assert.D.True(false, "Should not be here")
 	return nil
 }
 
-func (p *ForwardImpl) FieldObj() interface{} {
+func (p *forwardImpl) FieldObj() interface{} {
 	return p.Forward
 }

@@ -1,4 +1,4 @@
-package didexchange
+package utils
 
 import (
 	"reflect"
@@ -9,12 +9,12 @@ func TestDecodeB64(t *testing.T) {
 	const strPadded = "c3VyZS4="
 	const strUnpadded = "c3VyZS4"
 
-	res1, err := decodeB64(strPadded)
+	res1, err := DecodeB64(strPadded)
 	if err != nil {
 		t.Errorf("error in padded decode = %v", err)
 	}
 
-	res2, err := decodeB64(strUnpadded)
+	res2, err := DecodeB64(strUnpadded)
 	if err != nil {
 		t.Errorf("error in unpadded decode = %v", err)
 	}

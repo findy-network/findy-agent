@@ -20,6 +20,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go/did"
@@ -268,7 +269,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Out: caller,          // This is the other end, who sent the Request
 	}
 
-	err2.Check(res.Sign(pipe)) // we must sign the Response before send it
+	err2.Check(signature.Sign(res, pipe)) // we must sign the Response before send it
 
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
 	a.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
@@ -296,7 +297,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	nonce := ipl.ThreadID()
 	response := ipl.MsgHdr().FieldObj().(*didexchange.Response)
-	if !err2.Bool.Try(response.Verify()) {
+	if !err2.Bool.Try(signature.Verify(response)) {
 		glog.Error("cannot verify Connection Response signature --> send NACK")
 		return errors.New("cannot verify connection response signature")
 		// todo: send NACK here

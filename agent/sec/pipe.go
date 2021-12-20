@@ -9,8 +9,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/std/common"
+	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/crypto"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -126,13 +128,14 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	for _, rKey := range p.Out.Route() {
 		msgType := pltype.RoutingForward
 		msg := aries.MsgCreator.Create(didcomm.MsgInit{
-			Type:     msgType,
-			To:       vk,
-			MsgBytes: res,
+			Type: msgType,
+			To:   vk,
+			Msg:  res,
 		})
-		fwdMsg := aries.PayloadCreator.NewMsg(utils.UUID(), msgType, msg)
+		fwdMsg := msg.FieldObj().(*common.Forward)
+
 		// use anon-crypt for routing
-		r := <-crypto.Pack(wallet, "", fwdMsg.JSON(), rKey)
+		r := <-crypto.Pack(wallet, findy.NullString, dto.ToJSONBytes(fwdMsg), rKey)
 		if r.Err() != nil {
 			return nil, "", r.Err()
 		}

@@ -209,14 +209,12 @@ type Msg interface {
 	SetNonce(n string)
 	SetReady(yes bool)
 	SetBody(b interface{})
-	SetSubMsg(sm map[string]interface{})
 	SetDid(s string)
 	SetVerKey(s string)
 	SetInfo(s string)
 	SetInvitation(i *didexchange.Invitation)
 
 	Ready() bool
-	SubMsg() map[string]interface{}
 }
 
 // MsgInit is a helper struct for factors to construct new message instances.
@@ -234,11 +232,10 @@ type MsgInit struct {
 	Info       string
 	ID         string
 	Ready      bool
-	Msg        map[string]interface{}
 	Thread     *decorator.Thread
 	DIDObj     *ssi.DID
 	To         string
-	MsgBytes   []byte
+	Msg        []byte
 }
 
 type MsgFactor interface {

@@ -134,10 +134,6 @@ func (m *msgImpl) SetInvitation(i *didexchange.Invitation) {
 	panic("not in use in old API messages")
 }
 
-func (m *msgImpl) SetSubMsg(sm map[string]interface{}) {
-	m.Msg.Msg = sm
-}
-
 func (m *msgImpl) SetDid(s string) {
 	m.Msg.Did = s
 }
@@ -221,10 +217,6 @@ func (m *msgImpl) Name() string {
 	return m.Msg.Name
 }
 
-func (m *msgImpl) SubMsg() map[string]interface{} {
-	return m.Msg.Msg
-}
-
 func (m *msgImpl) ReceiverEP() service.Addr {
 	return service.Addr{
 		Endp: m.RcvrEndp,
@@ -238,18 +230,18 @@ type Msg struct {
 
 	Thread *decorator.Thread `json:"~thread,omitempty"`
 
-	Error      string                 `json:"error,omitempty"`        // If error happens includes error msg
-	Did        string                 `json:"did,omitempty"`          // Usually senders DID and corresponding VerKey
-	VerKey     string                 `json:"verkey,omitempty"`       // Senders Verkey for DID
-	RcvrEndp   string                 `json:"rcvr_endp,omitempty"`    // Receivers own endpoint, usually the public URL
-	RcvrKey    string                 `json:"rcvr_key,omitempty"`     // Receiver endpoint ver key
-	Endpoint   string                 `json:"endpoint,omitempty"`     // Multipurpose field which still is under design
-	EndpVerKey string                 `json:"endp_ver_key,omitempty"` // VerKey associated to endpoint i.e. payload verkey
-	Name       string                 `json:"name,omitempty"`         // Multipurpose field which still is under design
-	Info       string                 `json:"info,omitempty"`         // Used for transferring additional info like the Msg in IM-cases, and Pairwise name
-	ID         string                 `json:"id,omitempty"`           // Used for transferring additional ID like the Cred Def ID
-	Ready      bool                   `json:"ready,omitempty"`        // In queries tells if something is ready when true
-	Msg        map[string]interface{} `json:"msg,omitempty"`          // Generic sub message to transport JSON between Indy SDK and EAs
+	Error      string `json:"error,omitempty"`        // If error happens includes error msg
+	Did        string `json:"did,omitempty"`          // Usually senders DID and corresponding VerKey
+	VerKey     string `json:"verkey,omitempty"`       // Senders Verkey for DID
+	RcvrEndp   string `json:"rcvr_endp,omitempty"`    // Receivers own endpoint, usually the public URL
+	RcvrKey    string `json:"rcvr_key,omitempty"`     // Receiver endpoint ver key
+	Endpoint   string `json:"endpoint,omitempty"`     // Multipurpose field which still is under design
+	EndpVerKey string `json:"endp_ver_key,omitempty"` // VerKey associated to endpoint i.e. payload verkey
+	Name       string `json:"name,omitempty"`         // Multipurpose field which still is under design
+	Info       string `json:"info,omitempty"`         // Used for transferring additional info like the Msg in IM-cases, and Pairwise name
+	ID         string `json:"id,omitempty"`           // Used for transferring additional ID like the Cred Def ID
+	Ready      bool   `json:"ready,omitempty"`        // In queries tells if something is ready when true
+	Msg        []byte `json:"msg,omitempty"`          // Forwarded message
 }
 
 func newMsg(data []byte) *msgImpl {
