@@ -22,11 +22,11 @@ func (f *forwardFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 		To:   init.To,
 		Msg:  init.Msg,
 	}
-	return NewForward(m)
+	return newForward(m)
 }
 
 func (f *forwardFactor) NewMessage(data []byte) didcomm.MessageHdr {
-	return NewForwardMsg(data)
+	return newForwardMsg(data)
 }
 
 func init() {
@@ -35,11 +35,11 @@ func init() {
 	aries.Creator.Add(pltype.DIDOrgRoutingForward, forwardCreator)
 }
 
-func NewForward(r *Forward) *forwardImpl {
+func newForward(r *Forward) *forwardImpl {
 	return &forwardImpl{Forward: r}
 }
 
-func NewForwardMsg(data []byte) *forwardImpl {
+func newForwardMsg(data []byte) *forwardImpl {
 	var mImpl forwardImpl
 	dto.FromJSON(data, &mImpl)
 	return &mImpl

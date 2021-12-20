@@ -46,10 +46,6 @@ func removeFiles(home, nameFilter string) {
 func setUp() {
 }
 
-type packed struct {
-	Protected string
-}
-
 type protected struct {
 	Recipients []struct {
 		Header struct {
@@ -113,6 +109,7 @@ func TestPipe_pack(t *testing.T) {
 
 	// Unpack forward message with last routing key
 	route2Keys, err := getRecipientKeys(route2bytes)
+	assert.Nil(t, err)
 	assert.True(t, len(route2Keys) == 1)
 	assert.Equal(t, didRoute2.VerKey(), route2Keys[0])
 
@@ -124,6 +121,7 @@ func TestPipe_pack(t *testing.T) {
 	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
 	route1Bytes := route1FwdMsg.Msg
 	route1Keys, err := getRecipientKeys(route1Bytes)
+	assert.Nil(t, err)
 	assert.True(t, len(route2Keys) == 1)
 	assert.Equal(t, didRoute1.VerKey(), route1Keys[0])
 	assert.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
@@ -136,6 +134,7 @@ func TestPipe_pack(t *testing.T) {
 	dstFwdMsg := aries.PayloadCreator.NewFromData(dstFwBytes).MsgHdr().FieldObj().(*common.Forward)
 	dstPackedBytes := dstFwdMsg.Msg
 	dstFwdKeys, err := getRecipientKeys(dstPackedBytes)
+	assert.Nil(t, err)
 	assert.True(t, len(dstFwdKeys) == 1)
 	assert.Equal(t, didOut.VerKey(), dstFwdKeys[0])
 	assert.Equal(t, didOut.VerKey(), dstFwdMsg.To)
@@ -144,6 +143,7 @@ func TestPipe_pack(t *testing.T) {
 	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
 	assert.Nil(t, err)
 	dstKeys, err := getRecipientKeys(dstPackedBytes)
+	assert.Nil(t, err)
 	assert.True(t, len(dstFwdKeys) == 1)
 	assert.Equal(t, didOut.VerKey(), dstKeys[0])
 
