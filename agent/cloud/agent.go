@@ -205,9 +205,8 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 	}
 
 	cp.In = a.LoadDID(pw.MyDID)
-	outDID := a.LoadDID(pw.TheirDID)
+	outDID := a.LoadTheirDID(*pw)
 	outDID.StartEndp(a.Wallet())
-	outDID.SetPairwise(pw.Meta)
 	cp.Out = outDID
 	return cp, nil
 }
@@ -337,9 +336,8 @@ func (a *Agent) loadPWMap() {
 
 	for _, d := range pwd {
 		pwData := ssi.FromIndyPairwise(d)
-		outDID := a.LoadDID(pwData.TheirDID)
+		outDID := a.LoadTheirDID(pwData)
 		outDID.StartEndp(a.Wallet())
-		outDID.SetPairwise(pwData.Meta)
 		p := sec.Pipe{
 			In:  a.LoadDID(d.MyDid),
 			Out: outDID,

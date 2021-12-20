@@ -327,13 +327,11 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	callee.Store(a.Wallet())
 
 	pwName := pwr.Name
-
-	resp := ipl.MsgHdr().FieldObj().(*didexchange.Response)
-	callee.SetPairwise(ssi.PairwiseMeta{
+	route := didexchange.RouteForConnection(response.Connection)
+	caller.SavePairwiseForDID(a.Wallet(), callee, ssi.PairwiseMeta{
 		Name:  pwName,
-		Route: resp.Connection.DIDDoc.Service[0].RoutingKeys,
+		Route: route,
 	})
-	caller.SavePairwiseForDID(a.Wallet(), callee, pwName)
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())

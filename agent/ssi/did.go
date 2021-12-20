@@ -69,6 +69,12 @@ func NewDid(did, verkey string) (d *DID) {
 	return &DID{data: f}
 }
 
+func NewOutDid(verkey string, route []string) (d *DID) {
+	did := NewDid("", verkey)
+	did.pwMeta = &PairwiseMeta{Route: route}
+	return did
+}
+
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
 	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: ""}}, On: Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
@@ -165,16 +171,13 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, name string) {
+func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, pw PairwiseMeta) {
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
-		//log.Println("**** pairwise name: ", meta)
+		// encode to b64 string so that wrapper/indy does not attempt to decode json
 		f := &Future{}
-		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(PairwiseMeta{
-			Name:  name,
-			Route: theirDID.Route(),
-		}))
+		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(pw))
 
 		f.SetChan(pairwise.Create(wallet, theirDID.Did(), d.Did(), meta))
 		theirDID.pw = f
@@ -194,10 +197,6 @@ func (d *DID) StartEndp(wallet int) {
 	d.Lock()
 	d.endp = f
 	d.Unlock()
-}
-
-func (d *DID) SetPairwise(meta PairwiseMeta) {
-	d.pwMeta = &meta
 }
 
 func (d *DID) Endpoint() string {

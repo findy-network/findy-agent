@@ -1,13 +1,13 @@
 package ssi
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
@@ -234,10 +234,16 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 	return d
 }
 
+func (a *DIDAgent) LoadTheirDID(pw Pairwise) *DID {
+	did := a.LoadDID(pw.TheirDID)
+	did.pwMeta = &pw.Meta
+	return did
+}
+
 func FromIndyPairwise(pw pairwise.Data) Pairwise {
 	itemName := pw.Metadata
 	metaData := PairwiseMeta{}
-	bytes, err := base64.StdEncoding.DecodeString(pw.Metadata)
+	bytes, err := utils.DecodeB64(pw.Metadata)
 	if err == nil {
 		err = json.Unmarshal(bytes, &metaData) // meta data is stored to wallet as an object
 	}
