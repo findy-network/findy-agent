@@ -49,15 +49,15 @@ type Connection struct {
 
 func RouteForConnection(conn *Connection) (route []string) {
 	// Find the routing keys from the request
-	if conn != nil {
-		if conn != nil && conn.DIDDoc != nil {
-			assert.D.True(len(conn.DIDDoc.Service) > 0)
-			route = conn.DIDDoc.Service[0].RoutingKeys
-		} else {
-			glog.Warning("RouteForConnection - request does not contain DIDDoc")
-		}
-	} else {
-		glog.Warning("RouteForConnection - no DIDExchange request found")
+	if conn == nil {
+		glog.Warningln("RouteForConnection - no DIDExchange request found")
+		return
 	}
-	return route
+	if conn.DIDDoc == nil {
+		glog.Warningln("RouteForConnection - request does not contain DIDDoc")
+		return
+	}
+	assert.D.True(len(conn.DIDDoc.Service) > 0)
+	route = conn.DIDDoc.Service[0].RoutingKeys
+	return
 }

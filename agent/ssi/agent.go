@@ -276,7 +276,7 @@ func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
 	return nil, nil
 }
 
-// FindPWByDID finds pairwise by name. This is a ReceiverEndp interface method.
+// FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
 func (a *DIDAgent) FindPWByDID(my string) (pw *Pairwise, err error) {
 	a.AssertWallet()
 	r := <-pairwise.List(a.Wallet())
