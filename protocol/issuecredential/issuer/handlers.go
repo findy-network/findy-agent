@@ -48,8 +48,9 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 			attributes := make([]didcomm.CredentialAttribute, 0)
 			for _, attr := range prop.CredentialProposal.Attributes {
 				attributes = append(attributes, didcomm.CredentialAttribute{
-					Name:  attr.Name,
-					Value: attr.Value,
+					Name:     attr.Name,
+					Value:    attr.Value,
+					MimeType: attr.MimeType,
 				})
 			}
 
