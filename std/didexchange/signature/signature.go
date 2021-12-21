@@ -82,9 +82,17 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 	}
 
 	timestamp := int64(binary.BigEndian.Uint64(data))
+	now := time.Now().Unix()
+	diff := now - timestamp
+	if diff < 0 || diff > connectionSigExpTime {
+		// try little endian - TODO: format missing from spec?
+		glog.Warningf("signature timestamp %s is invalid for big endian encoding, try little endian", time.Unix(timestamp, 0))
+		timestamp = int64(binary.LittleEndian.Uint64(data))
+		diff = now - timestamp
+	}
 
-	if time.Now().Unix()-timestamp > connectionSigExpTime {
-		glog.Error("timestamp too old, connection verify signature!")
+	if diff < 0 || diff > connectionSigExpTime {
+		glog.Errorln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
 		return nil, nil
 	}
 
