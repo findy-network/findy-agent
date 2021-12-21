@@ -110,6 +110,13 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 	credTask, ok := t.(*taskIssueCredential)
 	assert.P.True(ok)
 
+	// ensure that mime type is set - some agent implementations are depending on it
+	for index, attr := range credTask.CredentialAttrs {
+		if attr.MimeType == "" {
+			credTask.CredentialAttrs[index].MimeType = "text/plain"
+		}
+	}
+
 	switch t.Type() {
 	case pltype.CACredOffer: // Send to Holder
 		err2.Check(prot.StartPSM(prot.Initial{

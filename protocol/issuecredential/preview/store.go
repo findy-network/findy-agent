@@ -11,6 +11,10 @@ import (
 func StoreCredPreview(preview *issuecredential.PreviewCredential, rep *data.IssueCredRep) {
 	rep.Attributes = make([]didcomm.CredentialAttribute, len(preview.Attributes))
 	for index, value := range preview.Attributes {
-		rep.Attributes[index] = didcomm.CredentialAttribute{Name: value.Name, Value: value.Value}
+		rep.Attributes[index] = didcomm.CredentialAttribute{
+			Name:     value.Name,
+			Value:    value.Value,
+			MimeType: value.MimeType,
+		}
 	}
 }

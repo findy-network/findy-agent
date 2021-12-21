@@ -153,8 +153,9 @@ type PwMsg interface {
 
 // CredentialAttribute for credential value
 type CredentialAttribute struct {
-	Name  string `json:"name,omitempty"`
-	Value string `json:"value,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Value    string `json:"value,omitempty"`
+	MimeType string `json:"mime-type,omitempty"`
 }
 
 // ProofAttribute for proof request attributes
