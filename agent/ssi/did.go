@@ -1,6 +1,7 @@
 package ssi
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sync"
 
@@ -20,6 +21,7 @@ type DidComm interface {
 type Out interface {
 	DidComm
 	VerKey() string
+	Route() []string
 	Endpoint() string                      // refactor
 	AEndp() (ae service.Addr, error error) // refactor
 }
@@ -42,6 +44,20 @@ type DID struct {
 	endp   *Future // When endpoint is started to fetch it's here
 
 	sync.Mutex // when setting Future ptrs making sure that happens atomically
+
+	pwMeta *PairwiseMeta // Meta data for pairwise
+
+}
+
+type PairwiseMeta struct {
+	Name  string
+	Route []string
+}
+
+type Pairwise struct {
+	MyDID    string
+	TheirDID string
+	Meta     PairwiseMeta
 }
 
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
@@ -51,6 +67,12 @@ func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
 func NewDid(did, verkey string) (d *DID) {
 	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: verkey}}, On: Consumed}
 	return &DID{data: f}
+}
+
+func NewOutDid(verkey string, route []string) (d *DID) {
+	did := NewDid("", verkey)
+	did.pwMeta = &PairwiseMeta{Route: route}
+	return did
 }
 
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
@@ -149,12 +171,14 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, meta string) {
+func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, pw PairwiseMeta) {
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
-		//log.Println("**** pairwise name: ", meta)
+		// encode to b64 string so that wrapper/indy does not attempt to decode json
 		f := &Future{}
+		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(pw))
+
 		f.SetChan(pairwise.Create(wallet, theirDID.Did(), d.Did(), meta))
 		theirDID.pw = f
 	} else {
@@ -213,4 +237,11 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
 	return service.Addr{}, fmt.Errorf("no data")
+}
+
+func (d *DID) Route() []string {
+	if d.pwMeta != nil {
+		return d.pwMeta.Route
+	}
+	return []string{}
 }

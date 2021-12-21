@@ -8,6 +8,8 @@ package didexchange
 import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
+	"github.com/golang/glog"
+	"github.com/lainio/err2/assert"
 )
 
 // Request defines a2a DID exchange request
@@ -43,4 +45,19 @@ type ConnectionSignature struct {
 type Connection struct {
 	DID    string   `json:"DID,omitempty"`
 	DIDDoc *did.Doc `json:"DIDDoc,omitempty"` // todo: was did_doc
+}
+
+func RouteForConnection(conn *Connection) (route []string) {
+	// Find the routing keys from the request
+	if conn == nil {
+		glog.Warningln("RouteForConnection - no DIDExchange request found")
+		return
+	}
+	if conn.DIDDoc == nil {
+		glog.Warningln("RouteForConnection - request does not contain DIDDoc")
+		return
+	}
+	assert.D.True(len(conn.DIDDoc.Service) > 0)
+	route = conn.DIDDoc.Service[0].RoutingKeys
+	return
 }

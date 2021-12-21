@@ -2,11 +2,18 @@ package sec
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/std/common"
+	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/crypto"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )
@@ -21,10 +28,11 @@ type Pipe struct {
 
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public
 // key.
-func NewPipeByVerkey(did *ssi.DID, verkey string) *Pipe {
+func NewPipeByVerkey(did *ssi.DID, verkey string, route []string) *Pipe {
+	out := ssi.NewOutDid(verkey, route) // we know verkey only
 	return &Pipe{
 		In:  did,
-		Out: ssi.NewDid("", verkey), // we know verkey only
+		Out: out,
 	}
 }
 
@@ -116,7 +124,31 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 		return nil, "", r.Err()
 	}
 
-	return r.Bytes(), vk, nil
+	res := r.Bytes()
+	for _, rKey := range p.Out.Route() {
+		msgType := pltype.RoutingForward
+		data := make(map[string]interface{})
+		err = json.Unmarshal(res, &data)
+		if err != nil {
+			return nil, "", err
+		}
+		msg := aries.MsgCreator.Create(didcomm.MsgInit{
+			Type: msgType,
+			To:   vk,
+			Msg:  data,
+		})
+		fwdMsg := msg.FieldObj().(*common.Forward)
+
+		// use anon-crypt for routing
+		r := <-crypto.Pack(wallet, findy.NullString, dto.ToJSONBytes(fwdMsg), rKey)
+		if r.Err() != nil {
+			return nil, "", r.Err()
+		}
+		res = r.Bytes()
+		vk = rKey
+	}
+
+	return res, vk, nil
 }
 
 // Unpack unpacks the source bytes and returns our verification key as well.

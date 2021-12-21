@@ -187,25 +187,25 @@ func (a *Agent) CAEndp() (endP *endp.Addr) {
 	}
 }
 
-func (a *Agent) PwPipe(pw string) (cp sec.Pipe, err error) {
+func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 	defer err2.Return(&err)
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	if secPipe, ok := a.pwNames[pw]; ok {
+	if secPipe, ok := a.pwNames[pwName]; ok {
 		return secPipe, nil
 	}
 
-	in, out, err := a.FindPWByName(pw)
+	pw, err := a.FindPWByName(pwName)
 	err2.Check(err)
 
-	if in == "" || out == "" {
+	if pw == nil || pw.MyDID == "" || pw.TheirDID == "" {
 		return cp, errors.New("cannot find pw")
 	}
 
-	cp.In = a.LoadDID(in)
-	outDID := a.LoadDID(out)
+	cp.In = a.LoadDID(pw.MyDID)
+	outDID := a.LoadTheirDID(*pw)
 	outDID.StartEndp(a.Wallet())
 	cp.Out = outDID
 	return cp, nil
@@ -335,7 +335,8 @@ func (a *Agent) loadPWMap() {
 	defer a.pwLock.Unlock()
 
 	for _, d := range pwd {
-		outDID := a.LoadDID(d.TheirDid)
+		pwData := ssi.FromIndyPairwise(d)
+		outDID := a.LoadTheirDID(pwData)
 		outDID.StartEndp(a.Wallet())
 		p := sec.Pipe{
 			In:  a.LoadDID(d.MyDid),

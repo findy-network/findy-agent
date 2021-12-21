@@ -15,8 +15,8 @@ var maxOpened = 10
 // the same time. This should be set at the startup of the application or
 // service.
 func SetWalletMgrPoolSize(s int) {
-	Wallets.l.Lock() // Precaution
-	defer Wallets.l.Unlock()
+	wallets.l.Lock() // Precaution
+	defer wallets.l.Unlock()
 
 	maxOpened = s
 }
@@ -83,7 +83,7 @@ func (h *Handle) Handle() int {
 	}
 
 	// reopen with the Manager. Note! They know that handle is locked
-	return Wallets.reopen(h)
+	return wallets.reopen(h)
 }
 
 // reopen opens the wallet by its configuration. Open is always called by Wallet
@@ -105,7 +105,7 @@ type Mgr struct {
 	l      sync.Mutex // lock
 }
 
-var Wallets = &Mgr{
+var wallets = &Mgr{
 	opened: make(WalletMap, maxOpened),
 }
 

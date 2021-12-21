@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -29,11 +30,22 @@ type Callee struct {
 // MARK: Callee ---
 
 func (p *Callee) startStore() {
-	//log.Println("CalleePw StartStore()")
 	wallet := p.agent.Wallet()
 	p.Caller.Store(wallet)
 	pwName := p.pairwiseName()
-	p.Callee.SavePairwiseForDID(wallet, p.Caller, pwName)
+
+	// Find the routing keys from the request
+	route := []string{}
+	if req, ok := p.Msg.FieldObj().(*didexchange.Request); ok {
+		route = didexchange.RouteForConnection(req.Connection)
+	} else {
+		glog.Warning("Callee.startStore() - no DIDExchange request found")
+	}
+
+	p.Callee.SavePairwiseForDID(wallet, p.Caller, ssi.PairwiseMeta{
+		Name:  pwName,
+		Route: route,
+	})
 }
 
 func (p *Callee) storeResult() error {

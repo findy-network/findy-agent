@@ -1,11 +1,13 @@
 package ssi
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
@@ -131,7 +133,7 @@ func (a *DIDAgent) assertPool() {
 }
 
 func (a *DIDAgent) OpenWallet(aw Wallet) {
-	a.WalletH = Wallets.Open(aw)
+	a.WalletH = wallets.Open(aw)
 	if glog.V(5) {
 		glog.Info("Opening wallet: ", aw.Config.ID)
 	}
@@ -232,34 +234,61 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 	return d
 }
 
-func (a *DIDAgent) FindPWByName(name string) (my string, their string, err error) {
-	a.AssertWallet()
-	r := <-pairwise.List(a.Wallet())
-	if r.Err() != nil {
-		return "", "", fmt.Errorf("agent pairwise: %s", r.Err())
-	}
-	pwd := pairwise.NewData(r.Str1())
-
-	for _, d := range pwd {
-		if d.Metadata == name || name == "" {
-			return d.MyDid, d.TheirDid, nil
-		}
-	}
-	return "", "", nil
+func (a *DIDAgent) LoadTheirDID(pw Pairwise) *DID {
+	did := a.LoadDID(pw.TheirDID)
+	did.pwMeta = &pw.Meta
+	return did
 }
 
-// FindPW finds pairwise by name. This is a ReceiverEndp interface method.
-func (a *DIDAgent) FindPWByDID(my string) (their string, pwname string, err error) {
+func FromIndyPairwise(pw pairwise.Data) Pairwise {
+	itemName := pw.Metadata
+	metaData := PairwiseMeta{}
+	bytes, err := utils.DecodeB64(pw.Metadata)
+	if err == nil {
+		err = json.Unmarshal(bytes, &metaData) // meta data is stored to wallet as an object
+	}
+	if err != nil {
+		metaData.Name = itemName // meta data is only connection name
+		metaData.Route = make([]string, 0)
+	}
+
+	return Pairwise{
+		MyDID:    pw.MyDid,
+		TheirDID: pw.TheirDid,
+		Meta:     metaData,
+	}
+}
+
+func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
 	a.AssertWallet()
 	r := <-pairwise.List(a.Wallet())
 	if r.Err() != nil {
-		return "", "", fmt.Errorf("agent pairwise: %s", r.Err())
+		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
 	}
 	pwd := pairwise.NewData(r.Str1())
-	for _, d := range pwd {
-		if d.MyDid == my {
-			return d.TheirDid, d.Metadata, nil
+
+	for _, item := range pwd {
+		pwData := FromIndyPairwise(item)
+		if pwData.Meta.Name == name || name == "" {
+			return &pwData, nil
 		}
 	}
-	return "", "", nil
+	return nil, nil
+}
+
+// FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
+func (a *DIDAgent) FindPWByDID(my string) (pw *Pairwise, err error) {
+	a.AssertWallet()
+	r := <-pairwise.List(a.Wallet())
+	if r.Err() != nil {
+		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
+	}
+	pwd := pairwise.NewData(r.Str1())
+	for _, item := range pwd {
+		if item.MyDid == my {
+			pwData := FromIndyPairwise(item)
+			return &pwData, nil
+		}
+	}
+	return nil, nil
 }

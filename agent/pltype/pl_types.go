@@ -44,6 +44,12 @@ const (
 )
 
 const (
+	ProtocolRouting      = "routing/1.0/forward"
+	RoutingForward       = Aries + "/" + ProtocolRouting
+	DIDOrgRoutingForward = DIDOrgAries + "/" + ProtocolRouting
+)
+
+const (
 	ProtocolNotification      = "notification"
 	HandlerProblemReport      = "problem-report"
 	HandlerAck                = "ack"

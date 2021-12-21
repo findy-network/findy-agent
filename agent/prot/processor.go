@@ -13,6 +13,7 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines
@@ -129,8 +130,12 @@ func ContinuePSM(shift Again) (err error) {
 	meDID := PSM.Key.DID
 
 	inDID := wa.LoadDID(msgMeDID)
-	outStr, _ := err2.StrStr.Try(wa.FindPWByDID(inDID.Did()))
-	outDID := wa.LoadDID(outStr)
+
+	pairwise, err := wa.FindPWByDID(inDID.Did())
+	err2.Check(err)
+	assert.D.True(pairwise != nil, "pairwise should not be nil")
+
+	outDID := wa.LoadTheirDID(*pairwise)
 	outDID.StartEndp(wa.Wallet())
 	pipe := sec.Pipe{In: inDID, Out: outDID}
 
@@ -215,9 +220,15 @@ func ExecPSM(ts Transition) (err error) {
 	var ep sec.Pipe
 	if ts.InOut != nil {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
-		outStr, connID := err2.StrStr.Try(ts.Receiver.FindPWByDID(inDID.Did()))
-		outDID := ts.Receiver.LoadDID(outStr)
+
+		pairwise, err := ts.Receiver.FindPWByDID(inDID.Did())
+		err2.Check(err)
+		assert.D.True(pairwise != nil, "pairwise should not be nil")
+
+		connID := pairwise.Meta.Name
+		outDID := ts.Receiver.LoadTheirDID(*pairwise)
 		outDID.StartEndp(ts.Receiver.Wallet())
+
 		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
