@@ -17,6 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
 )
@@ -54,13 +55,18 @@ type protected struct {
 	} `json:"recipients"`
 }
 
-func getRecipientKeys(msg []byte) (keys []string, err error) {
+func getRecipientKeysFromBytes(msg []byte) (keys []string, err error) {
+	data := make(map[string]interface{})
+	if err = json.Unmarshal(msg, &data); err != nil {
+		return nil, err
+	}
+	return getRecipientKeys(data)
+}
+
+func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 	err2.Return(&err)
 
-	msgFields := make(map[string]interface{})
-	err2.Check(json.Unmarshal(msg, &msgFields))
-
-	protData := err2.Bytes.Try(utils.DecodeB64(msgFields["protected"].(string)))
+	protData := err2.Bytes.Try(utils.DecodeB64(msg["protected"].(string)))
 
 	data := protected{}
 	err2.Check(json.Unmarshal(protData, &data))
@@ -108,7 +114,7 @@ func TestPipe_pack(t *testing.T) {
 	assert.True(t, len(route2bytes) > 0)
 
 	// Unpack forward message with last routing key
-	route2Keys, err := getRecipientKeys(route2bytes)
+	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
 	assert.Nil(t, err)
 	assert.True(t, len(route2Keys) == 1)
 	assert.Equal(t, didRoute2.VerKey(), route2Keys[0])
@@ -127,13 +133,13 @@ func TestPipe_pack(t *testing.T) {
 	assert.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
 
 	dstUnpackPipe := NewPipeByVerkey(didOut, didIn.VerKey(), []string{})
-	dstFwBytes, _, err := dstUnpackPipe.Unpack(route1Bytes)
+	dstFwBytes, _, err := dstUnpackPipe.Unpack(dto.ToJSONBytes(route1Bytes))
 	assert.Nil(t, err)
 
 	// Unpack final (anon-crypted) forward message with destination key
 	dstFwdMsg := aries.PayloadCreator.NewFromData(dstFwBytes).MsgHdr().FieldObj().(*common.Forward)
-	dstPackedBytes := dstFwdMsg.Msg
-	dstFwdKeys, err := getRecipientKeys(dstPackedBytes)
+	dstPackedBytes := dto.ToJSONBytes(dstFwdMsg.Msg)
+	dstFwdKeys, err := getRecipientKeys(dstFwdMsg.Msg)
 	assert.Nil(t, err)
 	assert.True(t, len(dstFwdKeys) == 1)
 	assert.Equal(t, didOut.VerKey(), dstFwdKeys[0])
@@ -142,7 +148,7 @@ func TestPipe_pack(t *testing.T) {
 	// Unpack final (auth-crypted) message with destination key
 	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
 	assert.Nil(t, err)
-	dstKeys, err := getRecipientKeys(dstPackedBytes)
+	dstKeys, err := getRecipientKeysFromBytes(dstPackedBytes)
 	assert.Nil(t, err)
 	assert.True(t, len(dstFwdKeys) == 1)
 	assert.Equal(t, didOut.VerKey(), dstKeys[0])

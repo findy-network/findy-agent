@@ -235,7 +235,7 @@ type MsgInit struct {
 	Thread     *decorator.Thread
 	DIDObj     *ssi.DID
 	To         string
-	Msg        []byte
+	Msg        map[string]interface{}
 }
 
 type MsgFactor interface {

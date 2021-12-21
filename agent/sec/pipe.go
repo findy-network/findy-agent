@@ -2,6 +2,7 @@ package sec
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/aries"
@@ -126,10 +127,15 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	res := r.Bytes()
 	for _, rKey := range p.Out.Route() {
 		msgType := pltype.RoutingForward
+		data := make(map[string]interface{})
+		err = json.Unmarshal(res, &data)
+		if err != nil {
+			return nil, "", err
+		}
 		msg := aries.MsgCreator.Create(didcomm.MsgInit{
 			Type: msgType,
 			To:   vk,
-			Msg:  res,
+			Msg:  data,
 		})
 		fwdMsg := msg.FieldObj().(*common.Forward)
 
