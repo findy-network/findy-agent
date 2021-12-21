@@ -51,6 +51,28 @@ func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (
 	}, nil
 }
 
+func verifyTimestamp(data []byte) (timestamp int64, valid bool) {
+	now := time.Now().Unix()
+	tsIsValid := func(ts int64) bool {
+		diff := now - ts
+		return diff >= 0 && diff <= connectionSigExpTime
+	}
+
+	// preferred is big endian
+	timestamp = int64(binary.BigEndian.Uint64(data))
+	if tsIsValid(timestamp) {
+		return timestamp, true
+	}
+
+	glog.Warningf("big endian encoded signature timestamp %s is invalid, try little endian", time.Unix(timestamp, 0))
+
+	// accept also meaningful values found in little endian encoding
+	// TODO: required format missing from spec
+	// => confirm if we should support only preferred big endian
+	timestamp = int64(binary.LittleEndian.Uint64(data))
+	return timestamp, tsIsValid(timestamp)
+}
+
 // verifySignature verifies a signature inside the structure. If sec.Pipe is not
 // given, it uses the key from the signature structure. If succeeded it returns
 // a Connection structure, else nil.
@@ -81,17 +103,8 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 		return nil, nil
 	}
 
-	timestamp := int64(binary.BigEndian.Uint64(data))
-	now := time.Now().Unix()
-	diff := now - timestamp
-	if diff < 0 || diff > connectionSigExpTime {
-		// try little endian - TODO: format missing from spec?
-		glog.Warningf("signature timestamp %s is invalid for big endian encoding, try little endian", time.Unix(timestamp, 0))
-		timestamp = int64(binary.LittleEndian.Uint64(data))
-		diff = now - timestamp
-	}
-
-	if diff < 0 || diff > connectionSigExpTime {
+	timestamp, ok := verifyTimestamp(data)
+	if !ok {
 		glog.Errorln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
 		return nil, nil
 	}
