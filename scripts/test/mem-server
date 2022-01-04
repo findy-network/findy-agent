@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. ./functions.sh
+
 agency=${fcli_agency:-"go run ../.."}
 pool=${fcli_pool:-"FINDY_MEM_LEDGER,"}
 wpool_size=${fcli_wsize:-"50"}
@@ -8,8 +10,16 @@ enclaveFile="mem/enclave.bolt"
 register="mem/findy.json"
 
 if [[ -z ${no_clean} ]]; then
-	echo "cleaning..."
+	echo -n "'no_clean' not defined, going to reset all. "
+	if [[ $(prompt_default_no) == "no" ]]; then
+		no_clean=yes
+	fi
+fi
+if [[ -z ${no_clean} ]]; then
+	echo "Backuping & cleaning..."
+	mkdir -p mem/
 	mv "$enclaveFile" "$enclaveFile".bak
+	mv "$register" "$register".bak
 	echo -n "{}" > "$register"
 fi
 
