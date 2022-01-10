@@ -264,6 +264,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	err2.Check(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey()))
 
 	res := msg.FieldObj().(*didexchange.Response)
+	// update caller with route information
+	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
 	pipe := sec.Pipe{
 		In:  calleePw.Callee, // This is us
 		Out: caller,          // This is the other end, who sent the Request

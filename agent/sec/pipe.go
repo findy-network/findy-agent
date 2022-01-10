@@ -126,6 +126,8 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 	res := r.Bytes()
 	for _, rKey := range p.Out.Route() {
+		glog.V(3).Infof("Packing with route key %s", rKey)
+
 		msgType := pltype.RoutingForward
 		data := make(map[string]interface{})
 		err = json.Unmarshal(res, &data)
