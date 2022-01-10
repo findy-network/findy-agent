@@ -11,6 +11,7 @@ services:
       - .data/agent:/root
     environment:
       FCLI_POOL_GENESIS_TXN_FILE: '/genesis.txt'
+      FCLI_AGENCY_STEWARD_DID: ''
       FCLI_AGENCY_GRPC_TLS: 'true'
       FCLI_AGENCY_GRPC_CERT_PATH: '/grpc'
       FCLI_AGENCY_HOST_ADDRESS: <IP_ADDRESS>
