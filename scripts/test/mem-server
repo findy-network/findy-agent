@@ -2,14 +2,14 @@
 
 . ./functions.sh
 
-agency=${fcli_agency:-"go run ../.."}
-pool=${fcli_pool:-"FINDY_MEM_LEDGER,"}
-wpool_size=${fcli_wsize:-"50"}
+agency=${agency:-"go run ../.."}
+pool=${pool:-"FINDY_MEM_LEDGER,"}
+wpool_size=${wsize:-"50"}
 
-enclaveFile="mem/enclave.bolt"
-register="mem/findy.json"
+enclaveFile=${enclave:-"mem/enclave.bolt"}
+register=${register:-"mem/findy.json"}
 
-if [[ -z ${no_clean} ]]; then
+if [[ -z ${no_clean} && ! -z ${pool} ]]; then
 	echo -n "'no_clean' not defined, going to reset all. "
 	if [[ $(prompt_default_no) == "no" ]]; then
 		no_clean=yes
