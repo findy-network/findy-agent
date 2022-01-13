@@ -32,7 +32,8 @@ $agency agency start $@ \
 --pool-name $pool \
 --steward-did Th7MpTaRZVRYnPiabds81Y \
 --register-file "$register" \
---register-backup-interval 300h \
+--register-backup "" \
+--register-backup-interval 0h \
 --enclave-path $enclaveFile \
 --host-address localhost \
 --wallet-pool $wpool_size
