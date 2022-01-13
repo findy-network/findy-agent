@@ -53,6 +53,7 @@ var agencyStartEnvs = map[string]string{
 	"wallet-backup":            "WALLET_BACKUP",
 	"wallet-backup-time":       "WALLET_BACKUP_TIME",
 	"wallet-pool":              "WALLET_POOL",
+	"request-timeout":          "REQUEST_TIMEOUT",
 }
 
 // startAgencyCmd represents the agency start subcommand
