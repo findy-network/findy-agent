@@ -3,11 +3,11 @@ module github.com/findy-network/findy-agent
 go 1.16
 
 require (
-	github.com/findy-network/findy-common-go v0.1.26-0.20211129161717-174e67c10dcf
-	github.com/findy-network/findy-wrapper-go v0.24.4-0.20211213085346-f038bb90f742
+	github.com/findy-network/findy-common-go v0.1.29
+	github.com/findy-network/findy-wrapper-go v0.3.6
 	github.com/go-co-op/gocron v1.6.2
 	github.com/go-test/deep v1.0.7
-	github.com/golang/glog v0.0.0-20210429001901-424d2337a529
+	github.com/golang/glog v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/lainio/err2 v0.7.0
 	github.com/spf13/cobra v1.2.1
