@@ -55,7 +55,13 @@ func Backup() {
 		glog.Warning(err)
 	})
 
-	name := backupName(utils.Settings.RegisterBackupName())
+	backupFileName := utils.Settings.RegisterBackupName()
+	if backupFileName == "" {
+		glog.V(10).Infoln("register backup name is empty, will not backup")
+		return
+	}
+
+	name := backupName(backupFileName)
 	err2.Check(backup.FileCopy(utils.Settings.RegisterName(), name))
 	glog.V(1).Infoln("CA register backup successful to:", name)
 	lastBackup = time.Now()
