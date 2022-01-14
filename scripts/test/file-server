@@ -1,12 +1,3 @@
 #!/bin/bash
 
-echo $@
-
-go run ../.. agency start "$@" \
---steward-wallet-name "sovrin_steward_wallet" \
---steward-wallet-key "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE" \
---pool-name "FINDY_FILE_LEDGER" \
---steward-did "Th7MpTaRZVRYnPiabds81Y" \
---register-file "findy.json" \
---host-address "localhost"
-
+pool="FINDY_FILE_LEDGER,file_ledger.json" ./mem-server
