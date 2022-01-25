@@ -106,10 +106,12 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
 		glog.Errorln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
-		return nil, nil
+		// TODO: pass invalid timestamps on for now, as some agents do not fill it at all
+		// should be fixed with new signature implementation
+		// return nil, nil
+	} else {
+		glog.V(3).Info("verified connection signature w/ ts:", time.Unix(timestamp, 0))
 	}
-
-	glog.V(3).Info("verified connection signature w/ ts:", time.Unix(timestamp, 0))
 
 	connectionJSON := data[8:]
 
