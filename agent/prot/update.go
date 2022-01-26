@@ -258,13 +258,21 @@ func triggerEnd(info endingInfo) {
 				role:        info.role,
 			})
 		}
-	case psm.Waiting:
-		// Notify also tasks that are waiting for user action
+	case psm.Waiting, psm.Failure:
+		plType := pltype.Nothing
+		// Notify tasks that are waiting for user action
 		if info.pendingUserAction {
+			plType = info.userActionType
+		}
+		// ...or failed
+		if info.subState&psm.Failure != 0 {
+			plType = pltype.CANotifyStatus
+		}
+		if plType != pltype.Nothing {
 			bus.WantUserActions.Broadcast(key, info.subState)
 			NotifyEdge(notifyEdge{
 				did:         info.meDID,
-				plType:      info.userActionType,
+				plType:      plType,
 				nonce:       info.nonce,
 				timestamp:   info.timestamp,
 				pwName:      info.pwName,
