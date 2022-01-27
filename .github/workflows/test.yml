@@ -25,13 +25,33 @@ jobs:
           go-version: 1.16.x
       - name: checkout
         uses: actions/checkout@v2
-      - name: test
-        run: make test
+      - name: test and measure coverage
+        run: make test_cov_out
         env:
           TEST_WORKDIR: /github/home/.test/
           CI: true
+      - name: store coverage file
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage.txt
+          path: ./coverage.txt
+          retention-days: 1
       - name: scan
         run: make scan
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage.txt
+      - name: upload coverage
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.txt
+
   e2e:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04

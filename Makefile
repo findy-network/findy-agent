@@ -105,8 +105,11 @@ testrv:
 testv:
 	go test -v -p 1 -failfast ./...
 
-test_cov:
-	go test -v -p 1 -failfast -coverprofile=c.out ./... && go tool cover -html=c.out
+test_cov_out:
+	go test -v -p 1 -failfast -coverprofile=coverage.txt ./...
+
+test_cov: test_cov_out
+	go tool cover -html=coverage.txt
 
 misspell:
 	@go get github.com/client9/misspell 
