@@ -33,7 +33,7 @@ jobs:
       - name: store coverage file
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.GITHUB_SHA }}-coverage.txt
+          name: ${{ github.sha }}-coverage.txt
           path: ./coverage.txt
           retention-days: 1
       - name: scan
@@ -46,7 +46,7 @@ jobs:
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
-          name: ${{ env.GITHUB_SHA }}-coverage.txt
+          name: ${{ github.sha }}-coverage.txt
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
