@@ -30,12 +30,29 @@ jobs:
         env:
           TEST_WORKDIR: /github/home/.test/
           CI: true
+      - name: store coverage file
+        uses: actions/upload-artifact@v2
+        with:
+          name: test job coverage $GITHUB_SHA
+          path: ./$GITHUB_SHA-coverage.txt
+          retention: 1
+      - name: scan
+        run: make scan
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: test job coverage $GITHUB_SHA
+          path: ./$GITHUB_SHA-coverage.txt
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          files: ./coverage.txt
-      - name: scan
-        run: make scan
+          files: ./$GITHUB_SHA-coverage.txt
+
   e2e:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
