@@ -33,9 +33,9 @@ jobs:
       - name: store coverage file
         uses: actions/upload-artifact@v2
         with:
-          name: test job coverage $GITHUB_SHA
-          path: ./$GITHUB_SHA-coverage.txt
-          retention: 1
+          name: $GITHUB_SHA-coverage.txt
+          path: ./coverage.txt
+          retention-days: 1
       - name: scan
         run: make scan
 
@@ -46,12 +46,11 @@ jobs:
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
-          name: test job coverage $GITHUB_SHA
-          path: ./$GITHUB_SHA-coverage.txt
+          name: $GITHUB_SHA-coverage.txt
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          files: ./$GITHUB_SHA-coverage.txt
+          files: ./coverage.txt
 
   e2e:
     runs-on: ubuntu-latest
