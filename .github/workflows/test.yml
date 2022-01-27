@@ -25,11 +25,15 @@ jobs:
           go-version: 1.16.x
       - name: checkout
         uses: actions/checkout@v2
-      - name: test
-        run: make test
+      - name: test and measure coverage
+        run: make test_cov_out
         env:
           TEST_WORKDIR: /github/home/.test/
           CI: true
+      - name: upload coverage
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.txt
       - name: scan
         run: make scan
   e2e:
