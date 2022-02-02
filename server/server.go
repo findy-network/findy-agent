@@ -19,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // StartHTTPServer starts the http server. The function blocks when it success.
@@ -96,7 +97,7 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	ourAddress := logRequestInfo("Aries TRANSPORT", r)
 
-	data := err2.Bytes.Try(ioutil.ReadAll(r.Body))
+	data := try.To1(ioutil.ReadAll(r.Body))
 
 	canContinue := ourAddress != nil &&
 		agency.IsHandlerInThisAgency(ourAddress.PlRcvr) &&

@@ -6,7 +6,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -20,6 +19,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type taskIssueCredential struct {
@@ -132,7 +132,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 				err2.Check(r.Err())
 				credOffer := r.Str1()
 
-				attrsStr := err2.Bytes.Try(json.Marshal(credTask.CredentialAttrs))
+				attrsStr := try.To1(json.Marshal(credTask.CredentialAttrs))
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				codedValues := issuecredential.PreviewCredentialToCodedValues(pc)
@@ -216,7 +216,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		Nonce: im.Thread().ID,
 	}
 
-	state := e2.PSM.Try(psm.GetPSM(key))
+	state := try.To1(psm.GetPSM(key))
 	assert.D.True(state != nil, "continue issue credential, task not found")
 
 	credTask := state.LastState().T.(*taskIssueCredential)
@@ -244,7 +244,7 @@ func fillIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolS
 		DID:   workerDID,
 		Nonce: taskID,
 	}
-	credRep := e2.IssueCredRep.Try(data.GetIssueCredRep(key))
+	credRep := try.To1(data.GetIssueCredRep(key))
 
 	// TODO: save schema id parsed to db? copied from original implementation
 	var credOfferMap map[string]interface{}

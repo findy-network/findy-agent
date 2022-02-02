@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type didCommServer struct {
@@ -36,10 +36,10 @@ func (s *didCommServer) Run(
 
 	glog.V(3).Infoln("run() call")
 
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := try.To2(ca(ctx))
 
-	task := e2.Task.Try(taskFrom(protocol))
+	task := try.To1(taskFrom(protocol))
 	glog.V(3).Infoln(caDID, "-agent starts protocol:", protocol.TypeID)
 
 	key := psm.NewStateKey(receiver.WorkerEA(), task.ID())
@@ -93,7 +93,7 @@ loop:
 func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pid *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Resume protocol:", state.ProtocolID.TypeID, state.ProtocolID.ID)
 
 	prot.Resume(receiver, uniqueTypeID(state.ProtocolID.Role, state.ProtocolID.TypeID),
@@ -105,7 +105,7 @@ func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pi
 func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.ID)
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
 	err2.Check(prot.AddAndSetFlagUpdatePSM(key, psm.Archiving, 0))
@@ -117,8 +117,8 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
 	defer err2.Return(&err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
-	task := e2.Task.Try(taskFrom(protocol))
+	caDID, receiver := try.To2(ca(ctx))
+	task := try.To1(taskFrom(protocol))
 	glog.V(1).Infoln(caDID, "-agent starts protocol:", protocol.TypeID)
 	prot.FindAndStartTask(receiver, task)
 	return &pb.ProtocolID{ID: task.ID()}, nil
@@ -127,7 +127,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {
 	defer err2.Return(&err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", id.TypeID, protocolName[id.TypeID])
 	ps, _ = tryProtocolStatus(id, key)
@@ -135,7 +135,7 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 }
 
 func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
-	m := e2.PSM.Try(psm.GetPSM(key))
+	m := try.To1(psm.GetPSM(key))
 	state := &pb.ProtocolState{
 		ProtocolID: id,
 		State:      calcProtocolState(m),

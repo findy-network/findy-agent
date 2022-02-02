@@ -8,13 +8,13 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type notifyEdge struct {
@@ -81,7 +81,7 @@ func UpdatePSM(
 	}
 
 	PSMKey := psm.StateKey{DID: agentDID, Nonce: task.ID()}
-	foundPSM := e2.PSM.Try(psm.FindPSM(PSMKey))
+	foundPSM := try.To1(psm.FindPSM(PSMKey))
 
 	var currentPSM *psm.PSM
 	timestamp := time.Now().UnixNano()
@@ -160,7 +160,7 @@ func AddAndSetFlagUpdatePSM(
 
 	defer err2.Annotate("mark archive psm", &err)
 
-	m := e2.PSM.Try(psm.GetPSM(machineKey))
+	m := try.To1(psm.GetPSM(machineKey))
 
 	clearedLastSubState := m.LastState().Sub &^ unsetSubState
 	var machine *psm.PSM

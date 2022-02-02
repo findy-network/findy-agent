@@ -19,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,7 +67,7 @@ func getRecipientKeysFromBytes(msg []byte) (keys []string, err error) {
 func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 	err2.Return(&err)
 
-	protData := err2.Bytes.Try(utils.DecodeB64(msg["protected"].(string)))
+	protData := try.To1(utils.DecodeB64(msg["protected"].(string)))
 
 	data := protected{}
 	err2.Check(json.Unmarshal(protData, &data))

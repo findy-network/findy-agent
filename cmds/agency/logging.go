@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-common-go/agency/client"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type LoggingCmd struct {
@@ -33,7 +34,7 @@ func (c LoggingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	defer cancel()
 
 	opsClient := pb.NewDevOpsServiceClient(conn)
-	err2.Empty.Try(opsClient.Enter(ctx, &pb.Cmd{
+	try.To1(opsClient.Enter(ctx, &pb.Cmd{
 		Type:    pb.Cmd_LOGGING,
 		Request: &pb.Cmd_Logging{Logging: c.Level},
 	}))

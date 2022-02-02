@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 func WalletLocations() []string {
@@ -13,7 +14,7 @@ func WalletLocations() []string {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 	})
 
-	home := err2.String.Try(os.UserHomeDir())
+	home := try.To1(os.UserHomeDir())
 	indyWallets := filepath.Join(home, ".indy_client/wallet")
 
 	return []string{indyWallets}

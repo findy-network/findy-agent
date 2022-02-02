@@ -39,6 +39,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/try"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -106,7 +107,7 @@ func setUp() {
 	calcTestMode()
 
 	if testMode == TestModeRunOne {
-		gob := err2.Bytes.Try(ioutil.ReadFile("ONEdata.gob"))
+		gob := try.To1(ioutil.ReadFile("ONEdata.gob"))
 		dto.FromGOB(gob, &prebuildAgents)
 		agents = &prebuildAgents
 	} else {

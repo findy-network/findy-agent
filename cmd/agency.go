@@ -8,6 +8,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +80,7 @@ Example
 		err2.Check(aCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(aCmd.Exec(os.Stdout))
+			try.To1(aCmd.Exec(os.Stdout))
 		}
 		return nil
 	},
@@ -109,7 +110,7 @@ Example
 		err2.Check(paCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(paCmd.Exec(os.Stdout))
+			try.To1(paCmd.Exec(os.Stdout))
 		}
 		return nil
 	},
@@ -139,7 +140,7 @@ Example
 
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(migrateCmd.Exec(os.Stdout))
+			try.To1(migrateCmd.Exec(os.Stdout))
 		}
 		return nil
 	},

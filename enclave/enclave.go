@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 const emailB = "email_bucket"
@@ -102,7 +103,7 @@ func NewWalletKey(email string) (key string, err error) {
 		return "", errors.New("key already exists")
 	}
 
-	key = err2.String.Try(generateKey())
+	key = try.To1(generateKey())
 
 	err2.Check(db.AddKeyValueToBucket(buckets[emailBucket],
 		&db.Data{
@@ -165,7 +166,7 @@ func WalletKeyExists(email string) bool {
 // associated to it.
 func WalletKeyByEmail(email string) (key string, err error) {
 	value := &db.Data{Write: decrypt}
-	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[emailBucket],
+	found := try.To1(db.GetKeyValueFromBucket(buckets[emailBucket],
 		&db.Data{
 			Data: []byte(email),
 			Read: hash,
@@ -180,7 +181,7 @@ func WalletKeyByEmail(email string) (key string, err error) {
 // WalletKeyByDID retrieves a wallet key by a DID.
 func WalletKeyByDID(DID string) (key string, err error) {
 	value := &db.Data{Write: decrypt}
-	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[didBucket],
+	found := try.To1(db.GetKeyValueFromBucket(buckets[didBucket],
 		&db.Data{
 			Data: []byte(DID),
 			Read: hash,
@@ -195,7 +196,7 @@ func WalletKeyByDID(DID string) (key string, err error) {
 // WalletMasterSecretByDID retrieves a wallet master secret key by a DID.
 func WalletMasterSecretByDID(DID string) (key string, err error) {
 	value := &db.Data{Write: decrypt}
-	found := err2.Bool.Try(db.GetKeyValueFromBucket(buckets[masterSecretBucket],
+	found := try.To1(db.GetKeyValueFromBucket(buckets[masterSecretBucket],
 		&db.Data{
 			Data: []byte(DID),
 			Read: hash,

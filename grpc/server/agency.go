@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -22,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type agencyService struct {
@@ -86,7 +86,7 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.AgencyService_PSMH
 			glog.Errorln("error sending response:", err)
 		}
 	})
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
 	user := jwt.User(ctx)
 	if user != a.Root {
 		return errors.New("access right")
@@ -155,7 +155,7 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 		DID:   notify.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
-	p := e2.PSM.Try(psm.GetPSM(psmKey))
+	p := try.To1(psm.GetPSM(psmKey))
 	err2.Check(psm.RmPSM(p))
 }
 

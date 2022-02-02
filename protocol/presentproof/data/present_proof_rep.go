@@ -11,6 +11,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const bucketType = psm.BucketPresentProof
@@ -72,10 +73,10 @@ func (rep *PresentProofRep) CreateProof(packet comm.Packet, rootDID string) (err
 		foundCredDefs[v.CredInfo.CredDefID] = struct{}{}
 	}
 
-	schemasJSON := err2.String.Try(schemas(rootDID, foundSchemas))
-	credDefsJSON := err2.String.Try(credDefs(rootDID, foundCredDefs))
+	schemasJSON := try.To1(schemas(rootDID, foundSchemas))
+	credDefsJSON := try.To1(credDefs(rootDID, foundCredDefs))
 
-	masterSec := err2.String.Try(packet.Receiver.MasterSecret())
+	masterSec := try.To1(packet.Receiver.MasterSecret())
 	r := <-anoncreds.ProverCreateProof(w2, rep.ProofReq, reqCredJSON,
 		masterSec, schemasJSON, credDefsJSON, "{}")
 	err2.Check(r.Err())
@@ -177,7 +178,7 @@ func credDefs(DID string, credDefIDs map[string]struct{}) (cJSON string, err err
 
 	credDefs := make(map[string]map[string]interface{}, len(credDefIDs))
 	for cdID := range credDefIDs {
-		credDef := err2.String.Try(ssi.CredDefFromLedger(DID, cdID))
+		credDef := try.To1(ssi.CredDefFromLedger(DID, cdID))
 		credDefObject := map[string]interface{}{}
 		dto.FromJSONStr(credDef, &credDefObject)
 		credDefs[cdID] = credDefObject
@@ -209,10 +210,10 @@ func (rep *PresentProofRep) VerifyProof(packet comm.Packet) (ack bool, err error
 
 	rootDID := packet.Receiver.RootDid().Did()
 	schemaIDs := getSchemaIDs(proof.Identifiers)
-	schemasJSON := err2.String.Try(schemas(rootDID, schemaIDs))
+	schemasJSON := try.To1(schemas(rootDID, schemaIDs))
 
 	credDefIDs := getCredDefIDs(proof.Identifiers)
-	credDefsJSON := err2.String.Try(credDefs(rootDID, credDefIDs))
+	credDefsJSON := try.To1(credDefs(rootDID, credDefIDs))
 
 	r := <-anoncreds.VerifierVerifyProof(rep.ProofReq, rep.Proof, schemasJSON, credDefsJSON, "{}", "{}")
 	err2.Check(r.Err())

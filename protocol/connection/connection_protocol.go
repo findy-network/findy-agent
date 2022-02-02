@@ -27,6 +27,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type taskDIDExchange struct {
@@ -299,7 +300,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	nonce := ipl.ThreadID()
 	response := ipl.MsgHdr().FieldObj().(*didexchange.Response)
-	if !err2.Bool.Try(signature.Verify(response)) {
+	if !try.To1(signature.Verify(response)) {
 		glog.Error("cannot verify Connection Response signature --> send NACK")
 		return errors.New("cannot verify connection response signature")
 		// todo: send NACK here

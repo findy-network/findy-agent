@@ -7,7 +7,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -22,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type taskPresentProof struct {
@@ -253,7 +253,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		Nonce: im.Thread().ID,
 	}
 
-	state := e2.PSM.Try(psm.GetPSM(*key))
+	state := try.To1(psm.GetPSM(*key))
 	assert.D.True(state != nil, "continue present proof, task not found")
 
 	proofTask := state.LastState().T

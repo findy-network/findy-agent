@@ -4,7 +4,6 @@ package prover
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -13,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/std/presentproof"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // HandleRequestPresentation is a handler func at PROVER side.
@@ -42,10 +42,10 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
+			rep := try.To1(data.GetPresentProofRep(repK))
 
 			req := im.FieldObj().(*presentproof.Request)
-			data := err2.Bytes.Try(presentproof.ProofReqData(req))
+			data := try.To1(presentproof.ProofReqData(req))
 			rep.ProofReq = string(data)
 
 			preview.StoreProofData(data, rep)
@@ -89,7 +89,7 @@ func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
 			// We continue, get previous data, create the proof and send it
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.PresentProofRep.Try(data.GetPresentProofRep(repK))
+			rep := try.To1(data.GetPresentProofRep(repK))
 
 			err2.Check(rep.CreateProof(comm.Packet{Receiver: agent}, repK.DID))
 			// save created proof to Representative

@@ -4,7 +4,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -14,6 +13,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines
@@ -71,9 +71,9 @@ func StartPSM(ts Initial) (err error) {
 		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
 	})
 
-	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.ConnectionID()))
+	pipe := try.To1(wa.PwPipe(ts.T.ConnectionID()))
 	msgMeDID := pipe.In.Did()
-	agentEndp := e2.Public.Try(pipe.EA())
+	agentEndp := try.To1(pipe.EA())
 	ts.T.SetReceiverEndp(agentEndp)
 
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
@@ -119,7 +119,7 @@ func ContinuePSM(shift Again) (err error) {
 	wDID := shift.CA.WDID()
 	wa := shift.CA.WorkerEA()
 
-	PSM := e2.PSM.Try(psm.GetPSM(psm.StateKey{
+	PSM := try.To1(psm.GetPSM(psm.StateKey{
 		DID:   wDID,
 		Nonce: shift.InMsg.SubLevelID(),
 	}))
@@ -153,7 +153,7 @@ func ContinuePSM(shift Again) (err error) {
 		Thread: decorator.NewThread(shift.InMsg.SubLevelID(), ""),
 	})
 
-	if !err2.Bool.Try(shift.Transfer(wa, im, om)) { // if handler says NACK
+	if !try.To1(shift.Transfer(wa, im, om)) { // if handler says NACK
 		if shift.SendOnNACK != "" {
 			sendBack = true           // set if we'll send NACK
 			plType = shift.SendOnNACK // NACK type to send
@@ -164,7 +164,7 @@ func ContinuePSM(shift Again) (err error) {
 
 	if sendBack {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
-		agentEndp := e2.Public.Try(pipe.EA())
+		agentEndp := try.To1(pipe.EA())
 		presentTask.SetReceiverEndp(agentEndp)
 
 		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, opl, psm.Sending))
@@ -241,7 +241,7 @@ func ExecPSM(ts Transition) (err error) {
 				Thread: ts.Payload.Thread(), // very important!
 			})
 
-		if !err2.Bool.Try(ts.InOut(connID, im, om)) { // if handler says NACK
+		if !try.To1(ts.InOut(connID, im, om)) { // if handler says NACK
 			if ts.SendOnNACK != pltype.Nothing {
 				sendBack = true        // set if we'll send NACK
 				plType = ts.SendOnNACK // NACK type to send
@@ -255,7 +255,7 @@ func ExecPSM(ts Transition) (err error) {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
 
 		// Get endpoint from secure pipe to save it in case for resending.
-		agentEndp := e2.Public.Try(ep.EA())
+		agentEndp := try.To1(ep.EA())
 		task.SetReceiverEndp(agentEndp)
 
 		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))

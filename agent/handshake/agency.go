@@ -21,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 var Hub *Agency
@@ -73,7 +74,7 @@ type Agency struct{}
 func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	defer err2.Annotate("create archor", &err)
 
-	key := err2.String.Try(enclave.NewWalletKey(email))
+	key := try.To1(enclave.NewWalletKey(email))
 	defer func() {
 		key = ""
 	}()
@@ -152,8 +153,8 @@ func LoadRegistered(filename string) (err error) {
 			})
 
 			if !alreadyRegistered[name] {
-				key := err2.String.Try(enclave.WalletKeyByEmail(email))
-				keyByDid := err2.String.Try(enclave.WalletKeyByDID(rootDid))
+				key := try.To1(enclave.WalletKeyByEmail(email))
+				keyByDid := try.To1(enclave.WalletKeyByDID(rootDid))
 
 				if key != keyByDid {
 					// key values are left out from logs in purpose

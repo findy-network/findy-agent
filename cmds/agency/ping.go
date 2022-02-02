@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-common-go/agency/client"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type PingCmd struct {
@@ -59,7 +60,7 @@ func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 		Service:  "/", // use the root as a ping address
 	}
 
-	resp := err2.Bytes.Try(comm.SendAndWaitReq(endpointAdd.Address(), p, 0))
+	resp := try.To1(comm.SendAndWaitReq(endpointAdd.Address(), p, 0))
 	cmds.Fprintln(w, string(resp))
 
 	return nil, nil

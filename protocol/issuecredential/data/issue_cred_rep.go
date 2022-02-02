@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const bucketType = psm.BucketIssueCred
@@ -54,7 +55,7 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 
 	a := packet.Receiver
 	w := a.Wallet()
-	masterSecID := err2.String.Try(a.MasterSecret())
+	masterSecID := try.To1(a.MasterSecret())
 
 	// Get CRED DEF from the ledger
 	_, rep.CredDef, err = ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID)

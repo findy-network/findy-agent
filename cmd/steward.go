@@ -6,6 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/cmds/steward"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,7 @@ Example
 		err2.Check(createStewardCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(createStewardCmd.Exec(os.Stdout))
+			try.To1(createStewardCmd.Exec(os.Stdout))
 		}
 		return nil
 	},
