@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/stretchr/testify/assert"
 )
 
