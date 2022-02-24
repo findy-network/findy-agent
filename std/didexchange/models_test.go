@@ -10,7 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 )
 
 // Connection request taken from Python Agent output for example json.

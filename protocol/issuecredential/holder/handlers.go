@@ -11,7 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/protocol/issuecredential/preview"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/issuecredential"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 )

@@ -7,8 +7,9 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -65,7 +66,7 @@ func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
 }
 
 func NewDid(did, verkey string) (d *DID) {
-	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: verkey}}, On: Consumed}
+	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: Consumed}
 	return &DID{data: f}
 }
 
@@ -76,7 +77,7 @@ func NewOutDid(verkey string, route []string) (d *DID) {
 }
 
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
-	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: ""}}, On: Consumed}
+	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
 	return d
 }
@@ -220,7 +221,7 @@ func (d *DID) Endpoint() string {
 
 func (d *DID) SetAEndp(ae service.Addr) {
 	d.endp = &Future{
-		V:  dto.Result{Data: dto.Data{Str1: ae.Endp, Str2: ae.Key}},
+		V:  indyDto.Result{Data: indyDto.Data{Str1: ae.Endp, Str2: ae.Key}},
 		On: Consumed,
 	}
 }

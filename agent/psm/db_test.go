@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-common-go/crypto/db"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/go-test/deep"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/assert"
