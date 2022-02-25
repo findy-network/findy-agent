@@ -69,11 +69,11 @@ func addData(key []byte, value []byte, bucketID byte) (err error) {
 	return mgdDB.AddKeyValueToBucket(buckets[bucketID],
 		&db.Data{
 			Data: value,
-			Read: hash,
+			Read: encrypt,
 		},
 		&db.Data{
 			Data: key,
-			Read: encrypt,
+			Read: hash,
 		},
 	)
 }
