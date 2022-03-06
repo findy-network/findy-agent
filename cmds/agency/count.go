@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-common-go/agency/client"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type CountCmd struct {
@@ -36,7 +37,7 @@ func (c CountCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	result, err := opsClient.Enter(ctx, &pb.Cmd{
 		Type: pb.Cmd_COUNT,
 	})
-	err2.Check(err)
+	try.To(err)
 	cmds.Fprintln(w, "count result:\n", result.GetCount())
 
 	return nil, nil

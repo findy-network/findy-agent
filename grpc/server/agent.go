@@ -147,8 +147,8 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
-	err2.Check(sch.Create(ca.RootDid().Did()))
-	err2.Check(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
+	try.To(sch.Create(ca.RootDid().Did()))
+	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
 	return &pb.Schema{ID: sch.ValidID()}, nil
 }
@@ -167,11 +167,11 @@ func (a *agentServer) CreateCredDef(
 		"schema:", cdc.SchemaID)
 
 	sch := &ssi.Schema{ID: cdc.SchemaID}
-	err2.Check(sch.FromLedger(ca.RootDid().Did()))
+	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	cd := r.Str2()
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
@@ -190,7 +190,7 @@ func (a *agentServer) GetSchema(
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
 
 	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID)
-	err2.Check(err)
+	try.To(err)
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -247,7 +247,7 @@ func (a *agentServer) CreateInvitation(
 	jStr := dto.ToJSON(invitation)
 	// .. and build a URL which contains the invitation
 	urlStr, err := didexchange.Build(invitation)
-	err2.Check(err)
+	try.To(err)
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from
@@ -271,7 +271,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 
 	// mark the preallocated pairwise DID with connection ID that we find it
 	r := <-did.SetMeta(wa.Wallet(), ourPairwiseDID.Did(), id)
-	err2.Check(r.Err())
+	try.To(r.Err())
 
 	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id
@@ -341,12 +341,12 @@ loop:
 			assert.D.True(clientID.ID == notify.ClientID)
 			agentStatus := processNofity(notify)
 			agentStatus.ClientID.ID = notify.ClientID
-			err2.Check(server.Send(agentStatus))
+			try.To(server.Send(agentStatus))
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
 			glog.V(7).Infoln("sending keepalive timer")
-			err2.Check(server.Send(&pb.AgentStatus{
+			try.To(server.Send(&pb.AgentStatus{
 				ClientID: &pb.ClientID{ID: clientID.ID},
 				Notification: &pb.Notification{
 					TypeID: pb.Notification_KEEPALIVE,
@@ -399,17 +399,17 @@ loop:
 
 			var question *pb.Question
 			question, err = processQuestion(ctx, notify)
-			err2.Check(err)
+			try.To(err)
 			if question != nil {
 				question.Status.ClientID.ID = clientID.ID
-				err2.Check(server.Send(question))
+				try.To(server.Send(question))
 				glog.V(1).Infoln("send question..")
 			}
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
 			glog.V(7).Infoln("sending keepalive timer")
-			err2.Check(server.Send(&pb.Question{
+			try.To(server.Send(&pb.Question{
 				Status: &pb.AgentStatus{
 					ClientID: &pb.ClientID{ID: clientID.ID},
 				},

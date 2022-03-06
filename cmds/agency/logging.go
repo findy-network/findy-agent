@@ -38,7 +38,7 @@ func (c LoggingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 		Type:    pb.Cmd_LOGGING,
 		Request: &pb.Cmd_Logging{Logging: c.Level},
 	}))
-	err2.Check(err)
+	try.To(err)
 	cmds.Fprintln(w, "no error")
 
 	return nil, nil

@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type ImportCmd struct {
@@ -54,7 +55,7 @@ func (c ImportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	}
 
 	res := <-wallet.Import(walletCfg, walletCreds, importCreds)
-	err2.Check(res.Err())
+	try.To(res.Err())
 
 	cmds.Fprintf(w, "wallet %s imported from file %s\n", c.WalletName,
 		c.Filename)

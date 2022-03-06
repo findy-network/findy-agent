@@ -119,7 +119,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 
 	switch t.Type() {
 	case pltype.CACredOffer: // Send to Holder
-		err2.Check(prot.StartPSM(prot.Initial{
+		try.To(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.IssueCredentialOffer,
 			WaitingNext: pltype.IssueCredentialRequest,
 			Ca:          ca,
@@ -129,7 +129,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 
 				r := <-anoncreds.IssuerCreateCredentialOffer(
 					ca.Wallet(), credTask.CredDefID)
-				err2.Check(r.Err())
+				try.To(r.Err())
 				credOffer := r.Str1()
 
 				attrsStr := try.To1(json.Marshal(credTask.CredentialAttrs))
@@ -143,7 +143,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 					CredOffer:  credOffer,
 					Attributes: credTask.CredentialAttrs,
 				}
-				err2.Check(psm.AddRep(rep))
+				try.To(psm.AddRep(rep))
 
 				offer := msg.FieldObj().(*issuecredential.Offer)
 				offer.CredentialPreview = pc
@@ -155,7 +155,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 		}))
 
 	case pltype.CACredRequest: // Send to Issuer
-		err2.Check(prot.StartPSM(prot.Initial{
+		try.To(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.IssueCredentialPropose,
 			WaitingNext: pltype.IssueCredentialOffer,
 			Ca:          ca,
@@ -164,7 +164,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 				defer err2.Annotate("start issue prot", &err)
 
 				attrsStr, err := json.Marshal(credTask.CredentialAttrs)
-				err2.Check(err)
+				try.To(err)
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				propose := msg.FieldObj().(*issuecredential.Propose)
@@ -178,7 +178,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 					Attributes: credTask.CredentialAttrs,
 					Values:     issuecredential.PreviewCredentialToCodedValues(pc),
 				}
-				err2.Check(psm.AddRep(rep))
+				try.To(psm.AddRep(rep))
 				return nil
 			},
 		}))

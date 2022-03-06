@@ -36,7 +36,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		rep := &data.IssueCredRep{
 			StateKey: key,
 		}
-		err2.Check(psm.AddRep(rep))
+		try.To(psm.AddRep(rep))
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
@@ -78,7 +78,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			// Save the rep with the offer and with the request if
 			// auto accept
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			return true, nil
 		},
@@ -94,7 +94,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.IssueCredentialRequest,
@@ -117,7 +117,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 			credRq := try.To1(rep.BuildCredRequest(
 				comm.Packet{Receiver: agent}))
 
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 			req := om.FieldObj().(*issuecredential.Request)
 			req.RequestsAttach =
 				issuecredential.NewRequestAttach([]byte(credRq))
@@ -154,7 +154,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 
 			rep := try.To1(data.GetIssueCredRep(repK))
 			cred := try.To1(issuecredential.CredentialAttach(issue))
-			err2.Check(rep.StoreCred(packet, string(cred)))
+			try.To(rep.StoreCred(packet, string(cred)))
 
 			outAck := om.FieldObj().(*common.Ack)
 			outAck.Status = "OK"

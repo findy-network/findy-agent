@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 var processor = comm.ProtProc{Starter: startProtocol,
@@ -26,7 +27,7 @@ func startProtocol(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.StartPSM(prot.Initial{
+	try.To(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.BasicMessageSend,
 		WaitingNext: pltype.Terminate,
 		Ca:          ca,

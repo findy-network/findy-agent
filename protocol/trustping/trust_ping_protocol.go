@@ -12,6 +12,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type taskTrustPing struct {
@@ -54,7 +55,7 @@ func startTrustPing(ca comm.Receiver, t comm.Task) {
 	defer err2.CatchTrace(func(err error) {
 		glog.Error(err)
 	})
-	err2.Check(prot.StartPSM(prot.Initial{
+	try.To(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.TrustPingPing,
 		WaitingNext: pltype.TrustPingResponse,
 		Ca:          ca,

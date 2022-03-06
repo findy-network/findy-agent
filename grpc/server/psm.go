@@ -73,7 +73,7 @@ loop:
 					ProtocolID: &pb.ProtocolID{ID: task.ID()},
 					State:      pb.ProtocolState_WAIT_ACTION,
 				}
-				err2.Check(server.Send(status))
+				try.To(server.Send(status))
 			}
 		}
 	}
@@ -85,7 +85,7 @@ loop:
 		ProtocolID: &pb.ProtocolID{ID: task.ID()},
 		State:      statusCode,
 	}
-	err2.Check(server.Send(status))
+	try.To(server.Send(status))
 
 	return nil
 }
@@ -108,7 +108,7 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.ID)
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
-	err2.Check(prot.AddAndSetFlagUpdatePSM(key, psm.Archiving, 0))
+	try.To(prot.AddAndSetFlagUpdatePSM(key, psm.Archiving, 0))
 	glog.V(1).Infoln(caDID, "-agent release OK", id.ID)
 
 	return id, nil

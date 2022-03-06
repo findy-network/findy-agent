@@ -70,7 +70,7 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 	protData := try.To1(utils.DecodeB64(msg["protected"].(string)))
 
 	data := protected{}
-	err2.Check(json.Unmarshal(protData, &data))
+	try.To(json.Unmarshal(protData, &data))
 
 	keys = make([]string, 0)
 	for _, recipient := range data.Recipients {

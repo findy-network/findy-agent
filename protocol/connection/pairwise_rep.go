@@ -5,6 +5,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const bucketType = psm.BucketPairwise
@@ -44,7 +45,7 @@ func getPairwiseRep(key psm.StateKey) (rep *pairwiseRep, err error) {
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, key)
-	err2.Check(err)
+	try.To(err)
 
 	var ok bool
 	rep, ok = res.(*pairwiseRep)

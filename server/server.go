@@ -198,7 +198,7 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 		Receiver: ca.WEA(), // worker EA handles the packet
 	}
 
-	err2.Check(comm.Proc.Process(packet))
+	try.To(comm.Proc.Process(packet))
 
 	// no error, we can cleanup the received payload
 	rmIncoming(packet.Address)

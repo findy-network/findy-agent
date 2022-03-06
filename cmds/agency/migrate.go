@@ -14,6 +14,7 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type MigrateCmd struct {
@@ -42,8 +43,8 @@ func (c MigrateCmd) Validate() (err error) {
 func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
-	err2.Check(c.sealedBox())
-	err2.Check(ag.Register.Load(c.InputReg))
+	try.To(c.sealedBox())
+	try.To(ag.Register.Load(c.InputReg))
 
 	registeredWallets := make(map[string]seedAgent)
 
@@ -78,7 +79,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 
 			seed := cloud.NewSeedAgent(rootDid, caDid, "", aw)
 			h, err := seed.Migrate()
-			err2.Check(err)
+			try.To(err)
 
 			a := h.(comm.Receiver)
 			vk := a.MyDID().VerKey()
@@ -101,7 +102,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	for _, sa := range registeredWallets {
 		ag.Register.Add(sa.RootDID, sa.Name, sa.CADID, sa.CAVerKey)
 	}
-	err2.Check(ag.Register.Save(c.OutputReg))
+	try.To(ag.Register.Save(c.OutputReg))
 	cmds.Fprintln(w, "All ready")
 
 	return nil, nil

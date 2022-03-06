@@ -19,6 +19,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 	"google.golang.org/grpc"
 )
 
@@ -44,9 +45,9 @@ func Serve(conf *rpc.ServerCfg) {
 	}
 
 	s, lis, err := rpc.PrepareServe(conf)
-	err2.Check(err)
+	try.To(err)
 	Server = s
-	err2.Check(s.Serve(lis))
+	try.To(s.Serve(lis))
 }
 
 func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {

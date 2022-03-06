@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -91,10 +92,10 @@ func init() {
 	flags.StringVar(&rootFlags.logging, "logging", "-logtostderr=true -v=2", flagInfo("logging startup arguments", "", rootEnvs["logging"]))
 	flags.BoolVarP(&rootFlags.dryRun, "dry-run", "n", false, flagInfo("perform a trial run with no changes made", "", rootEnvs["dry-run"]))
 
-	err2.Check(viper.BindPFlag("logging", flags.Lookup("logging")))
-	err2.Check(viper.BindPFlag("dry-run", flags.Lookup("dry-run")))
+	try.To(viper.BindPFlag("logging", flags.Lookup("logging")))
+	try.To(viper.BindPFlag("dry-run", flags.Lookup("dry-run")))
 
-	err2.Check(BindEnvs(rootEnvs, ""))
+	try.To(BindEnvs(rootEnvs, ""))
 
 }
 
@@ -133,7 +134,7 @@ func BindEnvs(envMap map[string]string, cmdName string) (err error) {
 	defer err2.Return(&err)
 	for flagKey, envName := range envMap {
 		finalEnvName := getEnvName(cmdName, envName)
-		err2.Check(viper.BindEnv(flagKey, finalEnvName))
+		try.To(viper.BindEnv(flagKey, finalEnvName))
 	}
 	return nil
 }
@@ -161,13 +162,13 @@ func setRequiredStringFlags(cmd *cobra.Command) {
 		log.Println(err)
 	})
 
-	err2.Check(viper.BindPFlags(cmd.LocalFlags()))
+	try.To(viper.BindPFlags(cmd.LocalFlags()))
 	if cmd.PreRunE != nil {
-		err2.Check(cmd.PreRunE(cmd, nil))
+		try.To(cmd.PreRunE(cmd, nil))
 	}
 	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
 		if viper.GetString(f.Name) != "" {
-			err2.Check(cmd.LocalFlags().Set(f.Name, viper.GetString(f.Name)))
+			try.To(cmd.LocalFlags().Set(f.Name, viper.GetString(f.Name)))
 		}
 	})
 }

@@ -167,7 +167,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 
 	switch t.Type() {
 	case pltype.CAProofPropose: // ----- prover will start -----
-		err2.Check(prot.StartPSM(prot.Initial{
+		try.To(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.PresentProofPropose,
 			WaitingNext: pltype.PresentProofRequest,
 			Ca:          ca,
@@ -198,7 +198,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 			},
 		}))
 	case pltype.CAProofRequest: // ----- verifier will start -----
-		err2.Check(prot.StartPSM(prot.Initial{
+		try.To(prot.StartPSM(prot.Initial{
 			SendNext:    pltype.PresentProofRequest,
 			WaitingNext: pltype.PresentProofPresentation,
 			Ca:          ca,
@@ -313,7 +313,7 @@ func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 		DID:   workerDID,
 		Nonce: taskID,
 	})
-	err2.Check(err)
+	try.To(err)
 
 	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
 

@@ -77,7 +77,7 @@ Example
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
 
-		err2.Check(aCmd.Validate())
+		try.To(aCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(aCmd.Exec(os.Stdout))
@@ -107,7 +107,7 @@ Example
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
-		err2.Check(paCmd.Validate())
+		try.To(paCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(paCmd.Exec(os.Stdout))
@@ -136,7 +136,7 @@ Example
 			migrateCmd.EnclaveKey = args[2]
 		}
 
-		err2.Check(migrateCmd.Validate())
+		try.To(migrateCmd.Validate())
 
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true

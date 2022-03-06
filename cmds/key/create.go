@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type CreateCmd struct {
@@ -31,7 +32,7 @@ func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	err2.Return(&err)
 
 	result := <-wallet.GenerateKey(c.Seed)
-	err2.Check(result.Err())
+	try.To(result.Err())
 	walletKey := result.Str1()
 	cmds.Fprintln(w, walletKey)
 

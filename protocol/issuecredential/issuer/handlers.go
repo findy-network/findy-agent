@@ -58,7 +58,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 
 			r := <-anoncreds.IssuerCreateCredentialOffer(
 				agent.MyCA().Wallet(), prop.CredDefID)
-			err2.Check(r.Err())
+			try.To(r.Err())
 			credOffer := r.Str1()
 
 			rep := &data.IssueCredRep{
@@ -68,7 +68,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 				Values:     values, // important! saved for Req handling
 				Attributes: attributes,
 			}
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			offer, autoAccept := om.FieldObj().(*issuecredential.Offer)
 			if autoAccept {
@@ -91,7 +91,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.IssueCredentialOffer,

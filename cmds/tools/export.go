@@ -8,6 +8,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type ExportCmd struct {
@@ -54,7 +55,7 @@ func (c ExportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer agent.CloseWallet()
 
 	agent.ExportWallet(c.ExportKey, c.Filename)
-	err2.Check(agent.Export.Result().Err())
+	try.To(agent.Export.Result().Err())
 
 	cmds.Fprintln(w, "wallet exported:", c.Filename)
 	return r, nil

@@ -36,7 +36,7 @@ Example
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
-		err2.Check(impCmd.Validate())
+		try.To(impCmd.Validate())
 		if !rootFlags.dryRun {
 			try.To1(impCmd.Exec(os.Stdout))
 		}

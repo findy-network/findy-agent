@@ -79,7 +79,7 @@ func (rep *PresentProofRep) CreateProof(packet comm.Packet, rootDID string) (err
 	masterSec := try.To1(packet.Receiver.MasterSecret())
 	r := <-anoncreds.ProverCreateProof(w2, rep.ProofReq, reqCredJSON,
 		masterSec, schemasJSON, credDefsJSON, "{}")
-	err2.Check(r.Err())
+	try.To(r.Err())
 	rep.Proof = r.Str1()
 	return nil
 }
@@ -88,7 +88,7 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 	proofReq anoncreds.ProofRequest) (anoncreds.RequestedCredentials, []anoncreds.Credentials) {
 
 	r := <-anoncreds.ProverSearchCredentialsForProofReq(w2, rep.ProofReq, findy.NullString)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	searchHandle := r.Handle()
 
 	reqCred := anoncreds.RequestedCredentials{
@@ -105,7 +105,7 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 		for {
 			r = <-anoncreds.ProverFetchCredentialsForProofReq(searchHandle,
 				attrRef, fetchMax)
-			err2.Check(r.Err())
+			try.To(r.Err())
 			credentials := r.Str1()
 			credInfo := make([]anoncreds.Credentials, 0, fetchMax)
 			dto.FromJSONStr(credentials, &credInfo)
@@ -143,7 +143,7 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 		for {
 			r = <-anoncreds.ProverFetchCredentialsForProofReq(searchHandle,
 				predicateRef, fetchMax)
-			err2.Check(r.Err())
+			try.To(r.Err())
 			credentials := r.Str1()
 			credInfo := make([]anoncreds.Credentials, 0, fetchMax)
 			dto.FromJSONStr(credentials, &credInfo)
@@ -169,7 +169,7 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 	}
 
 	r = <-anoncreds.ProverCloseCredentialsSearchForProofReq(searchHandle)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	return reqCred, allCredInfos
 }
 
@@ -193,7 +193,7 @@ func schemas(DID string, schemaIDs map[string]struct{}) (sJSON string, err error
 	schemas := make(map[string]map[string]interface{}, len(schemaIDs))
 	for schemaID := range schemaIDs {
 		sch := ssi.Schema{ID: schemaID}
-		err2.Check(sch.FromLedger(DID))
+		try.To(sch.FromLedger(DID))
 		schemaObject := map[string]interface{}{}
 		dto.FromJSONStr(sch.LazySchema(), &schemaObject)
 		schemas[schemaID] = schemaObject
@@ -216,7 +216,7 @@ func (rep *PresentProofRep) VerifyProof(packet comm.Packet) (ack bool, err error
 	credDefsJSON := try.To1(credDefs(rootDID, credDefIDs))
 
 	r := <-anoncreds.VerifierVerifyProof(rep.ProofReq, rep.Proof, schemasJSON, credDefsJSON, "{}", "{}")
-	err2.Check(r.Err())
+	try.To(r.Err())
 	return r.Yes(), nil
 }
 
@@ -241,7 +241,7 @@ func GetPresentProofRep(key psm.StateKey) (rep *PresentProofRep, err error) {
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, key)
-	err2.Check(err)
+	try.To(err)
 
 	// Allow not found
 	if res == nil {

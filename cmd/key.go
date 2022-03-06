@@ -42,7 +42,7 @@ Example
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
-		err2.Check(keyCreateCmd.Validate())
+		try.To(keyCreateCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(keyCreateCmd.Exec(os.Stdout))

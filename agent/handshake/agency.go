@@ -92,7 +92,7 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
 
 		// Promote new agent by Trusted Anchor DID if steward is available
-		err2.Check(steward.SendNYM(anchorDid, steward.RootDid().Did(),
+		try.To(steward.SendNYM(anchorDid, steward.RootDid().Did(),
 			findy.NullString, "TRUST_ANCHOR"))
 	}
 
@@ -105,7 +105,7 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	// from a pairwise only CA wallet in continuous backup process.
 	accessmgr.Send(agent.WalletH)
 
-	err2.Check(enclave.SetKeysDID(key, anchorDid.Did()))
+	try.To(enclave.SetKeysDID(key, anchorDid.Did()))
 
 	return agent, nil
 }

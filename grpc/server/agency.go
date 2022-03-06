@@ -51,7 +51,7 @@ func (a agencyService) Onboard(
 
 	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
 	ac, err := handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed)
-	err2.Check(err)
+	try.To(err)
 
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()
@@ -156,7 +156,7 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 		Nonce: notify.ProtocolID,
 	}
 	p := try.To1(psm.GetPSM(psmKey))
-	err2.Check(psm.RmPSM(p))
+	try.To(psm.RmPSM(p))
 }
 
 func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, notify bus.AgentNotify) {
@@ -188,10 +188,10 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 		glog.Warningf("client id mismatch: c/s: %s/%s",
 			hook.ID, notify.ClientID)
 	}
-	err2.Check(server.Send(&agentStatus))
+	try.To(server.Send(&agentStatus))
 
 	// Update PSM state to trigger immediate cleanup
-	err2.Check(prot.AddAndSetFlagUpdatePSM(psmKey,
+	try.To(prot.AddAndSetFlagUpdatePSM(psmKey,
 		psm.Archived,  // set this
 		psm.Archiving, // clear this
 	))

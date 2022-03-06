@@ -123,7 +123,7 @@ func UpdatePSM(
 			Role:        role,
 		}
 	}
-	err2.Check(psm.AddPSM(currentPSM))
+	try.To(psm.AddPSM(currentPSM))
 
 	plType := opl.Type()
 	if plType == pltype.Nothing {
@@ -172,7 +172,7 @@ func AddAndSetFlagUpdatePSM(
 	} else {
 		return fmt.Errorf("previous PSM (%s) must exist", machineKey)
 	}
-	err2.Check(psm.AddPSM(machine))
+	try.To(psm.AddPSM(machine))
 
 	if subState&(psm.Archiving|psm.Archived) != 0 {
 		go notifyArchiving(machine, endingInfo{

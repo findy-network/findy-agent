@@ -49,7 +49,7 @@ Example
 			Name: poolName,
 			Txn:  poolGen,
 		}
-		err2.Check(Cmd.Validate())
+		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(Cmd.Exec(os.Stdout))
@@ -81,7 +81,7 @@ Example
 		Cmd := pool.PingCmd{
 			Name: poolName,
 		}
-		err2.Check(Cmd.Validate())
+		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(Cmd.Exec(os.Stdout))

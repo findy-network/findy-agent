@@ -44,7 +44,7 @@ func (c PingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	result, err := opsClient.Enter(ctx, &pb.Cmd{
 		Type: pb.Cmd_PING,
 	})
-	err2.Check(err)
+	try.To(err)
 	cmds.Fprintln(w, "result:", result.GetPing())
 
 	return nil, nil

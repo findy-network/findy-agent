@@ -32,6 +32,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type Cmd struct {
@@ -155,9 +156,9 @@ func (c *Cmd) Setup() (err error) {
 	defer err2.Return(&err)
 
 	c.printStartupArgs()
-	err2.Check(c.initSealedBox())
+	try.To(c.initSealedBox())
 	c.startLoadingAgents()
-	err2.Check(psm.Open(c.PsmDb))
+	try.To(psm.Open(c.PsmDb))
 	ssi.OpenPool(c.PoolName)
 	c.checkSteward()
 	c.setRuntimeSettings()
@@ -171,7 +172,7 @@ func (c *Cmd) Run() (err error) {
 
 	c.startBackupTasks()
 	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
-	err2.Check(server.StartHTTPServer(c.ServerPort))
+	try.To(server.StartHTTPServer(c.ServerPort))
 
 	return nil
 }
@@ -206,8 +207,8 @@ func (c *Cmd) startBackupTasks() {
 func StartAgency(serverCmd *Cmd) (err error) {
 	defer err2.Return(&err)
 
-	err2.Check(serverCmd.Setup())
-	err2.Check(serverCmd.Run())
+	try.To(serverCmd.Setup())
+	try.To(serverCmd.Run())
 	serverCmd.closeAll()
 
 	return nil
@@ -265,9 +266,9 @@ func (c *Cmd) printStartupArgs() {
 
 func (c *Cmd) startLoadingAgents() {
 	if c.ResetData {
-		err2.Check(agency.ResetRegistered(c.HandshakeRegister))
+		try.To(agency.ResetRegistered(c.HandshakeRegister))
 	} else {
-		err2.Check(handshake.LoadRegistered(c.HandshakeRegister))
+		try.To(handshake.LoadRegistered(c.HandshakeRegister))
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type AgentType interface {
@@ -208,7 +209,7 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 	newDID.Store(a.Wallet())
 
 	// Previous is an async func so make sure results are ready
-	err2.Check(newDID.StoreResult())
+	try.To(newDID.StoreResult())
 
 	return nil
 }

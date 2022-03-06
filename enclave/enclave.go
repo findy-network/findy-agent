@@ -105,7 +105,7 @@ func NewWalletKey(email string) (key string, err error) {
 
 	key = try.To1(generateKey())
 
-	err2.Check(db.AddKeyValueToBucket(buckets[emailBucket],
+	try.To(db.AddKeyValueToBucket(buckets[emailBucket],
 		&db.Data{
 			Data: []byte(key),
 			Read: encrypt,
@@ -135,7 +135,7 @@ func NewWalletMasterSecret(did string) (sec string, err error) {
 
 	sec = utils.UUID()
 
-	err2.Check(db.AddKeyValueToBucket(buckets[masterSecretBucket],
+	try.To(db.AddKeyValueToBucket(buckets[masterSecretBucket],
 		&db.Data{
 			Data: []byte(sec),
 			Read: encrypt,
@@ -227,7 +227,7 @@ func generateKey() (key string, err error) {
 	defer err2.Return(&err)
 
 	r := <-wallet.GenerateKey("")
-	err2.Check(r.Err())
+	try.To(r.Err())
 	key = r.Str1()
 	return key, nil
 }

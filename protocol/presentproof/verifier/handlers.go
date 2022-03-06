@@ -99,7 +99,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 				ProofReq:   reqStr,
 				Attributes: attributes,
 			}
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			req, autoAccept := om.FieldObj().(*presentproof.Request)
 			if autoAccept {
@@ -117,7 +117,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.PresentProofRequest,
@@ -190,7 +190,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 				rep.Attributes[index].Value = proof.RequestedProof.RevealedAttrs[attr.ID].Raw
 			}
 
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			// Autoaccept -> all checks done, let's send ACK
 			ackMsg, autoAccept := om.FieldObj().(*common.Ack)
@@ -208,7 +208,7 @@ func ContinueHandlePresentation(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.PresentProofACK,

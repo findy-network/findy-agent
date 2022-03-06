@@ -48,7 +48,7 @@ Example
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
-		err2.Check(createStewardCmd.Validate())
+		try.To(createStewardCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
 			try.To1(createStewardCmd.Exec(os.Stdout))
