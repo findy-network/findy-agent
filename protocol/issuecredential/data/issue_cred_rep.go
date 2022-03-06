@@ -94,7 +94,7 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 }
 
 func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, key)

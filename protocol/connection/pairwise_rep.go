@@ -41,7 +41,7 @@ func (p *pairwiseRep) Type() byte {
 }
 
 func getPairwiseRep(key psm.StateKey) (rep *pairwiseRep, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, key)

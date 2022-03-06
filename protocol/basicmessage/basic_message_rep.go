@@ -43,7 +43,7 @@ func (p *basicMessageRep) Type() byte {
 }
 
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, psm.StateKey{

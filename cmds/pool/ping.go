@@ -20,7 +20,7 @@ func (c *PingCmd) Validate() error {
 }
 
 func (c *PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	cmds.Fprintln(w, "starting to open cnx to:", c.Name)
 	h := ssi.OpenPool(c.Name).Int()
