@@ -12,7 +12,6 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
 )
 
 type DidComm interface {
@@ -128,19 +127,6 @@ func (d *DID) Store(wallet int) {
 	d.Lock()
 	d.stored = f
 	d.Unlock()
-
-	go func() {
-		defer err2.CatchTrace(func(err error) {}) // dont let crash on panics
-
-		f := new(Future)
-		f.SetChan(did.SetMeta(wallet, ds, "pairwise"))
-
-		if f.Result().Err() == nil { // no error
-			d.Lock()
-			d.meta = f
-			d.Unlock()
-		}
-	}()
 }
 
 // StoreResult returns error status of the Store() functions result. If storing
