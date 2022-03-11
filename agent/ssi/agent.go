@@ -151,6 +151,10 @@ func (a *DIDAgent) Wallet() (h int) {
 	return a.WalletH.Handle()
 }
 
+func (a *DIDAgent) ManagedWallet() managed.Wallet {
+	return a.WalletH
+}
+
 func (a *DIDAgent) OpenPool(name string) {
 	OpenPool(name)
 }

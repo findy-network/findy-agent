@@ -7,6 +7,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -75,6 +76,10 @@ func (h *Handle) timestamp() int64 {
 	h.l.RLock()
 	defer h.l.RUnlock()
 	return h.ts
+}
+
+func (h *Handle) Storage() api.AgentStorage {
+	return h.storage
 }
 
 // Handle returns the actual indy wallet handle which can be used with indy SDK

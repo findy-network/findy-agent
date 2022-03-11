@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 )
@@ -20,6 +21,7 @@ type Receiver interface {
 	WDID() string
 	PwPipe(pw string) (cp sec.Pipe, err error)
 	Wallet() int
+	ManagedWallet() managed.Wallet
 	Pool() int
 	FindPWByDID(my string) (pw *ssi.Pairwise, err error)
 	AttachSAImpl(implID string)
