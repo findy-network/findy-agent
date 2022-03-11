@@ -1,12 +1,17 @@
 package ssi
 
 import (
+	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/managed"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 var maxOpened = 10
@@ -27,11 +32,12 @@ func SetWalletMgrPoolSize(s int) {
 // wallet handles is kept open (MaxOpen). See more information from API function
 // descriptions.
 type Handle struct {
-	ts  int64        // last access timestamp
-	h   int          // wallet handle
-	f   *Future      // wallet handle future
-	cfg Wallet       // wallet file information
-	l   sync.RWMutex // lock
+	ts      int64                // last access timestamp
+	h       int                  // wallet handle
+	f       *Future              // wallet handle future
+	cfg     Wallet               // wallet file information
+	storage storage.AgentStorage // agent-specific storage
+	l       sync.RWMutex         // lock
 }
 
 // Config returns managed wallet's associated indy wallet configuration.
@@ -45,6 +51,10 @@ func (h *Handle) Config() managed.WalletCfg {
 // NOT important or desired to call this function during the agency process is
 // running.
 func (h *Handle) Close() {
+	defer err2.Catch(func(err error) {
+		glog.Warning("closing error:", err)
+	})
+
 	h.l.Lock()
 	defer h.l.Unlock()
 
@@ -57,9 +67,8 @@ func (h *Handle) Close() {
 		glog.Warning("handle mismatch!!")
 	}
 	h.h = 0
-	if f.Result().Err() != nil {
-		glog.Warning("closing error:", f.Result().Err())
-	}
+	err2.Check(f.Result().Err())
+	err2.Check(h.storage.Close())
 }
 
 func (h *Handle) timestamp() int64 {
@@ -89,12 +98,19 @@ func (h *Handle) Handle() int {
 // reopen opens the wallet by its configuration. Open is always called by Wallet
 // Manager because it will keep track of wallet handles and max amount of them.
 func (h *Handle) reopen() int {
+	defer err2.Catch(func(err error) {
+		glog.Error("error when reopening wallet: ", err)
+	})
+
 	h.f = h.cfg.Open()
 	if glog.V(10) {
 		glog.Info("opening wallet: ", h.cfg.Config.ID)
 	}
 	h.ts = time.Now().UnixNano()
 	h.h = h.f.Int()
+
+	err2.Check(h.storage.Open())
+
 	return h.h
 }
 
@@ -123,11 +139,26 @@ func (m *Mgr) Open(cfg Wallet) managed.Wallet {
 }
 
 func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
+	defer err2.Catch(func(err error) {
+		glog.Error("error when opening wallet: ", err)
+	})
+
+	home := utils.IndyBaseDir()
+	filePath := filepath.Join(home, ".indy_client") // TODO: fetch from settings
+
+	aStorage, err := mgddb.New(storage.AgentStorageConfig{
+		AgentID:  cfg.ID(),
+		AgentKey: mgddb.GenerateKey(), // TODO: fetch from settings
+		FilePath: filePath,
+	})
+	err2.Check(err)
+
 	h := &Handle{
-		ts:  time.Now().UnixNano(),
-		h:   0,
-		f:   cfg.Open(),
-		cfg: cfg,
+		ts:      time.Now().UnixNano(),
+		h:       0,
+		f:       cfg.Open(),
+		cfg:     cfg,
+		storage: aStorage,
 	}
 	m.opened[cfg.UniqueID()] = h
 	h.h = h.f.Int()
