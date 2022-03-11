@@ -1,6 +1,8 @@
 package mgddb
 
 import (
+	"os"
+
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/wrapper"
 	"github.com/findy-network/findy-common-go/dto"
@@ -35,6 +37,8 @@ type Storage struct {
 
 func New(config api.AgentStorageConfig) (a *Storage, err error) {
 	defer err2.Annotate("afgo storage new", &err)
+
+	err2.Check(os.MkdirAll(config.FilePath, os.ModePerm))
 
 	me := &Storage{
 		wrapper.New(wrapper.Config{

@@ -7,11 +7,13 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
+	"github.com/lainio/err2"
 )
 
 type DidComm interface {
@@ -115,14 +117,24 @@ func (d *DID) SetWallet(w managed.Wallet) {
 // Store stores this DID as their DID to given wallet. Work is done thru futures
 // so the call doesn't block. The meta data is set "pairwise". See StoreResult()
 // for status.
-func (d *DID) Store(wallet int) {
-	ds, vk, _ := d.data.Strs()
+func (d *DID) Store(mgdWallet managed.Wallet) {
+	defer err2.Catch(func(err error) {
+		glog.Errorf("Error storing DID: %s", err)
+	})
 
+	ds, vk, _ := d.data.Strs()
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
-	f := new(Future)
 
-	f.SetChan(did.StoreTheir(wallet, json))
+	f := new(Future)
+	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
+
+	glog.V(5).Infof("agent storage Store DID %s", ds)
+	err2.Check(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
+		ID:         ds,
+		DID:        ds,
+		IndyVerKey: vk,
+	}))
 
 	d.Lock()
 	d.stored = f
@@ -155,6 +167,7 @@ func (d *DID) StoreResult() error {
 	if pw != nil && pw.Result().Err() != nil {
 		return fmt.Errorf("pairwise: %s", pw.Result().Error())
 	}
+
 	return nil
 }
 

@@ -19,9 +19,10 @@ const (
 )
 
 type DID struct {
-	ID  string
-	DID string
-	Doc *did.DocResolution
+	ID         string
+	DID        string
+	IndyVerKey string
+	Doc        *did.DocResolution
 }
 
 // just playing around, this is probably not needed at this level

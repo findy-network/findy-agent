@@ -122,12 +122,19 @@ func (h *Handle) reopen() int {
 type WalletMap map[string]*Handle
 
 type Mgr struct {
-	opened WalletMap
-	l      sync.Mutex // lock
+	opened          WalletMap
+	storageFilePath string
+	l               sync.Mutex // lock
 }
 
 var wallets = &Mgr{
-	opened: make(WalletMap, maxOpened),
+	opened:          make(WalletMap, maxOpened),
+	storageFilePath: storageFolder(),
+}
+
+func storageFolder() string {
+	home := utils.IndyBaseDir()
+	return filepath.Join(home, ".indy_client/storage") // TODO: fetch from agency settings
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
@@ -148,13 +155,10 @@ func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
 		glog.Error("error when opening wallet: ", err)
 	})
 
-	home := utils.IndyBaseDir()
-	filePath := filepath.Join(home, ".indy_client") // TODO: fetch from settings
-
 	aStorage, err := mgddb.New(storage.AgentStorageConfig{
 		AgentID:  cfg.ID(),
-		AgentKey: mgddb.GenerateKey(), // TODO: fetch from settings
-		FilePath: filePath,
+		AgentKey: mgddb.GenerateKey(), // TODO: fetch from agent settings
+		FilePath: m.storageFilePath,
 	})
 	err2.Check(err)
 

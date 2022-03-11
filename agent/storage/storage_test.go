@@ -41,7 +41,6 @@ func setUp() {
 	flag.Parse()
 
 	kmsTestStorages = make([]*storageTest, 0)
-
 	// AFGO
 	kmsTestConfig := api.AgentStorageConfig{
 		AgentKey: mgddb.GenerateKey(),
