@@ -177,13 +177,16 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 	f := new(Future)
 	ch := make(findy.Channel, 1)
 	go func() {
+		defer err2.Catch(func(err error) {
+			glog.Errorf("AddDID failed: %s", err)
+		})
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
-		a.WalletH.Storage().DIDStorage().AddDID(api.DID{
+		err2.Check(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
 			ID:         didRes.Data.Str1,
 			DID:        didRes.Data.Str1,
 			IndyVerKey: didRes.Data.Str2,
-		})
+		}))
 		ch <- didRes
 	}()
 	f.SetChan(ch)
