@@ -1,5 +1,9 @@
 name: test
-on: push
+on:
+  workflow_run:
+    workflows: [release]
+    types: [completed]
+  push:
 jobs:
   lint:
     runs-on: ubuntu-latest
