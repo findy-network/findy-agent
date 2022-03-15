@@ -33,12 +33,15 @@ func SetWalletMgrPoolSize(s int) {
 // wallet handles is kept open (MaxOpen). See more information from API function
 // descriptions.
 type Handle struct {
-	ts      int64                // last access timestamp
-	h       int                  // wallet handle
-	f       *Future              // wallet handle future
-	cfg     Wallet               // wallet file information
+	ts  int64   // last access timestamp
+	h   int     // wallet handle
+	f   *Future // wallet handle future
+	cfg Wallet  // wallet file information
+
+	// TODO: map agent storages to handles
 	storage storage.AgentStorage // agent-specific storage
-	l       sync.RWMutex         // lock
+
+	l sync.RWMutex // lock
 }
 
 // Config returns managed wallet's associated indy wallet configuration.

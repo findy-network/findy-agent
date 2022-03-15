@@ -129,6 +129,7 @@ func (d *DID) Store(mgdWallet managed.Wallet) {
 	f := new(Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
+	// Store did it also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
 	err2.Check(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
 		ID:         ds,

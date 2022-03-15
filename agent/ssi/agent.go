@@ -180,6 +180,7 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 		defer err2.Catch(func(err error) {
 			glog.Errorf("AddDID failed: %s", err)
 		})
+		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
 		err2.Check(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
@@ -221,6 +222,8 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 		glog.Errorln("error when fetching localKey: ", err)
 	})
 
+	// using did storage to get the verkey - could be also fetched from indy wallet directly
+	// eventually all data should be fetched from agent storage and not from indy wallet
 	did, err := a.ManagedWallet().Storage().DIDStorage().GetDID(didName)
 	err2.Check(err)
 
