@@ -22,7 +22,7 @@ type AgentStorage interface {
 }
 
 type DIDStorage interface {
-	AddDID(did DID) error
+	SaveDID(did DID) error
 	GetDID(id string) (*DID, error)
 }
 
@@ -35,7 +35,7 @@ type Connection struct {
 }
 
 type ConnectionStorage interface {
-	AddConnection(conn Connection) error
+	SaveConnection(conn Connection) error
 	GetConnection(id string) (*Connection, error)
 	ListConnections() ([]Connection, error)
 }

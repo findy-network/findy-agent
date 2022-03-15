@@ -98,7 +98,7 @@ func (s *Storage) CredentialStorage() api.CredentialStorage {
 }
 
 // DIDStorage
-func (s *Storage) AddDID(did api.DID) (err error) {
+func (s *Storage) SaveDID(did api.DID) (err error) {
 	return s.didStore.Put(did.ID, dto.ToGOB(did))
 }
 
@@ -113,7 +113,7 @@ func (s *Storage) GetDID(id string) (did *api.DID, err error) {
 }
 
 // ConnectionStorage
-func (s *Storage) AddConnection(conn api.Connection) error {
+func (s *Storage) SaveConnection(conn api.Connection) error {
 	return s.connStore.Put(conn.ID, dto.ToGOB(conn))
 }
 

@@ -252,6 +252,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
+	// TODO: DID CALL
 	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
 
 	try.To(r.Err())
@@ -335,6 +336,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
+	// TODO: DID CALL
 	r := <-did.SetEndpoint(a.Wallet(), callee.Did(), calleeEndp.Address(), calleeEndp.VerKey)
 	try.To(r.Err())
 

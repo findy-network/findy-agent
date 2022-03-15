@@ -184,7 +184,7 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
-		try.To(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
+		try.To(a.WalletH.Storage().DIDStorage().SaveDID(api.DID{
 			ID:         didRes.Data.Str1,
 			DID:        didRes.Data.Str1,
 			IndyVerKey: didRes.Data.Str2,

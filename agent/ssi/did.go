@@ -127,12 +127,13 @@ func (d *DID) Store(mgdWallet managed.Wallet) {
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
 
+	// TODO: DID CALL
 	f := new(Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
 	// Store did it also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
-	try.To(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
+	try.To(mgdWallet.Storage().DIDStorage().SaveDID(storage.DID{
 		ID:         ds,
 		DID:        ds,
 		IndyVerKey: vk,
@@ -181,6 +182,7 @@ func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, pw PairwiseMeta) {
 		f := &Future{}
 		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(pw))
 
+		// TODO: PW CALL
 		f.SetChan(pairwise.Create(wallet, theirDID.Did(), d.Did(), meta))
 		theirDID.pw = f
 	} else {
@@ -195,6 +197,7 @@ func (d *DID) hasKeyData() bool {
 
 func (d *DID) StartEndp(wallet int) {
 	f := &Future{}
+	// TODO: DID CALL
 	f.SetChan(did.Endpoint(wallet, Pool(), d.Did()))
 	d.Lock()
 	d.endp = f
