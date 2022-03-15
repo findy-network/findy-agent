@@ -224,6 +224,8 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/worker/email*")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	removeFiles(home, "/.indy_client/storage/unit_test_wallet*")
+	removeFiles(home, "/.indy_client/storage/email*")
 	if os.Getenv("TEST_WORKDIR") != "" {
 		removeFiles(home, "/wallets/*")
 	}
