@@ -13,8 +13,6 @@ import (
 	"github.com/lainio/err2"
 )
 
-const level7 = 7
-
 type Store interface {
 	storage.Store
 	GetAll(transform db.Filter) ([][]byte, error)
@@ -110,7 +108,7 @@ func (s *StorageProvider) Key() string {
 
 // Used by AFGO through StorageProvider interface
 func (s *StorageProvider) OpenStore(name string) (storage.Store, error) {
-	glog.V(level7).Infoln("StorageProvider::OpenStore", s.ID(), name)
+	glog.V(7).Infoln("StorageProvider::OpenStore", s.ID(), name)
 
 	if b, ok := s.buckets[name]; ok {
 		return &b, nil
@@ -221,16 +219,16 @@ func (s *StorageProvider) getAll(bucketID byte, transform db.Filter) (res [][]by
 
 // AFGO StorageProvider placeholder implementations
 func (s *StorageProvider) SetStoreConfig(name string, config storage.StoreConfiguration) error {
-	glog.V(level7).Infoln("StorageProvider::SetStoreConfig", name)
+	glog.V(7).Infoln("StorageProvider::SetStoreConfig", name)
 	panic("implement me")
 }
 
 func (s *StorageProvider) GetStoreConfig(name string) (storage.StoreConfiguration, error) {
-	glog.V(level7).Infoln("StorageProvider::GetStoreConfig", name)
+	glog.V(7).Infoln("StorageProvider::GetStoreConfig", name)
 	panic("implement me")
 }
 
 func (s *StorageProvider) GetOpenStores() []storage.Store {
-	glog.V(level7).Infoln("StorageProvider::GetOpenStores")
+	glog.V(7).Infoln("StorageProvider::GetOpenStores")
 	panic("implement me")
 }

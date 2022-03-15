@@ -22,7 +22,7 @@ func newBucket(owner *StorageProvider, bucketID byte) bucket {
 // Put stores the key + value pair along with the (optional) tags.
 // If key is empty or value is nil, then an error will be returned.
 func (b *bucket) Put(key string, value []byte, tags ...storage.Tag) (err error) {
-	glog.V(level7).Infoln("bucket::Put", key, tags)
+	glog.V(7).Infoln("bucket::Put", key, tags)
 
 	if len(tags) > 0 {
 		panic("tags not supported")
@@ -37,7 +37,7 @@ func (b *bucket) Put(key string, value []byte, tags ...storage.Tag) (err error) 
 func (b *bucket) Get(key string) (data []byte, err error) {
 	defer err2.Return(&err)
 
-	glog.V(level7).Infoln("bucket::Get", key)
+	glog.V(7).Infoln("bucket::Get", key)
 
 	data, err = b.owner.getData(b.bucketID, []byte(key))
 	err2.Check(err)
@@ -52,13 +52,13 @@ func (b *bucket) Get(key string) (data []byte, err error) {
 // Delete deletes the key + value pair (and all tags) associated with key.
 // If key is empty, then an error will be returned.
 func (b *bucket) Delete(key string) error {
-	glog.V(level7).Infoln("bucket::Delete", key)
+	glog.V(7).Infoln("bucket::Delete", key)
 
 	return b.owner.deleteData(b.bucketID, key)
 }
 
 func (b *bucket) GetAll(transform db.Filter) ([][]byte, error) {
-	glog.V(level7).Infoln("bucket::GetAll")
+	glog.V(7).Infoln("bucket::GetAll")
 
 	return b.owner.getAll(b.bucketID, transform)
 }
@@ -67,37 +67,37 @@ func (b *bucket) GetAll(transform db.Filter) ([][]byte, error) {
 // any data in the underlying databases.
 // Close can be called repeatedly on the same store multiple times without causing an error.
 func (b *bucket) Close() error {
-	glog.V(level7).Infoln("bucket::Close")
+	glog.V(7).Infoln("bucket::Close")
 	// skip this for now as Storage instance is handling closing
 	return nil
 }
 
 // AFGO-placeholder
 func (b *bucket) GetTags(key string) ([]storage.Tag, error) {
-	glog.V(level7).Infoln("bucket::GetTags", key)
+	glog.V(7).Infoln("bucket::GetTags", key)
 	panic("implement me")
 }
 
 // AFGO-placeholder
 func (b *bucket) GetBulk(keys ...string) ([][]byte, error) {
-	glog.V(level7).Infoln("bucket::GetBulk", keys)
+	glog.V(7).Infoln("bucket::GetBulk", keys)
 	panic("implement me")
 }
 
 // AFGO-placeholder
 func (b *bucket) Query(expression string, options ...storage.QueryOption) (storage.Iterator, error) {
-	glog.V(level7).Infoln("bucket::Query", expression)
+	glog.V(7).Infoln("bucket::Query", expression)
 	panic("implement me")
 }
 
 // AFGO-placeholder
 func (b *bucket) Batch(operations []storage.Operation) error {
-	glog.V(level7).Infoln("bucket::Batch")
+	glog.V(7).Infoln("bucket::Batch")
 	panic("implement me")
 }
 
 // AFGO-placeholder
 func (b *bucket) Flush() error {
-	glog.V(level7).Infoln("bucket::Flush")
+	glog.V(7).Infoln("bucket::Flush")
 	panic("implement me")
 }
