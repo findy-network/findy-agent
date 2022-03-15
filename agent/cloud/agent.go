@@ -206,7 +206,7 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 
 	cp.In = a.LoadDID(pw.MyDID)
 	outDID := a.LoadTheirDID(*pw)
-	outDID.StartEndp(a.Wallet())
+	outDID.StartEndp(a.ManagedWallet(), pwName)
 	cp.Out = outDID
 	return cp, nil
 }
@@ -323,6 +323,7 @@ func (a *Agent) ExportWallet(key string, exportPath string) string {
 func (a *Agent) loadPWMap() {
 	a.AssertWallet()
 
+	// TODO: PW CALL
 	r := <-indypw.List(a.Wallet())
 	if r.Err() != nil {
 		glog.Error("ERROR: could not load pw map:", r.Err())
@@ -337,7 +338,7 @@ func (a *Agent) loadPWMap() {
 	for _, d := range pwd {
 		pwData := ssi.FromIndyPairwise(d)
 		outDID := a.LoadTheirDID(pwData)
-		outDID.StartEndp(a.Wallet())
+		outDID.StartEndp(a.ManagedWallet(), pwData.Meta.Name)
 		p := sec.Pipe{
 			In:  a.LoadDID(d.MyDid),
 			Out: outDID,

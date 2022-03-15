@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
@@ -23,7 +24,6 @@ import (
 	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
-	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -215,7 +215,12 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, wca, ipl.MsgHdr().(didcomm.PwMsg))
 
-	calleePw.CheckPreallocation(cnxAddr)
+	connection := calleePw.CheckPreallocation(cnxAddr)
+	if connection == nil {
+		connection = &storage.Connection{
+			ID: connectionID,
+		}
+	}
 
 	msg := try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
 		msgMeDID = m.Did() // set our pw DID
@@ -252,10 +257,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
-	// TODO: DID CALL
-	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
-
-	try.To(r.Err())
+	store := a.ManagedWallet().Storage().ConnectionStorage()
+	connection.TheirEndpoint = callerAddress
+	try.To(store.SaveConnection(*connection))
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
@@ -336,9 +340,15 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
-	// TODO: DID CALL
-	r := <-did.SetEndpoint(a.Wallet(), callee.Did(), calleeEndp.Address(), calleeEndp.VerKey)
-	try.To(r.Err())
+	store := a.ManagedWallet().Storage().ConnectionStorage()
+	connection, _ := store.GetConnection(pwName)
+	if connection == nil {
+		connection = &storage.Connection{
+			ID: pwName,
+		}
+	}
+	connection.TheirEndpoint = calleeEndp.Address()
+	try.To(store.SaveConnection(*connection))
 
 	// Save Rep and PSM
 	newPwr := &pairwiseRep{

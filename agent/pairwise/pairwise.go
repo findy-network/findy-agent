@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -66,17 +67,19 @@ func NewCalleePairwise(msgFactor didcomm.MsgFactor, agent ssi.Agent,
 	}
 }
 
-func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
+func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) *storage.Connection {
 	a := p.agent.(comm.Receiver)
 	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
 
 	store := a.ManagedWallet().Storage().ConnectionStorage()
-	if _, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
+	if conn, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
 		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
 		p.Callee = calleeDID
-	} else {
-		glog.V(1).Infof("===== Cannot use pw DID, NO connection found with id %s =====", cnxAddr.EdgeToken)
+		return conn
 	}
+
+	glog.V(1).Infof("===== Cannot use pw DID, NO connection found with id %s =====", cnxAddr.EdgeToken)
+	return nil
 }
 
 func (p *Callee) ConnReqToRespWithSet(

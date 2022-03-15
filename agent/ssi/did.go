@@ -127,7 +127,6 @@ func (d *DID) Store(mgdWallet managed.Wallet) {
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
 
-	// TODO: DID CALL
 	f := new(Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
@@ -195,10 +194,22 @@ func (d *DID) hasKeyData() bool {
 	return vk != ""
 }
 
-func (d *DID) StartEndp(wallet int) {
-	f := &Future{}
-	// TODO: DID CALL
-	f.SetChan(did.Endpoint(wallet, Pool(), d.Did()))
+func (d *DID) StartEndp(wallet managed.Wallet, connectionID string) {
+	store := wallet.Storage().ConnectionStorage()
+	connection, err := store.GetConnection(connectionID)
+	endpoint := ""
+	errStr := ""
+	if err == nil {
+		endpoint = connection.TheirEndpoint
+	} else {
+		errStr = err.Error()
+	}
+
+	f := &Future{V: indyDto.Result{
+		Data: indyDto.Data{Str1: endpoint},
+		Er:   indyDto.Err{Error: errStr},
+	}, On: Consumed}
+
 	d.Lock()
 	d.endp = f
 	d.Unlock()

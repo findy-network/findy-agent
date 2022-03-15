@@ -296,6 +296,7 @@ func FromIndyPairwise(pw pairwise.Data) Pairwise {
 
 func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
 	a.AssertWallet()
+	// TODO: PW CALL
 	r := <-pairwise.List(a.Wallet())
 	if r.Err() != nil {
 		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
@@ -314,6 +315,8 @@ func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
 // FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
 func (a *DIDAgent) FindPWByDID(my string) (pw *Pairwise, err error) {
 	a.AssertWallet()
+
+	// TODO: PW CALL
 	r := <-pairwise.List(a.Wallet())
 	if r.Err() != nil {
 		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
