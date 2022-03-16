@@ -1,7 +1,6 @@
 package ssi
 
 import (
-	"encoding/base64"
 	"fmt"
 	"sync"
 
@@ -11,7 +10,6 @@ import (
 	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
-	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -55,12 +53,6 @@ type DID struct {
 type PairwiseMeta struct {
 	Name  string
 	Route []string
-}
-
-type Pairwise struct {
-	MyDID    string
-	TheirDID string
-	Meta     PairwiseMeta
 }
 
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
@@ -173,18 +165,30 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(wallet int, theirDID *DID, pw PairwiseMeta) {
+func (d *DID) SavePairwiseForDID(mgdWallet managed.Wallet, theirDID *DID, pw PairwiseMeta) {
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
-		// encode to b64 string so that wrapper/indy does not attempt to decode json
-		f := &Future{}
-		meta := base64.StdEncoding.EncodeToString(dto.ToJSONBytes(pw))
+		store := mgdWallet.Storage().ConnectionStorage()
+		connection, _ := store.GetConnection(pw.Name)
+		if connection == nil {
+			connection = &storage.Connection{
+				ID: pw.Name,
+			}
+		}
+		connection.MyDID = d.Did()
+		connection.TheirDID = theirDID.Did()
+		connection.TheirRoute = pw.Route
+		err := store.SaveConnection(*connection)
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
 
-		// TODO: PW CALL
-		f.SetChan(pairwise.Create(wallet, theirDID.Did(), d.Did(), meta))
+		f := &Future{V: indyDto.Result{Er: indyDto.Err{Error: errStr}}, On: Consumed}
 		theirDID.pw = f
-	} else {
+	}
+	if !ok {
 		glog.Error("Could not store pairwise info")
 	}
 }

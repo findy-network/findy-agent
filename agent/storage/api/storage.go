@@ -28,7 +28,7 @@ type DIDStorage interface {
 
 type Connection struct {
 	ID            string
-	OurDID        string
+	MyDID         string
 	TheirDID      string
 	TheirEndpoint string
 	TheirRoute    []string

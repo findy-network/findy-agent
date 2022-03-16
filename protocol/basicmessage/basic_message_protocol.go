@@ -104,7 +104,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 
 		if glog.V(3) {
 			glog.Info("-- Thread id: ", im.Thread().ID)
-			glog.Info("Basic msg from:", pw.Meta.Name)
+			glog.Info("Basic msg from:", pw.ID)
 			glog.Info("Sent time:", bm.SentTime)
 			glog.Info("Content: ", bm.Content)
 		}
@@ -116,7 +116,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 
 		rep := &basicMessageRep{
 			StateKey:      key,
-			PwName:        pw.Meta.Name,
+			PwName:        pw.ID,
 			Message:       bm.Content,
 			SendTimestamp: bm.SentTime.Time.UnixNano(),
 			Timestamp:     time.Now().UnixNano(),

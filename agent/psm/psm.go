@@ -221,7 +221,7 @@ func (p *PSM) PairwiseName() string {
 		pw := try.To1(r.FindPWByDID(p.ConnDID))
 
 		if pw != nil {
-			return pw.Meta.Name
+			return pw.ID
 		}
 	}
 	return ""

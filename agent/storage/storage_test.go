@@ -122,7 +122,7 @@ func TestConnectionStore(t *testing.T) {
 			store := testCase.storage.ConnectionStorage()
 			testConn := api.Connection{
 				ID:            "123-uid",
-				OurDID:        "did:test:123",
+				MyDID:         "did:test:123",
 				TheirDID:      "did:test:456",
 				TheirEndpoint: "https://example.com",
 				TheirRoute:    []string{"routeKey"},

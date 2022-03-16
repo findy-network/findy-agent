@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 )
 
 type Receiver interface {
@@ -17,13 +18,13 @@ type Receiver interface {
 	RootDid() *ssi.DID
 	SendNYM(targetDid *ssi.DID, submitterDid, alias, role string) (err error)
 	LoadDID(did string) *ssi.DID
-	LoadTheirDID(pw ssi.Pairwise) *ssi.DID
+	LoadTheirDID(connection storage.Connection) *ssi.DID
 	WDID() string
 	PwPipe(pw string) (cp sec.Pipe, err error)
 	Wallet() int
 	ManagedWallet() managed.Wallet // TODO: access storage using wallet handle
 	Pool() int
-	FindPWByDID(my string) (pw *ssi.Pairwise, err error)
+	FindPWByDID(my string) (pw *storage.Connection, err error)
 	AttachSAImpl(implID string)
 	AddToPWMap(me, you *ssi.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)

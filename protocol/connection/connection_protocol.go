@@ -327,7 +327,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
-	caller.SavePairwiseForDID(a.Wallet(), callee, ssi.PairwiseMeta{
+	caller.SavePairwiseForDID(a.ManagedWallet(), callee, ssi.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})

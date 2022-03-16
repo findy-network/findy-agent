@@ -271,7 +271,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	store := receiver.ManagedWallet().Storage().ConnectionStorage()
 	try.To(store.SaveConnection(storage.Connection{
 		ID:     id,
-		OurDID: ourPairwiseDID.Did(),
+		MyDID: ourPairwiseDID.Did(),
 	}))
 
 	ep.RcvrDID = ourPairwiseDID.Did()

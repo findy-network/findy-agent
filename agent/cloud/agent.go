@@ -11,7 +11,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	indypw "github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -321,31 +320,28 @@ func (a *Agent) ExportWallet(key string, exportPath string) string {
 }
 
 func (a *Agent) loadPWMap() {
+	defer err2.Catch(func(err error) {
+		glog.Error("cannot load PW map:", err)
+	})
+
 	a.AssertWallet()
 
-	// TODO: PW CALL
-	r := <-indypw.List(a.Wallet())
-	if r.Err() != nil {
-		glog.Error("ERROR: could not load pw map:", r.Err())
-		return
-	}
-
-	pwd := indypw.NewData(r.Str1())
+	connections, err := a.ManagedWallet().Storage().ConnectionStorage().ListConnections()
+	err2.Check(err)
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	for _, d := range pwd {
-		pwData := ssi.FromIndyPairwise(d)
-		outDID := a.LoadTheirDID(pwData)
-		outDID.StartEndp(a.ManagedWallet(), pwData.Meta.Name)
+	for _, conn := range connections {
+		outDID := a.LoadTheirDID(conn)
+		outDID.StartEndp(a.ManagedWallet(), conn.ID)
 		p := sec.Pipe{
-			In:  a.LoadDID(d.MyDid),
+			In:  a.LoadDID(conn.MyDID),
 			Out: outDID,
 		}
 
-		a.pws[d.MyDid] = p
-		a.pwNames[d.Metadata] = p
+		a.pws[conn.MyDID] = p
+		a.pwNames[conn.ID] = p
 	}
 }
 

@@ -30,7 +30,6 @@ type Callee struct {
 // MARK: Callee ---
 
 func (p *Callee) startStore() {
-	wallet := p.agent.Wallet()
 	p.Caller.Store(p.agent.ManagedWallet())
 	pwName := p.pairwiseName()
 
@@ -42,7 +41,7 @@ func (p *Callee) startStore() {
 		glog.Warning("Callee.startStore() - no DIDExchange request found")
 	}
 
-	p.Callee.SavePairwiseForDID(wallet, p.Caller, ssi.PairwiseMeta{
+	p.Callee.SavePairwiseForDID(p.agent.ManagedWallet(), p.Caller, ssi.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})

@@ -1,19 +1,15 @@
 package ssi
 
 import (
-	"encoding/json"
-	"fmt"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/agent/utils"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
-	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -184,7 +180,7 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
-		try.To(a.WalletH.Storage().DIDStorage().SaveDID(api.DID{
+		try.To(a.WalletH.Storage().DIDStorage().SaveDID(storage.DID{
 			ID:         didRes.Data.Str1,
 			DID:        didRes.Data.Str1,
 			IndyVerKey: didRes.Data.Str2,
@@ -269,63 +265,31 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 	return d
 }
 
-func (a *DIDAgent) LoadTheirDID(pw Pairwise) *DID {
-	did := a.LoadDID(pw.TheirDID)
-	did.pwMeta = &pw.Meta
+func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
+	did := a.LoadDID(connection.TheirDID)
+	did.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
 	return did
 }
 
-func FromIndyPairwise(pw pairwise.Data) Pairwise {
-	itemName := pw.Metadata
-	metaData := PairwiseMeta{}
-	bytes, err := utils.DecodeB64(pw.Metadata)
-	if err == nil {
-		err = json.Unmarshal(bytes, &metaData) // meta data is stored to wallet as an object
-	}
-	if err != nil {
-		metaData.Name = itemName // meta data is only connection name
-		metaData.Route = make([]string, 0)
-	}
-
-	return Pairwise{
-		MyDID:    pw.MyDid,
-		TheirDID: pw.TheirDid,
-		Meta:     metaData,
-	}
-}
-
-func (a *DIDAgent) FindPWByName(name string) (pw *Pairwise, err error) {
+func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {
 	a.AssertWallet()
-	// TODO: PW CALL
-	r := <-pairwise.List(a.Wallet())
-	if r.Err() != nil {
-		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
-	}
-	pwd := pairwise.NewData(r.Str1())
-
-	for _, item := range pwd {
-		pwData := FromIndyPairwise(item)
-		if pwData.Meta.Name == name || name == "" {
-			return &pwData, nil
-		}
-	}
-	return nil, nil
+	return a.ManagedWallet().Storage().ConnectionStorage().GetConnection(name)
 }
 
 // FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
-func (a *DIDAgent) FindPWByDID(my string) (pw *Pairwise, err error) {
+func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
+	defer err2.Catch(func(err error) {
+		glog.Error("cannot find pw by id:", err)
+	})
+
 	a.AssertWallet()
 
-	// TODO: PW CALL
-	r := <-pairwise.List(a.Wallet())
-	if r.Err() != nil {
-		return nil, fmt.Errorf("agent pairwise: %s", r.Err())
-	}
-	pwd := pairwise.NewData(r.Str1())
-	for _, item := range pwd {
-		if item.MyDid == my {
-			pwData := FromIndyPairwise(item)
-			return &pwData, nil
+	connections, err := a.ManagedWallet().Storage().ConnectionStorage().ListConnections()
+	err2.Check(err)
+
+	for _, item := range connections {
+		if item.MyDID == my {
+			return &item, nil
 		}
 	}
 	return nil, nil
