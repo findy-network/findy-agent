@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -215,12 +216,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, wca, ipl.MsgHdr().(didcomm.PwMsg))
 
-	connection := calleePw.CheckPreallocation(cnxAddr)
-	if connection == nil {
-		connection = &storage.Connection{
-			ID: connectionID,
-		}
-	}
+	calleePw.CheckPreallocation(cnxAddr)
 
 	msg := try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
 		msgMeDID = m.Did() // set our pw DID
@@ -257,9 +253,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
-	store := a.ManagedWallet().Storage().ConnectionStorage()
-	connection.TheirEndpoint = callerAddress
-	try.To(store.SaveConnection(*connection))
+	try.To(saveConnectionEndpoint(a.ManagedWallet(), connectionID, callerAddress))
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
@@ -340,15 +334,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
-	store := a.ManagedWallet().Storage().ConnectionStorage()
-	connection, _ := store.GetConnection(pwName)
-	if connection == nil {
-		connection = &storage.Connection{
-			ID: pwName,
-		}
-	}
-	connection.TheirEndpoint = calleeEndp.Address()
-	try.To(store.SaveConnection(*connection))
+	try.To(saveConnectionEndpoint(a.ManagedWallet(), pwName, calleeEndp.Address()))
 
 	// Save Rep and PSM
 	newPwr := &pairwiseRep{
@@ -375,6 +361,18 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.ReadyACK))
 
 	return nil
+}
+
+func saveConnectionEndpoint(mgdWallet managed.Wallet, connectionID, theirEndpoint string) error {
+	store := mgdWallet.Storage().ConnectionStorage()
+	connection, _ := store.GetConnection(connectionID)
+	if connection == nil {
+		connection = &storage.Connection{
+			ID: connectionID,
+		}
+	}
+	connection.TheirEndpoint = theirEndpoint
+	return store.SaveConnection(*connection)
 }
 
 func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
