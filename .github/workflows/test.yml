@@ -1,8 +1,5 @@
 name: test
 on:
-  workflow_run:
-    workflows: [release]
-    types: [completed]
   push:
 jobs:
   lint:
@@ -47,6 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
+      - name: checkout
+        uses: actions/checkout@v2
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
