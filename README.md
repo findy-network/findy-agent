@@ -2,7 +2,7 @@
 
 [![test](https://github.com/findy-network/findy-agent/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/findy-network/findy-agent/actions/workflows/test.yml)
 [![interop](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml/badge.svg?branch=dev)](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml)
-[![codecov](https://codecov.io/gh/findy-network/findy-agent/branch/master/graph/badge.svg?token=6ALFRN3WDS)](https://codecov.io/gh/findy-network/findy-agent)
+[![codecov](https://codecov.io/gh/findy-network/findy-agent/branch/dev/graph/badge.svg?token=6ALFRN3WDS)](https://codecov.io/gh/findy-network/findy-agent)
 
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
