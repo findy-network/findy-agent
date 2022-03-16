@@ -1,8 +1,5 @@
 name: test
 on:
-  workflow_run:
-    workflows: [release]
-    types: [completed]
   push:
 jobs:
   lint:
@@ -56,7 +53,6 @@ jobs:
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.txt
 
   e2e:
