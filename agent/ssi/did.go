@@ -182,6 +182,7 @@ func (d *DID) SavePairwiseForDID(mgdWallet managed.Wallet, theirDID *DID, pw Pai
 		err := store.SaveConnection(*connection)
 		errStr := ""
 		if err != nil {
+			ok = false
 			errStr = err.Error()
 		}
 
