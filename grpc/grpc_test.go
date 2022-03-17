@@ -38,8 +38,8 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/stretchr/testify/assert"
 	"github.com/lainio/err2/try"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
