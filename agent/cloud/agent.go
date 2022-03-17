@@ -198,8 +198,7 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 		return secPipe, nil
 	}
 
-	pw, err := a.FindPWByName(pwName)
-	try.To(err)
+	pw := try.To1(a.FindPWByName(pwName))
 
 	if pw == nil || pw.MyDID == "" || pw.TheirDID == "" {
 		return cp, errors.New("cannot find pw")

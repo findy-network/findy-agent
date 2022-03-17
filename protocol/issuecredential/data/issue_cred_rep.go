@@ -58,8 +58,7 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 	masterSecID := try.To1(a.MasterSecret())
 
 	// Get CRED DEF from the ledger
-	_, rep.CredDef, err = ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID)
-	try.To(err)
+	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID))
 
 	// build credential request to send back to an issuer
 	r := <-anoncreds.ProverCreateCredentialReq(w, a.RootDid().Did(), rep.CredOffer,
@@ -97,8 +96,7 @@ func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
 	defer err2.Return(&err)
 
 	var res psm.Rep
-	res, err = psm.GetRep(bucketType, key)
-	try.To(err)
+	res = try.To1(psm.GetRep(bucketType, key))
 
 	// Allow not found
 	if res == nil {

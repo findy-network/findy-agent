@@ -44,8 +44,7 @@ func Serve(conf *rpc.ServerCfg) {
 		return nil
 	}
 
-	s, lis, err := rpc.PrepareServe(conf)
-	try.To(err)
+	s, lis := try.To2(rpc.PrepareServe(conf))
 	Server = s
 	try.To(s.Serve(lis))
 }

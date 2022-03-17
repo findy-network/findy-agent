@@ -131,8 +131,7 @@ func ContinuePSM(shift Again) (err error) {
 
 	inDID := wa.LoadDID(msgMeDID)
 
-	pairwise, err := wa.FindPWByDID(inDID.Did())
-	try.To(err)
+	pairwise := try.To1(wa.FindPWByDID(inDID.Did()))
 	assert.D.True(pairwise != nil, "pairwise should not be nil")
 
 	outDID := wa.LoadTheirDID(*pairwise)
@@ -205,8 +204,7 @@ func ExecPSM(ts Transition) (err error) {
 	ts.TaskHeader.TypeID = ts.Payload.Type()
 
 	// Create protocol task in protocol implementation
-	task, err := CreateTask(ts.TaskHeader, nil)
-	try.To(err)
+	task := try.To1(CreateTask(ts.TaskHeader, nil))
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -221,8 +219,7 @@ func ExecPSM(ts Transition) (err error) {
 	if ts.InOut != nil {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
 
-		pairwise, err := ts.Receiver.FindPWByDID(inDID.Did())
-		try.To(err)
+		pairwise := try.To1(ts.Receiver.FindPWByDID(inDID.Did()))
 		assert.D.True(pairwise != nil, "pairwise should not be nil")
 
 		connID := pairwise.Meta.Name

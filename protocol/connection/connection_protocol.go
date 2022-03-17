@@ -71,8 +71,7 @@ func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t com
 		// Let's let invitation package translate incoming invitation. It will
 		// handle two different type formats even the field name ends with
 		// JSON.
-		inv, err = invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON())
-		try.To(err)
+		inv = try.To1(invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON()))
 
 		header.TaskID = inv.ID
 		label = protocol.GetDIDExchange().GetLabel()
@@ -218,7 +217,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	calleePw.CheckPreallocation(cnxAddr)
 
-	msg, err := calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
+	msg := try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
 		msgMeDID = m.Did() // set our pw DID
 
 		// calculate our endpoint for the pairwise
@@ -230,8 +229,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 			Endp: pubEndp.Address(),
 			Key:  pubEndp.VerKey,
 		})
-	})
-	try.To(err)
+	}))
 
 	// MARK: we must switch the Nonce for pairwise construction back. NOW we
 	//  return it back after we are done. This is because AcaPy compatibility
@@ -318,8 +316,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	try.To(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
 
-	pwr, err := getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce})
-	try.To(err)
+	pwr := try.To1(getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce}))
 	msgMeDID := pwr.Caller.DID
 	caller := a.LoadDID(pwr.Caller.DID)
 
@@ -383,8 +380,7 @@ func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) 
 
 	status := ps
 
-	pw, err := getPairwiseRep(key)
-	try.To(err)
+	pw := try.To1(getPairwiseRep(key))
 
 	myDID := pw.Callee
 	theirDID := pw.Caller

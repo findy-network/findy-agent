@@ -465,8 +465,7 @@ func connect(invitation string, ready chan struct{}) {
 		Conn:  conn,
 		Label: "OtherEndsTestLabel",
 	}
-	connID, ch, err := pairwise.Connection(ctx, invitation)
-	try.To(err)
+	connID, ch := try.To2(pairwise.Connection(ctx, invitation))
 
 	for status := range ch {
 		glog.V(1).Infof("==> WaitConnection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
@@ -630,8 +629,7 @@ func runPSMHook(intCh chan struct{}) {
 	conn := client.TryOpen("findy-root", baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	ch, err := conn.PSMHook(ctx)
-	try.To(err)
+	ch := try.To1(conn.PSMHook(ctx))
 loop:
 	for {
 		select {
@@ -1038,7 +1036,7 @@ func BenchmarkIssue(b *testing.B) {
 	connID := agents[0].ConnID[i]
 	// warm up
 	{
-		r, err := client.Pairwise{
+		r := try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
@@ -1046,13 +1044,12 @@ func BenchmarkIssue(b *testing.B) {
 				Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
-				}}})
-		try.To(err)
+				}}}))
 		for range r {
 		}
 	}
 	for n := 0; n < b.N; n++ {
-		r, err := client.Pairwise{
+		r := try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
@@ -1060,8 +1057,7 @@ func BenchmarkIssue(b *testing.B) {
 				Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
-				}}})
-		try.To(err)
+				}}}))
 		for range r {
 		}
 	}
@@ -1084,11 +1080,10 @@ func BenchmarkReqProof(b *testing.B) {
 			Name:      "email",
 			CredDefID: agents[0].CredDefID,
 		}}
-		r, err := client.Pairwise{
+		r := try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
-		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-		try.To(err)
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs}))
 		for range r {
 		}
 	}
@@ -1097,11 +1092,10 @@ func BenchmarkReqProof(b *testing.B) {
 			Name:      "email",
 			CredDefID: agents[0].CredDefID,
 		}}
-		r, err := client.Pairwise{
+		r := try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
-		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-		try.To(err)
+		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs}))
 		for range r {
 		}
 	}
@@ -1228,8 +1222,7 @@ func doListen(
 	//defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch, err := conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()})
-	try.To(err)
+	ch := try.To1(conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
 	glog.V(3).Info("***********************************\n",
 		"********** start to listen *******\n",
 		"***********************************\n")
@@ -1313,8 +1306,7 @@ func doListenResume(
 	//defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch, err := conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()})
-	try.To(err)
+	ch := try.To1(conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()}))
 	glog.V(3).Info("***********************************\n",
 		"********** start to listen Status *******\n",
 		"***********************************\n")
@@ -1414,13 +1406,12 @@ func handleStatusBMEcho(
 	case agency2.Protocol_BASIC_MESSAGE:
 		ctx := context.Background()
 		didComm := agency2.NewProtocolServiceClient(conn)
-		statusResult, err := didComm.Status(ctx, &agency2.ProtocolID{
+		statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
 			TypeID:           status.Notification.ProtocolType,
 			Role:             agency2.Protocol_ADDRESSEE,
 			ID:               status.Notification.ProtocolID,
 			NotificationTime: status.Notification.Timestamp,
-		})
-		try.To(err)
+		}))
 		if statusResult.GetBasicMessage().SentByMe {
 			glog.V(0).Infoln("---------- ours, no reply")
 			return handleOK
@@ -1429,11 +1420,10 @@ func handleStatusBMEcho(
 		assert.NotEmpty(t, statusResult.GetBasicMessage().GetContent())
 
 		glog.V(1).Infoln("sending BM back")
-		ch, err := client.Pairwise{
+		ch := try.To1(client.Pairwise{
 			ID:   status.Notification.ConnectionID,
 			Conn: conn,
-		}.BasicMessage(context.Background(), statusResult.GetBasicMessage().Content)
-		try.To(err)
+		}.BasicMessage(context.Background(), statusResult.GetBasicMessage().Content))
 		for state := range ch {
 			glog.V(1).Infoln("BM send state:", state.State, "|", state.Info)
 		}
@@ -1445,13 +1435,12 @@ func handleStatusBMEcho(
 func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
 	ctx := context.Background()
 	c := agency2.NewAgentServiceClient(conn)
-	cid, err := c.Give(ctx, &agency2.Answer{
+	cid := try.To1(c.Give(ctx, &agency2.Answer{
 		ID:       status.Status.Notification.ID,
 		ClientID: status.Status.ClientID,
 		Ack:      ack,
 		Info:     "testing says hello!",
-	})
-	try.To(err)
+	}))
 	glog.V(1).Infof("Sending the answer (%s) send to client:%s\n", status.Status.Notification.ID, cid.ID)
 }
 
@@ -1465,15 +1454,14 @@ func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
 	if !ack {
 		stateAck = agency2.ProtocolState_NACK
 	}
-	unpauseResult, err := didComm.Resume(ctx, &agency2.ProtocolState{
+	unpauseResult := try.To1(didComm.Resume(ctx, &agency2.ProtocolState{
 		ProtocolID: &agency2.ProtocolID{
 			TypeID: status.Notification.ProtocolType,
 			Role:   agency2.Protocol_RESUMER,
 			ID:     status.Notification.ProtocolID,
 		},
 		State: stateAck,
-	})
-	try.To(err)
+	}))
 	glog.V(1).Infoln("======= result:", unpauseResult.String())
 }
 
@@ -1507,11 +1495,9 @@ func TestInvitation_Multiple(t *testing.T) {
 		ctx := context.Background()
 		agencyClient := pb.NewAgencyServiceClient(conn)
 
-		oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+		oReply := try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
 			Email: strLiteral("email", "", 5),
-		})
-		assert.NoError(t, err)
-		try.To(err)
+		}))
 		caDID = oReply.Result.CADID
 	}
 

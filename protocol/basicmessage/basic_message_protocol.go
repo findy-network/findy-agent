@@ -97,8 +97,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Annotate("basic message", &err)
 
-		pw, err := packet.Receiver.FindPWByDID(packet.Address.RcvrDID)
-		try.To(err)
+		pw := try.To1(packet.Receiver.FindPWByDID(packet.Address.RcvrDID))
 		assert.D.True(pw != nil, "pairwise is nil")
 
 		bm := im.FieldObj().(*basicmessage.Basicmessage)
@@ -145,8 +144,7 @@ func fillBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 
 	status := ps
 
-	msg, err := getBasicMessageRep(workerDID, taskID)
-	try.To(err)
+	msg := try.To1(getBasicMessageRep(workerDID, taskID))
 
 	status.Status = &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
 		Content:       msg.Message,

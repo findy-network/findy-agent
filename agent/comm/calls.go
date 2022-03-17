@@ -37,8 +37,7 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 	c := &http.Client{
 		Timeout: timeout,
 	}
-	URL, err := url.Parse(urlStr)
-	try.To(err)
+	URL := try.To1(url.Parse(urlStr))
 
 	glog.V(1).Infof("Posting message to %s\n", urlStr)
 
@@ -47,8 +46,7 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 	// TODO: make configurable when there is support for application/didcomm-envelope-enc
 	request.Header.Set("Content-Type", "application/ssi-agent-wire")
 
-	response, err := c.Do(request)
-	try.To(err)
+	response := try.To1(c.Do(request))
 
 	defer func() {
 		_ = response.Body.Close()
@@ -89,8 +87,7 @@ func downloadFile(downloadDir, filepath, url string) (name string, err error) {
 	defer err2.Annotate("download file", &err)
 
 	// Get the data stream from server
-	resp, err := http.Get(url)
-	try.To(err)
+	resp := try.To1(http.Get(url))
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
@@ -124,8 +121,7 @@ func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
 
 	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())
 
-	cryptSendPL, _, err := sendPipe.Pack(opl.JSON())
-	try.To(err)
+	cryptSendPL, _ := try.To2(sendPipe.Pack(opl.JSON()))
 
 	_, err = SendAndWaitReq(cnxAddr.Address(), bytes.NewReader(cryptSendPL),
 		utils.Settings.Timeout())
