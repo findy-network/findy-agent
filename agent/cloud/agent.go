@@ -326,8 +326,7 @@ func (a *Agent) loadPWMap() {
 
 	a.AssertWallet()
 
-	connections, err := a.ManagedWallet().Storage().ConnectionStorage().ListConnections()
-	err2.Check(err)
+	connections := try.To1(a.ManagedWallet().Storage().ConnectionStorage().ListConnections())
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()

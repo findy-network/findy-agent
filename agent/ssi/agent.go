@@ -284,8 +284,7 @@ func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
 
 	a.AssertWallet()
 
-	connections, err := a.ManagedWallet().Storage().ConnectionStorage().ListConnections()
-	err2.Check(err)
+	connections := try.To1(a.ManagedWallet().Storage().ConnectionStorage().ListConnections())
 
 	for _, item := range connections {
 		if item.MyDID == my {
