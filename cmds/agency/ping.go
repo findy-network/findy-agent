@@ -41,10 +41,9 @@ func (c PingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	defer cancel()
 
 	opsClient := pb.NewDevOpsServiceClient(conn)
-	result, err := opsClient.Enter(ctx, &pb.Cmd{
+	result := try.To1(opsClient.Enter(ctx, &pb.Cmd{
 		Type: pb.Cmd_PING,
-	})
-	try.To(err)
+	}))
 	cmds.Fprintln(w, "result:", result.GetPing())
 
 	return nil, nil

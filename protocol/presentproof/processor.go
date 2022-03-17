@@ -309,11 +309,10 @@ func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 
 	status := ps
 
-	proofRep, err := data.GetPresentProofRep(psm.StateKey{
+	proofRep := try.To1(data.GetPresentProofRep(psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
-	})
-	try.To(err)
+	}))
 
 	attrs := make([]*pb.Protocol_Proof_Attribute, 0, len(proofRep.Attributes))
 

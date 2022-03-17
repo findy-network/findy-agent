@@ -163,8 +163,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 			Setup: func(key psm.StateKey, msg didcomm.MessageHdr) (err error) {
 				defer err2.Annotate("start issue prot", &err)
 
-				attrsStr, err := json.Marshal(credTask.CredentialAttrs)
-				try.To(err)
+				attrsStr := try.To1(json.Marshal(credTask.CredentialAttrs))
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
 
 				propose := msg.FieldObj().(*issuecredential.Propose)

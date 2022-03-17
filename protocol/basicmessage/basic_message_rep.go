@@ -46,11 +46,10 @@ func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err err
 	defer err2.Return(&err)
 
 	var res psm.Rep
-	res, err = psm.GetRep(bucketType, psm.StateKey{
+	res = try.To1(psm.GetRep(bucketType, psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
-	})
-	try.To(err)
+	}))
 
 	var ok bool
 	rep, ok = res.(*basicMessageRep)

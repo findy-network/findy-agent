@@ -34,10 +34,9 @@ func (c CountCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 	defer cancel()
 
 	opsClient := pb.NewDevOpsServiceClient(conn)
-	result, err := opsClient.Enter(ctx, &pb.Cmd{
+	result := try.To1(opsClient.Enter(ctx, &pb.Cmd{
 		Type: pb.Cmd_COUNT,
-	})
-	try.To(err)
+	}))
 	cmds.Fprintln(w, "count result:\n", result.GetCount())
 
 	return nil, nil

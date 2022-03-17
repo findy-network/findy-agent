@@ -189,8 +189,7 @@ func (a *agentServer) GetSchema(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
 
-	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID)
-	try.To(err)
+	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID))
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -246,8 +245,7 @@ func (a *agentServer) CreateInvitation(
 	// just JSON for our own clients
 	jStr := dto.ToJSON(invitation)
 	// .. and build a URL which contains the invitation
-	urlStr, err := didexchange.Build(invitation)
-	try.To(err)
+	urlStr := try.To1(didexchange.Build(invitation))
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from
@@ -398,8 +396,7 @@ loop:
 			assert.D.True(waitClientID == notify.ClientID)
 
 			var question *pb.Question
-			question, err = processQuestion(ctx, notify)
-			try.To(err)
+			question = try.To1(processQuestion(ctx, notify))
 			if question != nil {
 				question.Status.ClientID.ID = clientID.ID
 				try.To(server.Send(question))

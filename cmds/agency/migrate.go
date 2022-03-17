@@ -78,8 +78,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 			}
 
 			seed := cloud.NewSeedAgent(rootDid, caDid, "", aw)
-			h, err := seed.Migrate()
-			try.To(err)
+			h := try.To1(seed.Migrate())
 
 			a := h.(comm.Receiver)
 			vk := a.MyDID().VerKey()
