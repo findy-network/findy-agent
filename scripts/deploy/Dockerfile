@@ -60,7 +60,6 @@ ENV FCLI_AGENCY_REQUEST_TIMEOUT "3m"
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
     echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 grpc /grpc' >> /start.sh && \
     echo './import-wallet.sh' >> /start.sh && \
-    echo '/findy-agent agency migrate $FCLI_AGENCY_REGISTER_FILE $FCLI_AGENCY_REGISTER_FILE $FCLI_AGENCY_ENCLAVE_KEY' >> /start.sh && \
     echo '/findy-agent agency start' >> /start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "/start.sh"]

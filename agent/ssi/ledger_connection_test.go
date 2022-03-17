@@ -4,11 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func TestLedgerConnection_Open(t *testing.T) {
-	r := dto.Result{Data: dto.Data{Handle: 1}}
+	r := indyDto.Result{Data: indyDto.Data{Handle: 1}}
 	pool.V = r
 	pool.On = Consumed
 

@@ -46,6 +46,8 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/worker/email*")
 	removeFiles(home, "/.indy_client/wallet/unit_test_*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	removeFiles(home, "/.indy_client/storage/unit_test_wallet*")
+	removeFiles(home, "/.indy_client/storage/email*")
 	removeFiles(home, "/export_wallets/*")
 	enclave.WipeSealedBox()
 	ssi.ClosePool()

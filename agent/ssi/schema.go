@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -55,7 +55,7 @@ func (s *Schema) FromLedger(DID string) (err error) {
 
 	sID, schema, err := ledger.ReadSchema(Pool(), DID, s.ValidID())
 	try.To(err)
-	s.Stored = &Future{V: dto.Result{Data: dto.Data{Str1: sID, Str2: schema}}, On: Consumed}
+	s.Stored = &Future{V: indyDto.Result{Data: indyDto.Data{Str1: sID, Str2: schema}}, On: Consumed}
 
 	return nil
 }

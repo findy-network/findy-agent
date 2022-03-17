@@ -4,8 +4,8 @@ package preview
 import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/protocol/presentproof/data"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	"github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func StoreProofData(requestData []byte, rep *data.PresentProofRep) {

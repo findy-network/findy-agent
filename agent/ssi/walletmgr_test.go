@@ -64,48 +64,50 @@ func TestMgr_NewOpen(t *testing.T) {
 		{"open size 3", 3},
 	}
 	for _, tt := range tests {
-		SetWalletMgrPoolSize(tt.count)
+		t.Run(tt.name, func(t *testing.T) {
+			SetWalletMgrPoolSize(tt.count)
 
-		cfg := *NewRawWalletCfg(walletName1, key)
-		w := wallets.Open(cfg)
-		glog.V(3).Info("read handle 1")
-		assert.Greater(t, w.Handle(), 0)
+			cfg := *NewRawWalletCfg(walletName1, key)
+			w := wallets.Open(cfg)
+			glog.V(3).Info("read handle 1")
+			assert.Greater(t, w.Handle(), 0)
 
-		w.Handle()
-		w.Handle()
-		w.Handle()
-		w.Handle()
+			w.Handle()
+			w.Handle()
+			w.Handle()
+			w.Handle()
 
-		cfg = *NewRawWalletCfg(walletName2, key)
-		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
+			cfg = *NewRawWalletCfg(walletName2, key)
+			time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
-		w2 := wallets.Open(cfg)
-		glog.V(3).Info("read handle 2")
-		assert.Greater(t, w2.Handle(), 0)
+			w2 := wallets.Open(cfg)
+			glog.V(3).Info("read handle 2")
+			assert.Greater(t, w2.Handle(), 0)
 
-		w2.Handle()
-		w2.Handle()
-		w2.Handle()
+			w2.Handle()
+			w2.Handle()
+			w2.Handle()
 
-		glog.V(3).Info("read handle 1")
-		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
+			glog.V(3).Info("read handle 1")
+			time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
-		assert.Greater(t, w.Handle(), 0)
-		w.Handle()
-		w.Handle()
-		w.Handle()
+			assert.Greater(t, w.Handle(), 0)
+			w.Handle()
+			w.Handle()
+			w.Handle()
 
-		cfg = *NewRawWalletCfg(walletName3, key)
-		time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
-		w3 := wallets.Open(cfg)
-		glog.V(3).Info("read handle 3")
-		assert.Greater(t, w3.Handle(), 0)
+			cfg = *NewRawWalletCfg(walletName3, key)
+			time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
+			w3 := wallets.Open(cfg)
+			glog.V(3).Info("read handle 3")
+			assert.Greater(t, w3.Handle(), 0)
 
-		glog.V(3).Info("read handle 2")
-		assert.Greater(t, w2.Handle(), 0)
-		w2.Handle()
-		w2.Handle()
+			glog.V(3).Info("read handle 2")
+			assert.Greater(t, w2.Handle(), 0)
+			w2.Handle()
+			w2.Handle()
 
-		wallets.Reset()
+			wallets.Reset()
+		})
 	}
 }

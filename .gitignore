@@ -37,3 +37,6 @@ scripts/dev/docker/cert/**/*.crt
 scripts/dev/docker/cert/**/*.key
 scripts/dev/docker/docker-compose.yml
 scripts/**/*.log
+
+codecov
+coverage.txt

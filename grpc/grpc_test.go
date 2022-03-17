@@ -29,11 +29,11 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/findy-network/findy-common-go/agency/client"
+	"github.com/findy-network/findy-common-go/dto"
 	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/rpc"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
@@ -225,6 +225,8 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/worker/email*")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	removeFiles(home, "/.indy_client/storage/unit_test_wallet*")
+	removeFiles(home, "/.indy_client/storage/email*")
 	if os.Getenv("TEST_WORKDIR") != "" {
 		removeFiles(home, "/wallets/*")
 	}

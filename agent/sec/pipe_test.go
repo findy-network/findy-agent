@@ -17,7 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"

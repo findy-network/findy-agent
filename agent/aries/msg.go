@@ -9,7 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 )
 

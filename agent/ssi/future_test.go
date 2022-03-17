@@ -5,20 +5,20 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-wrapper-go"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2"
 )
 
 func fillChannel(cmd uint32, ch findy.Channel) {
-	r := dto.Result{}
+	r := indyDto.Result{}
 	r.SetHandle(int(cmd))
 	//	time.Sleep(time.Duration(cmd) * 10 * time.Millisecond)
 	ch <- r
 }
 
 func fillChannelWithError(ch findy.Channel) {
-	r := dto.Result{
-		Er: dto.Err{
+	r := indyDto.Result{
+		Er: indyDto.Err{
 			Error: "TEST_ERROR",
 			Code:  100,
 		},
@@ -28,7 +28,7 @@ func fillChannelWithError(ch findy.Channel) {
 
 func TestFuture_GetValue_And_SetChan(t *testing.T) {
 	const HandleValueToTest = 1
-	result := dto.Result{Data: dto.Data{Handle: HandleValueToTest}}
+	result := indyDto.Result{Data: indyDto.Data{Handle: HandleValueToTest}}
 
 	myFuture := Future{}
 	ch := make(findy.Channel, 1)
@@ -69,8 +69,8 @@ func TestFuture_TestWithErrorResult(t *testing.T) {
 		f.value()
 	}
 
-	result := dto.Result{
-		Er: dto.Err{
+	result := indyDto.Result{
+		Er: indyDto.Err{
 			Error: "TEST_ERROR",
 			Code:  100,
 		},
@@ -102,8 +102,8 @@ func TestFuture_TestWithErrorResult(t *testing.T) {
 }
 
 func TestFuture_GetResult(t *testing.T) {
-	result := dto.Result{Data: dto.Data{Handle: 1}}
-	result2 := dto.Result{Data: dto.Data{Handle: 1}}
+	result := indyDto.Result{Data: indyDto.Data{Handle: 1}}
+	result2 := indyDto.Result{Data: indyDto.Data{Handle: 1}}
 	type fields struct {
 		v  interface{}
 		ch findy.Channel
@@ -111,7 +111,7 @@ func TestFuture_GetResult(t *testing.T) {
 	tests := []struct {
 		name          string
 		fields        fields
-		wantDtoResult *dto.Result
+		wantDtoResult *indyDto.Result
 	}{
 		{"1st", fields{v: result}, &result},
 		{"2nd", fields{v: result2}, &result2},
@@ -130,9 +130,9 @@ func TestFuture_GetResult(t *testing.T) {
 }
 
 func TestFuture_GetInt(t *testing.T) {
-	result := dto.Result{}
-	result1 := dto.Result{Data: dto.Data{Handle: 1}}
-	result2 := dto.Result{Data: dto.Data{Handle: 2}}
+	result := indyDto.Result{}
+	result1 := indyDto.Result{Data: indyDto.Data{Handle: 1}}
+	result2 := indyDto.Result{Data: indyDto.Data{Handle: 2}}
 
 	type fields struct {
 		v  interface{}
@@ -161,9 +161,9 @@ func TestFuture_GetInt(t *testing.T) {
 }
 
 func TestFuture_GetStrs(t *testing.T) {
-	result := dto.Result{}
-	result1 := dto.Result{Data: dto.Data{Str1: "str1", Str2: "str2", Str3: ""}}
-	result2 := dto.Result{Data: dto.Data{Str1: "str1", Str2: "str2", Str3: "str3"}}
+	result := indyDto.Result{}
+	result1 := indyDto.Result{Data: indyDto.Data{Str1: "str1", Str2: "str2", Str3: ""}}
+	result2 := indyDto.Result{Data: indyDto.Data{Str1: "str1", Str2: "str2", Str3: "str3"}}
 
 	type fields struct {
 		v  interface{}

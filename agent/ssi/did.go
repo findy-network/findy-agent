@@ -7,8 +7,10 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -65,7 +67,7 @@ func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
 }
 
 func NewDid(did, verkey string) (d *DID) {
-	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: verkey}}, On: Consumed}
+	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: Consumed}
 	return &DID{data: f}
 }
 
@@ -76,7 +78,7 @@ func NewOutDid(verkey string, route []string) (d *DID) {
 }
 
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
-	f := &Future{V: dto.Result{Data: dto.Data{Str1: did, Str2: ""}}, On: Consumed}
+	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
 	return d
 }
@@ -115,31 +117,29 @@ func (d *DID) SetWallet(w managed.Wallet) {
 // Store stores this DID as their DID to given wallet. Work is done thru futures
 // so the call doesn't block. The meta data is set "pairwise". See StoreResult()
 // for status.
-func (d *DID) Store(wallet int) {
-	ds, vk, _ := d.data.Strs()
+func (d *DID) Store(mgdWallet managed.Wallet) {
+	defer err2.Catch(func(err error) {
+		glog.Errorf("Error storing DID: %s", err)
+	})
 
+	ds, vk, _ := d.data.Strs()
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
-	f := new(Future)
 
-	f.SetChan(did.StoreTheir(wallet, json))
+	f := new(Future)
+	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
+
+	// Store did it also to the agent storage
+	glog.V(5).Infof("agent storage Store DID %s", ds)
+	err2.Check(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
+		ID:         ds,
+		DID:        ds,
+		IndyVerKey: vk,
+	}))
 
 	d.Lock()
 	d.stored = f
 	d.Unlock()
-
-	go func() {
-		defer err2.CatchTrace(func(err error) {}) // dont let crash on panics
-
-		f := new(Future)
-		f.SetChan(did.SetMeta(wallet, ds, "pairwise"))
-
-		if f.Result().Err() == nil { // no error
-			d.Lock()
-			d.meta = f
-			d.Unlock()
-		}
-	}()
 }
 
 // StoreResult returns error status of the Store() functions result. If storing
@@ -168,6 +168,7 @@ func (d *DID) StoreResult() error {
 	if pw != nil && pw.Result().Err() != nil {
 		return fmt.Errorf("pairwise: %s", pw.Result().Error())
 	}
+
 	return nil
 }
 
@@ -220,7 +221,7 @@ func (d *DID) Endpoint() string {
 
 func (d *DID) SetAEndp(ae service.Addr) {
 	d.endp = &Future{
-		V:  dto.Result{Data: dto.Data{Str1: ae.Endp, Str2: ae.Key}},
+		V:  indyDto.Result{Data: indyDto.Data{Str1: ae.Endp, Str2: ae.Key}},
 		On: Consumed,
 	}
 }

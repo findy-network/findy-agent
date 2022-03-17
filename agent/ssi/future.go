@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-wrapper-go"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/lainio/err2/try"
 )
 
@@ -44,10 +44,10 @@ func (f *Future) IsEmpty() bool {
 	return f.On == empty
 }
 
-func (f *Future) Result() (dtoResult *dto.Result) {
+func (f *Future) Result() (dtoResult *indyDto.Result) {
 	pseudo := f.value()
 	if pseudo != nil {
-		r := pseudo.(dto.Result)
+		r := pseudo.(indyDto.Result)
 		dtoResult = &r
 	}
 	return

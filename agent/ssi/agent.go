@@ -7,8 +7,11 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
+	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
@@ -24,6 +27,7 @@ type AgentType interface {
 type Agent interface {
 	AgentType
 	Wallet() (h int)
+	ManagedWallet() managed.Wallet
 	RootDid() *DID
 	CreateDID(seed string) (agentDid *DID)
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
@@ -152,6 +156,10 @@ func (a *DIDAgent) Wallet() (h int) {
 	return a.WalletH.Handle()
 }
 
+func (a *DIDAgent) ManagedWallet() managed.Wallet {
+	return a.WalletH
+}
+
 func (a *DIDAgent) OpenPool(name string) {
 	OpenPool(name)
 }
@@ -168,7 +176,22 @@ func (a *DIDAgent) Pool() (v int) {
 func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 	a.AssertWallet()
 	f := new(Future)
-	f.SetChan(did.CreateAndStore(a.Wallet(), did.Did{Seed: seed}))
+	ch := make(findy.Channel, 1)
+	go func() {
+		defer err2.Catch(func(err error) {
+			glog.Errorf("AddDID failed: %s", err)
+		})
+		// Catch did result here and store it also to the agent storage
+		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
+		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
+		err2.Check(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
+			ID:         didRes.Data.Str1,
+			DID:        didRes.Data.Str1,
+			IndyVerKey: didRes.Data.Str2,
+		}))
+		ch <- didRes
+	}()
+	f.SetChan(ch)
 	return NewAgentDid(a.WalletH, f)
 }
 
@@ -196,9 +219,18 @@ func (a *DIDAgent) SendNYM(
 
 // localKey returns a future to the verkey of the DID from a local wallet.
 func (a *DIDAgent) localKey(didName string) (f *Future) {
-	f = new(Future)
-	f.SetChan(did.LocalKey(a.Wallet(), didName))
-	return
+	defer err2.Catch(func(err error) {
+		glog.Errorln("error when fetching localKey: ", err)
+	})
+
+	// using did storage to get the verkey - could be also fetched from indy wallet directly
+	// eventually all data should be fetched from agent storage and not from indy wallet
+	did, err := a.ManagedWallet().Storage().DIDStorage().GetDID(didName)
+	err2.Check(err)
+
+	glog.V(5).Infoln("found localKey: ", didName, did.IndyVerKey)
+
+	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did.IndyVerKey}}, On: Consumed}
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
@@ -206,7 +238,7 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 
 	newDID := NewDid(did, vk)
 	a.DidCache.Add(newDID)
-	newDID.Store(a.Wallet())
+	newDID.Store(a.ManagedWallet())
 
 	// Previous is an async func so make sure results are ready
 	try.To(newDID.StoreResult())
@@ -214,9 +246,12 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 	return nil
 }
 
+// Used by steward only
 func (a *DIDAgent) OpenDID(name string) *DID {
-	verkey := a.localKey(name)
-	newDid := NewDid(name, verkey.Str1())
+	f := new(Future)
+	f.SetChan(did.LocalKey(a.Wallet(), name))
+
+	newDid := NewDid(name, f.Str1())
 	a.DidCache.LazyAdd(name, newDid)
 	return newDid
 }

@@ -327,7 +327,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// Set pairwise info about other end to wallet
 	callee := ssi.NewDid(im.Did(), im.VerKey())
-	callee.Store(a.Wallet())
+	callee.Store(a.ManagedWallet())
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)

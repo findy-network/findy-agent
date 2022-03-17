@@ -11,9 +11,9 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/common"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/crypto"
-	"github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2/try"
 )

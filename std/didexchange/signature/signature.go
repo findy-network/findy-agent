@@ -12,7 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/didexchange"
-	"github.com/findy-network/findy-wrapper-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"

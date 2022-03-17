@@ -32,7 +32,7 @@ type Callee struct {
 
 func (p *Callee) startStore() {
 	wallet := p.agent.Wallet()
-	p.Caller.Store(wallet)
+	p.Caller.Store(p.agent.ManagedWallet())
 	pwName := p.pairwiseName()
 
 	// Find the routing keys from the request
