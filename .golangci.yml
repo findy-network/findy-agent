@@ -46,7 +46,6 @@ linters:
     #    - bodyclose
     - gofmt
     - goimports
-    - govet
 issues:
   exclude-rules:
     - path: _test\.go
