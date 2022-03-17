@@ -109,10 +109,10 @@ testv:
 	$(GO) test -v -p 1 -failfast ./...
 
 test_cov_out:
-	$(GO) test -v -p 1 -failfast \
+	$(GO) test -p 1 -failfast \
+		-coverpkg=github.com/findy-network/findy-agent/... \
 		-coverprofile=coverage.txt  \
 		-covermode=atomic \
-		-coverpkg $(go list ./...) \
 		./...
 
 test_cov: test_cov_out
