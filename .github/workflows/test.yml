@@ -40,7 +40,7 @@ jobs:
       - name: scan
         run: make scan
 
-  test-image:
+  test-docker-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
