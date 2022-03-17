@@ -7,8 +7,8 @@ API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
 GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
 
-# GO := go
-GO := go1.18beta2
+GO := go
+# GO := go1.18beta2
 
 scan:
 	@scripts/scan.sh $(ARGS)
