@@ -37,6 +37,8 @@ jobs:
           name: ${{ github.sha }}-coverage.txt
           path: ./coverage.txt
           retention-days: 1
+      - name: docker image
+        run: make image
       - name: scan
         run: make scan
 
