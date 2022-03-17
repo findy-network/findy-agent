@@ -109,7 +109,11 @@ testv:
 	$(GO) test -v -p 1 -failfast ./...
 
 test_cov_out:
-	$(GO) test -v -p 1 -failfast -coverprofile=coverage.txt ./...
+	$(GO) test -v -p 1 -failfast \
+		-coverprofile=coverage.txt  \
+		-covermode=atomic \
+		-coverpkg $(go list ./...) \
+		./...
 
 test_cov: test_cov_out
 	$(GO) tool cover -html=coverage.txt
