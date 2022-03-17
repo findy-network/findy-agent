@@ -61,7 +61,6 @@ linters:
     #    - gomnd
     - goprintffuncname
     #    - gosec
-    - gosimple
     - govet
     #    - ineffassign
     #    - interfacer
@@ -72,13 +71,11 @@ linters:
     - nolintlint
     - revive
     - rowserrcheck
-    - staticcheck
     - structcheck
     #    - stylecheck
     - typecheck
     - unconvert
     #    - unparam
-    - unused
     - varcheck
     #   - whitespace
 issues:
