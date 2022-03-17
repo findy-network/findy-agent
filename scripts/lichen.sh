@@ -6,7 +6,7 @@
 
 if ! command -v lichen &> /dev/null
 then
-	go get github.com/uw-labs/lichen
+	go install github.com/uw-labs/lichen
 fi
 
 case "$2" in
