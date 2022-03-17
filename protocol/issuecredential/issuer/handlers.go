@@ -3,7 +3,6 @@ package issuer
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -13,6 +12,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // HandleCredentialPropose is protocol function for IssueCredentialPropose at Issuer.
@@ -58,7 +58,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 
 			r := <-anoncreds.IssuerCreateCredentialOffer(
 				agent.MyCA().Wallet(), prop.CredDefID)
-			err2.Check(r.Err())
+			try.To(r.Err())
 			credOffer := r.Str1()
 
 			rep := &data.IssueCredRep{
@@ -68,7 +68,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 				Values:     values, // important! saved for Req handling
 				Attributes: attributes,
 			}
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			offer, autoAccept := om.FieldObj().(*issuecredential.Offer)
 			if autoAccept {
@@ -91,7 +91,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.IssueCredentialOffer,
@@ -109,7 +109,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 
 			repK := psm.NewStateKey(ca, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
+			rep := try.To1(data.GetIssueCredRep(repK))
 
 			offer := om.FieldObj().(*issuecredential.Offer)
 			offer.OffersAttach =
@@ -138,10 +138,10 @@ func HandleCredentialRequest(packet comm.Packet) (err error) {
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
-			attach := err2.Bytes.Try(issuecredential.RequestAttach(req))
+			rep := try.To1(data.GetIssueCredRep(repK))
+			attach := try.To1(issuecredential.RequestAttach(req))
 			credReq := string(attach)
-			cred := err2.String.Try(rep.IssuerBuildCred(packet, credReq))
+			cred := try.To1(rep.IssuerBuildCred(packet, credReq))
 
 			issue := om.FieldObj().(*issuecredential.Issue)
 			issue.CredentialsAttach =

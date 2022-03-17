@@ -7,28 +7,31 @@ API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
 GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
 
+GO := go
+# GO := go1.18beta2
+
 scan:
 	@scripts/scan.sh $(ARGS)
 
 drop_wrap:
-	go mod edit -dropreplace github.com/findy-network/findy-wrapper-go
+	$(GO) mod edit -dropreplace github.com/findy-network/findy-wrapper-go
 
 drop_comm:
-	go mod edit -dropreplace github.com/findy-network/findy-common-go
+	$(GO) mod edit -dropreplace github.com/findy-network/findy-common-go
 
 drop_api:
-	go mod edit -dropreplace github.com/findy-network/findy-agent-api
+	$(GO) mod edit -dropreplace github.com/findy-network/findy-agent-api
 
 drop_all: drop_api drop_comm drop_wrap
 
 repl_wrap:
-	go mod edit -replace github.com/findy-network/findy-wrapper-go=../findy-wrapper-go
+	$(GO) mod edit -replace github.com/findy-network/findy-wrapper-go=../findy-wrapper-go
 
 repl_comm:
-	go mod edit -replace github.com/findy-network/findy-common-go=../findy-common-go
+	$(GO) mod edit -replace github.com/findy-network/findy-common-go=../findy-common-go
 
 repl_api:
-	go mod edit -replace github.com/findy-network/findy-agent-api=../findy-agent-api
+	$(GO) mod edit -replace github.com/findy-network/findy-agent-api=../findy-agent-api
 
 repl_all: repl_api repl_comm repl_wrap
 
@@ -36,39 +39,39 @@ modules: modules_comm modules_wrap modules_api
 
 modules_comm: drop_comm
 	@echo Syncing modules: findy-common-go/$(GRPC_BRANCH)
-	go get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
+	$(GO) get github.com/findy-network/findy-common-go@$(GRPC_BRANCH)
 
 modules_wrap: drop_wrap
 	@echo Syncing modules: findy-wrapper-go/$(WRAP_BRANCH)
-	go get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
+	$(GO) get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
 
 modules_api: drop_api
 	@echo Syncing modules: findy-agent-api/$(API_BRANCH)
-	go get github.com/findy-network/findy-agent-api@$(API_BRANCH)
+	$(GO) get github.com/findy-network/findy-agent-api@$(API_BRANCH)
 
 deps:
-	go get -t ./...
+	$(GO) get -t ./...
 
 update-deps:
-	go get -u ./...
+	$(GO) get -u ./...
 
 cli:
 	@echo "building new CLI by name: fa"
 	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
-	@go build \
+	@$(GO) build \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
 		-o $(GOPATH)/bin/fa 
 
 build:
-	go build -v ./...
+	$(GO) build -v ./...
 
 vet:
-	go vet ./...
+	$(GO) vet ./...
 
 shadow:
 	@echo Running govet
-	go vet -vettool=$(GOPATH)/bin/shadow ./...
+	$(GO) vet -vettool=$(GOPATH)/bin/shadow ./...
 	@echo Govet success
 
 check_fmt:
@@ -82,37 +85,37 @@ lint:
 	@golangci-lint run
 
 test:
-	go test -p 1 -failfast ./...
+	$(GO) test -p 1 -failfast ./...
 
 testr:
-	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... | tee ../testr.log
+	$(GO) test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... | tee ../testr.log
 
 test_grpcv:
-	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 test_grpc:
-	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	$(GO) test -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 test_grpc_rv:
-	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 test_grpc_r:
-	go test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
+	$(GO) test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
 testrv:
-	go test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
+	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
 
 testv:
-	go test -v -p 1 -failfast ./...
+	$(GO) test -v -p 1 -failfast ./...
 
 test_cov_out:
-	go test -v -p 1 -failfast -coverprofile=coverage.txt ./...
+	$(GO) test -v -p 1 -failfast -coverprofile=coverage.txt ./...
 
 test_cov: test_cov_out
-	go tool cover -html=coverage.txt
+	$(GO) tool cover -html=coverage.txt
 
 misspell:
-	@go get github.com/client9/misspell 
+	@$(GO) get github.com/client9/misspell 
 	@find . -name '*.md' -o -name '*.go' -o -name '*.puml' | xargs misspell -error
 
 e2e: install
@@ -128,7 +131,7 @@ check: check_fmt vet shadow
 install:
 	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
-	go install \
+	$(GO) install \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
 		./...
 

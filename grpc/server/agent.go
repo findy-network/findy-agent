@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -23,6 +22,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const keepaliveTimer = 50 * time.Second
@@ -40,7 +40,7 @@ func (a *agentServer) Enter(
 ) {
 	defer err2.Annotate("agent server enter mode cmd", &err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent enter mode:", mode.TypeID, mode.IsInput)
 
 	retMode := pb.ModeCmd_AcceptModeCmd_DEFAULT
@@ -109,7 +109,7 @@ func (a *agentServer) Ping(
 ) {
 	defer err2.Annotate("agent server ping", &err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent ping:", pm.ID)
 
 	saReply := false
@@ -139,7 +139,7 @@ func (a *agentServer) CreateSchema(
 ) {
 	defer err2.Annotate("create schema", &err)
 
-	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
 
 	sch := &ssi.Schema{
@@ -147,8 +147,8 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
-	err2.Check(sch.Create(ca.RootDid().Did()))
-	err2.Check(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
+	try.To(sch.Create(ca.RootDid().Did()))
+	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
 	return &pb.Schema{ID: sch.ValidID()}, nil
 }
@@ -162,16 +162,16 @@ func (a *agentServer) CreateCredDef(
 ) {
 	defer err2.Annotate("create creddef", &err)
 
-	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
 	sch := &ssi.Schema{ID: cdc.SchemaID}
-	err2.Check(sch.FromLedger(ca.RootDid().Did()))
+	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	cd := r.Str2()
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
@@ -186,11 +186,11 @@ func (a *agentServer) GetSchema(
 ) {
 	defer err2.Annotate("get schema", &err)
 
-	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
 
 	sID, schema, err := ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID)
-	err2.Check(err)
+	try.To(err)
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -203,10 +203,10 @@ func (a *agentServer) GetCredDef(
 ) {
 	defer err2.Annotate("get creddef", &err)
 
-	caDID, ca := e2.StrRcvr.Try(ca(ctx))
+	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
 
-	def := err2.String.Try(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
+	def := try.To1(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 
@@ -227,7 +227,7 @@ func (a *agentServer) CreateInvitation(
 		glog.V(4).Infoln("generating connection id:", id)
 	}
 
-	addr := e2.Addr.Try(preallocatePWDID(ctx, id))
+	addr := try.To1(preallocatePWDID(ctx, id))
 
 	label := base.Label
 	if base.Label == "" {
@@ -247,7 +247,7 @@ func (a *agentServer) CreateInvitation(
 	jStr := dto.ToJSON(invitation)
 	// .. and build a URL which contains the invitation
 	urlStr, err := didexchange.Build(invitation)
-	err2.Check(err)
+	try.To(err)
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from
@@ -260,7 +260,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 
 	glog.V(5).Infoln("start prealloc", id)
 
-	_, receiver := e2.StrRcvr.Try(ca(ctx))
+	_, receiver := try.To2(ca(ctx))
 	ep = receiver.CAEndp()
 
 	wa := receiver.WorkerEA()
@@ -271,7 +271,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 
 	// mark the preallocated pairwise DID with connection ID that we find it
 	r := <-did.SetMeta(wa.Wallet(), ourPairwiseDID.Did(), id)
-	err2.Check(r.Err())
+	try.To(r.Err())
 
 	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id
@@ -291,13 +291,13 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
 	defer err2.Annotate("give answer", &err)
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
 		answer.ID,
 		answer.Ack,
 	)
 
-	state := e2.PSM.Try(psm.GetPSM(psm.StateKey{
+	state := try.To1(psm.GetPSM(psm.StateKey{
 		DID:   caDID,
 		Nonce: answer.ID,
 	}))
@@ -321,8 +321,8 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_Liste
 		}
 	})
 
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
 	listenKey := bus.AgentKeyType{
@@ -341,12 +341,12 @@ loop:
 			assert.D.True(clientID.ID == notify.ClientID)
 			agentStatus := processNofity(notify)
 			agentStatus.ClientID.ID = notify.ClientID
-			err2.Check(server.Send(agentStatus))
+			try.To(server.Send(agentStatus))
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
 			glog.V(7).Infoln("sending keepalive timer")
-			err2.Check(server.Send(&pb.AgentStatus{
+			try.To(server.Send(&pb.AgentStatus{
 				ClientID: &pb.ClientID{ID: clientID.ID},
 				Notification: &pb.Notification{
 					TypeID: pb.Notification_KEEPALIVE,
@@ -373,8 +373,8 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 		}
 	})
 
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
+	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent starts listener:", clientID.ID)
 
 	// avoid collisions by renaming part of the clientID that we can listen it
@@ -399,17 +399,17 @@ loop:
 
 			var question *pb.Question
 			question, err = processQuestion(ctx, notify)
-			err2.Check(err)
+			try.To(err)
 			if question != nil {
 				question.Status.ClientID.ID = clientID.ID
-				err2.Check(server.Send(question))
+				try.To(server.Send(question))
 				glog.V(1).Infoln("send question..")
 			}
 
 		case <-time.After(keepaliveTimer):
 			// send keep alive message
 			glog.V(7).Infoln("sending keepalive timer")
-			err2.Check(server.Send(&pb.Question{
+			try.To(server.Send(&pb.Question{
 				Status: &pb.AgentStatus{
 					ClientID: &pb.ClientID{ID: clientID.ID},
 				},
@@ -457,7 +457,7 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 		ID:     notify.ProtocolID,
 	}
 
-	caDID, receiver := e2.StrRcvr.Try(ca(ctx))
+	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeID)], protocolName[id.TypeID])
 	ps, _ := tryProtocolStatus(id, key)

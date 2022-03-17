@@ -5,7 +5,7 @@ import (
 
 	"github.com/findy-network/findy-wrapper-go"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
-	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type State uint32
@@ -32,7 +32,7 @@ func (f *Future) value() interface{} {
 		r := <-f.ch
 		f.On = Consumed
 		f.V = r
-		err2.Check(r.Err())
+		try.To(r.Err())
 	}
 
 	return f.V

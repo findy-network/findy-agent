@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 const connectionSigExpTime = 10 * 60 * 60
@@ -39,7 +40,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (cs *didexchange.ConnectionSignature, err error) {
 	defer err2.Annotate("build connection sign", &err)
 
-	connectionJSON := err2.Bytes.Try(json.Marshal(connection))
+	connectionJSON := try.To1(json.Marshal(connection))
 
 	signedData, signature, verKey := pipe.SignAndStamp(connectionJSON)
 
@@ -88,14 +89,14 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 		pipe = &sec.Pipe{Out: did}
 	}
 
-	data := err2.Bytes.Try(utils.DecodeB64(cs.SignedData))
+	data := try.To1(utils.DecodeB64(cs.SignedData))
 	if len(data) == 0 {
 		s := "missing or invalid signature data"
 		glog.Error(s)
 		return nil, fmt.Errorf(s)
 	}
 
-	signature := err2.Bytes.Try(utils.DecodeB64(cs.Signature))
+	signature := try.To1(utils.DecodeB64(cs.Signature))
 
 	ok, _ := pipe.Verify(data, signature)
 	if !ok {

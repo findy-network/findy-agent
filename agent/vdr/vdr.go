@@ -7,6 +7,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/key"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/peer"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type VDR struct {
@@ -27,8 +28,7 @@ func New(storage *mgddb.Storage) (v *VDR, err error) {
 	v = &VDR{
 		keyVDR: &key.VDR{},
 	}
-	peerVDR, err := peer.New(storage)
-	err2.Check(err)
+	peerVDR := try.To1(peer.New(storage))
 
 	v.peerVDR = peerVDR
 

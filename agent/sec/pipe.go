@@ -15,7 +15,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // Pipe is secure way to transport data between DID connection. All agent to
@@ -49,7 +49,7 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
 	vk = p.Out.VerKey()
 
 	r := <-crypto.VerifySignature(vk, msg, signature)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	return r.Yes(), vk
 }
 
@@ -60,7 +60,7 @@ func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
 	vk = p.In.VerKey()
 
 	r := <-crypto.SignMsg(wallet, vk, src)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	return r.Bytes(), vk
 }
 
@@ -93,7 +93,7 @@ func (p Pipe) DecryptGiveKey(src []byte) (dst []byte, vk string) {
 	}
 	vk = p.In.VerKey()
 	r := <-crypto.AnonDecrypt(wallet, vk, src)
-	err2.Check(r.Err())
+	try.To(r.Err())
 
 	return r.Bytes(), vk
 }

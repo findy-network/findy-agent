@@ -9,7 +9,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -22,6 +21,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type agencyService struct {
@@ -51,7 +51,7 @@ func (a agencyService) Onboard(
 
 	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
 	ac, err := handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed)
-	err2.Check(err)
+	try.To(err)
 
 	caDID := ac.CreateDID("")
 	DIDStr := caDID.Did()
@@ -86,7 +86,7 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.AgencyService_PSMH
 			glog.Errorln("error sending response:", err)
 		}
 	})
-	ctx := e2.Ctx.Try(jwt.CheckTokenValidity(server.Context()))
+	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
 	user := jwt.User(ctx)
 	if user != a.Root {
 		return errors.New("access right")
@@ -155,8 +155,8 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 		DID:   notify.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
-	p := e2.PSM.Try(psm.GetPSM(psmKey))
-	err2.Check(psm.RmPSM(p))
+	p := try.To1(psm.GetPSM(psmKey))
+	try.To(psm.RmPSM(p))
 }
 
 func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, notify bus.AgentNotify) {
@@ -188,10 +188,10 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 		glog.Warningf("client id mismatch: c/s: %s/%s",
 			hook.ID, notify.ClientID)
 	}
-	err2.Check(server.Send(&agentStatus))
+	try.To(server.Send(&agentStatus))
 
 	// Update PSM state to trigger immediate cleanup
-	err2.Check(prot.AddAndSetFlagUpdatePSM(psmKey,
+	try.To(prot.AddAndSetFlagUpdatePSM(psmKey,
 		psm.Archived,  // set this
 		psm.Archiving, // clear this
 	))

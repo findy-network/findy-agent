@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type AgentType interface {
@@ -183,7 +184,7 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
-		err2.Check(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
+		try.To(a.WalletH.Storage().DIDStorage().AddDID(api.DID{
 			ID:         didRes.Data.Str1,
 			DID:        didRes.Data.Str1,
 			IndyVerKey: didRes.Data.Str2,
@@ -224,8 +225,7 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	// using did storage to get the verkey - could be also fetched from indy wallet directly
 	// eventually all data should be fetched from agent storage and not from indy wallet
-	did, err := a.ManagedWallet().Storage().DIDStorage().GetDID(didName)
-	err2.Check(err)
+	did := try.To1(a.ManagedWallet().Storage().DIDStorage().GetDID(didName))
 
 	glog.V(5).Infoln("found localKey: ", didName, did.IndyVerKey)
 
@@ -240,7 +240,7 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 	newDID.Store(a.ManagedWallet())
 
 	// Previous is an async func so make sure results are ready
-	err2.Check(newDID.StoreResult())
+	try.To(newDID.StoreResult())
 
 	return nil
 }

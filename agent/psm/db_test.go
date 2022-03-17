@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/go-test/deep"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,9 +35,9 @@ func setUp() {
 	})
 
 	// We don't want logs on file with tests
-	err2.Check(flag.Set("logtostderr", "true"))
+	try.To(flag.Set("logtostderr", "true"))
 
-	err2.Check(Open(dbPath))
+	try.To(Open(dbPath))
 }
 
 func tearDown() {

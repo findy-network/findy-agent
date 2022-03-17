@@ -6,6 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/cmds/pool"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 )
 
@@ -48,10 +49,10 @@ Example
 			Name: poolName,
 			Txn:  poolGen,
 		}
-		err2.Check(Cmd.Validate())
+		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(Cmd.Exec(os.Stdout))
+			try.To1(Cmd.Exec(os.Stdout))
 		}
 		return nil
 	},
@@ -80,10 +81,10 @@ Example
 		Cmd := pool.PingCmd{
 			Name: poolName,
 		}
-		err2.Check(Cmd.Validate())
+		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
-			err2.Try(Cmd.Exec(os.Stdout))
+			try.To1(Cmd.Exec(os.Stdout))
 		}
 		return nil
 	},

@@ -8,6 +8,7 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 /*
@@ -218,7 +219,7 @@ func (p *PSM) PairwiseName() string {
 			return ""
 		}
 		pw, err := r.FindPWByDID(p.ConnDID)
-		err2.Check(err)
+		try.To(err)
 
 		if pw != nil {
 			return pw.Meta.Name

@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type Pairwise struct {
@@ -70,7 +71,7 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 	a := p.agent.(comm.Receiver)
 	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
 	r := <-did.Meta(a.Wallet(), calleeDID.Did())
-	err2.Check(r.Err())
+	try.To(r.Err())
 	if r.Str1() == cnxAddr.EdgeToken {
 		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
 		p.Callee = calleeDID
@@ -102,7 +103,7 @@ func (p *Callee) ConnReqToRespWithSet(
 	respMsg = responseMsg
 
 	// Check the result for error handling AND for consuming async's result
-	err2.Check(p.storeResult())
+	try.To(p.storeResult())
 
 	return respMsg, nil
 }

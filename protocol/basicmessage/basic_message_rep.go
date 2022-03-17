@@ -5,6 +5,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const bucketType = psm.BucketBasicMessage
@@ -42,14 +43,14 @@ func (p *basicMessageRep) Type() byte {
 }
 
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	})
-	err2.Check(err)
+	try.To(err)
 
 	var ok bool
 	rep, ok = res.(*basicMessageRep)

@@ -18,6 +18,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // errorMessageMaxLength is the maximum length of the response body we will
@@ -37,7 +38,7 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 		Timeout: timeout,
 	}
 	URL, err := url.Parse(urlStr)
-	err2.Check(err)
+	try.To(err)
 
 	glog.V(1).Infof("Posting message to %s\n", urlStr)
 
@@ -47,7 +48,7 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 	request.Header.Set("Content-Type", "application/ssi-agent-wire")
 
 	response, err := c.Do(request)
-	err2.Check(err)
+	try.To(err)
 
 	defer func() {
 		_ = response.Body.Close()
@@ -89,7 +90,7 @@ func downloadFile(downloadDir, filepath, url string) (name string, err error) {
 
 	// Get the data stream from server
 	resp, err := http.Get(url)
-	err2.Check(err)
+	try.To(err)
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
@@ -101,14 +102,14 @@ func downloadFile(downloadDir, filepath, url string) (name string, err error) {
 		filename = path.Base(resp.Request.URL.String())
 	}
 	filename = path.Join(downloadDir, filename)
-	out := err2.File.Try(os.Create(filename))
+	out := try.To1(os.Create(filename))
 	defer func() {
 		_ = resp.Body.Close()
 		_ = out.Close()
 	}()
 
 	// Stream copy, can be used for large files as well
-	err2.Empty.Try(io.Copy(out, resp.Body))
+	try.To1(io.Copy(out, resp.Body))
 
 	return filename, nil
 }
@@ -124,7 +125,7 @@ func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
 	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())
 
 	cryptSendPL, _, err := sendPipe.Pack(opl.JSON())
-	err2.Check(err)
+	try.To(err)
 
 	_, err = SendAndWaitReq(cnxAddr.Address(), bytes.NewReader(cryptSendPL),
 		utils.Settings.Timeout())

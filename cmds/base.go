@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 const walletKeyLength = 44
@@ -105,7 +106,7 @@ func NewCmd(d []byte) (c *Cmd, err error) {
 // error.
 func Fprintln(w io.Writer, a ...interface{}) {
 	if w != nil {
-		err2.Empty.Try(fmt.Fprintln(w, a...))
+		try.To1(fmt.Fprintln(w, a...))
 	}
 }
 
@@ -113,7 +114,7 @@ func Fprintln(w io.Writer, a ...interface{}) {
 // error.
 func Fprintf(w io.Writer, format string, a ...interface{}) {
 	if w != nil {
-		err2.Empty.Try(fmt.Fprintf(w, format, a...))
+		try.To1(fmt.Fprintf(w, format, a...))
 	}
 }
 
@@ -121,7 +122,7 @@ func Fprintf(w io.Writer, format string, a ...interface{}) {
 // error.
 func Fprint(w io.Writer, a ...interface{}) {
 	if w != nil {
-		err2.Empty.Try(fmt.Fprint(w, a...))
+		try.To1(fmt.Fprint(w, a...))
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type (
@@ -59,10 +60,10 @@ func (r *Reg) Load(filename string) (err error) {
 
 	data, err := readJSONFile(filename)
 	if err != nil && os.IsNotExist(err) {
-		err2.Check(writeJSONFile(filename, []byte("{}")))
+		try.To(writeJSONFile(filename, []byte("{}")))
 		data, err = readJSONFile(filename)
 	}
-	err2.Check(err)
+	try.To(err)
 
 	r.r = *newReg(data)
 	return nil
@@ -91,8 +92,8 @@ func (r *Reg) EnumValues(handler func(k keyDID, v []string) bool) {
 
 func (r *Reg) Reset(filename string) (err error) {
 	defer err2.Annotate("resetting", &err)
-	err2.Check(r.Load(""))       // reset data
-	err2.Check(r.Save(filename)) // save reset data to file
+	try.To(r.Load(""))       // reset data
+	try.To(r.Save(filename)) // save reset data to file
 	return err
 }
 

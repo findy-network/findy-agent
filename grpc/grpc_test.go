@@ -38,6 +38,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
@@ -83,7 +84,7 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 }
 
 func TestMain(m *testing.M) {
-	err2.Check(flag.Set("logtostderr", "true"))
+	try.To(flag.Set("logtostderr", "true"))
 
 	prepareBuildOneTest()
 	setUp()
@@ -106,7 +107,7 @@ func setUp() {
 	calcTestMode()
 
 	if testMode == TestModeRunOne {
-		gob := err2.Bytes.Try(ioutil.ReadFile("ONEdata.gob"))
+		gob := try.To1(ioutil.ReadFile("ONEdata.gob"))
 		dto.FromGOB(gob, &prebuildAgents)
 		agents = &prebuildAgents
 	} else {
@@ -132,7 +133,7 @@ func setUp() {
 	} else {
 		sealedBoxPath = enclaveFile
 	}
-	err2.Check(enclave.InitSealedBox(sealedBoxPath, "", ""))
+	try.To(enclave.InitSealedBox(sealedBoxPath, "", ""))
 
 	exportPath = filepath.Join(exportPath, "wallets")
 
@@ -147,9 +148,9 @@ func setUp() {
 
 	// IF DEBUGGING ONE TEST run first, todo: move cleanup to tear down? make it easier
 	if testMode == TestModeRunOne {
-		err2.Check(handshake.LoadRegistered(strLiteral("findy", ".json", -1)))
+		try.To(handshake.LoadRegistered(strLiteral("findy", ".json", -1)))
 	} else {
-		err2.Check(agency.ResetRegistered(strLiteral("findy", ".json", -1)))
+		try.To(agency.ResetRegistered(strLiteral("findy", ".json", -1)))
 	}
 
 	// IF DEBUGGING ONE TEST use always file ledger
@@ -171,7 +172,7 @@ func setUp() {
 	//utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
-	err2.Check(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
+	try.To(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
 
 	go grpcserver.Serve(&rpc.ServerCfg{
 		PKI:     rpc.LoadPKI("./cert"),
@@ -465,7 +466,7 @@ func connect(invitation string, ready chan struct{}) {
 		Label: "OtherEndsTestLabel",
 	}
 	connID, ch, err := pairwise.Connection(ctx, invitation)
-	err2.Check(err)
+	try.To(err)
 
 	for status := range ch {
 		glog.V(1).Infof("==> WaitConnection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
@@ -584,7 +585,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 		glog.V(1).Infoln(agent.String())
 	}
 	if testMode == TestModeBuildEnv {
-		err2.Check(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
+		try.To(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
 	}
 }
 
@@ -630,7 +631,7 @@ func runPSMHook(intCh chan struct{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	ch, err := conn.PSMHook(ctx)
-	err2.Check(err)
+	try.To(err)
 loop:
 	for {
 		select {
@@ -1046,7 +1047,7 @@ func BenchmarkIssue(b *testing.B) {
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}})
-		err2.Check(err)
+		try.To(err)
 		for range r {
 		}
 	}
@@ -1060,11 +1061,11 @@ func BenchmarkIssue(b *testing.B) {
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}})
-		err2.Check(err)
+		try.To(err)
 		for range r {
 		}
 	}
-	err2.Check(conn.Close())
+	try.To(conn.Close())
 }
 
 func BenchmarkReqProof(b *testing.B) {
@@ -1087,7 +1088,7 @@ func BenchmarkReqProof(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-		err2.Check(err)
+		try.To(err)
 		for range r {
 		}
 	}
@@ -1100,11 +1101,11 @@ func BenchmarkReqProof(b *testing.B) {
 			ID:   connID,
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-		err2.Check(err)
+		try.To(err)
 		for range r {
 		}
 	}
-	err2.Check(conn.Close())
+	try.To(conn.Close())
 }
 
 func TestListenSAGrpcProofReq(t *testing.T) {
@@ -1228,7 +1229,7 @@ func doListen(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch, err := conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()})
-	err2.Check(err)
+	try.To(err)
 	glog.V(3).Info("***********************************\n",
 		"********** start to listen *******\n",
 		"***********************************\n")
@@ -1313,7 +1314,7 @@ func doListenResume(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch, err := conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()})
-	err2.Check(err)
+	try.To(err)
 	glog.V(3).Info("***********************************\n",
 		"********** start to listen Status *******\n",
 		"***********************************\n")
@@ -1419,7 +1420,7 @@ func handleStatusBMEcho(
 			ID:               status.Notification.ProtocolID,
 			NotificationTime: status.Notification.Timestamp,
 		})
-		err2.Check(err)
+		try.To(err)
 		if statusResult.GetBasicMessage().SentByMe {
 			glog.V(0).Infoln("---------- ours, no reply")
 			return handleOK
@@ -1432,7 +1433,7 @@ func handleStatusBMEcho(
 			ID:   status.Notification.ConnectionID,
 			Conn: conn,
 		}.BasicMessage(context.Background(), statusResult.GetBasicMessage().Content)
-		err2.Check(err)
+		try.To(err)
 		for state := range ch {
 			glog.V(1).Infoln("BM send state:", state.State, "|", state.Info)
 		}
@@ -1450,7 +1451,7 @@ func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
 		Ack:      ack,
 		Info:     "testing says hello!",
 	})
-	err2.Check(err)
+	try.To(err)
 	glog.V(1).Infof("Sending the answer (%s) send to client:%s\n", status.Status.Notification.ID, cid.ID)
 }
 
@@ -1472,7 +1473,7 @@ func resume(conn *grpc.ClientConn, status *agency2.AgentStatus, ack bool) {
 		},
 		State: stateAck,
 	})
-	err2.Check(err)
+	try.To(err)
 	glog.V(1).Infoln("======= result:", unpauseResult.String())
 }
 
@@ -1510,7 +1511,7 @@ func TestInvitation_Multiple(t *testing.T) {
 			Email: strLiteral("email", "", 5),
 		})
 		assert.NoError(t, err)
-		err2.Check(err)
+		try.To(err)
 		caDID = oReply.Result.CADID
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const bucketType = psm.BucketIssueCred
@@ -54,16 +55,16 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 
 	a := packet.Receiver
 	w := a.Wallet()
-	masterSecID := err2.String.Try(a.MasterSecret())
+	masterSecID := try.To1(a.MasterSecret())
 
 	// Get CRED DEF from the ledger
 	_, rep.CredDef, err = ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID)
-	err2.Check(err)
+	try.To(err)
 
 	// build credential request to send back to an issuer
 	r := <-anoncreds.ProverCreateCredentialReq(w, a.RootDid().Did(), rep.CredOffer,
 		rep.CredDef, masterSecID)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	cr = r.Str1()
 	rep.CredReqMeta = r.Str2()
 	return cr, nil
@@ -79,7 +80,7 @@ func (rep *IssueCredRep) IssuerBuildCred(packet comm.Packet, credReq string) (c 
 
 	r := <-anoncreds.IssuerCreateCredential(w, rep.CredOffer, credReq, rep.Values,
 		findy.NullString, findy.NullHandle)
-	err2.Check(r.Err())
+	try.To(r.Err())
 	c = r.Str1()
 	return c, nil
 }
@@ -93,11 +94,11 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 }
 
 func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
-	err2.Return(&err)
+	defer err2.Return(&err)
 
 	var res psm.Rep
 	res, err = psm.GetRep(bucketType, key)
-	err2.Check(err)
+	try.To(err)
 
 	// Allow not found
 	if res == nil {

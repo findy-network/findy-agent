@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-common-go/backup"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 var (
@@ -62,7 +63,7 @@ func Backup() {
 	}
 
 	name := backupName(backupFileName)
-	err2.Check(backup.FileCopy(utils.Settings.RegisterName(), name))
+	try.To(backup.FileCopy(utils.Settings.RegisterName(), name))
 	glog.V(1).Infoln("CA register backup successful to:", name)
 	lastBackup = time.Now()
 }

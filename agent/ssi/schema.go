@@ -7,6 +7,7 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type Schema struct {
@@ -20,7 +21,7 @@ type Schema struct {
 func (s *Schema) Create(DID string) (err error) {
 	defer err2.Annotate("create schema", &err)
 	attrsStr, err := json.Marshal(s.Attrs)
-	err2.Check(err)
+	try.To(err)
 
 	s.Stored = &Future{}
 	s.Stored.SetChan(anoncreds.IssuerCreateSchema(DID, s.Name, s.Version, string(attrsStr)))
@@ -53,7 +54,7 @@ func (s *Schema) FromLedger(DID string) (err error) {
 	defer err2.Annotate("schema from ledger", &err)
 
 	sID, schema, err := ledger.ReadSchema(Pool(), DID, s.ValidID())
-	err2.Check(err)
+	try.To(err)
 	s.Stored = &Future{V: indyDto.Result{Data: indyDto.Data{Str1: sID, Str2: schema}}, On: Consumed}
 
 	return nil

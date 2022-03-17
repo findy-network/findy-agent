@@ -4,7 +4,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/sec"
@@ -14,6 +13,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 // Transition is a Protocol State Machine transition definition. It combines
@@ -71,9 +71,9 @@ func StartPSM(ts Initial) (err error) {
 		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
 	})
 
-	pipe := e2.Pipe.Try(wa.PwPipe(ts.T.ConnectionID()))
+	pipe := try.To1(wa.PwPipe(ts.T.ConnectionID()))
 	msgMeDID := pipe.In.Did()
-	agentEndp := e2.Public.Try(pipe.EA())
+	agentEndp := try.To1(pipe.EA())
 	ts.T.SetReceiverEndp(agentEndp)
 
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
@@ -84,12 +84,12 @@ func StartPSM(ts Initial) (err error) {
 	// Let caller of StartPSM() to update T data so that it can set what we'll
 	// send to receiver inside the PL.Message. So this must be here before we
 	// Encrypt and seal the output message (om) into PL
-	err2.Check(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.ID()}, msg))
+	try.To(ts.Setup(psm.StateKey{DID: wDID, Nonce: ts.T.ID()}, msg))
 
 	opl := aries.PayloadCreator.NewMsg(ts.T.ID(), ts.SendNext, msg)
 
-	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, opl, psm.Sending))
-	err2.Check(comm.SendPL(pipe, ts.T, opl))
+	try.To(UpdatePSM(wDID, msgMeDID, ts.T, opl, psm.Sending))
+	try.To(comm.SendPL(pipe, ts.T, opl))
 
 	// sending went OK, update PSM for what we are doing next: waiting a
 	// message from other side or we are ready.
@@ -99,7 +99,7 @@ func StartPSM(ts Initial) (err error) {
 	}
 	wpl := aries.PayloadCreator.New(
 		didcomm.PayloadInit{ID: ts.T.ID(), Type: ts.WaitingNext})
-	err2.Check(UpdatePSM(wDID, msgMeDID, ts.T, wpl, nextState))
+	try.To(UpdatePSM(wDID, msgMeDID, ts.T, wpl, nextState))
 
 	return err
 }
@@ -119,7 +119,7 @@ func ContinuePSM(shift Again) (err error) {
 	wDID := shift.CA.WDID()
 	wa := shift.CA.WorkerEA()
 
-	PSM := e2.PSM.Try(psm.GetPSM(psm.StateKey{
+	PSM := try.To1(psm.GetPSM(psm.StateKey{
 		DID:   wDID,
 		Nonce: shift.InMsg.SubLevelID(),
 	}))
@@ -132,7 +132,7 @@ func ContinuePSM(shift Again) (err error) {
 	inDID := wa.LoadDID(msgMeDID)
 
 	pairwise, err := wa.FindPWByDID(inDID.Did())
-	err2.Check(err)
+	try.To(err)
 	assert.D.True(pairwise != nil, "pairwise should not be nil")
 
 	outDID := wa.LoadTheirDID(*pairwise)
@@ -153,7 +153,7 @@ func ContinuePSM(shift Again) (err error) {
 		Thread: decorator.NewThread(shift.InMsg.SubLevelID(), ""),
 	})
 
-	if !err2.Bool.Try(shift.Transfer(wa, im, om)) { // if handler says NACK
+	if !try.To1(shift.Transfer(wa, im, om)) { // if handler says NACK
 		if shift.SendOnNACK != "" {
 			sendBack = true           // set if we'll send NACK
 			plType = shift.SendOnNACK // NACK type to send
@@ -164,18 +164,18 @@ func ContinuePSM(shift Again) (err error) {
 
 	if sendBack {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
-		agentEndp := e2.Public.Try(pipe.EA())
+		agentEndp := try.To1(pipe.EA())
 		presentTask.SetReceiverEndp(agentEndp)
 
-		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, opl, psm.Sending))
-		err2.Check(comm.SendPL(pipe, presentTask, opl))
+		try.To(UpdatePSM(meDID, msgMeDID, presentTask, opl, psm.Sending))
+		try.To(comm.SendPL(pipe, presentTask, opl))
 	}
 	if isLast {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: plType})
-		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Ready|ackFlag))
+		try.To(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Ready|ackFlag))
 	} else {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: shift.WaitingNext})
-		err2.Check(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Waiting))
+		try.To(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Waiting))
 	}
 
 	return err
@@ -206,7 +206,7 @@ func ExecPSM(ts Transition) (err error) {
 
 	// Create protocol task in protocol implementation
 	task, err := CreateTask(ts.TaskHeader, nil)
-	err2.Check(err)
+	try.To(err)
 
 	msgMeDID := ts.Address.RcvrDID
 
@@ -214,7 +214,7 @@ func ExecPSM(ts Transition) (err error) {
 		_ = UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Failure)
 	})
 
-	err2.Check(UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Received))
+	try.To(UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Received))
 
 	var om didcomm.MessageHdr
 	var ep sec.Pipe
@@ -222,7 +222,7 @@ func ExecPSM(ts Transition) (err error) {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
 
 		pairwise, err := ts.Receiver.FindPWByDID(inDID.Did())
-		err2.Check(err)
+		try.To(err)
 		assert.D.True(pairwise != nil, "pairwise should not be nil")
 
 		connID := pairwise.Meta.Name
@@ -233,7 +233,7 @@ func ExecPSM(ts Transition) (err error) {
 		im := ts.Payload.MsgHdr()
 
 		opl := aries.PayloadCreator.NewMsg(task.ID(), ts.Payload.Type(), im)
-		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Decrypted))
+		try.To(UpdatePSM(meDID, msgMeDID, task, opl, psm.Decrypted))
 
 		om = aries.MsgCreator.Create(
 			didcomm.MsgInit{
@@ -241,7 +241,7 @@ func ExecPSM(ts Transition) (err error) {
 				Thread: ts.Payload.Thread(), // very important!
 			})
 
-		if !err2.Bool.Try(ts.InOut(connID, im, om)) { // if handler says NACK
+		if !try.To1(ts.InOut(connID, im, om)) { // if handler says NACK
 			if ts.SendOnNACK != pltype.Nothing {
 				sendBack = true        // set if we'll send NACK
 				plType = ts.SendOnNACK // NACK type to send
@@ -255,19 +255,19 @@ func ExecPSM(ts Transition) (err error) {
 		opl := aries.PayloadCreator.NewMsg(utils.UUID(), plType, om)
 
 		// Get endpoint from secure pipe to save it in case for resending.
-		agentEndp := e2.Public.Try(ep.EA())
+		agentEndp := try.To1(ep.EA())
 		task.SetReceiverEndp(agentEndp)
 
-		err2.Check(UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
-		err2.Check(comm.SendPL(ep, task, opl))
+		try.To(UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
+		try.To(comm.SendPL(ep, task, opl))
 	}
 
 	if isLast {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: plType})
-		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Ready|ackFlag))
+		try.To(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Ready|ackFlag))
 	} else {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: ts.WaitingNext})
-		err2.Check(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Waiting))
+		try.To(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Waiting))
 	}
 	return nil
 }
@@ -308,7 +308,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 	})
 	wDID := receiver.WDID()
 	opl := aries.PayloadCreator.NewMsg(t.ID(), t.Type(), msg)
-	err2.Check(UpdatePSM(wDID, "", t, opl, state))
+	try.To(UpdatePSM(wDID, "", t, opl, state))
 }
 
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {

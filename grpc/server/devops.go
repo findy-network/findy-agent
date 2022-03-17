@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type devOpsServer struct {
@@ -35,7 +36,7 @@ func (d devOpsServer) Enter(ctx context.Context, cmd *agency.Cmd) (cr *agency.Cm
 		response := fmt.Sprintf("%s, ping ok", utils.Settings.VersionInfo())
 		cmdReturn.Response = &agency.CmdReturn_Ping{Ping: response}
 	case agency.Cmd_LOGGING:
-		err2.Check(flag.Set("v", cmd.GetLogging()))
+		try.To(flag.Set("v", cmd.GetLogging()))
 	case agency.Cmd_COUNT:
 		response := fmt.Sprintf("%d/%d cloud agents",
 			agencyServer.HandlerCount(), agencyServer.SeedHandlerCount())

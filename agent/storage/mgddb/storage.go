@@ -9,6 +9,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const (
@@ -38,7 +39,7 @@ type Storage struct {
 func New(config api.AgentStorageConfig) (a *Storage, err error) {
 	defer err2.Annotate("afgo storage new", &err)
 
-	err2.Check(os.MkdirAll(config.FilePath, os.ModePerm))
+	try.To(os.MkdirAll(config.FilePath, os.ModePerm))
 
 	me := &Storage{
 		wrapper.New(wrapper.Config{
@@ -52,20 +53,17 @@ func New(config api.AgentStorageConfig) (a *Storage, err error) {
 		nil,
 	}
 
-	err2.Check(me.Init())
+	try.To(me.Init())
 
-	keyStorage, err := newKmsStorage(me)
-	err2.Check(err)
+	keyStorage := try.To1(newKmsStorage(me))
 	me.keyStorage = keyStorage
 
 	var ok bool
-	didStore, err := me.OpenStore(NameDID)
-	err2.Check(err)
+	didStore := try.To1(me.OpenStore(NameDID))
 	me.didStore, ok = didStore.(wrapper.Store)
 	assert.D.True(ok, "did store should always be wrapper store")
 
-	connStore, err := me.OpenStore(NameConnection)
-	err2.Check(err)
+	connStore := try.To1(me.OpenStore(NameConnection))
 	me.connStore, ok = connStore.(wrapper.Store)
 	assert.D.True(ok, "conn store should always be wrapper store")
 
@@ -107,8 +105,7 @@ func (s *Storage) AddDID(did api.DID) (err error) {
 func (s *Storage) GetDID(id string) (did *api.DID, err error) {
 	defer err2.Annotate("did storage get did", &err)
 
-	bytes, err := s.didStore.Get(id)
-	err2.Check(err)
+	bytes := try.To1(s.didStore.Get(id))
 
 	did = &api.DID{}
 	dto.FromGOB(bytes, did)
@@ -123,8 +120,7 @@ func (s *Storage) AddConnection(conn api.Connection) error {
 func (s *Storage) GetConnection(id string) (conn *api.Connection, err error) {
 	defer err2.Annotate("conn storage get conn", &err)
 
-	bytes, err := s.connStore.Get(id)
-	err2.Check(err)
+	bytes := try.To1(s.connStore.Get(id))
 
 	conn = &api.Connection{}
 	dto.FromGOB(bytes, conn)
@@ -137,12 +133,11 @@ func (s *Storage) ListConnections() (res []api.Connection, err error) {
 
 	res = make([]api.Connection, 0)
 	conn := &api.Connection{}
-	_, err = s.connStore.GetAll(func(bytes []byte) []byte {
+	try.To1(s.connStore.GetAll(func(bytes []byte) []byte {
 		dto.FromGOB(bytes, conn)
 		res = append(res, *conn)
 		return bytes
-	})
-	err2.Check(err)
+	}))
 
 	return res, nil
 }

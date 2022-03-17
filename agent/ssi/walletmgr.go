@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 var maxOpened = 10
@@ -71,8 +72,8 @@ func (h *Handle) Close() {
 		glog.Warning("handle mismatch!!")
 	}
 	h.h = 0
-	err2.Check(f.Result().Err())
-	err2.Check(h.storage.Close())
+	try.To(f.Result().Err())
+	try.To(h.storage.Close())
 }
 
 func (h *Handle) timestamp() int64 {
@@ -117,7 +118,7 @@ func (h *Handle) reopen() int {
 	h.ts = time.Now().UnixNano()
 	h.h = h.f.Int()
 
-	err2.Check(h.storage.Open())
+	try.To(h.storage.Open())
 
 	return h.h
 }
@@ -158,12 +159,11 @@ func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
 		glog.Error("error when opening wallet: ", err)
 	})
 
-	aStorage, err := mgddb.New(storage.AgentStorageConfig{
+	aStorage := try.To1(mgddb.New(storage.AgentStorageConfig{
 		AgentID:  cfg.ID(),
 		AgentKey: mgddb.GenerateKey(), // TODO: fetch from agent settings
 		FilePath: m.storageFilePath,
-	})
-	err2.Check(err)
+	}))
 
 	h := &Handle{
 		ts:      time.Now().UnixNano(),

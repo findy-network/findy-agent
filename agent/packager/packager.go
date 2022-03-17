@@ -15,6 +15,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type Packager struct {
@@ -37,25 +38,21 @@ func New(
 		registry: registry,
 	}
 
-	crypto, err := tinkcrypto.New()
-	err2.Check(err)
+	crypto := try.To1(tinkcrypto.New())
 	p.crypto = crypto
 
 	// legacy authcrypt
 	p.packers = append(p.packers, legacy.New(p))
 
 	// authcrypt
-	authPacker, err := authcrypt.New(p, jose.A256CBCHS512)
-	err2.Check(err)
+	authPacker := try.To1(authcrypt.New(p, jose.A256CBCHS512))
 	p.packers = append(p.packers, authPacker)
 
 	// anoncrypt
-	anonPacker, err := anoncrypt.New(p, jose.A256GCM)
-	err2.Check(err)
+	anonPacker := try.To1(anoncrypt.New(p, jose.A256GCM))
 	p.packers = append(p.packers, anonPacker)
 
-	pckr, err := packager.New(p)
-	err2.Check(err)
+	pckr := try.To1(packager.New(p))
 	p.packager = pckr
 
 	return p, err

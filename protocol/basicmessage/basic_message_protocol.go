@@ -14,6 +14,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 type taskBasicMessage struct {
@@ -64,7 +65,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.StartPSM(prot.Initial{
+	try.To(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.BasicMessageSend,
 		WaitingNext: pltype.Terminate,
 		Ca:          ca,
@@ -83,7 +84,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 				SentByMe:  true,
 				Delivered: true,
 			}
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			msg := om.FieldObj().(*basicmessage.Basicmessage)
 			msg.Content = bmTask.Content
@@ -97,7 +98,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 		defer err2.Annotate("basic message", &err)
 
 		pw, err := packet.Receiver.FindPWByDID(packet.Address.RcvrDID)
-		err2.Check(err)
+		try.To(err)
 		assert.D.True(pw != nil, "pairwise is nil")
 
 		bm := im.FieldObj().(*basicmessage.Basicmessage)
@@ -123,7 +124,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 			SentByMe:      false,
 			Delivered:     true,
 		}
-		err2.Check(psm.AddRep(rep))
+		try.To(psm.AddRep(rep))
 
 		return true, nil
 	}
@@ -145,7 +146,7 @@ func fillBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 	status := ps
 
 	msg, err := getBasicMessageRep(workerDID, taskID)
-	err2.Check(err)
+	try.To(err)
 
 	status.Status = &pb.ProtocolStatus_BasicMessage{BasicMessage: &pb.ProtocolStatus_BasicMessageStatus{
 		Content:       msg.Message,

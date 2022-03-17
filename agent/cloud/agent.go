@@ -16,6 +16,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 /*
@@ -198,7 +199,7 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 	}
 
 	pw, err := a.FindPWByName(pwName)
-	err2.Check(err)
+	try.To(err)
 
 	if pw == nil || pw.MyDID == "" || pw.TheirDID == "" {
 		return cp, errors.New("cannot find pw")

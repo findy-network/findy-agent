@@ -6,6 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/cmds/tools"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 )
 
@@ -35,9 +36,9 @@ Example
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		defer err2.Return(&err)
-		err2.Check(impCmd.Validate())
+		try.To(impCmd.Validate())
 		if !rootFlags.dryRun {
-			err2.Try(impCmd.Exec(os.Stdout))
+			try.To1(impCmd.Exec(os.Stdout))
 		}
 		return nil
 	},

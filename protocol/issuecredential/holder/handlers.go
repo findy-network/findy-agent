@@ -3,7 +3,6 @@ package holder
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/e2"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -14,6 +13,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder
@@ -36,7 +36,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		rep := &data.IssueCredRep{
 			StateKey: key,
 		}
-		err2.Check(psm.AddRep(rep))
+		try.To(psm.AddRep(rep))
 	}
 
 	sendNext, waitingNext := checkAutoPermission(packet)
@@ -55,9 +55,9 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
+			rep := try.To1(data.GetIssueCredRep(repK))
 
-			attach := err2.Bytes.Try(issuecredential.OfferAttach(offer))
+			attach := try.To1(issuecredential.OfferAttach(offer))
 			rep.CredOffer = string(attach)
 
 			// we need to parse the cred_def_id from credOffer
@@ -71,14 +71,14 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 
 			req, autoAccept := om.FieldObj().(*issuecredential.Request)
 			if autoAccept {
-				credRq := err2.String.Try(rep.BuildCredRequest(packet))
+				credRq := try.To1(rep.BuildCredRequest(packet))
 				req.RequestsAttach =
 					issuecredential.NewRequestAttach([]byte(credRq))
 			}
 
 			// Save the rep with the offer and with the request if
 			// auto accept
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 
 			return true, nil
 		},
@@ -94,7 +94,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	err2.Check(prot.ContinuePSM(prot.Again{
+	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,
 		InMsg:       im,
 		SendNext:    pltype.IssueCredentialRequest,
@@ -113,11 +113,11 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 			agent := wa
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
-			credRq := err2.String.Try(rep.BuildCredRequest(
+			rep := try.To1(data.GetIssueCredRep(repK))
+			credRq := try.To1(rep.BuildCredRequest(
 				comm.Packet{Receiver: agent}))
 
-			err2.Check(psm.AddRep(rep))
+			try.To(psm.AddRep(rep))
 			req := om.FieldObj().(*issuecredential.Request)
 			req.RequestsAttach =
 				issuecredential.NewRequestAttach([]byte(credRq))
@@ -152,9 +152,9 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
 
-			rep := e2.IssueCredRep.Try(data.GetIssueCredRep(repK))
-			cred := err2.Bytes.Try(issuecredential.CredentialAttach(issue))
-			err2.Check(rep.StoreCred(packet, string(cred)))
+			rep := try.To1(data.GetIssueCredRep(repK))
+			cred := try.To1(issuecredential.CredentialAttach(issue))
+			try.To(rep.StoreCred(packet, string(cred)))
 
 			outAck := om.FieldObj().(*common.Ack)
 			outAck.Status = "OK"

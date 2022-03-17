@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,14 +87,14 @@ func setUp() {
 		ResetData:         true, // IMPORTANT for testing!
 		VersionInfo:       "test test",
 	}
-	err2.Check(agencyCmd.Validate())
+	try.To(agencyCmd.Validate())
 
 	// We don't want logs on file with tests
-	err2.Check(flag.Set("logtostderr", "true"))
+	try.To(flag.Set("logtostderr", "true"))
 
 	agencyCmd.PreRun()
 
-	err2.Check(agencyCmd.Setup())
+	try.To(agencyCmd.Setup())
 
 	httpTestServer = server.StartTestHTTPServer2()
 
