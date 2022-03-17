@@ -5,6 +5,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type bucket struct {
@@ -39,8 +40,7 @@ func (b *bucket) Get(key string) (data []byte, err error) {
 
 	glog.V(7).Infoln("bucket::Get", key)
 
-	data, err = b.owner.getData(b.bucketID, []byte(key))
-	err2.Check(err)
+	data = try.To1(b.owner.getData(b.bucketID, []byte(key)))
 
 	if len(data) == 0 {
 		return nil, storage.ErrDataNotFound

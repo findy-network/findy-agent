@@ -14,6 +14,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/pairwise"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type DidComm interface {
@@ -131,7 +132,7 @@ func (d *DID) Store(mgdWallet managed.Wallet) {
 
 	// Store did it also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
-	err2.Check(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
+	try.To(mgdWallet.Storage().DIDStorage().AddDID(storage.DID{
 		ID:         ds,
 		DID:        ds,
 		IndyVerKey: vk,

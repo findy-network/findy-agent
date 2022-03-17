@@ -7,6 +7,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/secretlock/noop"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type kmsStorage struct {
@@ -23,8 +24,7 @@ func newKmsStorage(owner *Storage) (k *kmsStorage, err error) {
 		noopLock: &noop.NoLock{},
 	}
 
-	localKms, err := localkms.New("local-lock://primary/test/", k) // TODO: figure out uri purpose
-	err2.Check(err)
+	localKms := try.To1(localkms.New("local-lock://primary/test/", k)) // TODO: figure out uri purpose
 
 	k.kms = localKms
 

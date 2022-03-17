@@ -11,6 +11,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 type Store interface {
@@ -62,8 +63,7 @@ func (s *StorageProvider) Init() (err error) {
 		return nil
 	}
 
-	k, err := hex.DecodeString(s.conf.Key)
-	err2.Check(err)
+	k := try.To1(hex.DecodeString(s.conf.Key))
 
 	cipher := crypto.NewCipher(k)
 
@@ -127,7 +127,7 @@ func (s *StorageProvider) Close() (err error) {
 		return nil
 	}
 
-	err2.Check(s.db.Close())
+	try.To(s.db.Close())
 	s.db = nil
 	return
 }

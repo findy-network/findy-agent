@@ -11,8 +11,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
-	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,9 +40,9 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
-	err2.Check(flag.Set("logtostderr", "true"))
-	err2.Check(flag.Set("stderrthreshold", "WARNING"))
-	err2.Check(flag.Set("v", "10"))
+	try.To(flag.Set("logtostderr", "true"))
+	try.To(flag.Set("stderrthreshold", "WARNING"))
+	try.To(flag.Set("v", "10"))
 	flag.Parse()
 
 	// AFGO
