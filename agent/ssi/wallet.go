@@ -67,12 +67,6 @@ func walletPath() string {
 	return filepath.Join(home, workerSubPath)
 }
 
-func (w *Wallet) StartCreation() (f *Future) {
-	f = new(Future)
-	f.SetChan(wallet.Create(w.Config, w.Credentials))
-	return f
-}
-
 func (w *Wallet) Create() (exist bool) {
 	r := <-wallet.Create(w.Config, w.Credentials)
 	if r.Err() != nil {

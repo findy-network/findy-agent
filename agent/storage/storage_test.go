@@ -105,7 +105,7 @@ func TestDIDStore(t *testing.T) {
 				ID:  "did:test:123",
 				DID: "did:test:123",
 			}
-			err := store.AddDID(testDID)
+			err := store.SaveDID(testDID)
 			require.NoError(t, err)
 
 			gotDID, err := store.GetDID(testDID.ID)
@@ -122,12 +122,12 @@ func TestConnectionStore(t *testing.T) {
 			store := testCase.storage.ConnectionStorage()
 			testConn := api.Connection{
 				ID:            "123-uid",
-				OurDID:        "did:test:123",
+				MyDID:         "did:test:123",
 				TheirDID:      "did:test:456",
 				TheirEndpoint: "https://example.com",
 				TheirRoute:    []string{"routeKey"},
 			}
-			err := store.AddConnection(testConn)
+			err := store.SaveConnection(testConn)
 			require.NoError(t, err)
 
 			gotConn, err := store.GetConnection(testConn.ID)
@@ -136,7 +136,7 @@ func TestConnectionStore(t *testing.T) {
 
 			testConn2 := testConn
 			testConn2.ID = "456-uid"
-			err = store.AddConnection(testConn2)
+			err = store.SaveConnection(testConn2)
 			require.NoError(t, err)
 
 			conns, err := store.ListConnections()

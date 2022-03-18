@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -17,7 +18,6 @@ import (
 	didexchange "github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
-	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -268,8 +268,11 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ourPairwiseDID := ssiWA.CreateDID("")
 
 	// mark the preallocated pairwise DID with connection ID that we find it
-	r := <-did.SetMeta(wa.Wallet(), ourPairwiseDID.Did(), id)
-	try.To(r.Err())
+	store := receiver.ManagedWallet().Storage().ConnectionStorage()
+	try.To(store.SaveConnection(storage.Connection{
+		ID:    id,
+		MyDID: ourPairwiseDID.Did(),
+	}))
 
 	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id

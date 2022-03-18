@@ -135,7 +135,7 @@ func ContinuePSM(shift Again) (err error) {
 	assert.D.True(pairwise != nil, "pairwise should not be nil")
 
 	outDID := wa.LoadTheirDID(*pairwise)
-	outDID.StartEndp(wa.Wallet())
+	outDID.StartEndp(wa.ManagedWallet(), pairwise.ID)
 	pipe := sec.Pipe{In: inDID, Out: outDID}
 
 	sendBack := shift.SendNext != pltype.Terminate
@@ -222,9 +222,9 @@ func ExecPSM(ts Transition) (err error) {
 		pairwise := try.To1(ts.Receiver.FindPWByDID(inDID.Did()))
 		assert.D.True(pairwise != nil, "pairwise should not be nil")
 
-		connID := pairwise.Meta.Name
+		connID := pairwise.ID
 		outDID := ts.Receiver.LoadTheirDID(*pairwise)
-		outDID.StartEndp(ts.Receiver.Wallet())
+		outDID.StartEndp(ts.Receiver.ManagedWallet(), pairwise.ID)
 
 		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()

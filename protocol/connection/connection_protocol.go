@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/pairwise"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -16,6 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
@@ -23,7 +25,6 @@ import (
 	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
-	"github.com/findy-network/findy-wrapper-go/did"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -252,9 +253,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
-	r := <-did.SetEndpoint(a.Wallet(), caller.Did(), callerAddress, callerEndp.VerKey)
-
-	try.To(r.Err())
+	try.To(saveConnectionEndpoint(a.ManagedWallet(), connectionID, callerAddress))
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
@@ -328,15 +327,14 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
-	caller.SavePairwiseForDID(a.Wallet(), callee, ssi.PairwiseMeta{
+	caller.SavePairwiseForDID(a.ManagedWallet(), callee, ssi.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
-	r := <-did.SetEndpoint(a.Wallet(), callee.Did(), calleeEndp.Address(), calleeEndp.VerKey)
-	try.To(r.Err())
+	try.To(saveConnectionEndpoint(a.ManagedWallet(), pwName, calleeEndp.Address()))
 
 	// Save Rep and PSM
 	newPwr := &pairwiseRep{
@@ -363,6 +361,18 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.ReadyACK))
 
 	return nil
+}
+
+func saveConnectionEndpoint(mgdWallet managed.Wallet, connectionID, theirEndpoint string) error {
+	store := mgdWallet.Storage().ConnectionStorage()
+	connection, _ := store.GetConnection(connectionID)
+	if connection == nil {
+		connection = &storage.Connection{
+			ID: connectionID,
+		}
+	}
+	connection.TheirEndpoint = theirEndpoint
+	return store.SaveConnection(*connection)
 }
 
 func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
