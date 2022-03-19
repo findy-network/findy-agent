@@ -3,6 +3,7 @@ package ssi
 import (
 	"sync"
 
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
@@ -14,6 +15,7 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -171,18 +173,21 @@ func (a *DIDAgent) Pool() (v int) {
 
 func (a *DIDAgent) VDR() *vdr.VDR {
 	apiStorage := a.ManagedWallet().Storage()
+
 	as, ok := apiStorage.(*mgddb.Storage)
 	assert.D.True(ok, "todo: update type later!!")
 
 	return try.To1(vdr.New(as))
 }
 
-func (a *DIDAgent) NewDID(method string) core.DID {
-	switch method {
+func (a *DIDAgent) NewDID(didmeth string) core.DID {
+	switch didmeth {
 	case "key":
 		// we will used the correct VDR to create the correct did
 		// the VDR is the factory for a DID method
-		a.VDR()
+		_ = a.VDR()
+		kms := a.KMS()
+		return try.To1(method.NewKey(kms))
 
 	case "indy":
 		return a.CreateDID("")
@@ -247,6 +252,10 @@ func (a *DIDAgent) ConnectionStorage() storage.ConnectionStorage {
 
 func (a *DIDAgent) DIDStorage() storage.DIDStorage {
 	return a.ManagedWallet().Storage().DIDStorage()
+}
+
+func (a *DIDAgent) KMS() kms.KeyManager {
+	return a.ManagedWallet().Storage().KMS()
 }
 
 // localKey returns a future to the verkey of the DID from a local wallet.
