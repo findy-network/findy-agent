@@ -12,6 +12,7 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -48,6 +49,15 @@ type DID struct {
 
 	pwMeta *PairwiseMeta // Meta data for pairwise
 
+}
+
+func (d *DID) String() string {
+	panic("not implemented") // TODO: Implement
+}
+
+func (d *DID) KID() string {
+	assert.D.NoImplementation()
+	return ""
 }
 
 type PairwiseMeta struct {

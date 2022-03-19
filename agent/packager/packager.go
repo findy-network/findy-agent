@@ -29,8 +29,10 @@ type Packager struct {
 func New(
 	agentStorage *mgddb.Storage,
 	registry vdr.Registry,
-
-) (p *Packager, err error) {
+) (
+	p *Packager,
+	err error,
+) {
 	defer err2.Annotate("packager new", &err)
 
 	p = &Packager{
