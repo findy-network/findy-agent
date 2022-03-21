@@ -60,6 +60,11 @@ func (d *DID) KID() string {
 	return ""
 }
 
+func (d *DID) SignKey() any {
+	assert.D.NoImplementation()
+	return ""
+}
+
 type PairwiseMeta struct {
 	Name  string
 	Route []string

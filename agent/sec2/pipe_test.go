@@ -58,9 +58,13 @@ func TestNewPipe(t *testing.T) {
 	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
 
 	didIn := a.NewDID("key")
+	println(didIn.KID())
 	didOut := a.NewDID("key")
+	println(didOut.KID())
 	didRoute1 := a.NewDID("key")
+	println(didRoute1.KID())
 	didRoute2 := a.NewDID("key")
+	println(didRoute2.KID())
 
 	require.NotNil(t, didIn)
 	require.NotNil(t, didOut)

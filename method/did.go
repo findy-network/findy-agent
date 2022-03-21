@@ -24,13 +24,16 @@ func New(keys kms.KeyManager, method Method) (id core.DID, err error) {
 type Key struct {
 	kid string
 	pk  []byte
+	vkh any
 }
 
 func NewKey(keys kms.KeyManager) (id core.DID, err error) {
 	defer err2.Annotate("new did:key", &err)
 
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
-	return Key{kid: kid, pk: pk}, nil
+	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
+
+	return Key{kid: kid, pk: pk, vkh: kh}, nil
 }
 
 func (k Key) String() string {
@@ -42,4 +45,8 @@ func (k Key) String() string {
 
 func (k Key) KID() string {
 	return k.kid
+}
+
+func (k Key) SignKey() any {
+	return k.vkh
 }

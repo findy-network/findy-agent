@@ -8,6 +8,11 @@ type DID interface {
 	KID() string
 
 	String() string
+
+	SignKey() any
+
+	// URI() string // real URI, currently used in did doc
+	// Did() == KID() alias for make old code easy to integrate
 }
 
 type MyDID interface {

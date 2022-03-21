@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/core"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
-	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -40,12 +39,19 @@ type Pipe struct {
 // Note! It throws err2 type of an error and needs an error handler in the call
 // stack.
 func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
+	defer err2.Catch(func(err error) {
+		glog.Error("error:", err)
+		// want to be explicit, because underlaying API uses errors wrongly
+		// for return non error information
+		yes = false
+	})
 	c := pckr.Crypto()
-	keyManager := pckr.KMS()
+	//	keyManager := pckr.KMS()
 
-	sigKey := try.To1(keyManager.ExportPubKeyBytes(p.In.KID()))
-	kh := try.To1(keyManager.PubKeyBytesToHandle(sigKey, kms.ED25519))
-	try.To(c.Verify(signature, msg, kh))
+	//	sigKey := try.To1(keyManager.ExportPubKeyBytes(p.In.KID()))
+	//	kh := try.To1(keyManager.PubKeyBytesToHandle(sigKey, kms.ED25519))
+
+	try.To(c.Verify(signature, msg, p.In.SignKey()))
 
 	return true, ""
 }
@@ -53,6 +59,9 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
 // Sign sings the message and returns the verification key. Note! It throws err2
 // type of an error and needs an error handler in the call stack.
 func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
+	defer err2.Catch(func(err error) {
+		glog.Error("error:", err)
+	})
 	c := pckr.Crypto()
 	kms := pckr.KMS()
 
@@ -82,12 +91,13 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
 
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
+	defer err2.Annotate("sec pipe pack", &err)
 	assert.D.True(pckr != nil)
 
 	media := p.defMediaType()
 
 	// pack an non empty envelope using packer selected by mediaType - should pass
-	dst = err2.Bytes.Try(pckr.PackMessage(&transport.Envelope{
+	dst = try.To1(pckr.PackMessage(&transport.Envelope{
 		MediaTypeProfile: media,
 		Message:          src,
 		FromKey:          []byte(p.In.String()),
@@ -99,9 +109,8 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
-	assert.D.True(pckr != nil)
-
 	defer err2.Annotate("sec pipe unpack", &err)
+	assert.D.True(pckr != nil)
 
 	env := try.To1(pckr.UnpackMessage(src))
 	dst = env.Message
