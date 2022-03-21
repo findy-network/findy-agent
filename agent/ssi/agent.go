@@ -3,13 +3,13 @@ package ssi
 import (
 	"sync"
 
-	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
@@ -186,6 +186,8 @@ func (a *DIDAgent) NewDID(didmeth string) core.DID {
 		// we will used the correct VDR to create the correct did
 		// the VDR is the factory for a DID method
 		_ = a.VDR()
+		//		keyVdr := a.VDR().Key()
+		//		keyVdr.Create()
 		kms := a.KMS()
 		return try.To1(method.NewKey(kms))
 

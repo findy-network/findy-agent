@@ -7,8 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/packager"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,14 +49,36 @@ func TestNewPipe(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
-	didIn := a.NewDID("")
-	didOut := a.NewDID("")
-	didRoute1 := a.NewDID("")
-	didRoute2 := a.NewDID("")
+	apiStorage := a.ManagedWallet().Storage()
+	as, ok := apiStorage.(*mgddb.Storage)
+	require.True(t, ok, "todo: update type later!!")
+
+	pckr := try.To1(packager.New(as, a.VDR().Registry()))
+	require.NotNil(t, pckr)
+	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
+
+	didIn := a.NewDID("key")
+	didOut := a.NewDID("key")
+	didRoute1 := a.NewDID("key")
+	didRoute2 := a.NewDID("key")
 
 	require.NotNil(t, didIn)
 	require.NotNil(t, didOut)
 	require.NotNil(t, didRoute1)
 	require.NotNil(t, didRoute2)
+
+	message := []byte("message")
+
+	p := Pipe{In: didIn, Out: didOut}
+
+	packed, _ := try.To2(p.Pack(message))
+	received, _ := try.To2(p.Unpack(packed))
+	require.Equal(t, message, received)
+
+	// pipe sign/verify
+	sign, _ := p.Sign(message)
+	ok, _ = p.Verify(message, sign)
+
+	require.True(t, ok)
 
 }

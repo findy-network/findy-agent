@@ -39,9 +39,7 @@ func setUp() {
 	flag.Parse()
 
 	// AFGO
-	var err error
-	afgoTestStorage, err = mgddb.New(storageTestConfig)
-	assert.D.True(err == nil)
+	afgoTestStorage = try.To1(mgddb.New(storageTestConfig))
 	assert.D.True(afgoTestStorage != nil)
 }
 
