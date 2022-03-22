@@ -201,6 +201,27 @@ func (a *DIDAgent) NewDID(didmeth string) core.DID {
 	return nil
 }
 
+func (a *DIDAgent) NewOutDID(didStr string) core.DID {
+	switch "key" { // TODO: we will have to make a way to parse this
+	case "key":
+		// we will used the correct VDR to create the correct did
+		// the VDR is the factory for a DID method
+		_ = a.VDR()
+		//		keyVdr := a.VDR().Key()
+		//		keyVdr.Create()
+		kms := a.KMS()
+		return try.To1(method.NewKeyFromDID(kms, didStr))
+
+	case "indy":
+		return a.CreateDID("")
+	default:
+		return a.CreateDID("")
+		//assert.That(false, "not supported")
+
+	}
+	return nil
+}
+
 // CreateDID creates a new DID thru the Future which means that returned *DID
 // follows 'lazy fetch' principle. You should call this as early as possible for
 // the performance reasons. Most cases seed should be empty string.

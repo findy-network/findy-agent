@@ -16,6 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	key1 = "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso"
+	key2 = "did:key:z6MkqQ81wZSsjWeTk4MnPVow3Jyydp31AP7qNj3WvUtrdejx"
+	key3 = "did:key:z6MkmPrHsyXEeujwhpMGSyyxmixpuqUYQ2QPfj3Y3gFPugNp"
+	key4 = "did:key:z6MkuMg4H1GH2XdLPuBMcuDvWx18NNHFie37PN37GP7V1L4G"
+)
+
 func TestMain(m *testing.M) {
 	setUp()
 	code := m.Run()
@@ -38,33 +45,39 @@ func removeFiles(home, nameFilter string) {
 	}
 }
 
-func setUp() {
-}
+var (
+	agent        = new(ssi.DIDAgent)
+	agentStorage *mgddb.Storage
+)
 
-func TestNewPipe(t *testing.T) {
+func setUp() {
 	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
 	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw.Create()
 
-	a := ssi.DIDAgent{}
-	a.OpenWallet(*aw)
+	agent.OpenWallet(*aw)
 
-	apiStorage := a.ManagedWallet().Storage()
-	as, ok := apiStorage.(*mgddb.Storage)
-	require.True(t, ok, "todo: update type later!!")
+	apiStorage := agent.ManagedWallet().Storage()
+	agentStorage = apiStorage.(*mgddb.Storage)
 
-	pckr := try.To1(packager.New(as, a.VDR().Registry()))
+	//	_ = try.To1(packager.New(as, agent.VDR().Registry()))
+	//	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
+
+}
+
+func TestNewPipe(t *testing.T) {
+	pckr := try.To1(packager.New(agentStorage, agent.VDR().Registry()))
 	require.NotNil(t, pckr)
 	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
 
-	didIn := a.NewDID("key")
-	println(didIn.KID())
-	didOut := a.NewDID("key")
-	println(didOut.KID())
-	didRoute1 := a.NewDID("key")
-	println(didRoute1.KID())
-	didRoute2 := a.NewDID("key")
-	println(didRoute2.KID())
+	didIn := agent.NewDID("key")
+	println(didIn.String())
+	didOut := agent.NewDID("key")
+	println(didOut.String())
+	didRoute1 := agent.NewDID("key")
+	println(didRoute1.String())
+	didRoute2 := agent.NewDID("key")
+	println(didRoute2.String())
 
 	require.NotNil(t, didIn)
 	require.NotNil(t, didOut)
@@ -81,8 +94,36 @@ func TestNewPipe(t *testing.T) {
 
 	// pipe sign/verify
 	sign, _ := p.Sign(message)
-	ok, _ = p.Verify(message, sign)
+	ok, _ := p.Verify(message, sign)
 
 	require.True(t, ok)
+}
 
+func TestResolveAndSignVerify(t *testing.T) {
+	vdr := agent.VDR() // .Registry()
+	docR := try.To1(vdr.Registry().Resolve(key1))
+	bytes := try.To1(docR.DIDDocument.JSONBytes())
+	println(string(bytes))
+
+	didIn := agent.NewDID("key")
+	println(didIn.String())
+	didOut := agent.NewOutDID(key2)
+	println(didOut.String())
+
+	require.NotNil(t, didIn)
+	require.NotNil(t, didOut)
+
+	message := []byte("message")
+
+	p := Pipe{In: didIn, Out: didOut}
+
+	_, _ = try.To2(p.Pack(message))
+	//	received, _ := try.To2(p.Unpack(packed))
+	//	require.Equal(t, message, received)
+
+	// pipe sign/verify
+	sign, _ := p.Sign(message)
+	ok, _ := p.Verify(message, sign)
+
+	require.True(t, ok)
 }

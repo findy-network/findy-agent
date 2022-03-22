@@ -36,6 +36,15 @@ func NewKey(keys kms.KeyManager) (id core.DID, err error) {
 	return Key{kid: kid, pk: pk, vkh: kh}, nil
 }
 
+func NewKeyFromDID(keys kms.KeyManager, didStr string) (id core.DID, err error) {
+	defer err2.Annotate("new did:key from did", &err)
+
+	pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
+	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
+
+	return Key{kid: "", pk: pk, vkh: kh}, nil
+}
+
 func (k Key) String() string {
 	// TODO: lazy fetch or move to constructor
 	didkey, _ := fingerprint.CreateDIDKey(k.pk)
