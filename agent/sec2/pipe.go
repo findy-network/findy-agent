@@ -14,14 +14,10 @@ import (
 )
 
 var (
-	pckr             *packager.Packager
 	defaultMediaType string
 )
 
-func Init(p *packager.Packager, defMediaType string) {
-	assert.D.True(pckr == nil, "init must be done only once!")
-
-	pckr = p
+func Init(defMediaType string) {
 	defaultMediaType = defMediaType
 }
 
@@ -33,6 +29,7 @@ type Pipe struct {
 	Out core.DID
 
 	mediaType string
+	Pckr      *packager.Packager
 }
 
 // Verify verifies signature of the message and returns the verification key.
@@ -45,13 +42,13 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
 		// for return non error information
 		yes = false
 	})
-	c := pckr.Crypto()
-	//	keyManager := pckr.KMS()
+	c := p.Pckr.Crypto()
+	//	keyManager := p.Pckr.KMS()
 
 	//	sigKey := try.To1(keyManager.ExportPubKeyBytes(p.In.KID()))
 	//	kh := try.To1(keyManager.PubKeyBytesToHandle(sigKey, kms.ED25519))
 
-	try.To(c.Verify(signature, msg, p.In.SignKey()))
+	try.To(c.Verify(signature, msg, p.Out.SignKey()))
 
 	return true, ""
 }
@@ -62,8 +59,8 @@ func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
 	defer err2.Catch(func(err error) {
 		glog.Error("error:", err)
 	})
-	c := pckr.Crypto()
-	kms := pckr.KMS()
+	c := p.Pckr.Crypto()
+	kms := p.Pckr.KMS()
 
 	kh := try.To1(kms.Get(p.In.KID()))
 	dst = try.To1(c.Sign(src, kh))
@@ -92,12 +89,12 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe pack", &err)
-	assert.D.True(pckr != nil)
+	assert.D.True(p.Pckr != nil)
 
 	media := p.defMediaType()
 
 	// pack an non empty envelope using packer selected by mediaType - should pass
-	dst = try.To1(pckr.PackMessage(&transport.Envelope{
+	dst = try.To1(p.Pckr.PackMessage(&transport.Envelope{
 		MediaTypeProfile: media,
 		Message:          src,
 		FromKey:          []byte(p.In.String()),
@@ -110,9 +107,9 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe unpack", &err)
-	assert.D.True(pckr != nil)
+	assert.D.True(p.Pckr != nil)
 
-	env := try.To1(pckr.UnpackMessage(src))
+	env := try.To1(p.Pckr.UnpackMessage(src))
 	dst = env.Message
 
 	return

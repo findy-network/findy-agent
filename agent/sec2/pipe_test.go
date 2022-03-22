@@ -46,12 +46,17 @@ func removeFiles(home, nameFilter string) {
 }
 
 var (
-	agent        = new(ssi.DIDAgent)
-	agentStorage *mgddb.Storage
+	agent, agent2 = new(ssi.DIDAgent), new(ssi.DIDAgent)
+
+	pckr, pckr2 *packager.Packager
+
+	agentStorage, agentStorage2 *mgddb.Storage
 )
 
 func setUp() {
-	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
+	Init(transport.MediaTypeProfileDIDCommAIP1)
+
+	walletID := fmt.Sprintf("pipe-test-agent-1%d", time.Now().Unix())
 	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw.Create()
 
@@ -60,16 +65,21 @@ func setUp() {
 	apiStorage := agent.ManagedWallet().Storage()
 	agentStorage = apiStorage.(*mgddb.Storage)
 
-	//	_ = try.To1(packager.New(as, agent.VDR().Registry()))
-	//	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
+	pckr = try.To1(packager.New(agentStorage, agent.VDR().Registry()))
 
+	walletID2 := fmt.Sprintf("pipe-test-agent-2%d", time.Now().Unix())
+	aw2 := ssi.NewRawWalletCfg(walletID2, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw2.Create()
+
+	agent2.OpenWallet(*aw2)
+
+	apiStorage2 := agent2.ManagedWallet().Storage()
+	agentStorage2 = apiStorage2.(*mgddb.Storage)
+
+	pckr2 = try.To1(packager.New(agentStorage2, agent2.VDR().Registry()))
 }
 
 func TestNewPipe(t *testing.T) {
-	pckr := try.To1(packager.New(agentStorage, agent.VDR().Registry()))
-	require.NotNil(t, pckr)
-	Init(pckr, transport.MediaTypeProfileDIDCommAIP1)
-
 	didIn := agent.NewDID("key")
 	println(didIn.String())
 	didOut := agent.NewDID("key")
@@ -86,7 +96,7 @@ func TestNewPipe(t *testing.T) {
 
 	message := []byte("message")
 
-	p := Pipe{In: didIn, Out: didOut}
+	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
 	received, _ := try.To2(p.Unpack(packed))
@@ -94,36 +104,69 @@ func TestNewPipe(t *testing.T) {
 
 	// pipe sign/verify
 	sign, _ := p.Sign(message)
-	ok, _ := p.Verify(message, sign)
+	_, _ = p.Verify(message, sign)
 
-	require.True(t, ok)
+	//require.True(t, ok)
 }
 
-func TestResolveAndSignVerify(t *testing.T) {
+func TestResolve(t *testing.T) {
 	vdr := agent.VDR() // .Registry()
 	docR := try.To1(vdr.Registry().Resolve(key1))
+	require.NotNil(t, docR)
 	bytes := try.To1(docR.DIDDocument.JSONBytes())
-	println(string(bytes))
+	require.NotNil(t, bytes)
+}
 
+func TestPackTowardsPubKeyOnly(t *testing.T) {
 	didIn := agent.NewDID("key")
+	require.NotNil(t, didIn)
 	println(didIn.String())
 	didOut := agent.NewOutDID(key2)
-	println(didOut.String())
-
-	require.NotNil(t, didIn)
 	require.NotNil(t, didOut)
+	println(didOut.String())
 
 	message := []byte("message")
 
-	p := Pipe{In: didIn, Out: didOut}
+	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
 
-	_, _ = try.To2(p.Pack(message))
-	//	received, _ := try.To2(p.Unpack(packed))
-	//	require.Equal(t, message, received)
+	packed, _ := try.To2(p.Pack(message))
+	require.NotNil(t, packed)
+}
 
-	// pipe sign/verify
+func TestSignVerify(t *testing.T) {
+	didIn2 := agent2.NewDID("key")
+	require.NotNil(t, didIn2)
+	println("in2: ", didIn2.String())
+
+	didIn := agent.NewDID("key")
+	require.NotNil(t, didIn)
+	println("in: ", didIn.String())
+
+	didOut := agent.NewOutDID(didIn2.String())
+	require.NotNil(t, didOut)
+	println("out: ", didOut.String())
+
+	didOut2 := agent2.NewOutDID(didIn.String())
+	require.NotNil(t, didOut2)
+	println("out2: ", didOut2.String())
+
+	message := []byte("message")
+
+	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
+	p2 := Pipe{Pckr: pckr2, In: didIn2, Out: didOut2}
+
+	packed, _ := try.To2(p.Pack(message))
+	require.NotNil(t, packed)
+	received, _ := try.To2(p2.Unpack(packed))
+	require.Equal(t, message, received)
+
+	// Note!! We cannot unpack packed message because we don't have private key
+	// here any more, we have only pre generated public keys to test signing
+
+	// We still can test verify() because it's done towards public key
+	// pipe.Sign sign message towards Out DID
 	sign, _ := p.Sign(message)
-	ok, _ := p.Verify(message, sign)
+	ok, _ := p2.Verify(message, sign)
 
 	require.True(t, ok)
 }
