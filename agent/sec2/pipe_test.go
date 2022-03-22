@@ -54,8 +54,11 @@ var (
 )
 
 func setUp() {
+	// init pipe package, TODO: try to find out how to get media profile
+	// from...
 	Init(transport.MediaTypeProfileDIDCommAIP1)
 
+	// first, create agent 1 with the storages
 	walletID := fmt.Sprintf("pipe-test-agent-1%d", time.Now().Unix())
 	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw.Create()
@@ -65,8 +68,11 @@ func setUp() {
 	apiStorage := agent.ManagedWallet().Storage()
 	agentStorage = apiStorage.(*mgddb.Storage)
 
+	// don't forget the packager for the agent, TODO: where we will put this?
+	// to agent, to agent storage?
 	pckr = try.To1(packager.New(agentStorage, agent.VDR().Registry()))
 
+	// second, create agent 2 with the storages
 	walletID2 := fmt.Sprintf("pipe-test-agent-2%d", time.Now().Unix())
 	aw2 := ssi.NewRawWalletCfg(walletID2, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw2.Create()
@@ -133,7 +139,12 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	require.NotNil(t, packed)
 }
 
-func TestSignVerify(t *testing.T) {
+func TestSignVerifyWithSeparatedWallets(t *testing.T) {
+	// we need to use two different agents that we have 2 different key and
+	// other storages. The AFGO (Tink) needs to have other agent's PubKey saved
+	// to its storage (to have key handle) that it can use its cryptos.
+
+	// create first agent2's input DID
 	didIn2 := agent2.NewDID("key")
 	require.NotNil(t, didIn2)
 	println("in2: ", didIn2.String())
@@ -142,10 +153,12 @@ func TestSignVerify(t *testing.T) {
 	require.NotNil(t, didIn)
 	println("in: ", didIn.String())
 
+	// give agent2's prime DID (input) to agent1's out DID
 	didOut := agent.NewOutDID(didIn2.String())
 	require.NotNil(t, didOut)
 	println("out: ", didOut.String())
 
+	// similarly, give agent1's in-DID to agent2's out-DID
 	didOut2 := agent2.NewOutDID(didIn.String())
 	require.NotNil(t, didOut2)
 	println("out2: ", didOut2.String())
@@ -160,12 +173,11 @@ func TestSignVerify(t *testing.T) {
 	received, _ := try.To2(p2.Unpack(packed))
 	require.Equal(t, message, received)
 
-	// Note!! We cannot unpack packed message because we don't have private key
-	// here any more, we have only pre generated public keys to test signing
-
-	// We still can test verify() because it's done towards public key
-	// pipe.Sign sign message towards Out DID
 	sign, _ := p.Sign(message)
+
+	// Signature verification must done from p2 because p2 has only pubKey of
+	// the DID in the 'wallet' where p2 is connected to. This way the test
+	// follows the real world situation
 	ok, _ := p2.Verify(message, sign)
 
 	require.True(t, ok)

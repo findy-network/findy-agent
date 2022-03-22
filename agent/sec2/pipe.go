@@ -29,7 +29,9 @@ type Pipe struct {
 	Out core.DID
 
 	mediaType string
-	Pckr      *packager.Packager
+
+	// TODO: move this to better place, to DID or storage? somewhere?
+	Pckr *packager.Packager
 }
 
 // Verify verifies signature of the message and returns the verification key.
@@ -43,10 +45,6 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
 		yes = false
 	})
 	c := p.Pckr.Crypto()
-	//	keyManager := p.Pckr.KMS()
-
-	//	sigKey := try.To1(keyManager.ExportPubKeyBytes(p.In.KID()))
-	//	kh := try.To1(keyManager.PubKeyBytesToHandle(sigKey, kms.ED25519))
 
 	try.To(c.Verify(signature, msg, p.Out.SignKey()))
 
