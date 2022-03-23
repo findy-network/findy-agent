@@ -6,6 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
@@ -49,6 +50,11 @@ type DID struct {
 
 	pwMeta *PairwiseMeta // Meta data for pairwise
 
+}
+
+func (d *DID) Storage() api.AgentStorage {
+	assert.D.NoImplementation()
+	return nil
 }
 
 func (d *DID) String() string {

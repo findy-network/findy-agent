@@ -9,7 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/method"
+	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
@@ -180,16 +180,15 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(as))
 }
 
-func (a *DIDAgent) NewDID(didmeth string) core.DID {
-	switch didmeth {
+func (a *DIDAgent) NewDID(method string) core.DID {
+	switch method {
 	case "key":
 		// we will used the correct VDR to create the correct did
 		// the VDR is the factory for a DID method
 		_ = a.VDR()
 		//		keyVdr := a.VDR().Key()
 		//		keyVdr.Create()
-		kms := a.KMS()
-		return try.To1(method.NewKey(kms))
+		return try.To1(didmethod.NewKey(a.ManagedWallet().Storage()))
 
 	case "indy":
 		return a.CreateDID("")
@@ -209,8 +208,10 @@ func (a *DIDAgent) NewOutDID(didStr string) core.DID {
 		_ = a.VDR()
 		//		keyVdr := a.VDR().Key()
 		//		keyVdr.Create()
-		kms := a.KMS()
-		return try.To1(method.NewKeyFromDID(kms, didStr))
+		return try.To1(didmethod.NewKeyFromDID(
+			a.ManagedWallet().Storage(),
+			didStr,
+		))
 
 	case "indy":
 		return a.CreateDID("")

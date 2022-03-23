@@ -1,15 +1,16 @@
 package core
 
+import "github.com/findy-network/findy-agent/agent/storage/api"
+
 type DID interface {
 
 	//	Resolve() DIDDoc
 	// Validate() error
 
 	KID() string
-
 	String() string
-
 	SignKey() any
+	Storage() api.AgentStorage
 
 	// URI() string // real URI, currently used in did doc
 	// Did() == KID() alias for make old code easy to integrate

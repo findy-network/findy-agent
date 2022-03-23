@@ -29,9 +29,6 @@ type Pipe struct {
 	Out core.DID
 
 	mediaType string
-
-	// TODO: move this to better place, to DID or storage? somewhere?
-	Pckr api.Packager
 }
 
 // Verify verifies signature of the message and returns the verification key.
@@ -44,7 +41,7 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
 		// for return non error information
 		yes = false
 	})
-	c := p.Pckr.Crypto()
+	c := p.pckr().Crypto()
 
 	try.To(c.Verify(signature, msg, p.Out.SignKey()))
 
@@ -57,8 +54,8 @@ func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
 	defer err2.Catch(func(err error) {
 		glog.Error("error:", err)
 	})
-	c := p.Pckr.Crypto()
-	kms := p.Pckr.KMS()
+	c := p.pckr().Crypto()
+	kms := p.pckr().KMS()
 
 	kh := try.To1(kms.Get(p.In.KID()))
 	dst = try.To1(c.Sign(src, kh))
@@ -87,12 +84,11 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe pack", &err)
-	assert.D.True(p.Pckr != nil)
 
 	media := p.defMediaType()
 
 	// pack an non empty envelope using packer selected by mediaType - should pass
-	dst = try.To1(p.Pckr.PackMessage(&transport.Envelope{
+	dst = try.To1(p.pckr().PackMessage(&transport.Envelope{
 		MediaTypeProfile: media,
 		Message:          src,
 		FromKey:          []byte(p.In.String()),
@@ -105,9 +101,8 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe unpack", &err)
-	assert.D.True(p.Pckr != nil)
 
-	env := try.To1(p.Pckr.UnpackMessage(src))
+	env := try.To1(p.pckr().UnpackMessage(src))
 	dst = env.Message
 
 	return
@@ -122,4 +117,10 @@ func (p Pipe) defMediaType() string {
 		return defaultMediaType
 	}
 	return p.mediaType
+}
+
+func (p Pipe) pckr() api.Packager {
+	assert.D.True(p.In.Storage() != nil)
+
+	return p.In.Storage().OurPackager()
 }

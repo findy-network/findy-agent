@@ -91,7 +91,7 @@ func TestNewPipe(t *testing.T) {
 
 	message := []byte("message")
 
-	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
+	p := Pipe{In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
 	received, _ := try.To2(p.Unpack(packed))
@@ -120,7 +120,7 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 
 	message := []byte("message")
 
-	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
+	p := Pipe{In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
 	require.NotNil(t, packed)
@@ -153,8 +153,8 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 
 	message := []byte("message")
 
-	p := Pipe{Pckr: pckr, In: didIn, Out: didOut}
-	p2 := Pipe{Pckr: pckr2, In: didIn2, Out: didOut2}
+	p := Pipe{In: didIn, Out: didOut}
+	p2 := Pipe{In: didIn2, Out: didOut2}
 
 	packed, _ := try.To2(p.Pack(message))
 	require.NotNil(t, packed)
