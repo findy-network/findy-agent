@@ -5,8 +5,11 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/wrapper"
+	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-common-go/dto"
+	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
+	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -34,6 +37,7 @@ type Storage struct {
 	keyStorage *kmsStorage
 	didStore   wrapper.Store
 	connStore  wrapper.Store
+	packager   api.Packager
 }
 
 func New(config api.AgentStorageConfig) (a *Storage, err error) {
@@ -48,6 +52,7 @@ func New(config api.AgentStorageConfig) (a *Storage, err error) {
 			FilePath:  config.FilePath,
 			BucketIDs: bucketIDs,
 		}),
+		nil,
 		nil,
 		nil,
 		nil,
@@ -66,6 +71,10 @@ func New(config api.AgentStorageConfig) (a *Storage, err error) {
 	connStore := try.To1(me.OpenStore(NameConnection))
 	me.connStore, ok = connStore.(wrapper.Store)
 	assert.D.True(ok, "conn store should always be wrapper store")
+
+	vdr := try.To1(vdr.New(me))
+
+	me.packager = try.To1(NewPackager(me, vdr.Registry()))
 
 	return me, nil
 }
@@ -95,6 +104,10 @@ func (s *Storage) ConnectionStorage() api.ConnectionStorage {
 func (s *Storage) CredentialStorage() api.CredentialStorage {
 	// TODO
 	return nil
+}
+
+func (s *Storage) OurPackager() api.Packager {
+	return s.packager
 }
 
 // DIDStorage
@@ -140,4 +153,25 @@ func (s *Storage) ListConnections() (res []api.Connection, err error) {
 	}))
 
 	return res, nil
+}
+
+// AFGO StorageProvider placeholder implementations
+
+func (s *Storage) OpenStore(name string) (storage.Store, error) {
+	return s.StorageProvider.OpenStore(name)
+}
+
+func (s *Storage) SetStoreConfig(name string, config storage.StoreConfiguration) error {
+	glog.V(7).Infoln("Storage::SetStoreConfig", name)
+	return s.StorageProvider.SetStoreConfig(name, config)
+}
+
+func (s *Storage) GetStoreConfig(name string) (storage.StoreConfiguration, error) {
+	glog.V(7).Infoln("Storage::GetStoreConfig", name)
+	return s.StorageProvider.GetStoreConfig(name)
+}
+
+func (s *Storage) GetOpenStores() []storage.Store {
+	glog.V(7).Infoln("Storage::GetOpenStores")
+	return s.StorageProvider.GetOpenStores()
 }
