@@ -21,6 +21,7 @@ type storageTest struct {
 
 var (
 	kmsTestStorages []*storageTest
+	afgoTestStorage *mgddb.Storage
 )
 
 const (
@@ -47,10 +48,9 @@ func setUp() {
 		AgentID:  "agentID",
 		FilePath: ".",
 	}
-	afgoTestStorage, err := mgddb.New(kmsTestConfig)
-	if err != nil {
-		panic(err)
-	}
+
+	afgoTestStorage = try.To1(mgddb.New(kmsTestConfig))
+
 	kmsTestStorages = append(kmsTestStorages, &storageTest{
 		name:    nameAfgo,
 		config:  kmsTestConfig,

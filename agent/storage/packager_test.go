@@ -1,54 +1,14 @@
 package storage
 
 import (
-	"flag"
-	"os"
 	"testing"
 
-	"github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
-	"github.com/lainio/err2/assert"
-	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
-
-var (
-	storageTestConfig = api.AgentStorageConfig{
-		AgentKey: mgddb.GenerateKey(),
-		AgentID:  "agentID",
-		FilePath: ".",
-	}
-	afgoTestStorage *mgddb.Storage
-)
-
-func TestMain(m *testing.M) {
-	setUp()
-	code := m.Run()
-	tearDown()
-	os.Exit(code)
-}
-
-func setUp() {
-	try.To(flag.Set("logtostderr", "true"))
-	try.To(flag.Set("stderrthreshold", "WARNING"))
-	try.To(flag.Set("v", "10"))
-	flag.Parse()
-
-	// AFGO
-	afgoTestStorage = try.To1(mgddb.New(storageTestConfig))
-	assert.D.True(afgoTestStorage != nil)
-}
-
-func tearDown() {
-	err := afgoTestStorage.Close()
-	assert.D.True(err == nil)
-
-	os.RemoveAll(storageTestConfig.AgentID + ".bolt")
-}
 
 func TestPackAndUnpack(t *testing.T) {
 	ourVdr, err := vdr.New(afgoTestStorage)
