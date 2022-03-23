@@ -1,21 +1,67 @@
-package storage
+package mgddb_test
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
+	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	setUp()
+	code := m.Run()
+	tearDown()
+	os.Exit(code)
+}
+
+func tearDown() {
+	home := utils.IndyBaseDir()
+	removeFiles(home, "/.indy_client/wallet/packager-test-agent*")
+}
+
+func removeFiles(home, nameFilter string) {
+	filter := filepath.Join(home, nameFilter)
+	files, _ := filepath.Glob(filter)
+	for _, f := range files {
+		try.To(os.RemoveAll(f))
+	}
+}
+
+var (
+	agent           = new(ssi.DIDAgent)
+	afgoTestStorage api.AgentStorage
+)
+
+func setUp() {
+	// first, create agent 1 with the storages
+	walletID := fmt.Sprintf("packager-test-agent-1%d", time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw.Create()
+
+	agent.OpenWallet(*aw)
+
+	apiStorage := agent.ManagedWallet().Storage()
+	afgoTestStorage = apiStorage
+}
 
 func TestPackAndUnpack(t *testing.T) {
 	ourVdr, err := vdr.New(afgoTestStorage)
 	require.NoError(t, err)
 	require.NotEmpty(t, ourVdr)
 
-	packager, err := New(afgoTestStorage, ourVdr.Registry())
+	packager, err := mgddb.NewPackagerFromStorage(afgoTestStorage, ourVdr.Registry())
 	require.NoError(t, err)
 	require.NotEmpty(t, packager)
 

@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/packager"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
@@ -31,7 +31,7 @@ type Pipe struct {
 	mediaType string
 
 	// TODO: move this to better place, to DID or storage? somewhere?
-	Pckr *packager.Packager
+	Pckr api.Packager
 }
 
 // Verify verifies signature of the message and returns the verification key.

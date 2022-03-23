@@ -1,7 +1,7 @@
-package storage
+package mgddb
 
 import (
-	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/crypto/tinkcrypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/packager"
@@ -20,14 +20,24 @@ import (
 
 type Packager struct {
 	packager *packager.Packager
-	storage  *mgddb.Storage
+	storage  *Storage
 	registry vdr.Registry
 	packers  []packer.Packer
 	crypto   cryptoapi.Crypto
 }
 
-func New(
-	agentStorage *mgddb.Storage,
+func NewPackagerFromStorage(
+	agentStorage api.AgentStorage,
+	registry vdr.Registry,
+) (
+	p *Packager,
+	err error,
+) {
+	return NewPackager(agentStorage.(*Storage), registry)
+}
+
+func NewPackager(
+	agentStorage *Storage,
 	registry vdr.Registry,
 ) (
 	p *Packager,

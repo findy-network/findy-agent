@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/packager"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/lainio/err2/try"
@@ -48,9 +47,7 @@ func removeFiles(home, nameFilter string) {
 var (
 	agent, agent2 = new(ssi.DIDAgent), new(ssi.DIDAgent)
 
-	pckr, pckr2 *packager.Packager
-
-	agentStorage, agentStorage2 *mgddb.Storage
+	pckr, pckr2 api.Packager
 )
 
 func setUp() {
@@ -62,27 +59,19 @@ func setUp() {
 	walletID := fmt.Sprintf("pipe-test-agent-1%d", time.Now().Unix())
 	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw.Create()
-
 	agent.OpenWallet(*aw)
 
 	apiStorage := agent.ManagedWallet().Storage()
-	agentStorage = apiStorage.(*mgddb.Storage)
-
-	// don't forget the packager for the agent, TODO: where we will put this?
-	// to agent, to agent storage?
-	pckr = try.To1(packager.New(agentStorage, agent.VDR().Registry()))
+	pckr = apiStorage.OurPackager()
 
 	// second, create agent 2 with the storages
 	walletID2 := fmt.Sprintf("pipe-test-agent-2%d", time.Now().Unix())
 	aw2 := ssi.NewRawWalletCfg(walletID2, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw2.Create()
-
 	agent2.OpenWallet(*aw2)
 
 	apiStorage2 := agent2.ManagedWallet().Storage()
-	agentStorage2 = apiStorage2.(*mgddb.Storage)
-
-	pckr2 = try.To1(packager.New(agentStorage2, agent2.VDR().Registry()))
+	pckr2 = apiStorage2.OurPackager()
 }
 
 func TestNewPipe(t *testing.T) {
@@ -111,8 +100,6 @@ func TestNewPipe(t *testing.T) {
 	// pipe sign/verify
 	sign, _ := p.Sign(message)
 	_, _ = p.Verify(message, sign)
-
-	//require.True(t, ok)
 }
 
 func TestResolve(t *testing.T) {
@@ -142,7 +129,8 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	// we need to use two different agents that we have 2 different key and
 	// other storages. The AFGO (Tink) needs to have other agent's PubKey saved
-	// to its storage (to have key handle) that it can use its cryptos.
+	// to its storage (to have key handle) that it can e.g. verify signatur.
+	// The access to public key is not enough. It must first stored.
 
 	// create first agent2's input DID
 	didIn2 := agent2.NewDID("key")
