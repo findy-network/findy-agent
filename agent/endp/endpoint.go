@@ -27,10 +27,16 @@ type Addr struct {
 	EdgeToken string // Final communication endpoint, now used for invitation ID
 	BasePath  string // The base address of the URL
 	VerKey    string // Associated VerKey, used for sending Payloads to this address
+
+	v2Api bool // uses new API endpoints
 }
 
-const DIDLengthMax = 22
-const DIDLengthMin = 21
+const (
+	Version2EndpPrefix = "-2"
+
+	DIDLengthMax = 22
+	DIDLengthMin = 21
+)
 
 var r *regexp.Regexp
 
@@ -52,6 +58,7 @@ func NewServerAddr(s string) (ea *Addr) {
 		switch i {
 		case 1:
 			ea.Service = part
+			ea.v2Api = strings.HasSuffix(part, Version2EndpPrefix)
 		case 2:
 			ea.PlRcvr = part
 		case 3:

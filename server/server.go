@@ -52,7 +52,7 @@ func StartHTTPServer(serverPort uint) error {
 }
 
 func buildNewTransportPath(pattern string) string {
-	return strings.TrimSuffix(pattern, "/") + "-2/"
+	return strings.TrimSuffix(pattern, "/") + endp.Version2EndpPrefix + "/"
 }
 
 func BuildHostAddr(scheme string, hostPort uint) {
