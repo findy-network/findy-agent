@@ -84,6 +84,7 @@ func NewClientAddr(s string) (ea *Addr) {
 		switch i {
 		case 1:
 			ea.Service = part
+			ea.v2Api = strings.HasSuffix(part, Version2EndpPrefix)
 		case 2:
 			ea.PlRcvr = part
 		case 3:
