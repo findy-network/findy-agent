@@ -1,28 +1,22 @@
-package packager
+package mgddb_test
 
 import (
-	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
-	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	storageTestConfig = api.AgentStorageConfig{
-		AgentKey: mgddb.GenerateKey(),
-		AgentID:  "agentID",
-		FilePath: ".",
-	}
-	afgoTestStorage *mgddb.Storage
 )
 
 func TestMain(m *testing.M) {
@@ -32,24 +26,34 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setUp() {
-	try.To(flag.Set("logtostderr", "true"))
-	try.To(flag.Set("stderrthreshold", "WARNING"))
-	try.To(flag.Set("v", "10"))
-	flag.Parse()
-
-	// AFGO
-	var err error
-	afgoTestStorage, err = mgddb.New(storageTestConfig)
-	assert.D.True(err == nil)
-	assert.D.True(afgoTestStorage != nil)
+func tearDown() {
+	home := utils.IndyBaseDir()
+	removeFiles(home, "/.indy_client/wallet/packager-test-agent*")
 }
 
-func tearDown() {
-	err := afgoTestStorage.Close()
-	assert.D.True(err == nil)
+func removeFiles(home, nameFilter string) {
+	filter := filepath.Join(home, nameFilter)
+	files, _ := filepath.Glob(filter)
+	for _, f := range files {
+		try.To(os.RemoveAll(f))
+	}
+}
 
-	os.RemoveAll(storageTestConfig.AgentID + ".bolt")
+var (
+	agent           = new(ssi.DIDAgent)
+	afgoTestStorage api.AgentStorage
+)
+
+func setUp() {
+	// first, create agent 1 with the storages
+	walletID := fmt.Sprintf("packager-test-agent-1%d", time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw.Create()
+
+	agent.OpenWallet(*aw)
+
+	apiStorage := agent.ManagedWallet().Storage()
+	afgoTestStorage = apiStorage
 }
 
 func TestPackAndUnpack(t *testing.T) {
@@ -57,7 +61,7 @@ func TestPackAndUnpack(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, ourVdr)
 
-	packager, err := New(afgoTestStorage, ourVdr.Registry())
+	packager, err := mgddb.NewPackagerFromStorage(afgoTestStorage, ourVdr.Registry())
 	require.NoError(t, err)
 	require.NotEmpty(t, packager)
 

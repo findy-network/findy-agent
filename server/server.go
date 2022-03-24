@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"runtime/debug"
+	"strings"
 
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/aries"
@@ -32,35 +33,26 @@ func StartHTTPServer(serverPort uint) error {
 	mux := http.NewServeMux()
 
 	pattern := setHandler(utils.Settings.ServiceName(), mux, protocolTransport)
-
-	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		if glog.V(5) {
-			glog.Info("/version requested")
-		}
-		_, _ = w.Write([]byte(utils.Version))
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if glog.V(7) {
-			glog.Infoln("testing the server", r.URL.Path)
-		}
-		_, _ = w.Write([]byte(utils.Version))
-	})
-
-	// TODO: potential security hole - should remove?
-	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
-	mux.Handle("/static/", http.StripPrefix("/static", fs))
+	pattern2 := buildNewTransportPath(pattern)
+	mux.HandleFunc(pattern2, protocolTransport)
+	mux.HandleFunc("/version", tellVersion)
+	mux.HandleFunc("/", tellVersion)
 
 	if glog.V(1) {
 		glog.Info(utils.Settings.VersionInfo())
 		glog.Infof("HTTP Server on port: %v with handle pattern: \"%s\"",
 			serverPort, pattern)
+		glog.Infof("***** New DID-Server v2.0 Path: '%s' *******", pattern2)
 	}
 	server := http.Server{
 		Addr:    sp,
 		Handler: mux,
 	}
 	return server.ListenAndServe()
+}
+
+func buildNewTransportPath(pattern string) string {
+	return strings.TrimSuffix(pattern, "/") + endp.Version2EndpSuffix + "/"
 }
 
 func BuildHostAddr(scheme string, hostPort uint) {
@@ -72,6 +64,14 @@ func BuildHostAddr(scheme string, hostPort uint) {
 		hostAddr := fmt.Sprintf("%s://%s", scheme, utils.Settings.HostAddr())
 		utils.Settings.SetHostAddr(hostAddr)
 	}
+}
+
+func tellVersion(w http.ResponseWriter, r *http.Request) {
+	defer err2.Catch(func(err error) {
+		glog.Warningln(err)
+	})
+	glog.V(5).Info("/version requested")
+	try.To1(w.Write([]byte(utils.Version)))
 }
 
 func setHandler(serviceName string,

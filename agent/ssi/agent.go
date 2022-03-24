@@ -6,12 +6,18 @@ import (
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/vdr"
+	"github.com/findy-network/findy-agent/core"
+	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -26,6 +32,7 @@ type Agent interface {
 	ManagedWallet() managed.Wallet
 	RootDid() *DID
 	CreateDID(seed string) (agentDid *DID)
+	NewDID(method string) core.DID
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -164,7 +171,57 @@ func (a *DIDAgent) Pool() (v int) {
 	return Pool()
 }
 
-// MARK: DID --
+func (a *DIDAgent) VDR() *vdr.VDR {
+	apiStorage := a.ManagedWallet().Storage()
+
+	as, ok := apiStorage.(*mgddb.Storage)
+	assert.D.True(ok, "todo: update type later!!")
+
+	return try.To1(vdr.New(as))
+}
+
+func (a *DIDAgent) NewDID(method string) core.DID {
+	switch method {
+	case "key":
+		// we will used the correct VDR to create the correct did
+		// the VDR is the factory for a DID method
+		_ = a.VDR()
+		//		keyVdr := a.VDR().Key()
+		//		keyVdr.Create()
+		return try.To1(didmethod.NewKey(a.ManagedWallet().Storage()))
+
+	case "indy":
+		return a.CreateDID("")
+	default:
+		return a.CreateDID("")
+		//assert.That(false, "not supported")
+
+	}
+	return nil
+}
+
+func (a *DIDAgent) NewOutDID(didStr string) core.DID {
+	switch "key" { // TODO: we will have to make a way to parse this
+	case "key":
+		// we will used the correct VDR to create the correct did
+		// the VDR is the factory for a DID method
+		_ = a.VDR()
+		//		keyVdr := a.VDR().Key()
+		//		keyVdr.Create()
+		return try.To1(didmethod.NewKeyFromDID(
+			a.ManagedWallet().Storage(),
+			didStr,
+		))
+
+	case "indy":
+		return a.CreateDID("")
+	default:
+		return a.CreateDID("")
+		//assert.That(false, "not supported")
+
+	}
+	return nil
+}
 
 // CreateDID creates a new DID thru the Future which means that returned *DID
 // follows 'lazy fetch' principle. You should call this as early as possible for
@@ -180,7 +237,7 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
-		try.To(a.WalletH.Storage().DIDStorage().SaveDID(storage.DID{
+		try.To(a.DIDStorage().SaveDID(storage.DID{
 			ID:         didRes.Data.Str1,
 			DID:        didRes.Data.Str1,
 			IndyVerKey: didRes.Data.Str2,
@@ -213,6 +270,18 @@ func (a *DIDAgent) SendNYM(
 	return ledger.WriteDID(a.Pool(), a.Wallet(), submitterDid, targetDID, verkey, alias, role)
 }
 
+func (a *DIDAgent) ConnectionStorage() storage.ConnectionStorage {
+	return a.ManagedWallet().Storage().ConnectionStorage()
+}
+
+func (a *DIDAgent) DIDStorage() storage.DIDStorage {
+	return a.ManagedWallet().Storage().DIDStorage()
+}
+
+func (a *DIDAgent) KMS() kms.KeyManager {
+	return a.ManagedWallet().Storage().KMS()
+}
+
 // localKey returns a future to the verkey of the DID from a local wallet.
 func (a *DIDAgent) localKey(didName string) (f *Future) {
 	defer err2.Catch(func(err error) {
@@ -221,7 +290,7 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	// using did storage to get the verkey - could be also fetched from indy wallet directly
 	// eventually all data should be fetched from agent storage and not from indy wallet
-	did := try.To1(a.ManagedWallet().Storage().DIDStorage().GetDID(didName))
+	did := try.To1(a.DIDStorage().GetDID(didName))
 
 	glog.V(5).Infoln("found localKey: ", didName, did.IndyVerKey)
 
@@ -273,7 +342,7 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
 
 func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {
 	a.AssertWallet()
-	return a.ManagedWallet().Storage().ConnectionStorage().GetConnection(name)
+	return a.ConnectionStorage().GetConnection(name)
 }
 
 // FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
@@ -284,7 +353,7 @@ func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
 
 	a.AssertWallet()
 
-	connections := try.To1(a.ManagedWallet().Storage().ConnectionStorage().ListConnections())
+	connections := try.To1(a.ConnectionStorage().ListConnections())
 
 	for _, item := range connections {
 		if item.MyDID == my {

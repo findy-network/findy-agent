@@ -6,12 +6,14 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -48,6 +50,25 @@ type DID struct {
 
 	pwMeta *PairwiseMeta // Meta data for pairwise
 
+}
+
+func (d *DID) Storage() api.AgentStorage {
+	assert.D.NoImplementation()
+	return nil
+}
+
+func (d *DID) String() string {
+	panic("not implemented") // TODO: Implement
+}
+
+func (d *DID) KID() string {
+	assert.D.NoImplementation()
+	return ""
+}
+
+func (d *DID) SignKey() any {
+	assert.D.NoImplementation()
+	return ""
 }
 
 type PairwiseMeta struct {

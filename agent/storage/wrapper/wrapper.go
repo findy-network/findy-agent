@@ -119,8 +119,8 @@ func (s *StorageProvider) OpenStore(name string) (storage.Store, error) {
 func (s *StorageProvider) Close() (err error) {
 	defer err2.Annotate("afgo storage close", &err)
 
-	s.l.RLock()
-	defer s.l.RUnlock()
+	s.l.Lock() // We update s.db to nil, need write lock as well
+	defer s.l.Unlock()
 
 	if s.db == nil {
 		glog.Warningf("skipping storage provider close for %s, already closed", s.conf.FileName)

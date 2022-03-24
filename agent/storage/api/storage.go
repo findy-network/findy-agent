@@ -1,7 +1,10 @@
 package api
 
 import (
+	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
+	"github.com/hyperledger/aries-framework-go/spi/storage"
 )
 
 type AgentStorageConfig struct {
@@ -19,6 +22,15 @@ type AgentStorage interface {
 	DIDStorage() DIDStorage
 	ConnectionStorage() ConnectionStorage
 	CredentialStorage() CredentialStorage
+
+	OurPackager() Packager
+
+	// We needed direct wrapping to because Go couldn't keep on with transitive
+	// type support of aggregated types.
+	OpenStore(name string) (storage.Store, error)
+	SetStoreConfig(name string, config storage.StoreConfiguration) error
+	GetStoreConfig(name string) (storage.StoreConfiguration, error)
+	GetOpenStores() []storage.Store
 }
 
 type DIDStorage interface {
@@ -42,4 +54,13 @@ type ConnectionStorage interface {
 
 type CredentialStorage interface {
 	// Similar than DIDStorage, relevant functionality for storing credential data
+}
+
+type Packager interface {
+	KMS() kms.KeyManager
+	Crypto() cryptoapi.Crypto
+	//VDRegistry() vdr.Registry
+	UnpackMessage(encMessage []byte) (*transport.Envelope, error)
+	PackMessage(messageEnvelope *transport.Envelope) ([]byte, error)
+	StorageProvider() storage.Provider
 }

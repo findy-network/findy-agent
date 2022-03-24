@@ -1,4 +1,4 @@
-package vdr
+package vdr_test
 
 import (
 	"crypto/ed25519"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	myvdr "github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/lainio/err2/assert"
@@ -51,7 +52,7 @@ func setUp() {
 	assert.D.True(err == nil)
 	assert.D.True(afgoTestStorage != nil)
 
-	testVdr, err := New(afgoTestStorage)
+	testVdr, err := myvdr.New(afgoTestStorage)
 	assert.D.True(err == nil)
 	assert.D.True(testVdr != nil)
 
