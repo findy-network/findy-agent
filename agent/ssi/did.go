@@ -23,8 +23,8 @@ type Out interface {
 	DidComm
 	VerKey() string
 	Route() []string
-	Endpoint() string                      // refactor
-	AEndp() (ae service.Addr, error error) // refactor
+	Endpoint() string                    // refactor
+	AEndp() (ae service.Addr, err error) // refactor
 }
 
 type In interface {

@@ -172,9 +172,8 @@ func (a *Agent) CAEndp() (endP *endp.Addr) {
 
 	hostname := utils.Settings.HostAddr()
 	caDID := a.MyDID().Did()
-	rcvrDID := caDID
 	vk := a.MyDID().VerKey()
-	rcvrDID = a.WDID()
+	rcvrDID := a.WDID()
 	serviceName := utils.Settings.ServiceName()
 
 	return &endp.Addr{
