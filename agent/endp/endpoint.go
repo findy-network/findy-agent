@@ -32,7 +32,7 @@ type Addr struct {
 }
 
 const (
-	Version2EndpPrefix = "-2"
+	Version2EndpSuffix = "-2"
 
 	DIDLengthMax = 22
 	DIDLengthMin = 21
@@ -58,7 +58,7 @@ func NewServerAddr(s string) (ea *Addr) {
 		switch i {
 		case 1:
 			ea.Service = part
-			ea.v2Api = strings.HasSuffix(part, Version2EndpPrefix)
+			ea.v2Api = strings.HasSuffix(part, Version2EndpSuffix)
 		case 2:
 			ea.PlRcvr = part
 		case 3:
@@ -84,7 +84,7 @@ func NewClientAddr(s string) (ea *Addr) {
 		switch i {
 		case 1:
 			ea.Service = part
-			ea.v2Api = strings.HasSuffix(part, Version2EndpPrefix)
+			ea.v2Api = strings.HasSuffix(part, Version2EndpSuffix)
 		case 2:
 			ea.PlRcvr = part
 		case 3:
