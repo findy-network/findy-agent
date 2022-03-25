@@ -10,11 +10,13 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -102,11 +104,7 @@ func (p Pipe) DecryptGiveKey(src []byte) (dst []byte, vk string) {
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	wallet := p.wallet()
 	vk = p.Out.VerKey()
-
-	if vk == "" {
-		glog.Error("verification key cannot be empty")
-		panic("programming error")
-	}
+	assert.D.True(vk != "")
 
 	if glog.V(5) {
 		glog.Infof("<== Pack: %s/%s, w(%d)\n", p.Out.Did(), vk, wallet)
@@ -187,14 +185,20 @@ func (p Pipe) EA() (ae service.Addr, err error) {
 	return p.Out.AEndp()
 }
 
+// wallet will be obsolete. Use pckr() instead, and maybe later we don't need
+// that either because everything goes thru DID itself.
 func (p Pipe) wallet() int {
 	wallet := p.In.Wallet()
-	if wallet == 0 {
-		panic("wallet not set")
-	}
+	assert.D.True(wallet != 0)
 	return wallet
 }
 
 func getEpochTime() int64 {
 	return time.Now().Unix()
+}
+
+func (p Pipe) pckr() api.Packager {
+	assert.D.True(p.In.Storage() != nil)
+
+	return p.In.Storage().OurPackager()
 }
