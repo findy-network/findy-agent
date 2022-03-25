@@ -3,6 +3,7 @@ package api
 import (
 	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 )
@@ -59,7 +60,7 @@ type CredentialStorage interface {
 type Packager interface {
 	KMS() kms.KeyManager
 	Crypto() cryptoapi.Crypto
-	//VDRegistry() vdr.Registry
+	VDRegistry() vdr.Registry
 	UnpackMessage(encMessage []byte) (*transport.Envelope, error)
 	PackMessage(messageEnvelope *transport.Envelope) ([]byte, error)
 	StorageProvider() storage.Provider
