@@ -68,3 +68,8 @@ func (k Key) SignKey() any {
 func (k Key) Storage() api.AgentStorage {
 	return k.storage
 }
+
+// TODO: this is mainly for indy but could be merged with SignKey?
+func (k Key) VerKey() string {
+	return string(k.pk)
+}
