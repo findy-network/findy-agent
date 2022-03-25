@@ -10,6 +10,8 @@ type DID interface {
 	KID() string
 	String() string
 	SignKey() any
+	// TODO: this is mainly for indy but could be merged with SignKey?
+	VerKey() string
 	Storage() api.AgentStorage
 
 	// URI() string // real URI, currently used in did doc
