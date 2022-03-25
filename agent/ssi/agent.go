@@ -98,6 +98,11 @@ type DIDAgent struct {
 	EAEndp   *service.Addr // EA endpoint if set, used for SA API and notifications
 }
 
+const (
+	methodKey  = "key"
+	methodIndy = "indy"
+)
+
 func (a *DIDAgent) SAImplID() string {
 	a.Lock()
 	defer a.Unlock()
@@ -182,7 +187,7 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 
 func (a *DIDAgent) NewDID(method string) core.DID {
 	switch method {
-	case "key":
+	case methodKey:
 		// we will used the correct VDR to create the correct did
 		// the VDR is the factory for a DID method
 		_ = a.VDR()
@@ -190,19 +195,18 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 		//		keyVdr.Create()
 		return try.To1(didmethod.NewKey(a.ManagedWallet().Storage()))
 
-	case "indy":
+	case methodIndy:
 		return a.CreateDID("")
 	default:
 		return a.CreateDID("")
 		//assert.That(false, "not supported")
 
 	}
-	return nil
 }
 
 func (a *DIDAgent) NewOutDID(didStr string) core.DID {
 	switch "key" { // TODO: we will have to make a way to parse this
-	case "key":
+	case methodKey:
 		// we will used the correct VDR to create the correct did
 		// the VDR is the factory for a DID method
 		_ = a.VDR()
@@ -213,14 +217,13 @@ func (a *DIDAgent) NewOutDID(didStr string) core.DID {
 			didStr,
 		))
 
-	case "indy":
+	case methodIndy:
 		return a.CreateDID("")
 	default:
 		return a.CreateDID("")
 		//assert.That(false, "not supported")
 
 	}
-	return nil
 }
 
 // CreateDID creates a new DID thru the Future which means that returned *DID
