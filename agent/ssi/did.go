@@ -19,6 +19,7 @@ import (
 
 type DidComm interface {
 	Did() string
+	Storage() api.AgentStorage
 }
 
 type Out interface {
