@@ -19,7 +19,7 @@ import (
 
 type DidComm interface {
 	Did() string
-	Storage() api.AgentStorage
+	Storage() api.AgentStorage // TODO: as must be a handle!
 }
 
 type Out interface {
