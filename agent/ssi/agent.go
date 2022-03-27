@@ -146,7 +146,9 @@ func (a *DIDAgent) assertPool() {
 }
 
 func (a *DIDAgent) OpenWallet(aw Wallet) {
-	a.WalletH = wallets.Open(aw)
+	cfg := new(Wallet)
+	*cfg = aw
+	a.WalletH = wallets.Open(cfg)
 	if glog.V(5) {
 		glog.Info("Opening wallet: ", aw.Config.ID)
 	}
