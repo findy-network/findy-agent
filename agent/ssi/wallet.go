@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
@@ -92,6 +94,19 @@ func (w *Wallet) Open() (f *Future) {
 	return f
 }
 
+func (w *Wallet) OpenWallet() (h int, err error) {
+	defer err2.Annotate("open wallet", &err)
+
+	f := w.Open()
+	try.To(f.Result().Err())
+
+	return f.Int(), nil
+}
+
+func (w *Wallet) WantsBackup() bool {
+	return w.worker
+}
+
 func (w *Wallet) Exists(worker bool) bool {
 	path := walletPath()
 	if worker {
@@ -121,6 +136,11 @@ func (w *Wallet) Close(handle int) (f *Future) {
 	f = new(Future)
 	f.SetChan(wallet.Close(handle))
 	return f
+}
+
+func (w *Wallet) CloseWallet(handle int) (err error) {
+	f := w.Close(handle)
+	return f.Result().Err()
 }
 
 func (w *Wallet) SetID(id string) {

@@ -34,10 +34,10 @@ func SetWalletMgrPoolSize(s int) {
 // wallet handles is kept open (MaxOpen). See more information from API function
 // descriptions.
 type Handle struct {
-	ts  int64   // last access timestamp
-	h   int     // wallet handle
-	f   *Future // wallet handle future
-	cfg Wallet  // wallet file information
+	ts int64 // last access timestamp
+	h  int   // wallet handle
+
+	cfg managed.WalletCfg // wallet file information
 
 	// TODO: map agent storages to handles
 	storage storage.AgentStorage // agent-specific storage
@@ -49,7 +49,7 @@ type Handle struct {
 func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
-	return &h.cfg
+	return h.cfg
 }
 
 // Close frees the wallet handle to reuse by WalletMgr. Please note that it's
@@ -63,16 +63,14 @@ func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
 
-	f := h.cfg.Close(h.f.Int())
+	try.To(h.cfg.CloseWallet(h.h))
 	if glog.V(10) {
-		glog.Info("closing wallet: ", h.cfg.Config.ID)
+		glog.Info("closing wallet: ", h.cfg.UniqueID())
 	}
 
-	if h.h != h.f.Int() {
-		glog.Warning("handle mismatch!!")
-	}
 	h.h = 0
-	try.To(f.Result().Err())
+
+	// TODO: remove!
 	try.To(h.storage.Close())
 }
 
@@ -111,13 +109,14 @@ func (h *Handle) reopen() int {
 		glog.Error("error when reopening wallet: ", err)
 	})
 
-	h.f = h.cfg.Open()
+	h.h = try.To1(h.cfg.OpenWallet())
+
 	if glog.V(10) {
-		glog.Info("opening wallet: ", h.cfg.Config.ID)
+		glog.Info("opening wallet: ", h.cfg.UniqueID())
 	}
 	h.ts = time.Now().UnixNano()
-	h.h = h.f.Int()
 
+	// TODO: remove!
 	try.To(h.storage.Open())
 
 	return h.h
@@ -142,7 +141,7 @@ func storageFolder() string {
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
-func (m *Mgr) Open(cfg Wallet) managed.Wallet {
+func (m *Mgr) Open(cfg managed.WalletCfg) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -154,7 +153,7 @@ func (m *Mgr) Open(cfg Wallet) managed.Wallet {
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
+func (m *Mgr) openNewWallet(cfg managed.WalletCfg) managed.Wallet {
 	defer err2.Catch(func(err error) {
 		glog.Error("error when opening wallet: ", err)
 	})
@@ -165,17 +164,17 @@ func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
 		FilePath: m.storageFilePath,
 	}))
 
+	handle := try.To1(cfg.OpenWallet())
+
 	h := &Handle{
 		ts:      time.Now().UnixNano(),
-		h:       0,
-		f:       cfg.Open(),
+		h:       handle,
 		cfg:     cfg,
 		storage: aStorage,
 	}
 	m.opened[cfg.UniqueID()] = h
-	h.h = h.f.Int()
 
-	if h.cfg.worker {
+	if h.cfg.WantsBackup() {
 		// AccessMgr will handle backups. Let it know that the managed WORKER
 		// wallet is opened. Pairwise wallet backup will be handled in
 		// handshake.
@@ -207,7 +206,7 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	return h.reopen()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg Wallet) managed.Wallet {
+func (m *Mgr) closeOldestAndOpen(cfg managed.WalletCfg) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)
