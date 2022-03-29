@@ -7,6 +7,7 @@ AUTH_ORIGIN:="localhost:8888"
 
 gen-yml: docker-host
 # TODO: use env variables or params
+	@$(eval DOCKERHOST=$(shell ./get-docker-host.sh))
 	@cat ./docker-compose.yml.template > ./docker-compose.yml
 	awk '{sub("<IP_ADDRESS>","$(DOCKERHOST)")}1' ./docker-compose.yml > ./docker-compose.yml.tmp && \
 		mv ./docker-compose.yml.tmp ./docker-compose.yml
@@ -24,10 +25,9 @@ docker-host:
 	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost > get-docker-host.sh
 	@echo "\ngetDockerHost" >> ./get-docker-host.sh
 	@chmod a+x ./get-docker-host.sh
-	@$(eval DOCKERHOST=$(shell ./get-docker-host.sh))
 
 gen-cert: docker-host
-	$(eval IP_ADDRESS=$(shell ./get-cert-host.sh $(DOCKERHOST)))
+	$(eval IP_ADDRESS=$(shell ./get-cert-host.sh))
 	@echo $(IP_ADDRESS)
 	@cat ./cert/client/conf.template > ./cert/client/cert.conf
 	awk '{sub("<IP_ADDRESS>","$(IP_ADDRESS)")}1' ./cert/client/cert.conf > ./cert/client/cert.conf.tmp && \
