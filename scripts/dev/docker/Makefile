@@ -21,16 +21,14 @@ von-up: clone
 
 # resolve docker host similarly as is done in von-network
 docker-host:
-	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost > getDockerHost.sh
-	@echo "\ngetDockerHost" >> ./getDockerHost.sh
-	@chmod a+x ./getDockerHost.sh
-	@$(eval DOCKERHOST=$(shell ./getDockerHost.sh))
+	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost > get-docker-host.sh
+	@echo "\ngetDockerHost" >> ./get-docker-host.sh
+	@chmod a+x ./get-docker-host.sh
+	@$(eval DOCKERHOST=$(shell ./get-docker-host.sh))
 
 gen-cert: docker-host
-	@$(eval IP_ADDRESS=$(DOCKERHOST))
-	@if [ "$(IP_ADDRESS)" = "host.docker.internal" ]; then \
-        echo $(eval IP_ADDRESS='127.0.0.1'); \
-    fi;
+	$(eval IP_ADDRESS=$(shell ./get-cert-host.sh $(DOCKERHOST)))
+	@echo $(IP_ADDRESS)
 	@cat ./cert/client/conf.template > ./cert/client/cert.conf
 	awk '{sub("<IP_ADDRESS>","$(IP_ADDRESS)")}1' ./cert/client/cert.conf > ./cert/client/cert.conf.tmp && \
 		mv ./cert/client/cert.conf.tmp ./cert/client/cert.conf
