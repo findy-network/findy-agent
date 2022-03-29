@@ -1,13 +1,12 @@
-VON_NETWORK_VERSION:=37fa43673678b64c0f6080c5e2b50c7ea5354cb4
+VON_NETWORK_VERSION:=7365a190a72edccccdffcdbce95e043cb8d9ac63
 
 FCLI:="findy-agent-cli"
 AUTH_URL:="http://localhost:8888"
 AUTH_KEY:="15308490f1e4026284594dd08d31291bc8ef2aeac730d0daf6ff87bb92d4336c"
 AUTH_ORIGIN:="localhost:8888"
 
-gen-yml:
+gen-yml: docker-host
 # TODO: use env variables or params
-	$(eval DOCKERHOST=$(shell docker run --rm --net=host eclipse/che-ip))
 	@cat ./docker-compose.yml.template > ./docker-compose.yml
 	awk '{sub("<IP_ADDRESS>","$(DOCKERHOST)")}1' ./docker-compose.yml > ./docker-compose.yml.tmp && \
 		mv ./docker-compose.yml.tmp ./docker-compose.yml
@@ -18,16 +17,26 @@ clone:
 	cd .docker/von-network && git reset --hard $(VON_NETWORK_VERSION)
 
 von-up: clone
-	cd .docker/von-network && ./manage build && ./manage start
+	cd .docker/von-network && ./manage build && ./manage up
 
-gen-cert:
-	$(eval DOCKERHOST=$(shell docker run --rm --net=host eclipse/che-ip))
+# resolve docker host similarly as is done in von-network
+docker-host:
+	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost > getDockerHost.sh
+	@echo "\ngetDockerHost" >> ./getDockerHost.sh
+	@chmod a+x ./getDockerHost.sh
+	@$(eval DOCKERHOST=$(shell ./getDockerHost.sh))
+
+gen-cert: docker-host
+	@$(eval IP_ADDRESS=$(DOCKERHOST))
+	@if [ "$(IP_ADDRESS)" = "host.docker.internal" ]; then \
+        echo $(eval IP_ADDRESS='127.0.0.1'); \
+    fi;
 	@cat ./cert/client/conf.template > ./cert/client/cert.conf
-	awk '{sub("<IP_ADDRESS>","$(DOCKERHOST)")}1' ./cert/client/cert.conf > ./cert/client/cert.conf.tmp && \
+	awk '{sub("<IP_ADDRESS>","$(IP_ADDRESS)")}1' ./cert/client/cert.conf > ./cert/client/cert.conf.tmp && \
 		mv ./cert/client/cert.conf.tmp ./cert/client/cert.conf
 	cd ./cert && ./gen.sh client
 	@cat ./cert/server/conf.template > ./cert/server/cert.conf
-	awk '{sub("<IP_ADDRESS>","$(DOCKERHOST)")}1' ./cert/server/cert.conf > ./cert/server/cert.conf.tmp && \
+	awk '{sub("<IP_ADDRESS>","$(IP_ADDRESS)")}1' ./cert/server/cert.conf > ./cert/server/cert.conf.tmp && \
 		mv ./cert/server/cert.conf.tmp ./cert/server/cert.conf
 	cd ./cert && ./gen.sh server
 
@@ -46,7 +55,7 @@ agency-d: ledger-ready
 
 down: clone
 	docker-compose down
-	cd .docker/von-network && ./manage stop
+	cd .docker/von-network && ./manage down
 
 onboard:
 	$(eval AGENT_NAME="agent-$(shell date +%s)-1")
