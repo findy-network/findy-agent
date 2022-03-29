@@ -22,7 +22,8 @@ von-up: clone
 
 # resolve docker host similarly as is done in von-network
 docker-host:
-	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost > get-docker-host.sh
+	@echo "#!/bin/bash\n" > ./get-docker-host.sh
+	@curl -s --raw https://raw.githubusercontent.com/bcgov/DITP-DevOps/main/code/snippets/getDockerHost >> get-docker-host.sh
 	@echo "\ngetDockerHost" >> ./get-docker-host.sh
 	@chmod a+x ./get-docker-host.sh
 
