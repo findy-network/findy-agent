@@ -20,6 +20,6 @@ subjectAltName = @alt_names
 [ alt_names ]
 DNS.1 = core
 DNS.2 = localhost
-DNS.3 = www.inanzzz.com
+DNS.3 = host.docker.internal
 IP.1 = <IP_ADDRESS>
 
