@@ -1,6 +1,9 @@
 package core
 
-import "github.com/findy-network/findy-agent/agent/storage/api"
+import (
+	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/storage/api"
+)
 
 type DID interface {
 
@@ -10,9 +13,11 @@ type DID interface {
 	KID() string
 	String() string
 	SignKey() any
+	Packager() api.Packager
+
 	// TODO: this is mainly for indy but could be merged with SignKey?
 	VerKey() string
-	Storage() api.AgentStorage
+	Storage() managed.Wallet
 
 	// URI() string // real URI, currently used in did doc
 	// Did() == KID() alias for make old code easy to integrate

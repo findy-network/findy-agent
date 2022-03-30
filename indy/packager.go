@@ -1,7 +1,7 @@
 package indy
 
 import (
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	indycrypto "github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/crypto"
@@ -25,8 +25,10 @@ type Handle struct {
 }
 
 type Packager struct {
-	ssi.Agent
-	crypto *Crypto
+	handle  int
+	storage api.AgentStorage
+
+	crypto Crypto
 }
 
 func (p *Packager) KMS() kms.KeyManager {
@@ -34,7 +36,7 @@ func (p *Packager) KMS() kms.KeyManager {
 }
 
 func (p *Packager) Crypto() cryptoapi.Crypto {
-	return p.crypto
+	return &p.crypto
 }
 
 func (p *Packager) VDRegistry() vdr.Registry {
@@ -49,7 +51,7 @@ func (p *Packager) UnpackMessage(
 ) {
 	defer err2.Annotate("indy unpack message", &err)
 
-	wallet := p.Agent.Wallet()
+	wallet := p.handle
 
 	if glog.V(5) {
 		glog.Infof("<== Unpack: w(%d)\n", wallet)
@@ -76,7 +78,7 @@ func (p *Packager) UnpackMessage(
 func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err error) {
 	defer err2.Annotate("indy pack message", &err)
 
-	wallet := p.Agent.Wallet()
+	wallet := p.handle
 
 	vk := envelope.ToKeys[0] // p.Out.VerKey()
 	assert.D.True(vk != "")

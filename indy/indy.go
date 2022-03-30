@@ -6,15 +6,25 @@ import (
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 )
 
+func New(handle int) *Indy {
+	storage := &Indy{Handle: handle, packager: nil}
+	p := &Packager{handle: handle, storage: storage}
+	storage.packager = p
+	return storage
+}
+
 type Indy struct {
+	Handle int
+
+	packager *Packager
 }
 
 func (i *Indy) Open() error {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (i *Indy) Close() error {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (i *Indy) KMS() kms.KeyManager {

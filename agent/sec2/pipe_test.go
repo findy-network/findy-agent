@@ -159,3 +159,43 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 
 	require.True(t, ok)
 }
+
+func _(t *testing.T) {
+	didIn := agent.NewDID("indy")
+	str := didIn.String()
+	require.NotEmpty(t, str)
+	println(str)
+
+	didIn2 := agent2.NewDID("indy")
+	str = didIn.String()
+	require.NotEmpty(t, str)
+	println(str)
+
+	p := Pipe{In: didIn, Out: didIn2}
+
+	message := []byte("message")
+
+	packed, _, err := p.Pack(message)
+	require.NoError(t, err)
+	require.NotNil(t, packed)
+
+	//	didOut := agent.NewDID("key")
+	//	println(didOut.String())
+	//	didRoute1 := agent.NewDID("key")
+	//	println(didRoute1.String())
+	//	didRoute2 := agent.NewDID("key")
+	//	println(didRoute2.String())
+	//
+	//	require.NotNil(t, didIn)
+	//	require.NotNil(t, didOut)
+	//	require.NotNil(t, didRoute1)
+	//	require.NotNil(t, didRoute2)
+	//
+	//	message := []byte("message")
+	//
+	//	p := Pipe{In: didIn, Out: didOut}
+	//
+	//	packed, _ := try.To2(p.Pack(message))
+	//	received, _ := try.To2(p.Unpack(packed))
+	//	require.Equal(t, message, received)
+}

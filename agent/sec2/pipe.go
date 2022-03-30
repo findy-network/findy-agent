@@ -123,6 +123,5 @@ func (p Pipe) defMediaType() string {
 func (p Pipe) packager() api.Packager {
 	assert.D.True(p.In.Storage() != nil)
 
-	// TODO: Storage() return a handle!
-	return p.In.Storage().OurPackager()
+	return p.In.Packager()
 }

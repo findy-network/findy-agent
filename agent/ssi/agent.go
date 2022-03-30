@@ -216,12 +216,8 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 
 	switch method {
 	case methodKey:
-		// we will used the correct VDR to create the correct did
-		// the VDR is the factory for a DID method
 		_ = a.VDR()
-		//		keyVdr := a.VDR().Key()
-		//		keyVdr.Create()
-		return try.To1(didmethod.NewKey(a.Storage()))
+		return try.To1(didmethod.NewKey(a.StorageH))
 
 	case methodIndy:
 		return a.CreateDID("")
@@ -237,13 +233,9 @@ func (a *DIDAgent) NewOutDID(didStr string) core.DID {
 
 	switch "key" { // TODO: we will have to make a way to parse this
 	case methodKey:
-		// we will used the correct VDR to create the correct did
-		// the VDR is the factory for a DID method
 		_ = a.VDR()
-		//		keyVdr := a.VDR().Key()
-		//		keyVdr.Create()
 		return try.To1(didmethod.NewKeyFromDID(
-			a.Storage(),
+			a.StorageH,
 			didStr,
 		))
 

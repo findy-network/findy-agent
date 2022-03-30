@@ -13,13 +13,12 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
 type DidComm interface {
 	Did() string
-	Storage() api.AgentStorage // TODO: as must be a handle!
+	Storage() managed.Wallet
 }
 
 type Out interface {
@@ -38,7 +37,10 @@ type In interface {
 // DID is an application framework level wrapper for findy.DID implementation.
 // Uses Future to async processing of the findy.Channel results.
 type DID struct {
-	wallet managed.Wallet // Wallet handle if available
+	// Wallet handle if available.
+	// Implementation Note: we will build access with these handles to the Indy
+	// AgentStorage. managed.WalletCfg.UniqueID() will be the key.
+	wallet managed.Wallet
 
 	data   *Future // DID data when queried from the wallet or received somewhere
 	stored *Future // result of the StartStore Their DID operation
@@ -53,23 +55,26 @@ type DID struct {
 
 }
 
-func (d *DID) Storage() api.AgentStorage {
-	assert.D.NoImplementation()
-	return nil
+func (d *DID) Storage() managed.Wallet {
+	return d.wallet
 }
 
+func (d *DID) Packager() api.Packager {
+	return AgentStorage(d.wallet.Handle()).OurPackager()
+}
+
+const methodPrefix = "did:sov:"
+
 func (d *DID) String() string {
-	panic("not implemented") // TODO: Implement
+	return methodPrefix + d.Did()
 }
 
 func (d *DID) KID() string {
-	assert.D.NoImplementation()
-	return ""
+	return d.Did()
 }
 
 func (d *DID) SignKey() any {
-	assert.D.NoImplementation()
-	return ""
+	return d.VerKey()
 }
 
 type PairwiseMeta struct {

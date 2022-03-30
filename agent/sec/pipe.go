@@ -200,5 +200,5 @@ func getEpochTime() int64 {
 func (p Pipe) pckr() api.Packager {
 	assert.D.True(p.In.Storage() != nil)
 
-	return p.In.Storage().OurPackager()
+	return p.In.Storage().Storage().OurPackager()
 }
