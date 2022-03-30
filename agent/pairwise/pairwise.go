@@ -40,8 +40,8 @@ func (p *Callee) startStore() {
 	} else {
 		glog.Warning("Callee.startStore() - no DIDExchange request found")
 	}
-
-	p.Callee.SavePairwiseForDID(p.agent.ManagedWallet(), p.Caller, ssi.PairwiseMeta{
+	_, storageH := p.agent.ManagedWallet()
+	p.Callee.SavePairwiseForDID(storageH, p.Caller, ssi.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})
@@ -69,7 +69,13 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 	a := p.agent.(comm.Receiver)
 	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
 
-	store := a.ManagedWallet().Storage().ConnectionStorage()
+	if cnxAddr.EdgeToken == "" {
+		glog.V(1).Infof("===== Cannot use pw DID, NO connection found from addr: %s =====", cnxAddr.Address())
+		return
+	}
+
+	_, storageH := p.agent.ManagedWallet()
+	store := storageH.Storage().ConnectionStorage()
 	if _, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
 		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
 		p.Callee = calleeDID
