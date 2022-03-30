@@ -285,7 +285,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ourPairwiseDID.SetAEndp(ep.AE())
 	wa.AddToPWMap(ourPairwiseDID, ourPairwiseDID, id)
 
-	glog.V(1).Infoln("---- Using preallocated PW DID for Invitation ---")
+	glog.V(1).Infof("---- Using preallocated PW DID %s for connection id %s ---", ourPairwiseDID.Did(), id)
 
 	return ep, nil
 }

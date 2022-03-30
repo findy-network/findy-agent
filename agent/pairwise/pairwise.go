@@ -77,8 +77,9 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 	_, storageH := p.agent.ManagedWallet()
 	store := storageH.Storage().ConnectionStorage()
 	if _, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
-		glog.V(1).Infoln("==== using preallocated pw DID ====", calleeDID.Did())
+		glog.V(1).Infof("==== using preallocated pw DID  %s for connection id %s ====", calleeDID.Did(), cnxAddr.EdgeToken)
 		p.Callee = calleeDID
+		return
 	}
 
 	glog.V(1).Infof("===== Cannot use pw DID, NO connection found with id %s =====", cnxAddr.EdgeToken)
