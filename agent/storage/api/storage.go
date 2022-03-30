@@ -25,8 +25,6 @@ type AgentStorage interface {
 
 	OurPackager() Packager
 
-	// We needed direct wrapping to because Go couldn't keep on with transitive
-	// type support of aggregated types.
 	OpenStore(name string) (storage.Store, error)
 	SetStoreConfig(name string, config storage.StoreConfiguration) error
 	GetStoreConfig(name string) (storage.StoreConfiguration, error)
