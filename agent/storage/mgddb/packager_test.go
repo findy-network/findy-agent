@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
@@ -40,8 +39,7 @@ func removeFiles(home, nameFilter string) {
 }
 
 var (
-	agent           = new(ssi.DIDAgent)
-	afgoTestStorage api.AgentStorage
+	agent = new(ssi.DIDAgent)
 )
 
 func setUp() {
@@ -51,27 +49,24 @@ func setUp() {
 	aw.Create()
 
 	agent.OpenWallet(*aw)
-
-	apiStorage := agent.ManagedWallet().Storage()
-	afgoTestStorage = apiStorage
 }
 
 func TestPackAndUnpack(t *testing.T) {
-	ourVdr, err := vdr.New(afgoTestStorage)
+	ourVdr, err := vdr.New(agent.Storage())
 	require.NoError(t, err)
 	require.NotEmpty(t, ourVdr)
 
-	packager, err := mgddb.NewPackagerFromStorage(afgoTestStorage, ourVdr.Registry())
+	packager, err := mgddb.NewPackagerFromStorage(agent.Storage(), ourVdr.Registry())
 	require.NoError(t, err)
 	require.NotEmpty(t, packager)
 
 	mediaType := transport.MediaTypeProfileDIDCommAIP1
 
-	_, fromPkBytes, err := afgoTestStorage.KMS().CreateAndExportPubKeyBytes(kms.ED25519)
+	_, fromPkBytes, err := agent.Storage().KMS().CreateAndExportPubKeyBytes(kms.ED25519)
 	require.NoError(t, err)
 	fromDIDKey, _ := fingerprint.CreateDIDKey(fromPkBytes)
 
-	_, toPkBytes, err := afgoTestStorage.KMS().CreateAndExportPubKeyBytes(kms.ED25519)
+	_, toPkBytes, err := agent.Storage().KMS().CreateAndExportPubKeyBytes(kms.ED25519)
 	require.NoError(t, err)
 	toDIDKey, _ := fingerprint.CreateDIDKey(toPkBytes)
 

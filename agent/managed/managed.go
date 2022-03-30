@@ -20,4 +20,9 @@ type WalletCfg interface {
 	Identifier
 	ID() string
 	Key() string
+
+	OpenWallet() (int, error)
+	CloseWallet(handle int) error
+
+	WantsBackup() bool
 }

@@ -22,7 +22,7 @@ type Receiver interface {
 	WDID() string
 	PwPipe(pw string) (cp sec.Pipe, err error)
 	Wallet() int
-	ManagedWallet() managed.Wallet // TODO: access storage using wallet handle
+	ManagedWallet() (managed.Wallet, managed.Wallet)
 	Pool() int
 	FindPWByDID(my string) (pw *storage.Connection, err error)
 	AttachSAImpl(implID string)

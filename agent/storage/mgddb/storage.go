@@ -131,7 +131,9 @@ func (s *Storage) SaveConnection(conn api.Connection) error {
 }
 
 func (s *Storage) GetConnection(id string) (conn *api.Connection, err error) {
-	defer err2.Annotate("conn storage get conn", &err)
+	defer err2.Annotatew("conn storage get conn", &err)
+
+	assert.That(id != "", "connection ID is empty")
 
 	bytes := try.To1(s.connStore.Get(id))
 
@@ -156,6 +158,8 @@ func (s *Storage) ListConnections() (res []api.Connection, err error) {
 }
 
 // AFGO StorageProvider placeholder implementations
+// We needed direct wrapping because Go couldn't keep on with transitive
+// type support of aggregated types.
 
 func (s *Storage) OpenStore(name string) (storage.Store, error) {
 	return s.StorageProvider.OpenStore(name)

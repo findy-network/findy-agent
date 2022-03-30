@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	myvdr "github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
@@ -23,11 +24,11 @@ type testCase struct {
 }
 
 var (
-	storageTestConfig = api.AgentStorageConfig{
+	storageTestConfig = cfg.AgentStorage{AgentStorageConfig: api.AgentStorageConfig{
 		AgentKey: mgddb.GenerateKey(),
 		AgentID:  "agentID",
 		FilePath: ".",
-	}
+	}}
 	afgoTestStorage *mgddb.Storage
 	tests           []testCase
 	testKey         []byte
@@ -48,7 +49,7 @@ func setUp() {
 
 	// AFGO
 	var err error
-	afgoTestStorage, err = mgddb.New(storageTestConfig)
+	afgoTestStorage, err = mgddb.New(storageTestConfig.AgentStorageConfig)
 	assert.D.True(err == nil)
 	assert.D.True(afgoTestStorage != nil)
 
@@ -76,7 +77,7 @@ func tearDown() {
 	err := afgoTestStorage.Close()
 	assert.D.True(err == nil)
 
-	os.RemoveAll(storageTestConfig.AgentID + ".bolt")
+	_ = os.RemoveAll(storageTestConfig.AgentID + ".bolt")
 }
 
 func TestVDRAccept(t *testing.T) {

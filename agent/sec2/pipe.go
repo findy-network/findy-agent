@@ -21,7 +21,7 @@ func Init(defMediaType string) {
 	defaultMediaType = defMediaType
 }
 
-// Pipe is secure way to transport data between DID connection. All agent to
+// Pipe is a secure way to transport data between DID connection. All agent to
 // agent communication uses it. For its internal structure we must define the
 // direction of the pipe.
 type Pipe struct {
@@ -32,30 +32,24 @@ type Pipe struct {
 }
 
 // Verify verifies signature of the message and returns the verification key.
-// Note! It throws err2 type of an error and needs an error handler in the call
+// Note! It throws err2 type of error and needs an error handler in the call
 // stack.
-func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
-	defer err2.Catch(func(err error) {
-		glog.Error("error:", err)
-		// want to be explicit, because underlaying API uses errors wrongly
-		// for return non error information
-		yes = false
-	})
-	c := p.pckr().Crypto()
+func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
+	defer err2.Annotate("pipe sign", &err)
 
+	c := p.packager().Crypto()
 	try.To(c.Verify(signature, msg, p.Out.SignKey()))
 
-	return true, ""
+	return true, "", nil
 }
 
 // Sign sings the message and returns the verification key. Note! It throws err2
-// type of an error and needs an error handler in the call stack.
-func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
-	defer err2.Catch(func(err error) {
-		glog.Error("error:", err)
-	})
-	c := p.pckr().Crypto()
-	kms := p.pckr().KMS()
+// type of error and needs an error handler in the call stack.
+func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
+	defer err2.Annotate("pipe sign", &err)
+
+	c := p.packager().Crypto()
+	kms := p.packager().KMS()
 
 	kh := try.To1(kms.Get(p.In.KID()))
 	dst = try.To1(c.Sign(src, kh))
@@ -64,9 +58,11 @@ func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
 }
 
 // SignAndStamp sings and stamps a message and returns the verification key.
-// Note! It throws err2 type of an error and needs an error handler in the call
+// Note! It throws err2 type of error and needs an error handler in the call
 // stack.
-func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
+func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string, err error) {
+	defer err2.Return(&err)
+
 	now := getEpochTime()
 
 	data = make([]byte, 8+len(src))
@@ -77,8 +73,8 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
 		glog.Warning("WARNING, NOT all bytes copied")
 	}
 
-	sign, verKey := p.Sign(data)
-	return data, sign, verKey
+	sign, verKey := try.To2(p.Sign(data))
+	return data, sign, verKey, nil
 }
 
 // Pack packs the byte slice and returns verification key as well.
@@ -87,8 +83,8 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 	media := p.defMediaType()
 
-	// pack an non empty envelope using packer selected by mediaType - should pass
-	dst = try.To1(p.pckr().PackMessage(&transport.Envelope{
+	// pack a non-empty envelope using packer selected by mediaType - should pass
+	dst = try.To1(p.packager().PackMessage(&transport.Envelope{
 		MediaTypeProfile: media,
 		Message:          src,
 		FromKey:          []byte(p.In.String()),
@@ -102,7 +98,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe unpack", &err)
 
-	env := try.To1(p.pckr().UnpackMessage(src))
+	env := try.To1(p.packager().UnpackMessage(src))
 	dst = env.Message
 
 	return
@@ -119,7 +115,7 @@ func (p Pipe) defMediaType() string {
 	return p.mediaType
 }
 
-func (p Pipe) pckr() api.Packager {
+func (p Pipe) packager() api.Packager {
 	assert.D.True(p.In.Storage() != nil)
 
 	return p.In.Storage().OurPackager()

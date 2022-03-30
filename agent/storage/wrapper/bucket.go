@@ -23,7 +23,7 @@ func newBucket(owner *StorageProvider, bucketID byte) bucket {
 // Put stores the key + value pair along with the (optional) tags.
 // If key is empty or value is nil, then an error will be returned.
 func (b *bucket) Put(key string, value []byte, tags ...storage.Tag) (err error) {
-	glog.V(7).Infoln("bucket::Put", key, tags)
+	glog.V(7).Infoln(">>>> bucket::Put", key, tags)
 
 	if len(tags) > 0 {
 		panic("tags not supported")

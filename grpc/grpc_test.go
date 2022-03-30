@@ -38,6 +38,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	err2assert "github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -85,6 +86,9 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 
 func TestMain(m *testing.M) {
 	try.To(flag.Set("logtostderr", "true"))
+
+	// we want panics from every err2/assert
+	err2assert.DefaultAsserter = err2assert.D
 
 	prepareBuildOneTest()
 	setUp()

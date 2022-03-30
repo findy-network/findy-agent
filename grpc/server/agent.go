@@ -256,7 +256,7 @@ func (a *agentServer) CreateInvitation(
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
 	defer err2.Return(&err)
 
-	glog.V(5).Infoln("start prealloc", id)
+	glog.V(5).Infoln("========== start prealloc:", id)
 
 	_, receiver := try.To2(ca(ctx))
 	ep = receiver.CAEndp()
@@ -267,8 +267,9 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	// Build new DID for the pairwise and save it for the CONN_REQ??
 	ourPairwiseDID := ssiWA.CreateDID("")
 
-	// mark the preallocated pairwise DID with connection ID that we find it
-	store := receiver.ManagedWallet().Storage().ConnectionStorage()
+	// mark the pre-allocated pairwise DID with connection ID that we find it
+	_, ms := wa.ManagedWallet()
+	store := ms.Storage().ConnectionStorage()
 	try.To(store.SaveConnection(storage.Connection{
 		ID:    id,
 		MyDID: ourPairwiseDID.Did(),

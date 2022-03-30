@@ -1,22 +1,23 @@
 package ssi
 
 import (
-	"path/filepath"
 	"sync"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/storage/api"
-	storage "github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/agent/storage/mgddb"
-	"github.com/findy-network/findy-agent/agent/utils"
+	storagecfg "github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 )
 
 var maxOpened = 10
+
+type manager interface {
+	reopen(h *Handle) int
+}
 
 // SetWalletMgrPoolSize sets pool size, i.e. how many wallets can kept open in
 // the same time. This should be set at the startup of the application or
@@ -34,22 +35,20 @@ func SetWalletMgrPoolSize(s int) {
 // wallet handles is kept open (MaxOpen). See more information from API function
 // descriptions.
 type Handle struct {
-	ts  int64   // last access timestamp
-	h   int     // wallet handle
-	f   *Future // wallet handle future
-	cfg Wallet  // wallet file information
+	ts int64 // last access timestamp
+	h  int   // wallet handle
 
-	// TODO: map agent storages to handles
-	storage storage.AgentStorage // agent-specific storage
+	mgr manager
 
-	l sync.RWMutex // lock
+	cfg managed.WalletCfg // wallet file information
+	l   sync.RWMutex      // lock
 }
 
 // Config returns managed wallet's associated indy wallet configuration.
 func (h *Handle) Config() managed.WalletCfg {
 	h.l.RLock()
 	defer h.l.RUnlock()
-	return &h.cfg
+	return h.cfg
 }
 
 // Close frees the wallet handle to reuse by WalletMgr. Please note that it's
@@ -63,17 +62,12 @@ func (h *Handle) Close() {
 	h.l.Lock()
 	defer h.l.Unlock()
 
-	f := h.cfg.Close(h.f.Int())
+	try.To(h.cfg.CloseWallet(h.h))
 	if glog.V(10) {
-		glog.Info("closing wallet: ", h.cfg.Config.ID)
+		glog.Info("closing wallet: ", h.cfg.UniqueID())
 	}
 
-	if h.h != h.f.Int() {
-		glog.Warning("handle mismatch!!")
-	}
 	h.h = 0
-	try.To(f.Result().Err())
-	try.To(h.storage.Close())
 }
 
 func (h *Handle) timestamp() int64 {
@@ -83,7 +77,8 @@ func (h *Handle) timestamp() int64 {
 }
 
 func (h *Handle) Storage() api.AgentStorage {
-	return h.storage
+	handle := h.Handle()
+	return storagecfg.Storage(handle)
 }
 
 // Handle returns the actual indy wallet handle which can be used with indy SDK
@@ -101,7 +96,7 @@ func (h *Handle) Handle() int {
 	}
 
 	// reopen with the Manager. Note! They know that handle is locked
-	return wallets.reopen(h)
+	return h.mgr.reopen(h)
 }
 
 // reopen opens the wallet by its configuration. Open is always called by Wallet
@@ -111,14 +106,12 @@ func (h *Handle) reopen() int {
 		glog.Error("error when reopening wallet: ", err)
 	})
 
-	h.f = h.cfg.Open()
+	h.h = try.To1(h.cfg.OpenWallet())
+
 	if glog.V(10) {
-		glog.Info("opening wallet: ", h.cfg.Config.ID)
+		glog.Info("opening wallet: ", h.cfg.UniqueID())
 	}
 	h.ts = time.Now().UnixNano()
-	h.h = h.f.Int()
-
-	try.To(h.storage.Open())
 
 	return h.h
 }
@@ -126,23 +119,20 @@ func (h *Handle) reopen() int {
 type WalletMap map[string]*Handle
 
 type Mgr struct {
-	opened          WalletMap
-	storageFilePath string
-	l               sync.Mutex // lock
+	opened WalletMap
+	l      sync.Mutex // lock
 }
 
 var wallets = &Mgr{
-	opened:          make(WalletMap, maxOpened),
-	storageFilePath: storageFolder(),
+	opened: make(WalletMap, maxOpened),
 }
 
-func storageFolder() string {
-	home := utils.IndyBaseDir()
-	return filepath.Join(home, ".indy_client/storage") // TODO: fetch from agency settings
+var storages = &Mgr{
+	opened: make(WalletMap, maxOpened),
 }
 
 // Open opens a wallet configuration and returns a managed wallet.
-func (m *Mgr) Open(cfg Wallet) managed.Wallet {
+func (m *Mgr) Open(cfg managed.WalletCfg) managed.Wallet {
 	m.l.Lock()
 	defer m.l.Unlock()
 
@@ -154,28 +144,22 @@ func (m *Mgr) Open(cfg Wallet) managed.Wallet {
 	return m.closeOldestAndOpen(cfg)
 }
 
-func (m *Mgr) openNewWallet(cfg Wallet) managed.Wallet {
+func (m *Mgr) openNewWallet(cfg managed.WalletCfg) managed.Wallet {
 	defer err2.Catch(func(err error) {
 		glog.Error("error when opening wallet: ", err)
 	})
 
-	aStorage := try.To1(mgddb.New(storage.AgentStorageConfig{
-		AgentID:  cfg.ID(),
-		AgentKey: mgddb.GenerateKey(), // TODO: fetch from agent settings
-		FilePath: m.storageFilePath,
-	}))
+	handle := try.To1(cfg.OpenWallet())
 
 	h := &Handle{
-		ts:      time.Now().UnixNano(),
-		h:       0,
-		f:       cfg.Open(),
-		cfg:     cfg,
-		storage: aStorage,
+		ts:  time.Now().UnixNano(),
+		h:   handle,
+		mgr: m,
+		cfg: cfg,
 	}
 	m.opened[cfg.UniqueID()] = h
-	h.h = h.f.Int()
 
-	if h.cfg.worker {
+	if h.cfg.WantsBackup() {
 		// AccessMgr will handle backups. Let it know that the managed WORKER
 		// wallet is opened. Pairwise wallet backup will be handled in
 		// handshake.
@@ -207,7 +191,7 @@ func (m *Mgr) closeOldestAndReopen(h *Handle) int {
 	return h.reopen()
 }
 
-func (m *Mgr) closeOldestAndOpen(cfg Wallet) managed.Wallet {
+func (m *Mgr) closeOldestAndOpen(cfg managed.WalletCfg) managed.Wallet {
 	oldest := m.findOldest()
 	w := m.opened[oldest]
 	delete(m.opened, oldest)

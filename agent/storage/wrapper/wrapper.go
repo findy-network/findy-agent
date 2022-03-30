@@ -59,7 +59,9 @@ func (s *StorageProvider) Init() (err error) {
 	defer s.l.Unlock()
 
 	if s.db != nil {
-		glog.Warningf("skipping storage provider initialization for %s, already open", s.conf.FileName)
+		glog.V(15).Infof(
+			"skipping storage provider initialization for %s, already open",
+			s.conf.FileName)
 		return nil
 	}
 
@@ -119,16 +121,19 @@ func (s *StorageProvider) OpenStore(name string) (storage.Store, error) {
 func (s *StorageProvider) Close() (err error) {
 	defer err2.Annotate("afgo storage close", &err)
 
-	s.l.Lock() // We update s.db to nil, need write lock as well
-	defer s.l.Unlock()
+	// We need to just read values here. We don't update s.db = nil
+	// because we don't want to reinitialize everything. Underlying db
+	// handles Open/Close semantics.
+	s.l.RLock()
+	defer s.l.RUnlock()
 
 	if s.db == nil {
-		glog.Warningf("skipping storage provider close for %s, already closed", s.conf.FileName)
+		glog.Warningf("skipping storage provider close for %s, NOT YET opened",
+			s.conf.FileName)
 		return nil
 	}
 
 	try.To(s.db.Close())
-	s.db = nil
 	return
 }
 

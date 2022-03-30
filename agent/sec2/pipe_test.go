@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/lainio/err2/try"
@@ -46,8 +45,6 @@ func removeFiles(home, nameFilter string) {
 
 var (
 	agent, agent2 = new(ssi.DIDAgent), new(ssi.DIDAgent)
-
-	pckr, pckr2 api.Packager
 )
 
 func setUp() {
@@ -61,17 +58,11 @@ func setUp() {
 	aw.Create()
 	agent.OpenWallet(*aw)
 
-	apiStorage := agent.ManagedWallet().Storage()
-	pckr = apiStorage.OurPackager()
-
 	// second, create agent 2 with the storages
 	walletID2 := fmt.Sprintf("pipe-test-agent-2%d", time.Now().Unix())
 	aw2 := ssi.NewRawWalletCfg(walletID2, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 	aw2.Create()
 	agent2.OpenWallet(*aw2)
-
-	apiStorage2 := agent2.ManagedWallet().Storage()
-	pckr2 = apiStorage2.OurPackager()
 }
 
 func TestNewPipe(t *testing.T) {
@@ -96,10 +87,6 @@ func TestNewPipe(t *testing.T) {
 	packed, _ := try.To2(p.Pack(message))
 	received, _ := try.To2(p.Unpack(packed))
 	require.Equal(t, message, received)
-
-	// pipe sign/verify
-	sign, _ := p.Sign(message)
-	_, _ = p.Verify(message, sign)
 }
 
 func TestResolve(t *testing.T) {
@@ -161,12 +148,14 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	received, _ := try.To2(p2.Unpack(packed))
 	require.Equal(t, message, received)
 
-	sign, _ := p.Sign(message)
+	sign, _, err := p.Sign(message)
+	require.NoError(t, err)
 
 	// Signature verification must done from p2 because p2 has only pubKey of
 	// the DID in the 'wallet' where p2 is connected to. This way the test
 	// follows the real world situation
-	ok, _ := p2.Verify(message, sign)
+	ok, _, err := p2.Verify(message, sign)
+	require.NoError(t, err)
 
 	require.True(t, ok)
 }

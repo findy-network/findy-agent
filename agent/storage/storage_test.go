@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2/try"
@@ -15,7 +16,7 @@ import (
 
 type storageTest struct {
 	name    string
-	config  api.AgentStorageConfig
+	config  cfg.AgentStorage
 	storage api.AgentStorage
 }
 
@@ -43,13 +44,13 @@ func setUp() {
 
 	kmsTestStorages = make([]*storageTest, 0)
 	// AFGO
-	kmsTestConfig := api.AgentStorageConfig{
+	kmsTestConfig := cfg.AgentStorage{AgentStorageConfig: api.AgentStorageConfig{
 		AgentKey: mgddb.GenerateKey(),
 		AgentID:  "agentID",
 		FilePath: ".",
-	}
+	}}
 
-	afgoTestStorage = try.To1(mgddb.New(kmsTestConfig))
+	afgoTestStorage = try.To1(mgddb.New(kmsTestConfig.AgentStorageConfig))
 
 	kmsTestStorages = append(kmsTestStorages, &storageTest{
 		name:    nameAfgo,
@@ -64,7 +65,7 @@ func tearDown() {
 			panic(err)
 		}
 		// afgo
-		os.RemoveAll(testStorage.config.AgentID + ".bolt")
+		_ = os.RemoveAll(testStorage.config.AgentID + ".bolt")
 	}
 }
 
