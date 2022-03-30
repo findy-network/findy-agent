@@ -74,6 +74,9 @@ func TestAgentStorageConfig_OpenWallet(t *testing.T) {
 			h, err = cfg.OpenWallet()
 			require.NoError(t, err)
 			require.Equal(t, oldH, h)
+
+			aStorage := Storage(h)
+			require.NotNil(t, aStorage)
 		}
 		for i, cfg := range testConfig {
 			err := cfg.CloseWallet(handles[i])

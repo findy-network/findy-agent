@@ -27,19 +27,22 @@ type InfoMap map[string]StorageInfo
 var (
 	storages = struct {
 		InfoMap
-		sync.Mutex
-	}{
-		InfoMap: make(InfoMap),
-	}
-
-	/*handles*/
-	_ = struct {
-		storages []*mgddb.Storage
+		handles []*mgddb.Storage
 		sync.RWMutex
 	}{
-		storages: make([]*mgddb.Storage, 0, 12),
+		InfoMap: make(InfoMap),
+		handles: make([]*mgddb.Storage, 0, 12),
 	}
 )
+
+func Storage(h int) api.AgentStorage {
+	storages.RLock()
+	defer storages.RUnlock()
+
+	s := storages.handles[h-1]
+	glog.V(11).Infof("----- STORAGE: (%s) HANDLE: (%d)", s.StorageProvider.ID(), h)
+	return storages.handles[h-1] // handles start from 1 not 0
+}
 
 func (c *AgentStorage) UniqueID() string {
 	return filepath.Join(c.FilePath, c.AgentID)
@@ -68,21 +71,22 @@ func (c *AgentStorage) OpenWallet() (h int, err error) {
 		return info.handle, nil
 	}
 
-	//handles.RLock()
-	lenHandles := len(storages.InfoMap) //len(handles.storages)
-	//handles.RUnlock()
+	// reserve zero for nul handle, start handles from 1
+	handle := len(storages.InfoMap) + 1
 
-	cfg := c.AgentStorageConfig
-	aStorage := try.To1(mgddb.New(cfg))
+	aStorage := try.To1(mgddb.New(c.AgentStorageConfig))
 	try.To(aStorage.Open())
 	glog.V(5).Infoln("successful first time opening agent storage:", c.AgentID)
 
 	storages.InfoMap[c.UniqueID()] = StorageInfo{
 		storage: aStorage,
-		handle:  lenHandles,
+		handle:  handle,
 		isOpen:  true,
 	}
-	return lenHandles, nil
+	storages.handles = append(storages.handles, aStorage)
+	assert.That(len(storages.handles) == len(storages.InfoMap), "fast index mismatch")
+
+	return handle, nil
 }
 
 func (c *AgentStorage) CloseWallet(handle int) (err error) {
@@ -92,8 +96,8 @@ func (c *AgentStorage) CloseWallet(handle int) (err error) {
 	defer storages.Unlock()
 
 	info, exist := storages.InfoMap[c.UniqueID()]
-	assert.That(exist)
-	assert.That(info.handle == handle)
+	assert.That(exist, "config must exists in map")
+	assert.That(info.handle == handle, "info.handle must be equal to argument handle")
 
 	if info.isOpen {
 		try.To(info.storage.Close())
