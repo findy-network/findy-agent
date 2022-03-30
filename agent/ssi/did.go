@@ -131,7 +131,7 @@ func (d *DID) SetWallet(w managed.Wallet) {
 // Store stores this DID as their DID to given wallet. Work is done thru futures
 // so the call doesn't block. The meta data is set "pairwise". See StoreResult()
 // for status.
-func (d *DID) Store(mgdWallet managed.Wallet) {
+func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 	defer err2.Catch(func(err error) {
 		glog.Errorf("Error storing DID: %s", err)
 	})
@@ -143,9 +143,9 @@ func (d *DID) Store(mgdWallet managed.Wallet) {
 	f := new(Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
-	// Store did it also to the agent storage
+	// Store the DID also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
-	try.To(mgdWallet.Storage().DIDStorage().SaveDID(storage.DID{
+	try.To(mgdStorage.Storage().DIDStorage().SaveDID(storage.DID{
 		ID:         ds,
 		DID:        ds,
 		IndyVerKey: vk,
@@ -186,12 +186,15 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(mgdWallet managed.Wallet, theirDID *DID, pw PairwiseMeta) {
+func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, theirDID *DID, pw PairwiseMeta) {
+	defer err2.Catch(func(err error) {
+		glog.Warningf("save pairwise for DID error: %v", err)
+	})
+
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
 	if ok {
-		store := mgdWallet.Storage().ConnectionStorage()
-		connection, _ := store.GetConnection(pw.Name)
+		connection, _ := mStorage.Storage().ConnectionStorage().GetConnection(pw.Name)
 		if connection == nil {
 			connection = &storage.Connection{
 				ID: pw.Name,
@@ -200,7 +203,10 @@ func (d *DID) SavePairwiseForDID(mgdWallet managed.Wallet, theirDID *DID, pw Pai
 		connection.MyDID = d.Did()
 		connection.TheirDID = theirDID.Did()
 		connection.TheirRoute = pw.Route
-		err := store.SaveConnection(*connection)
+		glog.V(7).Infoln("=== save connection:",
+			connection.ID, connection.MyDID, connection.TheirDID)
+
+		err := mStorage.Storage().ConnectionStorage().SaveConnection(*connection)
 		errStr := ""
 		if err != nil {
 			ok = false
@@ -220,14 +226,15 @@ func (d *DID) hasKeyData() bool {
 	return vk != ""
 }
 
-func (d *DID) StartEndp(wallet managed.Wallet, connectionID string) {
-	store := wallet.Storage().ConnectionStorage()
+func (d *DID) StartEndp(storageH managed.Wallet, connectionID string) {
+	store := storageH.Storage().ConnectionStorage()
 	connection, err := store.GetConnection(connectionID)
 	endpoint := ""
 	errStr := ""
 	if err == nil {
 		endpoint = connection.TheirEndpoint
 	} else {
+		glog.Warningf("--- get connection (%s) failure", connectionID)
 		errStr = err.Error()
 	}
 

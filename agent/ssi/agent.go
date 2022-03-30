@@ -1,12 +1,15 @@
 package ssi
 
 import (
+	"path/filepath"
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
 	didmethod "github.com/findy-network/findy-agent/method"
@@ -29,7 +32,7 @@ type AgentType interface {
 type Agent interface {
 	AgentType
 	Wallet() (h int)
-	ManagedWallet() managed.Wallet
+	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() *DID
 	CreateDID(seed string) (agentDid *DID)
 	NewDID(method string) core.DID
@@ -78,7 +81,8 @@ There is DIDAgent.Type where this DIDAgent can be EA only. That type is used for
 test and CLI Go clients.
 */
 type DIDAgent struct {
-	WalletH managed.Wallet
+	WalletH  managed.Wallet
+	StorageH managed.Wallet
 
 	// result future of the wallet export, one time attr, obsolete soon
 	Export Future
@@ -134,9 +138,7 @@ func (a *DIDAgent) IsWorker() bool {
 }
 
 func (a *DIDAgent) AssertWallet() {
-	if a.WalletH == nil {
-		panic("Fatal Programming Error!")
-	}
+	assert.D.True(a.WalletH != nil && a.StorageH != nil)
 }
 
 func (a *DIDAgent) assertPool() {
@@ -146,12 +148,26 @@ func (a *DIDAgent) assertPool() {
 }
 
 func (a *DIDAgent) OpenWallet(aw Wallet) {
-	cfg := new(Wallet)
-	*cfg = aw
-	a.WalletH = wallets.Open(cfg)
+	c := new(Wallet)
+	*c = aw
+	a.WalletH = wallets.Open(c)
 	if glog.V(5) {
 		glog.Info("Opening wallet: ", aw.Config.ID)
 	}
+
+	path := utils.IndyBaseDir()
+	path = filepath.Join(path, "storage")
+	sc := &cfg.AgentStorage{AgentStorageConfig: storage.AgentStorageConfig{
+		AgentKey: generateKey(),
+		AgentID:  aw.ID(),
+		FilePath: path,
+	}}
+	a.StorageH = storages.Open(sc)
+}
+
+func generateKey() string {
+	// TODO
+	return "15308490f1e4026284594dd08d31291bc8ef2aeac730d0daf6ff87bb92d4336c"
 }
 
 func (a *DIDAgent) CloseWallet() {
@@ -166,8 +182,18 @@ func (a *DIDAgent) Wallet() (h int) {
 	return a.WalletH.Handle()
 }
 
-func (a *DIDAgent) ManagedWallet() managed.Wallet {
-	return a.WalletH
+func (a *DIDAgent) ManagedWallet() (managed.Wallet, managed.Wallet) {
+	return a.WalletH, a.StorageH
+}
+
+func (a *DIDAgent) ManagedStorage() managed.Wallet {
+	return a.StorageH
+}
+
+// Storage returns TEMPORARY agent storage object pointer. Note!! You should
+// newer store it, only use by once, even in every single line of code.
+func (a *DIDAgent) Storage() storage.AgentStorage {
+	return a.ManagedStorage().Storage()
 }
 
 func (a *DIDAgent) OpenPool(name string) {
@@ -179,15 +205,15 @@ func (a *DIDAgent) Pool() (v int) {
 }
 
 func (a *DIDAgent) VDR() *vdr.VDR {
-	apiStorage := a.ManagedWallet().Storage()
+	aStorage, ok := a.Storage().(*mgddb.Storage)
+	assert.D.True(ok, "TODO: update type later!!")
 
-	as, ok := apiStorage.(*mgddb.Storage)
-	assert.D.True(ok, "todo: update type later!!")
-
-	return try.To1(vdr.New(as))
+	return try.To1(vdr.New(aStorage))
 }
 
 func (a *DIDAgent) NewDID(method string) core.DID {
+	// TODO: under construction!
+
 	switch method {
 	case methodKey:
 		// we will used the correct VDR to create the correct did
@@ -195,7 +221,7 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 		_ = a.VDR()
 		//		keyVdr := a.VDR().Key()
 		//		keyVdr.Create()
-		return try.To1(didmethod.NewKey(a.ManagedWallet().Storage()))
+		return try.To1(didmethod.NewKey(a.Storage()))
 
 	case methodIndy:
 		return a.CreateDID("")
@@ -207,6 +233,8 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 }
 
 func (a *DIDAgent) NewOutDID(didStr string) core.DID {
+	// TODO: under construction!
+
 	switch "key" { // TODO: we will have to make a way to parse this
 	case methodKey:
 		// we will used the correct VDR to create the correct did
@@ -215,7 +243,7 @@ func (a *DIDAgent) NewOutDID(didStr string) core.DID {
 		//		keyVdr := a.VDR().Key()
 		//		keyVdr.Create()
 		return try.To1(didmethod.NewKeyFromDID(
-			a.ManagedWallet().Storage(),
+			a.Storage(),
 			didStr,
 		))
 
@@ -276,15 +304,15 @@ func (a *DIDAgent) SendNYM(
 }
 
 func (a *DIDAgent) ConnectionStorage() storage.ConnectionStorage {
-	return a.ManagedWallet().Storage().ConnectionStorage()
+	return a.Storage().ConnectionStorage()
 }
 
 func (a *DIDAgent) DIDStorage() storage.DIDStorage {
-	return a.ManagedWallet().Storage().DIDStorage()
+	return a.Storage().DIDStorage()
 }
 
 func (a *DIDAgent) KMS() kms.KeyManager {
-	return a.ManagedWallet().Storage().KMS()
+	return a.Storage().KMS()
 }
 
 // localKey returns a future to the verkey of the DID from a local wallet.
@@ -340,6 +368,14 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
+	defer err2.CatchAll(func(err error) {
+		glog.Warningf("load connection (%s) error: %v", connection.ID, err)
+	}, func(v any) {
+		glog.Warningf("load connection (%s) error: %v", connection.ID, v)
+	})
+
+	assert.D.True(connection.TheirDID != "")
+
 	did := a.LoadDID(connection.TheirDID)
 	did.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
 	return did
@@ -347,23 +383,27 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
 
 func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {
 	a.AssertWallet()
+	assert.D.True(name != "")
 	return a.ConnectionStorage().GetConnection(name)
 }
 
 // FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
 func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
 	defer err2.Catch(func(err error) {
-		glog.Error("cannot find pw by id:", err)
+		glog.Errorf("cannot find pw by DID(%s): %v", my, err)
 	})
 
 	a.AssertWallet()
 
 	connections := try.To1(a.ConnectionStorage().ListConnections())
 
+	glog.V(10).Infoln("connections from find: ", len(connections))
 	for _, item := range connections {
 		if item.MyDID == my {
+			glog.V(10).Infoln("connection found")
 			return &item, nil
 		}
 	}
+	glog.V(10).Infoln("! connection NOT found")
 	return nil, nil
 }

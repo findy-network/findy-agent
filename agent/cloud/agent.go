@@ -204,7 +204,7 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 
 	cp.In = a.LoadDID(pw.MyDID)
 	outDID := a.LoadTheirDID(*pw)
-	outDID.StartEndp(a.ManagedWallet(), pwName)
+	outDID.StartEndp(a.ManagedStorage(), pwName)
 	cp.Out = outDID
 	return cp, nil
 }
@@ -325,14 +325,18 @@ func (a *Agent) loadPWMap() {
 
 	a.AssertWallet()
 
-	connections := try.To1(a.ManagedWallet().Storage().ConnectionStorage().ListConnections())
+	connections := try.To1(a.ConnectionStorage().ListConnections())
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
 	for _, conn := range connections {
+		if conn.TheirDID == "" {
+			glog.Warningf("connection (%s) TheirDID is empty", conn.TheirDID)
+			continue
+		}
 		outDID := a.LoadTheirDID(conn)
-		outDID.StartEndp(a.ManagedWallet(), conn.ID)
+		outDID.StartEndp(a.ManagedStorage(), conn.ID)
 		p := sec.Pipe{
 			In:  a.LoadDID(conn.MyDID),
 			Out: outDID,
