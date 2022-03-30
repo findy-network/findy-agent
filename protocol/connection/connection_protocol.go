@@ -180,7 +180,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	ipl := packet.Payload
 	cnxAddr := packet.Address
-	a := packet.Receiver
+	receiver := packet.Receiver
 
 	safeThreadID := ipl.ThreadID()
 	connectionID := safeThreadID
@@ -212,7 +212,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	//  it back after we are done. This is because AcaPy compatibility
 	ipl.MsgHdr().Thread().ID = connectionID
 
-	wca := a.(ssi.Agent)
+	wca := receiver.(ssi.Agent)
 	calleePw := pairwise.NewCalleePairwise(
 		didexchange.ResponseCreator, wca, ipl.MsgHdr().(didcomm.PwMsg))
 
@@ -253,7 +253,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(psm.AddRep(pwr))
 
 	// SAVE ENDPOINT to wallet
-	try.To(saveConnectionEndpoint(a.ManagedWallet(), connectionID, callerAddress))
+	try.To(saveConnectionEndpoint(managedStorage(receiver), connectionID, callerAddress))
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
@@ -272,7 +272,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	try.To(signature.Sign(res, pipe)) // we must sign the Response before send it
 
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
-	a.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
+	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
@@ -293,7 +293,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
 	cnxAddr := packet.Address
-	a := packet.Receiver
+	receiver := packet.Receiver
 
 	nonce := ipl.ThreadID()
 	response := ipl.MsgHdr().FieldObj().(*didexchange.Response)
@@ -317,24 +317,24 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwr := try.To1(getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce}))
 	msgMeDID := pwr.Caller.DID
-	caller := a.LoadDID(pwr.Caller.DID)
+	caller := receiver.LoadDID(pwr.Caller.DID)
 
 	im := ipl.MsgHdr().(didcomm.PwMsg)
 
 	// Set pairwise info about other end to wallet
 	callee := ssi.NewDid(im.Did(), im.VerKey())
-	callee.Store(a.ManagedWallet())
+	callee.Store(receiver.ManagedWallet())
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
-	caller.SavePairwiseForDID(a.ManagedWallet(), callee, ssi.PairwiseMeta{
+	caller.SavePairwiseForDID(managedStorage(receiver), callee, ssi.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})
 
 	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
-	try.To(saveConnectionEndpoint(a.ManagedWallet(), pwName, calleeEndp.Address()))
+	try.To(saveConnectionEndpoint(managedStorage(receiver), pwName, calleeEndp.Address()))
 
 	// Save Rep and PSM
 	newPwr := &pairwiseRep{
@@ -353,7 +353,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	// Caller DID saved when we sent Conn_Req, in case both parties are us
 
 	callee.SetAEndp(im.Endpoint())
-	a.AddToPWMap(caller, callee, pwName) // to access PW later, map it
+	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	// Update that PSM is successfully Ready
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
@@ -363,8 +363,8 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	return nil
 }
 
-func saveConnectionEndpoint(mgdWallet managed.Wallet, connectionID, theirEndpoint string) error {
-	store := mgdWallet.Storage().ConnectionStorage()
+func saveConnectionEndpoint(mgdStorage managed.Wallet, connectionID, theirEndpoint string) error {
+	store := mgdStorage.Storage().ConnectionStorage()
 	connection, _ := store.GetConnection(connectionID)
 	if connection == nil {
 		connection = &storage.Connection{
@@ -411,4 +411,9 @@ func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) 
 	}}
 
 	return status
+}
+
+func managedStorage(a comm.Receiver) managed.Wallet {
+	_, ms := a.ManagedWallet()
+	return ms
 }
