@@ -27,13 +27,13 @@ type Key struct {
 	pk  []byte
 	vkh any
 
-	storage api.AgentStorage
+	storage api.AgentStorage // TODO: this MUST be a managed handle!
 }
 
 func NewKey(as api.AgentStorage) (id core.DID, err error) {
 	defer err2.Annotate("new did:key", &err)
 
-	keys := as.KMS()
+	keys := as.KMS() // TODO: as must be a handle!
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
@@ -43,7 +43,7 @@ func NewKey(as api.AgentStorage) (id core.DID, err error) {
 func NewKeyFromDID(as api.AgentStorage, didStr string) (id core.DID, err error) {
 	defer err2.Annotate("new did:key from did", &err)
 
-	keys := as.KMS()
+	keys := as.KMS() // TODO: as must be a handle!
 	pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
@@ -66,5 +66,10 @@ func (k Key) SignKey() any {
 }
 
 func (k Key) Storage() api.AgentStorage {
-	return k.storage
+	return k.storage // TODO: as must be a handle!
+}
+
+// TODO: this is mainly for indy but could be merged with SignKey?
+func (k Key) VerKey() string {
+	return string(k.pk)
 }
