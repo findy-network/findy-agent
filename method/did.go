@@ -1,6 +1,8 @@
 package method
 
 import (
+	"strings"
+
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
@@ -10,6 +12,11 @@ import (
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
+
+func MethodString(d string) string {
+	s := strings.Split(d, ":")
+	return s[1]
+}
 
 type Method int
 

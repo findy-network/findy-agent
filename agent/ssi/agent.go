@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/indy"
 	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
@@ -105,6 +106,7 @@ type DIDAgent struct {
 const (
 	methodKey  = "key"
 	methodIndy = "indy"
+	methodSov  = "sov"
 )
 
 func (a *DIDAgent) SAImplID() string {
@@ -228,23 +230,27 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr string) core.DID {
+func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 	// TODO: under construction!
+	defer err2.Return(&err)
 
-	switch "key" { // TODO: we will have to make a way to parse this
+	switch didmethod.MethodString(didStr) {
 	case methodKey:
 		_ = a.VDR()
-		return try.To1(didmethod.NewKeyFromDID(
+		return didmethod.NewKeyFromDID(
 			a.StorageH,
 			didStr,
-		))
+		)
 
-	case methodIndy:
-		return a.CreateDID("")
+	case methodIndy, methodSov:
+		d := indy.DID2KID(didStr)
+		try.To(a.SaveTheirDID(d, verKey))
+		cached := a.DidCache.Get(d, true)
+		assert.D.True(cached.wallet != nil)
+		return cached, nil
 	default:
-		return a.CreateDID("")
-		//assert.That(false, "not supported")
-
+		assert.That(false, "not supported")
+		return nil, nil
 	}
 }
 

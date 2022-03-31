@@ -1,22 +1,33 @@
 package indy
 
 import (
+	"strings"
+
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 )
 
+const MethodPrefix = "did:sov:"
+
+func DID2KID(did string) string {
+	return strings.TrimPrefix(did, MethodPrefix)
+}
+
 func New(handle int) *Indy {
-	storage := &Indy{Handle: handle, packager: nil}
-	p := &Packager{handle: handle, storage: storage}
-	storage.packager = p
-	return storage
+	s := &Indy{Handle: handle, packager: nil}
+	p := &Packager{handle: handle, storage: s}
+	s.packager = p
+	k := NewKMS(handle, s)
+	s.kms = k
+	return s
 }
 
 type Indy struct {
 	Handle int
 
-	packager *Packager
+	packager api.Packager
+	kms      kms.KeyManager
 }
 
 func (i *Indy) Open() error {
@@ -28,7 +39,7 @@ func (i *Indy) Close() error {
 }
 
 func (i *Indy) KMS() kms.KeyManager {
-	panic("not implemented") // TODO: Implement
+	return i.kms
 }
 
 func (i *Indy) DIDStorage() api.DIDStorage {
@@ -44,7 +55,7 @@ func (i *Indy) CredentialStorage() api.CredentialStorage {
 }
 
 func (i *Indy) OurPackager() api.Packager {
-	panic("not implemented") // TODO: Implement
+	return i.packager
 }
 
 // We needed direct wrapping to because Go couldn't keep on with transitive

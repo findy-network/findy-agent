@@ -1,14 +1,16 @@
 package indy
 
 import (
+	"strings"
+
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	indycrypto "github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/crypto"
 	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
-	"github.com/hyperledger/aries-framework-go/pkg/vdr"
 	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -32,7 +34,7 @@ type Packager struct {
 }
 
 func (p *Packager) KMS() kms.KeyManager {
-	panic("not implemented") // TODO: Implement
+	return p.storage.KMS()
 }
 
 func (p *Packager) Crypto() cryptoapi.Crypto {
@@ -79,12 +81,13 @@ func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err erro
 	defer err2.Annotate("indy pack message", &err)
 
 	wallet := p.handle
+	toDID := envelope.ToKeys[0]
+	assert.D.True(toDID != "")
 
-	vk := envelope.ToKeys[0] // p.Out.VerKey()
-	assert.D.True(vk != "")
+	toVerKey := p.didStrToVerKey(toDID)
 
 	if glog.V(5) {
-		glog.Infof("<== Pack: %s, w(%d)\n", vk, wallet)
+		glog.Infof("<== Pack: %s, w(%d)\n", toVerKey, wallet)
 
 		// TODO: do not log sensitive data in production
 		if glog.V(6) {
@@ -92,12 +95,19 @@ func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err erro
 		}
 	}
 
-	senderKey := string(envelope.FromKey) //p.In.VerKey()
+	senderKey := p.didStrToVerKey(string(envelope.FromKey))
 
-	r := <-indycrypto.Pack(wallet, senderKey, envelope.Message, vk)
+	r := <-indycrypto.Pack(wallet, senderKey, envelope.Message, toVerKey)
 	try.To(r.Err())
 
 	return r.Bytes(), nil
+}
+
+func (p *Packager) didStrToVerKey(vk string) string {
+	kms := p.KMS()
+	vk = strings.TrimPrefix(vk, MethodPrefix)
+	vk = try.To1(kms.Get(vk)).(*Handle).VerKey
+	return vk
 }
 
 func (p *Packager) StorageProvider() storage.Provider {

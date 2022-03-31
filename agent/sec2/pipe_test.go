@@ -101,7 +101,8 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	didIn := agent.NewDID("key")
 	require.NotNil(t, didIn)
 	println(didIn.String())
-	didOut := agent.NewOutDID(key2)
+	didOut, err := agent.NewOutDID(key2, "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println(didOut.String())
 
@@ -129,12 +130,14 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	println("in: ", didIn.String())
 
 	// give agent2's prime DID (input) to agent1's out DID
-	didOut := agent.NewOutDID(didIn2.String())
+	didOut, err := agent.NewOutDID(didIn2.String(), "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println("out: ", didOut.String())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
-	didOut2 := agent2.NewOutDID(didIn.String())
+	didOut2, err := agent2.NewOutDID(didIn.String(), "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut2)
 	println("out2: ", didOut2.String())
 
@@ -160,18 +163,21 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	require.True(t, ok)
 }
 
-func _(t *testing.T) {
+func TestIndyPipe(t *testing.T) {
 	didIn := agent.NewDID("indy")
 	str := didIn.String()
 	require.NotEmpty(t, str)
 	println(str)
 
 	didIn2 := agent2.NewDID("indy")
-	str = didIn.String()
-	require.NotEmpty(t, str)
-	println(str)
+	did2 := didIn2.String()
+	require.NotEmpty(t, did2)
+	println(did2)
 
-	p := Pipe{In: didIn, Out: didIn2}
+	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
+	require.NoError(t, err)
+
+	p := Pipe{In: didIn, Out: didOut}
 
 	message := []byte("message")
 
@@ -179,23 +185,21 @@ func _(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, packed)
 
-	//	didOut := agent.NewDID("key")
-	//	println(didOut.String())
-	//	didRoute1 := agent.NewDID("key")
-	//	println(didRoute1.String())
-	//	didRoute2 := agent.NewDID("key")
-	//	println(didRoute2.String())
-	//
-	//	require.NotNil(t, didIn)
-	//	require.NotNil(t, didOut)
-	//	require.NotNil(t, didRoute1)
-	//	require.NotNil(t, didRoute2)
-	//
-	//	message := []byte("message")
-	//
-	//	p := Pipe{In: didIn, Out: didOut}
-	//
-	//	packed, _ := try.To2(p.Pack(message))
-	//	received, _ := try.To2(p.Unpack(packed))
-	//	require.Equal(t, message, received)
+	didOut2, err := agent2.NewOutDID(didIn.String(), didIn.VerKey())
+	require.NoError(t, err)
+
+	p2 := Pipe{In: didIn2, Out: didOut2}
+	received, _ := try.To2(p2.Unpack(packed))
+	require.Equal(t, message, received)
+
+	sign, _, err := p.Sign(message)
+	require.NoError(t, err)
+
+	// Signature verification must be done from p2 because p2 has only pubKey
+	// of the DID in the 'wallet' where p2 is connected to. This way the test
+	// follows the real world situation
+	ok, _, err := p2.Verify(message, sign)
+	require.NoError(t, err)
+
+	require.True(t, ok)
 }
