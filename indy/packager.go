@@ -64,7 +64,7 @@ func (p *Packager) UnpackMessage(
 
 	// TODO: do not log sensitive data in production
 	if glog.V(6) {
-		glog.Infof("<== Unpacked: %s\n", string(unpacked.Message))
+		glog.Infof("<== Unpacked: %s\n", unpacked.Message)
 	}
 
 	return &transport.Envelope{
