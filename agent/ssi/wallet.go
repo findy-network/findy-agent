@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -37,7 +38,13 @@ var (
 func AgentStorage(h int) api.AgentStorage {
 	agentStorages.Lock()
 	defer agentStorages.Unlock()
-	return agentStorages.indys[h]
+
+	storage, ok := agentStorages.indys[h]
+	if !ok {
+		glog.Warningf("handle not found!")
+		assert.D.True(ok, "indy handle must exist in the handle map")
+	}
+	return storage
 }
 
 func NewWalletCfg(name, key string) (w *Wallet) {
@@ -120,11 +127,17 @@ func (w *Wallet) OpenWallet() (h int, err error) {
 	f := w.Open()
 	try.To(f.Result().Err())
 
+	oldHandle := w.handle
 	w.handle = f.Int()
-	if w.storage == nil {
+	if w.storage == nil { // first opening
 		w.storage = indy.New(w.handle)
 
 		agentStorages.Lock()
+		agentStorages.indys[w.handle] = w.storage
+		agentStorages.Unlock()
+	} else if oldHandle != w.handle { // update the handle value
+		agentStorages.Lock()
+		delete(agentStorages.indys, oldHandle)
 		agentStorages.indys[w.handle] = w.storage
 		agentStorages.Unlock()
 	}

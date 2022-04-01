@@ -234,7 +234,7 @@ func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 	// TODO: under construction!
 	defer err2.Return(&err)
 
-	switch didmethod.MethodString(didStr) {
+	switch didmethod.String(didStr) {
 	case methodKey:
 		_ = a.VDR()
 		return didmethod.NewKeyFromDID(
@@ -321,11 +321,11 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	// using did storage to get the verkey - could be also fetched from indy wallet directly
 	// eventually all data should be fetched from agent storage and not from indy wallet
-	did := try.To1(a.DIDStorage().GetDID(didName))
+	d := try.To1(a.DIDStorage().GetDID(didName))
 
-	glog.V(5).Infoln("found localKey: ", didName, did.IndyVerKey)
+	glog.V(5).Infoln("found localKey: ", didName, d.IndyVerKey)
 
-	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did.IndyVerKey}}, On: Consumed}
+	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: Consumed}
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
@@ -374,9 +374,9 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
 
 	assert.D.True(connection.TheirDID != "")
 
-	did := a.LoadDID(connection.TheirDID)
-	did.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
-	return did
+	d := a.LoadDID(connection.TheirDID)
+	d.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
+	return d
 }
 
 func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {
