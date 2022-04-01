@@ -13,7 +13,7 @@ import (
 	"github.com/lainio/err2/try"
 )
 
-func MethodString(d string) string {
+func String(d string) string {
 	s := strings.Split(d, ":")
 	return s[1]
 }

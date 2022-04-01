@@ -21,7 +21,7 @@ func TestMethodString(t *testing.T) {
 	for i, tt := range tests {
 		name := fmt.Sprintf("test_%d", i)
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tt.method, MethodString(tt.did))
+			require.Equal(t, tt.method, String(tt.did))
 		})
 	}
 }
