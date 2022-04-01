@@ -332,7 +332,7 @@ func (a *Agent) loadPWMap() {
 
 	for _, conn := range connections {
 		if conn.TheirDID == "" {
-			glog.Warningf("connection (%s) TheirDID is empty", conn.TheirDID)
+			glog.V(15).Infof("connection (%s) TheirDID is empty", conn.TheirDID)
 			continue
 		}
 		outDID := a.LoadTheirDID(conn)
