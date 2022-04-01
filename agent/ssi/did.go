@@ -8,17 +8,18 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/indy"
 	dto "github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
 type DidComm interface {
 	Did() string
+	Storage() managed.Wallet
 }
 
 type Out interface {
@@ -37,7 +38,10 @@ type In interface {
 // DID is an application framework level wrapper for findy.DID implementation.
 // Uses Future to async processing of the findy.Channel results.
 type DID struct {
-	wallet managed.Wallet // Wallet handle if available
+	// Wallet handle if available.
+	// Implementation Note: we will build access with these handles to the Indy
+	// AgentStorage. managed.WalletCfg.UniqueID() will be the key.
+	wallet managed.Wallet
 
 	data   *Future // DID data when queried from the wallet or received somewhere
 	stored *Future // result of the StartStore Their DID operation
@@ -52,23 +56,35 @@ type DID struct {
 
 }
 
-func (d *DID) Storage() api.AgentStorage {
-	assert.D.NoImplementation()
-	return nil
+func (d *DID) Storage() managed.Wallet {
+	return d.wallet
 }
 
+func (d *DID) Packager() api.Packager {
+	return AgentStorage(d.wallet.Handle()).OurPackager()
+}
+
+func (d *DID) KMS() *indy.KMS {
+	return AgentStorage(d.wallet.Handle()).OurPackager().KMS().(*indy.KMS)
+}
+
+// String returns a string in DID format e.g. 'did:sov:xxx..'
 func (d *DID) String() string {
-	panic("not implemented") // TODO: Implement
+	return indy.MethodPrefix + d.Did()
 }
 
+// KID returns a KMS specific key ID that can be used to Get KH from KMS.
 func (d *DID) KID() string {
-	assert.D.NoImplementation()
-	return ""
+	return d.Did()
 }
 
+// SignKey return a indy.Handle including wallet SDK handle (int) and a VerKey
+// TODO: Let's think if wee need a KID for there as well
 func (d *DID) SignKey() any {
-	assert.D.NoImplementation()
-	return ""
+	return &indy.Handle{
+		Wallet: d.Wallet(),
+		VerKey: d.VerKey(),
+	}
 }
 
 type PairwiseMeta struct {
@@ -77,7 +93,9 @@ type PairwiseMeta struct {
 }
 
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
-	return &DID{wallet: wallet, data: f}
+	d := &DID{wallet: wallet, data: f}
+	d.SetWallet(wallet)
+	return d
 }
 
 func NewDid(did, verkey string) (d *DID) {
@@ -94,6 +112,7 @@ func NewOutDid(verkey string, route []string) (d *DID) {
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
 	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
+	d.SetWallet(wallet)
 	return d
 }
 
@@ -126,6 +145,9 @@ func (d *DID) Wallet() int {
 
 func (d *DID) SetWallet(w managed.Wallet) {
 	d.wallet = w
+	if d.Did() != "" && d.VerKey() != "" {
+		d.KMS().Add(d.Did(), d.VerKey())
+	}
 }
 
 // Store stores this DID as their DID to given wallet. Work is done thru futures
@@ -152,6 +174,11 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 	}))
 
 	d.Lock()
+	// we use stored lock just for extra safety. The whole indy.DID implementation
+	// will change
+	if d.wallet == nil {
+		d.SetWallet(mgdWallet)
+	}
 	d.stored = f
 	d.Unlock()
 }

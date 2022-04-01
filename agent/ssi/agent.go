@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/indy"
 	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
@@ -105,6 +106,7 @@ type DIDAgent struct {
 const (
 	methodKey  = "key"
 	methodIndy = "indy"
+	methodSov  = "sov"
 )
 
 func (a *DIDAgent) SAImplID() string {
@@ -216,12 +218,8 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 
 	switch method {
 	case methodKey:
-		// we will used the correct VDR to create the correct did
-		// the VDR is the factory for a DID method
 		_ = a.VDR()
-		//		keyVdr := a.VDR().Key()
-		//		keyVdr.Create()
-		return try.To1(didmethod.NewKey(a.Storage()))
+		return try.To1(didmethod.NewKey(a.StorageH))
 
 	case methodIndy:
 		return a.CreateDID("")
@@ -232,27 +230,27 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr string) core.DID {
+func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 	// TODO: under construction!
+	defer err2.Return(&err)
 
-	switch "key" { // TODO: we will have to make a way to parse this
+	switch didmethod.String(didStr) {
 	case methodKey:
-		// we will used the correct VDR to create the correct did
-		// the VDR is the factory for a DID method
 		_ = a.VDR()
-		//		keyVdr := a.VDR().Key()
-		//		keyVdr.Create()
-		return try.To1(didmethod.NewKeyFromDID(
-			a.Storage(),
+		return didmethod.NewKeyFromDID(
+			a.StorageH,
 			didStr,
-		))
+		)
 
-	case methodIndy:
-		return a.CreateDID("")
+	case methodIndy, methodSov:
+		d := indy.DID2KID(didStr)
+		try.To(a.SaveTheirDID(d, verKey))
+		cached := a.DidCache.Get(d, true)
+		assert.D.True(cached.wallet != nil)
+		return cached, nil
 	default:
-		return a.CreateDID("")
-		//assert.That(false, "not supported")
-
+		assert.That(false, "not supported")
+		return nil, nil
 	}
 }
 
@@ -323,11 +321,11 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	// using did storage to get the verkey - could be also fetched from indy wallet directly
 	// eventually all data should be fetched from agent storage and not from indy wallet
-	did := try.To1(a.DIDStorage().GetDID(didName))
+	d := try.To1(a.DIDStorage().GetDID(didName))
 
-	glog.V(5).Infoln("found localKey: ", didName, did.IndyVerKey)
+	glog.V(5).Infoln("found localKey: ", didName, d.IndyVerKey)
 
-	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did.IndyVerKey}}, On: Consumed}
+	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: Consumed}
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
@@ -376,9 +374,9 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
 
 	assert.D.True(connection.TheirDID != "")
 
-	did := a.LoadDID(connection.TheirDID)
-	did.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
-	return did
+	d := a.LoadDID(connection.TheirDID)
+	d.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
+	return d
 }
 
 func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {

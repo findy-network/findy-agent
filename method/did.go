@@ -1,6 +1,9 @@
 package method
 
 import (
+	"strings"
+
+	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -10,6 +13,11 @@ import (
 	"github.com/lainio/err2/try"
 )
 
+func String(d string) string {
+	s := strings.Split(d, ":")
+	return s[1]
+}
+
 type Method int
 
 const (
@@ -17,9 +25,9 @@ const (
 	MethodPeer
 )
 
-func New(as api.AgentStorage, method Method) (id core.DID, err error) {
+func New(hStorage managed.Wallet, method Method) (id core.DID, err error) {
 	assert.D.True(method == MethodKey)
-	return NewKey(as)
+	return NewKey(hStorage)
 }
 
 type Key struct {
@@ -27,27 +35,33 @@ type Key struct {
 	pk  []byte
 	vkh any
 
-	storage api.AgentStorage
+	handle managed.Wallet
 }
 
-func NewKey(as api.AgentStorage) (id core.DID, err error) {
+func NewKey(hStorage managed.Wallet) (id core.DID, err error) {
 	defer err2.Annotate("new did:key", &err)
 
-	keys := as.KMS()
+	keys := hStorage.Storage().KMS()
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
-	return Key{storage: as, kid: kid, pk: pk, vkh: kh}, nil
+	return Key{handle: hStorage, kid: kid, pk: pk, vkh: kh}, nil
 }
 
-func NewKeyFromDID(as api.AgentStorage, didStr string) (id core.DID, err error) {
+func NewKeyFromDID(
+	hStorage managed.Wallet,
+	didStr string,
+) (
+	id core.DID,
+	err error,
+) {
 	defer err2.Annotate("new did:key from did", &err)
 
-	keys := as.KMS()
+	keys := hStorage.Storage().KMS()
 	pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
-	return Key{storage: as, kid: "", pk: pk, vkh: kh}, nil
+	return Key{handle: hStorage, kid: "", pk: pk, vkh: kh}, nil
 }
 
 func (k Key) String() string {
@@ -65,6 +79,15 @@ func (k Key) SignKey() any {
 	return k.vkh
 }
 
-func (k Key) Storage() api.AgentStorage {
-	return k.storage
+func (k Key) Storage() managed.Wallet {
+	return k.handle
+}
+
+// TODO: this is mainly for indy but could be merged with SignKey?
+func (k Key) VerKey() string {
+	return string(k.pk)
+}
+
+func (k Key) Packager() api.Packager {
+	return k.handle.Storage().OurPackager()
 }

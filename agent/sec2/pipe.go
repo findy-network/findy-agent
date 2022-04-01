@@ -104,6 +104,11 @@ func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
 	return
 }
 
+// IsNull returns true if pipe is null.
+func (p Pipe) IsNull() bool {
+	return p.In == nil
+}
+
 func getEpochTime() int64 {
 	return time.Now().Unix()
 }
@@ -118,5 +123,5 @@ func (p Pipe) defMediaType() string {
 func (p Pipe) packager() api.Packager {
 	assert.D.True(p.In.Storage() != nil)
 
-	return p.In.Storage().OurPackager()
+	return p.In.Packager()
 }

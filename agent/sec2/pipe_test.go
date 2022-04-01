@@ -101,7 +101,8 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	didIn := agent.NewDID("key")
 	require.NotNil(t, didIn)
 	println(didIn.String())
-	didOut := agent.NewOutDID(key2)
+	didOut, err := agent.NewOutDID(key2, "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println(didOut.String())
 
@@ -129,12 +130,14 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	println("in: ", didIn.String())
 
 	// give agent2's prime DID (input) to agent1's out DID
-	didOut := agent.NewOutDID(didIn2.String())
+	didOut, err := agent.NewOutDID(didIn2.String(), "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println("out: ", didOut.String())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
-	didOut2 := agent2.NewOutDID(didIn.String())
+	didOut2, err := agent2.NewOutDID(didIn.String(), "")
+	require.NoError(t, err)
 	require.NotNil(t, didOut2)
 	println("out2: ", didOut2.String())
 
@@ -153,6 +156,47 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 
 	// Signature verification must done from p2 because p2 has only pubKey of
 	// the DID in the 'wallet' where p2 is connected to. This way the test
+	// follows the real world situation
+	ok, _, err := p2.Verify(message, sign)
+	require.NoError(t, err)
+
+	require.True(t, ok)
+}
+
+func TestIndyPipe(t *testing.T) {
+	didIn := agent.NewDID("indy")
+	str := didIn.String()
+	require.NotEmpty(t, str)
+	println(str)
+
+	didIn2 := agent2.NewDID("indy")
+	did2 := didIn2.String()
+	require.NotEmpty(t, did2)
+	println(did2)
+
+	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
+	require.NoError(t, err)
+
+	p := Pipe{In: didIn, Out: didOut}
+
+	message := []byte("message")
+
+	packed, _, err := p.Pack(message)
+	require.NoError(t, err)
+	require.NotNil(t, packed)
+
+	didOut2, err := agent2.NewOutDID(didIn.String(), didIn.VerKey())
+	require.NoError(t, err)
+
+	p2 := Pipe{In: didIn2, Out: didOut2}
+	received, _ := try.To2(p2.Unpack(packed))
+	require.Equal(t, message, received)
+
+	sign, _, err := p.Sign(message)
+	require.NoError(t, err)
+
+	// Signature verification must be done from p2 because p2 has only pubKey
+	// of the DID in the 'wallet' where p2 is connected to. This way the test
 	// follows the real world situation
 	ok, _, err := p2.Verify(message, sign)
 	require.NoError(t, err)
