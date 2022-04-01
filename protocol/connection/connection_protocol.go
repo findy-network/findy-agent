@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"errors"
 
-	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -138,7 +137,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	ssiWA.AddDIDCache(caller)
 
 	// Write EA's new DID (caller) to CA's wallet (e.g. routing)
-	try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
+	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &pairwiseRep{
@@ -257,9 +256,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
-	ca := agency.RcvrCA(cnxAddr)
-	try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
-	try.To(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey()))
+	// ca := agency.RcvrCA(cnxAddr)
+	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
+	// try.To(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey()))
 
 	res := msg.FieldObj().(*didexchange.Response)
 	// update caller with route information
@@ -292,7 +291,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
-	cnxAddr := packet.Address
+	// cnxAddr := packet.Address
 	receiver := packet.Receiver
 
 	nonce := ipl.ThreadID()
@@ -348,8 +347,8 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
 	// future routing. Everything goes thru CA.
-	ca := agency.RcvrCA(cnxAddr)
-	try.To(ca.SaveTheirDID(callee.Did(), callee.VerKey()))
+	// ca := agency.RcvrCA(cnxAddr)
+	// try.To(ca.SaveTheirDID(callee.Did(), callee.VerKey()))
 	// Caller DID saved when we sent Conn_Req, in case both parties are us
 
 	callee.SetAEndp(im.Endpoint())
