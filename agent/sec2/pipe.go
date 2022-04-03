@@ -4,9 +4,13 @@ import (
 	"encoding/binary"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/indy"
 	"github.com/golang/glog"
+	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -27,8 +31,17 @@ func Init(defMediaType string) {
 type Pipe struct {
 	In  core.DID
 	Out core.DID
+}
 
-	mediaType string
+// NewPipeByVerkey creates a new secure pipe by our DID and other end's public
+// key.
+func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
+	out := ssi.NewOutDid(verkey, route) // we know verkey only
+
+	return &Pipe{
+		In:  did,
+		Out: out,
+	}
 }
 
 // Verify verifies signature of the message and returns the verification key.
@@ -37,10 +50,10 @@ type Pipe struct {
 func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
 	defer err2.Annotate("pipe sign", &err)
 
-	c := p.packager().Crypto()
+	c := p.crypto()
 	try.To(c.Verify(signature, msg, p.Out.SignKey()))
 
-	return true, "", nil
+	return true, p.Out.VerKey(), nil
 }
 
 // Sign sings the message and returns the verification key. Note! It throws err2
@@ -48,11 +61,12 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
 func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("pipe sign", &err)
 
-	c := p.packager().Crypto()
+	c := p.crypto()
 	kms := p.packager().KMS()
 
 	kh := try.To1(kms.Get(p.In.KID()))
 	dst = try.To1(c.Sign(src, kh))
+	vk = p.In.VerKey()
 
 	return
 }
@@ -82,6 +96,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	defer err2.Annotate("sec pipe pack", &err)
 
 	media := p.defMediaType()
+	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
 
 	// pack a non-empty envelope using packer selected by mediaType - should pass
 	dst = try.To1(p.packager().PackMessage(&transport.Envelope{
@@ -109,18 +124,31 @@ func (p Pipe) IsNull() bool {
 	return p.In == nil
 }
 
+// EA returns endpoint of the agent.
+func (p Pipe) EA() (ae service.Addr, err error) {
+	return p.Out.AEndp()
+}
+
 func getEpochTime() int64 {
 	return time.Now().Unix()
 }
 
 func (p Pipe) defMediaType() string {
-	if p.mediaType == "" {
-		return defaultMediaType
+	return defaultMediaType
+}
+
+func (p Pipe) crypto() cryptoapi.Crypto {
+	if p.packager() == nil {
+		glog.V(10).Infoln("-- using Indy crypto as a default")
+		return new(indy.Crypto)
 	}
-	return p.mediaType
+	return p.packager().Crypto()
 }
 
 func (p Pipe) packager() api.Packager {
+	if p.In == nil {
+		return nil
+	}
 	assert.D.True(p.In.Storage() != nil)
 
 	return p.In.Packager()

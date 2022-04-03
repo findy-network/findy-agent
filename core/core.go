@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 )
 
@@ -11,6 +12,15 @@ type DID interface {
 	// Validate() error
 
 	KID() string
+	Did() string // this is alias for KID() TODO: remove when done with ssi.DID
+
+	StartEndp(storageH managed.Wallet, connectionID string)
+	Store(mgdWallet, mgdStorage managed.Wallet)
+	SavePairwiseForDID(mStorage managed.Wallet, theirDID DID, pw PairwiseMeta)
+	StoreResult() error
+	AEndp() (ae service.Addr, err error)
+	SetAEndp(ae service.Addr)
+
 	String() string
 	SignKey() any
 	Packager() api.Packager
@@ -95,4 +105,9 @@ type Pipe interface {
 }
 
 type Destination struct {
+}
+
+type PairwiseMeta struct {
+	Name  string
+	Route []string
 }

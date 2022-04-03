@@ -6,9 +6,10 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/sec2"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
@@ -43,7 +44,7 @@ type Agent struct {
 	ssi.DIDAgent
 
 	// replace transport with caDID
-	myDID *ssi.DID
+	myDID core.DID
 
 	// worker agent performs the actual protocol tasks
 	worker agentPtr
@@ -124,7 +125,7 @@ func NewSeedAgent(rootDid, caDid, caVerKey string, cfg *ssi.Wallet) *SeedAgent {
 	}
 }
 
-type PipeMap map[string]sec.Pipe
+type PipeMap map[string]sec2.Pipe
 
 // NewEA creates a new EA without any initialization.
 func NewEA() *Agent {
@@ -148,11 +149,11 @@ func (a *Agent) AttachSAImpl(implID string) {
 	}
 }
 
-func (a *Agent) SetMyDID(myDID *ssi.DID) {
+func (a *Agent) SetMyDID(myDID core.DID) {
 	a.myDID = myDID
 }
 
-func (a *Agent) MyDID() *ssi.DID {
+func (a *Agent) MyDID() core.DID {
 	return a.myDID
 }
 
@@ -186,7 +187,7 @@ func (a *Agent) CAEndp() (endP *endp.Addr) {
 	}
 }
 
-func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
+func (a *Agent) PwPipe(pwName string) (cp sec2.Pipe, err error) {
 	defer err2.Return(&err)
 
 	a.pwLock.Lock()
@@ -224,7 +225,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 
 		// getting wallet credentials
 		// CA and EA wallets have same key, they have same root DID
-		key, err := enclave.WalletKeyByDID(ca.RootDid().Did())
+		key, err := enclave.WalletKeyByDID(ca.RootDid().KID())
 		if err != nil {
 			glog.Error("cannot get wallet key:", err)
 			panic(err)
@@ -337,7 +338,7 @@ func (a *Agent) loadPWMap() {
 		}
 		outDID := a.LoadTheirDID(conn)
 		outDID.StartEndp(a.ManagedStorage(), conn.ID)
-		p := sec.Pipe{
+		p := sec2.Pipe{
 			In:  a.LoadDID(conn.MyDID),
 			Out: outDID,
 		}
@@ -347,8 +348,8 @@ func (a *Agent) loadPWMap() {
 	}
 }
 
-func (a *Agent) AddToPWMap(me, you *ssi.DID, name string) sec.Pipe {
-	pipe := sec.Pipe{
+func (a *Agent) AddToPWMap(me, you core.DID, name string) sec2.Pipe {
+	pipe := sec2.Pipe{
 		In:  me,
 		Out: you,
 	}
@@ -362,7 +363,7 @@ func (a *Agent) AddToPWMap(me, you *ssi.DID, name string) sec.Pipe {
 	return pipe
 }
 
-func (a *Agent) AddPipeToPWMap(p sec.Pipe, name string) {
+func (a *Agent) AddPipeToPWMap(p sec2.Pipe, name string) {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
@@ -370,7 +371,7 @@ func (a *Agent) AddPipeToPWMap(p sec.Pipe, name string) {
 	a.pwNames[name] = p
 }
 
-func (a *Agent) SecPipe(meDID string) sec.Pipe {
+func (a *Agent) SecPipe(meDID string) sec2.Pipe {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 

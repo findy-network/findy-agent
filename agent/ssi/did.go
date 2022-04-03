@@ -8,8 +8,9 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
-	dto "github.com/findy-network/findy-common-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
@@ -52,7 +53,7 @@ type DID struct {
 
 	sync.Mutex // when setting Future ptrs making sure that happens atomically
 
-	pwMeta *PairwiseMeta // Meta data for pairwise
+	pwMeta *core.PairwiseMeta // Meta data for pairwise
 
 }
 
@@ -70,7 +71,11 @@ func (d *DID) KMS() *indy.KMS {
 
 // String returns a string in DID format e.g. 'did:sov:xxx..'
 func (d *DID) String() string {
-	return indy.MethodPrefix + d.Did()
+	dStr := d.Did()
+	if dStr == "" { // invitations have only VerKeys no (D)ID, bad design
+		dStr = d.VerKey()
+	}
+	return indy.MethodPrefix + dStr
 }
 
 // KID returns a KMS specific key ID that can be used to Get KH from KMS.
@@ -87,11 +92,6 @@ func (d *DID) SignKey() any {
 	}
 }
 
-type PairwiseMeta struct {
-	Name  string
-	Route []string
-}
-
 func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
 	d := &DID{wallet: wallet, data: f}
 	d.SetWallet(wallet)
@@ -104,9 +104,9 @@ func NewDid(did, verkey string) (d *DID) {
 }
 
 func NewOutDid(verkey string, route []string) (d *DID) {
-	did := NewDid("", verkey)
-	did.pwMeta = &PairwiseMeta{Route: route}
-	return did
+	d = NewDid("", verkey)
+	d.pwMeta = &core.PairwiseMeta{Route: route}
+	return d
 }
 
 func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
@@ -162,6 +162,7 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
 
+	glog.V(5).Infof("Store DID %s -> %d", ds, mgdWallet.Handle())
 	f := new(Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
@@ -213,10 +214,12 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, theirDID *DID, pw PairwiseMeta) {
+func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core.PairwiseMeta) {
 	defer err2.Catch(func(err error) {
 		glog.Warningf("save pairwise for DID error: %v", err)
 	})
+
+	theirDID := tDID.(*DID)
 
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil

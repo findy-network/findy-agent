@@ -27,10 +27,13 @@ type Handle struct {
 }
 
 type Packager struct {
-	handle  int
 	storage api.AgentStorage
 
 	crypto Crypto
+}
+
+func (p *Packager) handle() int {
+	return p.storage.(*Indy).Handle
 }
 
 func (p *Packager) KMS() kms.KeyManager {
@@ -53,7 +56,7 @@ func (p *Packager) UnpackMessage(
 ) {
 	defer err2.Annotate("indy unpack message", &err)
 
-	wallet := p.handle
+	wallet := p.handle()
 
 	if glog.V(5) {
 		glog.Infof("<== Unpack: w(%d)\n", wallet)
@@ -80,14 +83,17 @@ func (p *Packager) UnpackMessage(
 func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err error) {
 	defer err2.Annotate("indy pack message", &err)
 
-	wallet := p.handle
+	wallet := p.handle()
 	toDID := envelope.ToKeys[0]
 	assert.D.True(toDID != "")
 
 	toVerKey := p.didStrToVerKey(toDID)
+	senderKey := p.didStrToVerKey(string(envelope.FromKey))
 
 	if glog.V(5) {
-		glog.Infof("<== Pack: %s, w(%d)\n", toVerKey, wallet)
+		glog.Infof("<== Pack: %s, %s", envelope.FromKey, senderKey)
+		glog.Infof("<== Pack: w(%d) %s, %s", wallet,
+			toDID, toVerKey)
 
 		// TODO: do not log sensitive data in production
 		if glog.V(6) {
@@ -95,18 +101,21 @@ func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err erro
 		}
 	}
 
-	senderKey := p.didStrToVerKey(string(envelope.FromKey))
-
 	r := <-indycrypto.Pack(wallet, senderKey, envelope.Message, toVerKey)
 	try.To(r.Err())
 
 	return r.Bytes(), nil
 }
 
+const SovVerKeyLen = 32
+
 func (p *Packager) didStrToVerKey(vk string) string {
-	kms := p.KMS()
 	vk = strings.TrimPrefix(vk, MethodPrefix)
-	vk = try.To1(kms.Get(vk)).(*Handle).VerKey
+	if len(vk) >= SovVerKeyLen {
+		return vk
+	}
+	keyManager := p.KMS()
+	vk = try.To1(keyManager.Get(vk)).(*Handle).VerKey
 	return vk
 }
 

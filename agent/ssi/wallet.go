@@ -138,6 +138,8 @@ func (w *Wallet) OpenWallet() (h int, err error) {
 	} else if oldHandle != w.handle { // update the handle value
 		agentStorages.Lock()
 		delete(agentStorages.indys, oldHandle)
+		storage := w.storage.(*indy.Indy)
+		storage.Handle = w.handle
 		agentStorages.indys[w.handle] = w.storage
 		agentStorages.Unlock()
 	}

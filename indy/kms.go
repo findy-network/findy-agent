@@ -8,7 +8,6 @@ import (
 )
 
 type KMS struct {
-	handle  int
 	storage api.AgentStorage
 
 	kms struct {
@@ -17,14 +16,18 @@ type KMS struct {
 	}
 }
 
-func NewKMS(handle int, storage api.AgentStorage) *KMS {
-	return &KMS{handle: handle, storage: storage,
+func NewKMS(storage api.AgentStorage) *KMS {
+	return &KMS{storage: storage,
 		kms: struct {
 			sync.Mutex
 			verkeys map[string]string
 		}{
 			verkeys: make(map[string]string),
 		}}
+}
+
+func (k *KMS) handle() int {
+	return k.storage.(*Indy).Handle
 }
 
 func (k *KMS) Add(KID, verKey string) {
@@ -46,7 +49,7 @@ func (k *KMS) Get(KID string) (interface{}, error) {
 	verKey := k.kms.verkeys[KID]
 
 	return &Handle{
-		Wallet: k.handle,
+		Wallet: k.handle(),
 		VerKey: verKey,
 	}, nil
 }

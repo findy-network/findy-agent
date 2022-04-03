@@ -174,6 +174,7 @@ func TestIndyPipe(t *testing.T) {
 	require.NotEmpty(t, did2)
 	println(did2)
 
+	did2 = "did:sov:"
 	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
 	require.NoError(t, err)
 
@@ -185,15 +186,16 @@ func TestIndyPipe(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, packed)
 
-	didOut2, err := agent2.NewOutDID(didIn.String(), didIn.VerKey())
+	didOut2, err := agent2.NewOutDID("did:sov:", didIn.VerKey())
 	require.NoError(t, err)
 
 	p2 := Pipe{In: didIn2, Out: didOut2}
 	received, _ := try.To2(p2.Unpack(packed))
 	require.Equal(t, message, received)
 
-	sign, _, err := p.Sign(message)
+	sign, vk, err := p.Sign(message)
 	require.NoError(t, err)
+	require.Equal(t, p2.Out.VerKey(), vk)
 
 	// Signature verification must be done from p2 because p2 has only pubKey
 	// of the DID in the 'wallet' where p2 is connected to. This way the test
@@ -201,5 +203,13 @@ func TestIndyPipe(t *testing.T) {
 	ok, _, err := p2.Verify(message, sign)
 	require.NoError(t, err)
 
+	require.True(t, ok)
+
+	p3 := Pipe{Out: didOut2}
+
+	// Signature verification must be done from p2 because p2 has only pubKey
+	// Now we test the pipe which have only one end, no sender
+	ok, _, err = p3.Verify(message, sign)
+	require.NoError(t, err)
 	require.True(t, ok)
 }

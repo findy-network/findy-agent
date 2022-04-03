@@ -13,11 +13,12 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/sec2"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
@@ -101,7 +102,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	assert.P.True(ok)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		glog.V(3).Infof("it's us who wait connection (%v) to invitation",
+		glog.V(3).Infof("it's us who waits connection (%v) to invitation",
 			deTask.InvitationID)
 
 		wpl := aries.PayloadCreator.New(
@@ -118,7 +119,9 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
 
-	caller := ssiWA.CreateDID("")  // Create a new DID for our end
+	// TODO: SUPER
+	caller := ssiWA.NewDID("sov") // Create a new DID for our end
+
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID
 
@@ -134,7 +137,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Thread: &decorator.Thread{ID: deTask.InvitationID},
 	})
 	// add to the cache until all lazy fetches are called
-	ssiWA.AddDIDCache(caller)
+	ssiWA.AddDIDCache(caller.(*ssi.DID))
 
 	// Write EA's new DID (caller) to CA's wallet (e.g. routing)
 	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
@@ -152,14 +155,17 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// Create payload to send
 	opl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionRequest, msg)
 
+	// TODO: SUPER! create new out DID by its DID str
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	secPipe := sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
-	wa.AddPipeToPWMap(*secPipe, pwr.Name)
+	callee := try.To1(wa.NewOutDID("did:sov:", receiverKey))
+	secPipe := sec2.Pipe{In: caller, Out: callee}
+	//secPipe := sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
+	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
 	try.To(prot.UpdatePSM(me, caller.Did(), task, opl, psm.Sending))
-	try.To(comm.SendPL(*secPipe, task, opl))
+	try.To(comm.SendPL(secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
 	wpl := aries.PayloadCreator.New(
@@ -263,7 +269,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	res := msg.FieldObj().(*didexchange.Response)
 	// update caller with route information
 	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
-	pipe := sec.Pipe{
+	pipe := sec2.Pipe{
 		In:  calleePw.Callee, // This is us
 		Out: caller,          // This is the other end, who sent the Request
 	}
@@ -273,7 +279,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
-	// build the response payload, update PSM, and send the PL with sec.Pipe
+	// build the response payload, update PSM, and send the PL with sec2.Pipe
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
 	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, task, opl))
@@ -326,7 +332,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
-	caller.SavePairwiseForDID(managedStorage(receiver), callee, ssi.PairwiseMeta{
+	caller.SavePairwiseForDID(managedStorage(receiver), callee, core.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})
