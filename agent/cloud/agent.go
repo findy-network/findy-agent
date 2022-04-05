@@ -6,7 +6,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
@@ -125,7 +125,7 @@ func NewSeedAgent(rootDid, caDid, caVerKey string, cfg *ssi.Wallet) *SeedAgent {
 	}
 }
 
-type PipeMap map[string]sec2.Pipe
+type PipeMap map[string]sec.Pipe
 
 // NewEA creates a new EA without any initialization.
 func NewEA() *Agent {
@@ -187,7 +187,7 @@ func (a *Agent) CAEndp() (endP *endp.Addr) {
 	}
 }
 
-func (a *Agent) PwPipe(pwName string) (cp sec2.Pipe, err error) {
+func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 	defer err2.Return(&err)
 
 	a.pwLock.Lock()
@@ -338,7 +338,7 @@ func (a *Agent) loadPWMap() {
 		}
 		outDID := a.LoadTheirDID(conn)
 		outDID.StartEndp(a.ManagedStorage(), conn.ID)
-		p := sec2.Pipe{
+		p := sec.Pipe{
 			In:  a.LoadDID(conn.MyDID),
 			Out: outDID,
 		}
@@ -348,8 +348,8 @@ func (a *Agent) loadPWMap() {
 	}
 }
 
-func (a *Agent) AddToPWMap(me, you core.DID, name string) sec2.Pipe {
-	pipe := sec2.Pipe{
+func (a *Agent) AddToPWMap(me, you core.DID, name string) sec.Pipe {
+	pipe := sec.Pipe{
 		In:  me,
 		Out: you,
 	}
@@ -363,7 +363,7 @@ func (a *Agent) AddToPWMap(me, you core.DID, name string) sec2.Pipe {
 	return pipe
 }
 
-func (a *Agent) AddPipeToPWMap(p sec2.Pipe, name string) {
+func (a *Agent) AddPipeToPWMap(p sec.Pipe, name string) {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
@@ -371,7 +371,7 @@ func (a *Agent) AddPipeToPWMap(p sec2.Pipe, name string) {
 	a.pwNames[name] = p
 }
 
-func (a *Agent) SecPipe(meDID string) sec2.Pipe {
+func (a *Agent) SecPipe(meDID string) sec.Pipe {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 

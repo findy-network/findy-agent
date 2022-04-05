@@ -6,7 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/decorator"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -137,7 +137,7 @@ func ContinuePSM(shift Again) (err error) {
 	outDID := wa.LoadTheirDID(*pairwise)
 	_, storageH := wa.ManagedWallet()
 	outDID.StartEndp(storageH, pairwise.ID)
-	pipe := sec2.Pipe{In: inDID, Out: outDID}
+	pipe := sec.Pipe{In: inDID, Out: outDID}
 
 	sendBack := shift.SendNext != pltype.Terminate
 	plType := shift.SendNext
@@ -216,7 +216,7 @@ func ExecPSM(ts Transition) (err error) {
 	try.To(UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Received))
 
 	var om didcomm.MessageHdr
-	var ep sec2.Pipe
+	var ep sec.Pipe
 	if ts.InOut != nil {
 		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
 
@@ -228,7 +228,7 @@ func ExecPSM(ts Transition) (err error) {
 		_, storageH := ts.Receiver.ManagedWallet()
 		outDID.StartEndp(storageH, pairwise.ID)
 
-		ep = sec2.Pipe{In: inDID, Out: outDID}
+		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
 		opl := aries.PayloadCreator.NewMsg(task.ID(), ts.Payload.Type(), im)

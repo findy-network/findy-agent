@@ -1,4 +1,4 @@
-package sec2_test
+package sec_test
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/pltype"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -61,7 +61,7 @@ var (
 func setUp() {
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
-	sec2.Init(transport.MediaTypeProfileDIDCommAIP1)
+	sec.Init(transport.MediaTypeProfileDIDCommAIP1)
 
 	// first, create agent 1 with the storages
 	walletID := fmt.Sprintf("pipe-test-agent-1%d", time.Now().Unix())
@@ -93,7 +93,7 @@ func TestNewPipe(t *testing.T) {
 
 	message := []byte("message")
 
-	p := sec2.Pipe{In: didIn, Out: didOut}
+	p := sec.Pipe{In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
 	received, _ := try.To2(p.Unpack(packed))
@@ -119,7 +119,7 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 
 	message := []byte("message")
 
-	p := sec2.Pipe{In: didIn, Out: didOut}
+	p := sec.Pipe{In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
 	require.NotNil(t, packed)
@@ -154,8 +154,8 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 
 	message := []byte("message")
 
-	p := sec2.Pipe{In: didIn, Out: didOut}
-	p2 := sec2.Pipe{In: didIn2, Out: didOut2}
+	p := sec.Pipe{In: didIn, Out: didOut}
+	p2 := sec.Pipe{In: didIn2, Out: didOut2}
 
 	packed, _ := try.To2(p.Pack(message))
 	require.NotNil(t, packed)
@@ -189,7 +189,7 @@ func TestIndyPipe(t *testing.T) {
 	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
 	require.NoError(t, err)
 
-	p := sec2.Pipe{In: didIn, Out: didOut}
+	p := sec.Pipe{In: didIn, Out: didOut}
 
 	message := []byte("message")
 
@@ -200,7 +200,7 @@ func TestIndyPipe(t *testing.T) {
 	didOut2, err := agent2.NewOutDID("did:sov:", didIn.VerKey())
 	require.NoError(t, err)
 
-	p2 := sec2.Pipe{In: didIn2, Out: didOut2}
+	p2 := sec.Pipe{In: didIn2, Out: didOut2}
 	received, _ := try.To2(p2.Unpack(packed))
 	require.Equal(t, message, received)
 
@@ -216,7 +216,7 @@ func TestIndyPipe(t *testing.T) {
 
 	require.True(t, ok)
 
-	p3 := sec2.Pipe{Out: didOut2}
+	p3 := sec.Pipe{Out: didOut2}
 
 	// Signature verification must be done from p2 because p2 has only pubKey
 	// Now we test the pipe which have only one end, no sender
@@ -270,7 +270,7 @@ func TestPipe_pack(t *testing.T) {
 	didRoute2 := a.NewDID("indy")
 
 	// Packing pipe with two routing keys
-	packPipe := sec2.NewPipeByVerkey(didIn, didOut.VerKey(),
+	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
 		[]string{didRoute1.VerKey(), didRoute2.VerKey()})
 
 	// Simulate actual aries message
@@ -299,7 +299,7 @@ func TestPipe_pack(t *testing.T) {
 	require.True(t, len(route2Keys) == 1)
 	require.Equal(t, didRoute2.VerKey(), route2Keys[0])
 
-	route1UnpackPipe := sec2.NewPipeByVerkey(didRoute2, didIn.VerKey(), []string{})
+	route1UnpackPipe := sec.NewPipeByVerkey(didRoute2, didIn.VerKey(), []string{})
 	route1FwBytes, _, err := route1UnpackPipe.Unpack(route2bytes)
 	require.NoError(t, err)
 
@@ -312,7 +312,7 @@ func TestPipe_pack(t *testing.T) {
 	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
 	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
 
-	dstUnpackPipe := sec2.NewPipeByVerkey(didOut, didIn.VerKey(), []string{})
+	dstUnpackPipe := sec.NewPipeByVerkey(didOut, didIn.VerKey(), []string{})
 	dstFwBytes, _, err := dstUnpackPipe.Unpack(dto.ToJSONBytes(route1Bytes))
 	require.NoError(t, err)
 

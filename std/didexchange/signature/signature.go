@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/std/didexchange"
@@ -20,7 +20,7 @@ import (
 
 const connectionSigExpTime = 10 * 60 * 60
 
-func Sign(r *didexchange.Response, pipe sec2.Pipe) (err error) {
+func Sign(r *didexchange.Response, pipe sec.Pipe) (err error) {
 	r.ConnectionSignature, err = newConnectionSignature(r.Connection, pipe)
 	return err
 }
@@ -37,7 +37,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 	return ok, err
 }
 
-func newConnectionSignature(connection *didexchange.Connection, pipe sec2.Pipe) (cs *didexchange.ConnectionSignature, err error) {
+func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (cs *didexchange.ConnectionSignature, err error) {
 	defer err2.Annotate("build connection sign", &err)
 
 	connectionJSON := try.To1(json.Marshal(connection))
@@ -74,10 +74,10 @@ func verifyTimestamp(data []byte) (timestamp int64, valid bool) {
 	return timestamp, tsIsValid(timestamp)
 }
 
-// verifySignature verifies a signature inside the structure. If sec2.Pipe is not
+// verifySignature verifies a signature inside the structure. If sec.Pipe is not
 // given, it uses the key from the signature structure. If succeeded it returns
 // a Connection structure, else nil.
-func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec2.Pipe) (c *didexchange.Connection, err error) {
+func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *didexchange.Connection, err error) {
 	defer err2.Annotate("verify sign", &err)
 
 	if pipe != nil && pipe.Out.VerKey() != cs.SignVerKey {
@@ -86,7 +86,7 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec2.Pipe) (c *d
 		panic(s)
 	} else if pipe == nil { // we need a tmp DID for a tmp Pipe
 		did := ssi.NewDid("", cs.SignVerKey)
-		pipe = &sec2.Pipe{Out: did}
+		pipe = &sec.Pipe{Out: did}
 	}
 
 	data := try.To1(utils.DecodeB64(cs.SignedData))

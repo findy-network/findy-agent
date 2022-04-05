@@ -14,7 +14,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -116,7 +116,7 @@ SendPL is helper function to send a protocol messages to receiver which is
 defined in the Task.ReceiverEndp. Function will encrypt messages before sending.
 It doesn't resend PL in case of failure. The recovering in done at PSM level.
 */
-func SendPL(sendPipe sec2.Pipe, task Task, opl didcomm.Payload) (err error) {
+func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
 	defer err2.Annotate("send payload", &err)
 
 	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())

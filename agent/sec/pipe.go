@@ -1,4 +1,4 @@
-package sec2
+package sec
 
 import (
 	"encoding/binary"

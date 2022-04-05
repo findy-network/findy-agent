@@ -13,7 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
@@ -159,8 +159,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
 	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
-	secPipe := sec2.Pipe{In: caller, Out: callee}
-	//secPipe := *sec2.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
+	secPipe := sec.Pipe{In: caller, Out: callee}
+	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -275,7 +275,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	res := msg.FieldObj().(*didexchange.Response)
 	// update caller with route information
 	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
-	pipe := sec2.Pipe{
+	pipe := sec.Pipe{
 		In:  calleePw.Callee, // This is us
 		Out: caller,          // This is the other end, who sent the Request
 	}
@@ -285,7 +285,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
-	// build the response payload, update PSM, and send the PL with sec2.Pipe
+	// build the response payload, update PSM, and send the PL with sec.Pipe
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
 	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, task, opl))

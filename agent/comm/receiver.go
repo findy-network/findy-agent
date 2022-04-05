@@ -5,7 +5,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/managed"
-	"github.com/findy-network/findy-agent/agent/sec2"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
@@ -21,17 +21,17 @@ type Receiver interface {
 	LoadDID(did string) core.DID
 	LoadTheirDID(connection storage.Connection) core.DID
 	WDID() string
-	PwPipe(pw string) (cp sec2.Pipe, err error)
+	PwPipe(pw string) (cp sec.Pipe, err error)
 	NewOutDID(didStr string, verKey ...string) (id core.DID, err error)
 	Wallet() int
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	Pool() int
 	FindPWByDID(my string) (pw *storage.Connection, err error)
 	AttachSAImpl(implID string)
-	AddToPWMap(me, you core.DID, name string) sec2.Pipe
+	AddToPWMap(me, you core.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)
 	CAEndp() (endP *endp.Addr)
-	AddPipeToPWMap(p sec2.Pipe, name string)
+	AddPipeToPWMap(p sec.Pipe, name string)
 	MasterSecret() (string, error)
 	AutoPermission() bool
 	ID() string
