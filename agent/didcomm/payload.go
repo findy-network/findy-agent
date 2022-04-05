@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
@@ -202,8 +202,8 @@ type Msg interface {
 	SubLevelID() string
 	SetSubLevelID(s string)
 
-	Schema() *ssi.Schema
-	SetSchema(sch *ssi.Schema)
+	Schema() *vc.Schema
+	SetSchema(sch *vc.Schema)
 
 	ReceiverEP() service.Addr
 

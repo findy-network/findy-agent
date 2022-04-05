@@ -116,6 +116,10 @@ func (k Key) SetAEndp(ae service.Addr) {
 	assert.D.NoImplementation()
 }
 
+func (k Key) Route() []string {
+	return []string{}
+}
+
 // TODO: this is mainly for indy but could be merged with SignKey?
 func (k Key) VerKey() string {
 	return string(k.pk)

@@ -17,9 +17,11 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/enclave"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
@@ -34,7 +36,7 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/rpc"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
-	"github.com/findy-network/findy-wrapper-go/pool"
+	indypool "github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -145,7 +147,7 @@ func setUp() {
 		server.ResetEnv(sw, exportPath)
 	}
 
-	r := <-pool.SetProtocolVersion(2)
+	r := <-indypool.SetProtocolVersion(2)
 	if r.Err() != nil {
 		log.Panicln(r.Err())
 	}
@@ -159,9 +161,9 @@ func setUp() {
 
 	// IF DEBUGGING ONE TEST use always file ledger
 	if testMode == TestModeCI {
-		ssi.OpenPool("FINDY_MEM_LEDGER")
+		pool.Open("FINDY_MEM_LEDGER")
 	} else {
-		ssi.OpenPool("FINDY_FILE_LEDGER")
+		pool.Open("FINDY_FILE_LEDGER")
 	}
 
 	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
@@ -235,7 +237,7 @@ func tearDown() {
 		removeFiles(home, "/wallets/*")
 	}
 	enclave.WipeSealedBox()
-	ssi.ClosePool()
+	pool.Close()
 }
 
 func removeFiles(home, nameFilter string) {
@@ -304,7 +306,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	ut := time.Now().Unix() - 1545924840
 	schemaName := fmt.Sprintf("NEW_SCHEMA_%v", ut)
 
-	sch := ssi.Schema{
+	sch := vc.Schema{
 		Name:    schemaName,
 		Version: "1.0",
 		Attrs:   []string{"email"},

@@ -1,9 +1,16 @@
 package indy
 
 import (
+	"encoding/json"
 	"strings"
 
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/std/common"
+	"github.com/findy-network/findy-common-go/dto"
+	"github.com/findy-network/findy-wrapper-go"
 	indycrypto "github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/crypto"
@@ -104,7 +111,36 @@ func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err erro
 	r := <-indycrypto.Pack(wallet, senderKey, envelope.Message, toVerKey)
 	try.To(r.Err())
 
-	return r.Bytes(), nil
+	res := r.Bytes()
+
+	for i, toKey := range envelope.ToKeys {
+		if i == 0 {
+			continue
+		}
+		rKey := p.didStrToVerKey(toKey)
+		glog.V(3).Infof("Packing with route key %s->%s",
+			rKey, toKey)
+
+		msgType := pltype.RoutingForward
+		data := make(map[string]interface{})
+		try.To(json.Unmarshal(res, &data))
+		msg := aries.MsgCreator.Create(didcomm.MsgInit{
+			Type: msgType,
+			To:   toVerKey,
+			Msg:  data,
+		})
+		fwdMsg := msg.FieldObj().(*common.Forward)
+
+		// use anon-crypt for routing
+		r := <-indycrypto.Pack(wallet, findy.NullString,
+			dto.ToJSONBytes(fwdMsg), rKey)
+		try.To(r.Err())
+
+		res = r.Bytes()
+		toVerKey = rKey
+	}
+
+	return res, nil
 }
 
 const SovVerKeyLen = 32

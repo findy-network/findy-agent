@@ -20,6 +20,7 @@ type DID interface {
 	StoreResult() error
 	AEndp() (ae service.Addr, err error)
 	SetAEndp(ae service.Addr)
+	Route() []string
 
 	String() string
 	SignKey() any

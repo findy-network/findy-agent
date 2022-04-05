@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
@@ -142,7 +143,7 @@ func (a *agentServer) CreateSchema(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
 
-	sch := &ssi.Schema{
+	sch := &vc.Schema{
 		Name:    s.Name,
 		Version: s.Version,
 		Attrs:   s.Attributes,
@@ -166,7 +167,7 @@ func (a *agentServer) CreateCredDef(
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
-	sch := &ssi.Schema{ID: cdc.SchemaID}
+	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
@@ -205,7 +206,7 @@ func (a *agentServer) GetCredDef(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
 
-	def := try.To1(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
+	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 

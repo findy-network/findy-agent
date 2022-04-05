@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/cmds"
@@ -51,7 +52,7 @@ func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	if c.StewardSeed != "" {
 		seed = c.StewardSeed
 	}
-	f := new(ssi.Future)
+	f := new(async.Future)
 	f.SetChan(did.CreateAndStore(walletFuture.Int(), did.Did{Seed: seed}))
 
 	cmds.Fprintln(w,

@@ -3,7 +3,7 @@ package pool
 import (
 	"io"
 
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/lainio/err2"
 )
@@ -23,9 +23,9 @@ func (c *PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	defer err2.Return(&err)
 
 	cmds.Fprintln(w, "starting to open cnx to:", c.Name)
-	h := ssi.OpenPool(c.Name).Int()
+	h := pool.Open(c.Name).Int()
 	cmds.Fprintln(w, "pool handle:", h)
-	ssi.ClosePool()
+	pool.Close()
 	cmds.Fprintln(w, "pool closed")
 
 	return r, nil

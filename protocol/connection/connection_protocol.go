@@ -155,12 +155,12 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// Create payload to send
 	opl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionRequest, msg)
 
-	// TODO: SUPER! create new out DID by its DID str
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	callee := try.To1(wa.NewOutDID("did:sov:", receiverKey))
+	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
+	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
 	secPipe := sec2.Pipe{In: caller, Out: callee}
-	//secPipe := sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
+	//secPipe := *sec2.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -174,6 +174,12 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 			Type: pltype.AriesConnectionResponse,
 		})
 	try.To(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
+}
+
+func buildRouting(rKey string, rKeys []string) []string {
+	retval := make([]string, 1, len(rKeys)+1)
+	retval[0] = rKey
+	return append(retval, rKeys...)
 }
 
 func handleConnectionRequest(packet comm.Packet) (err error) {

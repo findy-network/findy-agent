@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
@@ -50,7 +51,7 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/storage/email*")
 	removeFiles(home, "/export_wallets/*")
 	enclave.WipeSealedBox()
-	ssi.ClosePool()
+	pool.Close()
 }
 
 func removeFiles(home, nameFilter string) {

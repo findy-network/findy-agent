@@ -4,7 +4,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
@@ -178,7 +178,7 @@ func credDefs(DID string, credDefIDs map[string]struct{}) (cJSON string, err err
 
 	credDefs := make(map[string]map[string]interface{}, len(credDefIDs))
 	for cdID := range credDefIDs {
-		credDef := try.To1(ssi.CredDefFromLedger(DID, cdID))
+		credDef := try.To1(vc.CredDefFromLedger(DID, cdID))
 		credDefObject := map[string]interface{}{}
 		dto.FromJSONStr(credDef, &credDefObject)
 		credDefs[cdID] = credDefObject
@@ -192,7 +192,7 @@ func schemas(DID string, schemaIDs map[string]struct{}) (sJSON string, err error
 
 	schemas := make(map[string]map[string]interface{}, len(schemaIDs))
 	for schemaID := range schemaIDs {
-		sch := ssi.Schema{ID: schemaID}
+		sch := vc.Schema{ID: schemaID}
 		try.To(sch.FromLedger(DID))
 		schemaObject := map[string]interface{}{}
 		dto.FromJSONStr(sch.LazySchema(), &schemaObject)

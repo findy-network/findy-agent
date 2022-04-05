@@ -4,7 +4,9 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/cfg"
@@ -86,7 +88,7 @@ type DIDAgent struct {
 	StorageH managed.Wallet
 
 	// result future of the wallet export, one time attr, obsolete soon
-	Export Future
+	Export async.Future
 
 	// the Root DID which gives us rights to write ledger
 	Root core.DID
@@ -199,11 +201,11 @@ func (a *DIDAgent) Storage() storage.AgentStorage {
 }
 
 func (a *DIDAgent) OpenPool(name string) {
-	OpenPool(name)
+	pool.Open(name)
 }
 
 func (a *DIDAgent) Pool() (v int) {
-	return Pool()
+	return pool.Handle()
 }
 
 func (a *DIDAgent) VDR() *vdr.VDR {
@@ -230,7 +232,7 @@ func (a *DIDAgent) NewDID(method string) core.DID {
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
+func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err error) {
 	// TODO: under construction!
 	defer err2.Return(&err)
 
@@ -249,11 +251,11 @@ func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 		d := indy.DID2KID(didStr)
 		var cached *DID
 		if d != "" {
-			try.To(a.SaveTheirDID(d, verKey))
+			try.To(a.SaveTheirDID(d, verKey[0]))
 			cached = a.DidCache.Get(d, true)
 			assert.D.True(cached.wallet != nil)
 		} else {
-			newDID := NewDid("", verKey)
+			newDID := NewDIDWithRouting("", verKey...)
 			a.DidCache.Add(newDID)
 			cached = newDID
 		}
@@ -269,7 +271,7 @@ func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 // the performance reasons. Most cases seed should be empty string.
 func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	a.AssertWallet()
-	f := new(Future)
+	f := new(async.Future)
 	ch := make(findy.Channel, 1)
 	go func() {
 		defer err2.Catch(func(err error) {
@@ -324,7 +326,7 @@ func (a *DIDAgent) KMS() kms.KeyManager {
 }
 
 // localKey returns a future to the verkey of the DID from a local wallet.
-func (a *DIDAgent) localKey(didName string) (f *Future) {
+func (a *DIDAgent) localKey(didName string) (f *async.Future) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("error when fetching localKey: ", err)
 	})
@@ -335,7 +337,7 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	glog.V(5).Infoln("found localKey: ", didName, d.IndyVerKey)
 
-	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: Consumed}
+	return &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: async.Consumed}
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
@@ -353,7 +355,7 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 
 // OpenDID NOTE! Used by steward only.
 func (a *DIDAgent) OpenDID(name string) *DID {
-	f := new(Future)
+	f := new(async.Future)
 	f.SetChan(did.LocalKey(a.Wallet(), name))
 
 	newDid := NewDid(name, f.Str1())

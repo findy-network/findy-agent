@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
@@ -44,12 +45,12 @@ type DID struct {
 	// AgentStorage. managed.WalletCfg.UniqueID() will be the key.
 	wallet managed.Wallet
 
-	data   *Future // DID data when queried from the wallet or received somewhere
-	stored *Future // result of the StartStore Their DID operation
-	key    *Future // DID construct where key is Future
-	meta   *Future // Meta data stored to DID
-	pw     *Future // Pairwise data stored to DID
-	endp   *Future // When endpoint is started to fetch it's here
+	data   *async.Future // DID data when queried from the wallet or received somewhere
+	stored *async.Future // result of the StartStore Their DID operation
+	key    *async.Future // DID construct where key is Future
+	meta   *async.Future // Meta data stored to DID
+	pw     *async.Future // Pairwise data stored to DID
+	endp   *async.Future // When endpoint is started to fetch it's here
 
 	sync.Mutex // when setting Future ptrs making sure that happens atomically
 
@@ -92,15 +93,21 @@ func (d *DID) SignKey() any {
 	}
 }
 
-func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
+func NewAgentDid(wallet managed.Wallet, f *async.Future) (ad *DID) {
 	d := &DID{wallet: wallet, data: f}
 	d.SetWallet(wallet)
 	return d
 }
 
 func NewDid(did, verkey string) (d *DID) {
-	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: Consumed}
+	f := &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: async.Consumed}
 	return &DID{data: f}
+}
+
+func NewDIDWithRouting(did string, verkey ...string) (d *DID) {
+	d = NewDid("", verkey[0])
+	d.pwMeta = &core.PairwiseMeta{Route: verkey[1:]}
+	return d
 }
 
 func NewOutDid(verkey string, route []string) (d *DID) {
@@ -109,8 +116,8 @@ func NewOutDid(verkey string, route []string) (d *DID) {
 	return d
 }
 
-func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
-	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: Consumed}
+func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *async.Future) (d *DID) {
+	f := &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: async.Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
 	d.SetWallet(wallet)
 	return d
@@ -163,7 +170,7 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 	json := dto.ToJSON(idJSON)
 
 	glog.V(5).Infof("Store DID %s -> %d", ds, mgdWallet.Handle())
-	f := new(Future)
+	f := new(async.Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
 	// Store the DID also to the agent storage
@@ -243,7 +250,7 @@ func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core
 			errStr = err.Error()
 		}
 
-		f := &Future{V: indyDto.Result{Er: indyDto.Err{Error: errStr}}, On: Consumed}
+		f := &async.Future{V: indyDto.Result{Er: indyDto.Err{Error: errStr}}, On: async.Consumed}
 		theirDID.pw = f
 	}
 	if !ok {
@@ -268,10 +275,10 @@ func (d *DID) StartEndp(storageH managed.Wallet, connectionID string) {
 		errStr = err.Error()
 	}
 
-	f := &Future{V: indyDto.Result{
+	f := &async.Future{V: indyDto.Result{
 		Data: indyDto.Data{Str1: endpoint},
 		Er:   indyDto.Err{Error: errStr},
-	}, On: Consumed}
+	}, On: async.Consumed}
 
 	d.Lock()
 	d.endp = f
@@ -298,9 +305,9 @@ func (d *DID) Endpoint() string {
 }
 
 func (d *DID) SetAEndp(ae service.Addr) {
-	d.endp = &Future{
+	d.endp = &async.Future{
 		V:  indyDto.Result{Data: indyDto.Data{Str1: ae.Endp, Str2: ae.Key}},
-		On: Consumed,
+		On: async.Consumed,
 	}
 }
 
