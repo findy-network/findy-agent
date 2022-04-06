@@ -18,6 +18,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
@@ -101,7 +102,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	assert.P.True(ok)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		glog.V(3).Infof("it's us who wait connection (%v) to invitation",
+		glog.V(3).Infof("it's us who waits connection (%v) to invitation",
 			deTask.InvitationID)
 
 		wpl := aries.PayloadCreator.New(
@@ -118,7 +119,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
 
-	caller := ssiWA.CreateDID("")  // Create a new DID for our end
+	caller := ssiWA.NewDID("sov", "") // Create a new DID for our end
+
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID
 
@@ -134,7 +136,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Thread: &decorator.Thread{ID: deTask.InvitationID},
 	})
 	// add to the cache until all lazy fetches are called
-	ssiWA.AddDIDCache(caller)
+	ssiWA.AddDIDCache(caller.(*ssi.DID))
 
 	// Write EA's new DID (caller) to CA's wallet (e.g. routing)
 	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
@@ -154,12 +156,15 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	secPipe := sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
-	wa.AddPipeToPWMap(*secPipe, pwr.Name)
+	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
+	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
+	secPipe := sec.Pipe{In: caller, Out: callee}
+	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
+	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
 	try.To(prot.UpdatePSM(me, caller.Did(), task, opl, psm.Sending))
-	try.To(comm.SendPL(*secPipe, task, opl))
+	try.To(comm.SendPL(secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
 	wpl := aries.PayloadCreator.New(
@@ -168,6 +173,12 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 			Type: pltype.AriesConnectionResponse,
 		})
 	try.To(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
+}
+
+func buildRouting(rKey string, rKeys []string) []string {
+	retval := make([]string, 1, len(rKeys)+1)
+	retval[0] = rKey
+	return append(retval, rKeys...)
 }
 
 func handleConnectionRequest(packet comm.Packet) (err error) {
@@ -326,7 +337,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
-	caller.SavePairwiseForDID(managedStorage(receiver), callee, ssi.PairwiseMeta{
+	caller.SavePairwiseForDID(managedStorage(receiver), callee, core.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})

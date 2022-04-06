@@ -4,7 +4,9 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/service"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/storage/cfg"
@@ -34,9 +36,9 @@ type Agent interface {
 	AgentType
 	Wallet() (h int)
 	ManagedWallet() (managed.Wallet, managed.Wallet)
-	RootDid() *DID
-	CreateDID(seed string) (agentDid *DID)
-	NewDID(method string) core.DID
+	RootDid() core.DID
+	//CreateDID(seed string) (agentDid core.DID)
+	NewDID(method string, seed string) core.DID
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -86,10 +88,10 @@ type DIDAgent struct {
 	StorageH managed.Wallet
 
 	// result future of the wallet export, one time attr, obsolete soon
-	Export Future
+	Export async.Future
 
 	// the Root DID which gives us rights to write ledger
-	Root *DID
+	Root core.DID
 
 	// keep 'all' DIDs for performance reasons as well as better usability of our APIs
 	DidCache Cache
@@ -199,11 +201,11 @@ func (a *DIDAgent) Storage() storage.AgentStorage {
 }
 
 func (a *DIDAgent) OpenPool(name string) {
-	OpenPool(name)
+	pool.Open(name)
 }
 
 func (a *DIDAgent) Pool() (v int) {
-	return Pool()
+	return pool.Handle()
 }
 
 func (a *DIDAgent) VDR() *vdr.VDR {
@@ -213,26 +215,29 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(method string) core.DID {
+func (a *DIDAgent) NewDID(method string, seed string) core.DID {
 	// TODO: under construction!
 
 	switch method {
 	case methodKey:
-		_ = a.VDR()
+		_ = a.VDR() // TODO: check if we could use VDR as method factory
 		return try.To1(didmethod.NewKey(a.StorageH))
 
-	case methodIndy:
-		return a.CreateDID("")
+	case methodIndy, methodSov:
+		return a.myCreateDID(seed)
 	default:
-		return a.CreateDID("")
+		return a.myCreateDID(seed)
 		//assert.That(false, "not supported")
 
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
+func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err error) {
 	// TODO: under construction!
 	defer err2.Return(&err)
+
+	glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
+		didStr, verKey)
 
 	switch didmethod.String(didStr) {
 	case methodKey:
@@ -244,9 +249,16 @@ func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 
 	case methodIndy, methodSov:
 		d := indy.DID2KID(didStr)
-		try.To(a.SaveTheirDID(d, verKey))
-		cached := a.DidCache.Get(d, true)
-		assert.D.True(cached.wallet != nil)
+		var cached *DID
+		if d != "" {
+			try.To(a.SaveTheirDID(d, verKey[0]))
+			cached = a.DidCache.Get(d, true)
+			assert.D.True(cached.wallet != nil)
+		} else {
+			newDID := NewDIDWithRouting("", verKey...)
+			a.DidCache.Add(newDID)
+			cached = newDID
+		}
 		return cached, nil
 	default:
 		assert.That(false, "not supported")
@@ -254,12 +266,12 @@ func (a *DIDAgent) NewOutDID(didStr, verKey string) (id core.DID, err error) {
 	}
 }
 
-// CreateDID creates a new DID thru the Future which means that returned *DID
+// myCreateDID creates a new DID thru the Future which means that returned *DID
 // follows 'lazy fetch' principle. You should call this as early as possible for
 // the performance reasons. Most cases seed should be empty string.
-func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
+func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	a.AssertWallet()
-	f := new(Future)
+	f := new(async.Future)
 	ch := make(findy.Channel, 1)
 	go func() {
 		defer err2.Catch(func(err error) {
@@ -279,11 +291,11 @@ func (a *DIDAgent) CreateDID(seed string) (agentDid *DID) {
 	return NewAgentDid(a.WalletH, f)
 }
 
-func (a *DIDAgent) RootDid() *DID {
+func (a *DIDAgent) RootDid() core.DID {
 	return a.Root
 }
 
-func (a *DIDAgent) SetRootDid(rootDid *DID) {
+func (a *DIDAgent) SetRootDid(rootDid core.DID) {
 	a.Root = rootDid
 }
 
@@ -314,7 +326,7 @@ func (a *DIDAgent) KMS() kms.KeyManager {
 }
 
 // localKey returns a future to the verkey of the DID from a local wallet.
-func (a *DIDAgent) localKey(didName string) (f *Future) {
+func (a *DIDAgent) localKey(didName string) (f *async.Future) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("error when fetching localKey: ", err)
 	})
@@ -325,7 +337,7 @@ func (a *DIDAgent) localKey(didName string) (f *Future) {
 
 	glog.V(5).Infoln("found localKey: ", didName, d.IndyVerKey)
 
-	return &Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: Consumed}
+	return &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: d.IndyVerKey}}, On: async.Consumed}
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
@@ -341,9 +353,9 @@ func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
 	return nil
 }
 
-// Used by steward only
+// OpenDID NOTE! Used by steward only.
 func (a *DIDAgent) OpenDID(name string) *DID {
-	f := new(Future)
+	f := new(async.Future)
 	f.SetChan(did.LocalKey(a.Wallet(), name))
 
 	newDid := NewDid(name, f.Str1())
@@ -351,7 +363,7 @@ func (a *DIDAgent) OpenDID(name string) *DID {
 	return newDid
 }
 
-func (a *DIDAgent) LoadDID(did string) *DID {
+func (a *DIDAgent) LoadDID(did string) core.DID {
 	cached := a.DidCache.Get(did, true)
 	if cached != nil {
 		if cached.Wallet() == 0 {
@@ -365,7 +377,7 @@ func (a *DIDAgent) LoadDID(did string) *DID {
 	return d
 }
 
-func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
+func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {
 	defer err2.CatchAll(func(err error) {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, err)
 	}, func(v any) {
@@ -375,7 +387,8 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) *DID {
 	assert.D.True(connection.TheirDID != "")
 
 	d := a.LoadDID(connection.TheirDID)
-	d.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
+	// TODO: implement!
+	// d.pwMeta = &PairwiseMeta{Route: connection.TheirRoute}
 	return d
 }
 

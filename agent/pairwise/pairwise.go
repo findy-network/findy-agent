@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -23,8 +24,8 @@ type Pairwise struct {
 
 type Callee struct {
 	Pairwise
-	Caller *ssi.DID
-	Callee *ssi.DID
+	Caller core.DID
+	Callee core.DID
 }
 
 // MARK: Callee ---
@@ -41,7 +42,7 @@ func (p *Callee) startStore() {
 		glog.Warning("Callee.startStore() - no DIDExchange request found")
 	}
 	_, storageH := p.agent.ManagedWallet()
-	p.Callee.SavePairwiseForDID(storageH, p.Caller, ssi.PairwiseMeta{
+	p.Callee.SavePairwiseForDID(storageH, p.Caller, core.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
 	})
@@ -70,14 +71,18 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
 
 	if cnxAddr.EdgeToken == "" {
-		glog.V(1).Infof("===== Cannot use pw DID, NO connection found from addr: %s =====", cnxAddr.Address())
+		glog.V(1).Infof(
+			"===== Cannot use pw DID, NO connection found from addr: %s =====",
+			cnxAddr.Address(),
+		)
 		return
 	}
 
 	_, storageH := p.agent.ManagedWallet()
 	store := storageH.Storage().ConnectionStorage()
 	if _, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
-		glog.V(1).Infof("==== using preallocated pw DID  %s for connection id %s ====", calleeDID.Did(), cnxAddr.EdgeToken)
+		glog.V(1).Infof("==== using preallocated pw DID  %s for connection id %s ====",
+			calleeDID.Did(), cnxAddr.EdgeToken)
 		p.Callee = calleeDID
 		return
 	}
@@ -115,7 +120,7 @@ func (p *Callee) ConnReqToRespWithSet(
 
 func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
-		p.Callee = p.agent.CreateDID("")
+		p.Callee = p.agent.NewDID("", "")
 	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,

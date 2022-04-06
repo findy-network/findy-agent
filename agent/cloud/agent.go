@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
@@ -43,7 +44,7 @@ type Agent struct {
 	ssi.DIDAgent
 
 	// replace transport with caDID
-	myDID *ssi.DID
+	myDID core.DID
 
 	// worker agent performs the actual protocol tasks
 	worker agentPtr
@@ -148,11 +149,11 @@ func (a *Agent) AttachSAImpl(implID string) {
 	}
 }
 
-func (a *Agent) SetMyDID(myDID *ssi.DID) {
+func (a *Agent) SetMyDID(myDID core.DID) {
 	a.myDID = myDID
 }
 
-func (a *Agent) MyDID() *ssi.DID {
+func (a *Agent) MyDID() core.DID {
 	return a.myDID
 }
 
@@ -224,7 +225,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 
 		// getting wallet credentials
 		// CA and EA wallets have same key, they have same root DID
-		key, err := enclave.WalletKeyByDID(ca.RootDid().Did())
+		key, err := enclave.WalletKeyByDID(ca.RootDid().KID())
 		if err != nil {
 			glog.Error("cannot get wallet key:", err)
 			panic(err)
@@ -347,7 +348,7 @@ func (a *Agent) loadPWMap() {
 	}
 }
 
-func (a *Agent) AddToPWMap(me, you *ssi.DID, name string) sec.Pipe {
+func (a *Agent) AddToPWMap(me, you core.DID, name string) sec.Pipe {
 	pipe := sec.Pipe{
 		In:  me,
 		Out: you,

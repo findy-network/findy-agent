@@ -16,9 +16,9 @@ func DID2KID(did string) string {
 
 func New(handle int) *Indy {
 	s := &Indy{Handle: handle, packager: nil}
-	p := &Packager{handle: handle, storage: s}
+	p := &Packager{storage: s}
 	s.packager = p
-	k := NewKMS(handle, s)
+	k := NewKMS(s)
 	s.kms = k
 	return s
 }

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
-	dto "github.com/findy-network/findy-common-go/dto"
+	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
@@ -43,16 +45,16 @@ type DID struct {
 	// AgentStorage. managed.WalletCfg.UniqueID() will be the key.
 	wallet managed.Wallet
 
-	data   *Future // DID data when queried from the wallet or received somewhere
-	stored *Future // result of the StartStore Their DID operation
-	key    *Future // DID construct where key is Future
-	meta   *Future // Meta data stored to DID
-	pw     *Future // Pairwise data stored to DID
-	endp   *Future // When endpoint is started to fetch it's here
+	data   *async.Future // DID data when queried from the wallet or received somewhere
+	stored *async.Future // result of the StartStore Their DID operation
+	key    *async.Future // DID construct where key is Future
+	meta   *async.Future // Meta data stored to DID
+	pw     *async.Future // Pairwise data stored to DID
+	endp   *async.Future // When endpoint is started to fetch it's here
 
 	sync.Mutex // when setting Future ptrs making sure that happens atomically
 
-	pwMeta *PairwiseMeta // Meta data for pairwise
+	pwMeta *core.PairwiseMeta // Meta data for pairwise
 
 }
 
@@ -70,7 +72,11 @@ func (d *DID) KMS() *indy.KMS {
 
 // String returns a string in DID format e.g. 'did:sov:xxx..'
 func (d *DID) String() string {
-	return indy.MethodPrefix + d.Did()
+	dStr := d.Did()
+	if dStr == "" { // invitations have only VerKeys no (D)ID, bad design
+		dStr = d.VerKey()
+	}
+	return indy.MethodPrefix + dStr
 }
 
 // KID returns a KMS specific key ID that can be used to Get KH from KMS.
@@ -87,30 +93,31 @@ func (d *DID) SignKey() any {
 	}
 }
 
-type PairwiseMeta struct {
-	Name  string
-	Route []string
-}
-
-func NewAgentDid(wallet managed.Wallet, f *Future) (ad *DID) {
+func NewAgentDid(wallet managed.Wallet, f *async.Future) (ad *DID) {
 	d := &DID{wallet: wallet, data: f}
 	d.SetWallet(wallet)
 	return d
 }
 
 func NewDid(did, verkey string) (d *DID) {
-	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: Consumed}
+	f := &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: verkey}}, On: async.Consumed}
 	return &DID{data: f}
 }
 
-func NewOutDid(verkey string, route []string) (d *DID) {
-	did := NewDid("", verkey)
-	did.pwMeta = &PairwiseMeta{Route: route}
-	return did
+func NewDIDWithRouting(did string, verkey ...string) (d *DID) {
+	d = NewDid("", verkey[0])
+	d.pwMeta = &core.PairwiseMeta{Route: verkey[1:]}
+	return d
 }
 
-func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *Future) (d *DID) {
-	f := &Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: Consumed}
+func NewOutDid(verkey string, route []string) (d *DID) {
+	d = NewDid("", verkey)
+	d.pwMeta = &core.PairwiseMeta{Route: route}
+	return d
+}
+
+func NewDidWithKeyFuture(wallet managed.Wallet, did string, verkey *async.Future) (d *DID) {
+	f := &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: did, Str2: ""}}, On: async.Consumed}
 	d = &DID{wallet: wallet, data: f, key: verkey}
 	d.SetWallet(wallet)
 	return d
@@ -162,7 +169,8 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 	idJSON := did.Did{Did: ds, VerKey: vk}
 	json := dto.ToJSON(idJSON)
 
-	f := new(Future)
+	glog.V(5).Infof("Store DID %s -> %d", ds, mgdWallet.Handle())
+	f := new(async.Future)
 	f.SetChan(did.StoreTheir(mgdWallet.Handle(), json))
 
 	// Store the DID also to the agent storage
@@ -213,10 +221,12 @@ func (d *DID) StoreResult() error {
 	return nil
 }
 
-func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, theirDID *DID, pw PairwiseMeta) {
+func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core.PairwiseMeta) {
 	defer err2.Catch(func(err error) {
 		glog.Warningf("save pairwise for DID error: %v", err)
 	})
+
+	theirDID := tDID.(*DID)
 
 	// check that DIDs are ready
 	ok := d.data.Result().Err() == nil && theirDID.stored.Result().Err() == nil
@@ -240,7 +250,7 @@ func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, theirDID *DID, pw Pair
 			errStr = err.Error()
 		}
 
-		f := &Future{V: indyDto.Result{Er: indyDto.Err{Error: errStr}}, On: Consumed}
+		f := &async.Future{V: indyDto.Result{Er: indyDto.Err{Error: errStr}}, On: async.Consumed}
 		theirDID.pw = f
 	}
 	if !ok {
@@ -265,10 +275,10 @@ func (d *DID) StartEndp(storageH managed.Wallet, connectionID string) {
 		errStr = err.Error()
 	}
 
-	f := &Future{V: indyDto.Result{
+	f := &async.Future{V: indyDto.Result{
 		Data: indyDto.Data{Str1: endpoint},
 		Er:   indyDto.Err{Error: errStr},
-	}, On: Consumed}
+	}, On: async.Consumed}
 
 	d.Lock()
 	d.endp = f
@@ -295,9 +305,9 @@ func (d *DID) Endpoint() string {
 }
 
 func (d *DID) SetAEndp(ae service.Addr) {
-	d.endp = &Future{
+	d.endp = &async.Future{
 		V:  indyDto.Result{Data: indyDto.Data{Str1: ae.Endp, Str2: ae.Key}},
-		On: Consumed,
+		On: async.Consumed,
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
+	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -27,7 +28,7 @@ import (
 	"github.com/findy-network/findy-agent/server"
 	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
-	"github.com/findy-network/findy-wrapper-go/pool"
+	indypool "github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/go-co-op/gocron"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -159,7 +160,7 @@ func (c *Cmd) Setup() (err error) {
 	try.To(c.initSealedBox())
 	c.startLoadingAgents()
 	try.To(psm.Open(c.PsmDb))
-	ssi.OpenPool(c.PoolName)
+	pool.Open(c.PoolName)
 	c.checkSteward()
 	c.setRuntimeSettings()
 	server.BuildHostAddr(c.HostScheme, c.HostPort)
@@ -246,7 +247,7 @@ func (c *Cmd) PreRun() {
 }
 
 func setProtocol(version uint64) {
-	r := <-pool.SetProtocolVersion(version)
+	r := <-indypool.SetProtocolVersion(version)
 	if r.Err() != nil {
 		fmt.Println(r.Err())
 		panic(r.Err())
@@ -305,7 +306,7 @@ func (c *Cmd) setRuntimeSettings() {
 func (c *Cmd) closeAll() {
 	enclave.Close()
 	// add close psm
-	ssi.ClosePool()
+	pool.Close()
 }
 
 func (c *Cmd) SetMustHaveDefaults() {

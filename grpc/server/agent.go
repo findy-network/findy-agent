@@ -12,6 +12,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
@@ -142,7 +143,7 @@ func (a *agentServer) CreateSchema(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
 
-	sch := &ssi.Schema{
+	sch := &vc.Schema{
 		Name:    s.Name,
 		Version: s.Version,
 		Attrs:   s.Attributes,
@@ -166,7 +167,7 @@ func (a *agentServer) CreateCredDef(
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
-	sch := &ssi.Schema{ID: cdc.SchemaID}
+	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
@@ -205,7 +206,7 @@ func (a *agentServer) GetCredDef(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
 
-	def := try.To1(ssi.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
+	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 
@@ -265,7 +266,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ssiWA := wa.(ssi.Agent)
 
 	// Build new DID for the pairwise and save it for the CONN_REQ??
-	ourPairwiseDID := ssiWA.CreateDID("")
+	ourPairwiseDID := ssiWA.NewDID("sov", "")
 
 	// mark the pre-allocated pairwise DID with connection ID that we find it
 	_, ms := wa.ManagedWallet()
@@ -278,7 +279,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id
 	ep.VerKey = ourPairwiseDID.VerKey()
-	ssiWA.AddDIDCache(ourPairwiseDID)
+	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
 
 	// map PW that the endpoint address get activated for the http server
 	// when connection request arrives

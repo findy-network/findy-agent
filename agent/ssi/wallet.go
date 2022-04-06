@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/indy"
@@ -112,11 +113,11 @@ func (w *Wallet) SyncOpen() int {
 	return w.Open().Int()
 }
 
-func (w *Wallet) Open() (f *Future) {
+func (w *Wallet) Open() (f *async.Future) {
 	if glog.V(3) {
 		glog.Info("opening wallet: ", w.Config.ID)
 	}
-	f = new(Future)
+	f = new(async.Future)
 	f.SetChan(wallet.Open(w.Config, w.Credentials))
 	return f
 }
@@ -138,6 +139,8 @@ func (w *Wallet) OpenWallet() (h int, err error) {
 	} else if oldHandle != w.handle { // update the handle value
 		agentStorages.Lock()
 		delete(agentStorages.indys, oldHandle)
+		storage := w.storage.(*indy.Indy)
+		storage.Handle = w.handle
 		agentStorages.indys[w.handle] = w.storage
 		agentStorages.Unlock()
 	}
@@ -171,11 +174,11 @@ func (w *Wallet) SyncClose(handle int) (err error) {
 	return w.Close(handle).Result().Err()
 }
 
-func (w *Wallet) Close(handle int) (f *Future) {
+func (w *Wallet) Close(handle int) (f *async.Future) {
 	if glog.V(3) {
 		glog.Infof("closing wallet(%d): %s", handle, w.Config.ID)
 	}
-	f = new(Future)
+	f = new(async.Future)
 	f.SetChan(wallet.Close(handle))
 	return f
 }

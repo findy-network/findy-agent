@@ -2,74 +2,81 @@ package sec
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"time"
 
-	"github.com/findy-network/findy-agent/agent/aries"
-	"github.com/findy-network/findy-agent/agent/didcomm"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/std/common"
-	"github.com/findy-network/findy-common-go/dto"
-	"github.com/findy-network/findy-wrapper-go"
-	"github.com/findy-network/findy-wrapper-go/crypto"
+	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/indy"
 	"github.com/golang/glog"
+	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
-// Pipe is secure way to transport data between DID connection. All agent to
+var (
+	defaultMediaType string
+)
+
+func Init(defMediaType string) {
+	defaultMediaType = defMediaType
+}
+
+// Pipe is a secure way to transport data between DID connection. All agent to
 // agent communication uses it. For its internal structure we must define the
 // direction of the pipe.
 type Pipe struct {
-	ssi.In
-	ssi.Out
+	In  core.DID
+	Out core.DID
 }
 
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public
 // key.
-func NewPipeByVerkey(did *ssi.DID, verkey string, route []string) *Pipe {
-	out := ssi.NewOutDid(verkey, route) // we know verkey only
+func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
+	out := ssi.NewOutDid(verkey, route)
+
 	return &Pipe{
 		In:  did,
 		Out: out,
 	}
 }
 
-// Decrypt decrypts the byte slice.
-func (p Pipe) Decrypt(src []byte) (dst []byte) {
-	dst, _ = p.DecryptGiveKey(src)
-	return
-}
-
 // Verify verifies signature of the message and returns the verification key.
-// Note! It throws err2 type of an error and needs an error handler in the call
+// Note! It throws err2 type of error and needs an error handler in the call
 // stack.
-func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string) {
-	vk = p.Out.VerKey()
+func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
+	defer err2.Annotate("pipe sign", &err)
 
-	r := <-crypto.VerifySignature(vk, msg, signature)
-	try.To(r.Err())
-	return r.Yes(), vk
+	c := p.crypto()
+	try.To(c.Verify(signature, msg, p.Out.SignKey()))
+
+	return true, p.Out.VerKey(), nil
 }
 
 // Sign sings the message and returns the verification key. Note! It throws err2
-// type of an error and needs an error handler in the call stack.
-func (p Pipe) Sign(src []byte) (dst []byte, vk string) {
-	wallet := p.wallet()
+// type of error and needs an error handler in the call stack.
+func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
+	defer err2.Annotate("pipe sign", &err)
+
+	c := p.crypto()
+	kms := p.packager().KMS()
+
+	kh := try.To1(kms.Get(p.In.KID()))
+	dst = try.To1(c.Sign(src, kh))
 	vk = p.In.VerKey()
 
-	r := <-crypto.SignMsg(wallet, vk, src)
-	try.To(r.Err())
-	return r.Bytes(), vk
+	return
 }
 
 // SignAndStamp sings and stamps a message and returns the verification key.
-// Note! It throws err2 type of an error and needs an error handler in the call
+// Note! It throws err2 type of error and needs an error handler in the call
 // stack.
-func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
+func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string, err error) {
+	defer err2.Return(&err)
+
 	now := getEpochTime()
 
 	data = make([]byte, 8+len(src))
@@ -80,99 +87,43 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string) {
 		glog.Warning("WARNING, NOT all bytes copied")
 	}
 
-	sign, verKey := p.Sign(data)
-	return data, sign, verKey
-}
-
-// DecryptGiveKey decrypts scr bytes and returns the verkey as well. Note! It
-// throws an err2 exception. So, there should be at least one error handler in
-// the call stack.
-func (p Pipe) DecryptGiveKey(src []byte) (dst []byte, vk string) {
-	wallet := p.wallet()
-
-	if glog.V(5) {
-		glog.Infof("==> Decrypt: %s, w(%d)\n", p.In.VerKey(), wallet)
-	}
-	vk = p.In.VerKey()
-	r := <-crypto.AnonDecrypt(wallet, vk, src)
-	try.To(r.Err())
-
-	return r.Bytes(), vk
+	sign, verKey := try.To2(p.Sign(data))
+	return data, sign, verKey, nil
 }
 
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
-	wallet := p.wallet()
-	vk = p.Out.VerKey()
-	assert.D.True(vk != "")
+	defer err2.Annotate("sec pipe pack", &err)
 
-	if glog.V(5) {
-		glog.Infof("<== Pack: %s/%s, w(%d)\n", p.Out.Did(), vk, wallet)
+	media := p.defMediaType()
+	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
 
-		// TODO: do not log sensitive data in production
-		if glog.V(6) {
-			glog.Infof("<== Pack data: %s\n", string(src))
-		}
+	route := p.Out.Route()
+	toKeys := make([]string, len(route)+1)
+	toKeys[0] = p.Out.String()
+	for i, r := range route {
+		toKeys[i+1] = "did:sov:" + r
 	}
 
-	senderKey := p.In.VerKey()
+	// pack a non-empty envelope using packer selected by mediaType - should pass
+	dst = try.To1(p.packager().PackMessage(&transport.Envelope{
+		MediaTypeProfile: media,
+		Message:          src,
+		FromKey:          []byte(p.In.String()),
+		ToKeys:           toKeys,
+	}))
 
-	r := <-crypto.Pack(wallet, senderKey, src, vk)
-	if r.Err() != nil {
-		return nil, "", r.Err()
-	}
-
-	res := r.Bytes()
-	for _, rKey := range p.Out.Route() {
-		glog.V(3).Infof("Packing with route key %s", rKey)
-
-		msgType := pltype.RoutingForward
-		data := make(map[string]interface{})
-		err = json.Unmarshal(res, &data)
-		if err != nil {
-			return nil, "", err
-		}
-		msg := aries.MsgCreator.Create(didcomm.MsgInit{
-			Type: msgType,
-			To:   vk,
-			Msg:  data,
-		})
-		fwdMsg := msg.FieldObj().(*common.Forward)
-
-		// use anon-crypt for routing
-		r := <-crypto.Pack(wallet, findy.NullString, dto.ToJSONBytes(fwdMsg), rKey)
-		if r.Err() != nil {
-			return nil, "", r.Err()
-		}
-		res = r.Bytes()
-		vk = rKey
-	}
-
-	return res, vk, nil
+	return
 }
 
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
-	wallet := p.wallet()
-	vk = p.In.VerKey()
+	defer err2.Annotate("sec pipe unpack", &err)
 
-	if glog.V(5) {
-		glog.Infof("<== Unpack: w(%d)\n", wallet)
-	}
+	env := try.To1(p.packager().UnpackMessage(src))
+	dst = env.Message
 
-	r := <-crypto.UnpackMessage(wallet, src)
-	if r.Err() != nil {
-		return nil, "", r.Err()
-	}
-
-	res := crypto.NewUnpacked(r.Bytes()).Bytes()
-
-	// TODO: do not log sensitive data in production
-	if glog.V(6) {
-		glog.Infof("<== Unpacked: %s\n", string(res))
-	}
-
-	return res, vk, nil
+	return
 }
 
 // IsNull returns true if pipe is null.
@@ -185,20 +136,27 @@ func (p Pipe) EA() (ae service.Addr, err error) {
 	return p.Out.AEndp()
 }
 
-// wallet will be obsolete. Use pckr() instead, and maybe later we don't need
-// that either because everything goes thru DID itself.
-func (p Pipe) wallet() int {
-	wallet := p.In.Wallet()
-	assert.D.True(wallet != 0)
-	return wallet
-}
-
 func getEpochTime() int64 {
 	return time.Now().Unix()
 }
 
-func (p Pipe) pckr() api.Packager {
+func (p Pipe) defMediaType() string {
+	return defaultMediaType
+}
+
+func (p Pipe) crypto() cryptoapi.Crypto {
+	if p.packager() == nil {
+		glog.V(10).Infoln("-- using Indy crypto as a default")
+		return new(indy.Crypto)
+	}
+	return p.packager().Crypto()
+}
+
+func (p Pipe) packager() api.Packager {
+	if p.In == nil {
+		return nil
+	}
 	assert.D.True(p.In.Storage() != nil)
 
-	return p.In.Storage().Storage().OurPackager()
+	return p.In.Packager()
 }

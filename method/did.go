@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/managed"
+	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -22,7 +23,7 @@ type Method int
 
 const (
 	MethodKey Method = 0 + iota
-	MethodPeer
+	//MethodPeer
 )
 
 func New(hStorage managed.Wallet, method Method) (id core.DID, err error) {
@@ -71,6 +72,10 @@ func (k Key) String() string {
 	return didkey
 }
 
+func (k Key) Did() string {
+	return k.kid
+}
+
 func (k Key) KID() string {
 	return k.kid
 }
@@ -81,6 +86,38 @@ func (k Key) SignKey() any {
 
 func (k Key) Storage() managed.Wallet {
 	return k.handle
+}
+
+func (k Key) StartEndp(storageH managed.Wallet, connectionID string) {
+	// todo: check how this is implemented in ssi.DID.
+	// It seems that it's simple, but unnesseary.
+}
+
+func (k Key) Store(mgdWallet, mgdStorage managed.Wallet) {
+	// todo: check the implementation from ssi.DID
+	// it seems that there is nothing to do, all is saved already.
+}
+
+func (k Key) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID, pw core.PairwiseMeta) {
+	// todo: check ssi.DID, propably not needed
+}
+
+func (k Key) StoreResult() error {
+	// todo: see ssi.DID
+	return nil
+}
+
+func (k Key) AEndp() (ae service.Addr, err error) {
+	assert.D.NoImplementation()
+	return
+}
+
+func (k Key) SetAEndp(ae service.Addr) {
+	assert.D.NoImplementation()
+}
+
+func (k Key) Route() []string {
+	return []string{}
 }
 
 // TODO: this is mainly for indy but could be merged with SignKey?

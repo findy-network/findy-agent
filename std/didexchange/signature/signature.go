@@ -42,7 +42,7 @@ func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (
 
 	connectionJSON := try.To1(json.Marshal(connection))
 
-	signedData, signature, verKey := pipe.SignAndStamp(connectionJSON)
+	signedData, signature, verKey := try.To3(pipe.SignAndStamp(connectionJSON))
 
 	return &didexchange.ConnectionSignature{
 		Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
@@ -98,7 +98,7 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 
 	signature := try.To1(utils.DecodeB64(cs.Signature))
 
-	ok, _ := pipe.Verify(data, signature)
+	ok, _ := try.To2(pipe.Verify(data, signature))
 	if !ok {
 		glog.Error("cannot verify signature")
 		return nil, nil

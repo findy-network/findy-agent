@@ -27,7 +27,7 @@ type Transition struct {
 	TaskHeader  *comm.TaskHeader // updated task data
 }
 
-// TransitionHandler is a type for Transition to process PSM state transition.
+// InOut is a type for Transition to process PSM state transition.
 // It receivers input msg and produce output msg. Implementor should return
 // false if it wants to NACK otherwise true.
 type InOut func(connID string, im, om didcomm.MessageHdr) (ack bool, err error)
@@ -279,7 +279,7 @@ var starters = map[string]comm.ProtProc{}
 var continuators = map[string]comm.ProtProc{}
 var statusProviders = map[string]comm.ProtProc{}
 
-// AddStarter adds association between CA API message type and protocol. The
+// AddCreator adds association between CA API message type and protocol. The
 // association is used to start protocol with FindAndStart function.
 func AddCreator(t string, proc comm.ProtProc) {
 	creators[t] = proc

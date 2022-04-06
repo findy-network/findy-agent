@@ -1,16 +1,17 @@
-package ssi
+package pool
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/findy-network/findy-agent/agent/async"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 )
 
 func TestLedgerConnection_Open(t *testing.T) {
 	r := indyDto.Result{Data: indyDto.Data{Handle: 1}}
 	pool.V = r
-	pool.On = Consumed
+	pool.On = async.Consumed
 
 	type args struct {
 		name string
@@ -28,7 +29,7 @@ func TestLedgerConnection_Open(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := OpenPool(tt.args.name).Int(); !reflect.DeepEqual(got, tt.want) {
+			if got := Open(tt.args.name).Int(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("LedgerConnection.Open() = %v, want %v", got, tt.want)
 			}
 		})

@@ -6,7 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-common-go/dto"
@@ -114,11 +114,11 @@ func (m *msgImpl) SetSubLevelID(s string) {
 	m.Msg.ID = s
 }
 
-func (m *msgImpl) Schema() *ssi.Schema {
+func (m *msgImpl) Schema() *vc.Schema {
 	panic("not in use in old API messages")
 }
 
-func (m *msgImpl) SetSchema(sch *ssi.Schema) {
+func (m *msgImpl) SetSchema(sch *vc.Schema) {
 	panic("not in use in old API messages")
 }
 

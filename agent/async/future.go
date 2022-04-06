@@ -1,4 +1,4 @@
-package ssi
+package async
 
 import (
 	"sync"
