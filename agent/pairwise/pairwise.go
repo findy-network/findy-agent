@@ -120,8 +120,7 @@ func (p *Callee) ConnReqToRespWithSet(
 
 func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
-		// TODO: super
-		p.Callee = p.agent.NewDID("")
+		p.Callee = p.agent.NewDID("", "")
 	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,

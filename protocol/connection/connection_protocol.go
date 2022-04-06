@@ -119,8 +119,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
 
-	// TODO: SUPER
-	caller := ssiWA.NewDID("sov") // Create a new DID for our end
+	caller := ssiWA.NewDID("sov", "") // Create a new DID for our end
 
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID

@@ -77,13 +77,13 @@ func setUp() {
 }
 
 func TestNewPipe(t *testing.T) {
-	didIn := agent.NewDID("key")
+	didIn := agent.NewDID("key", "")
 	println(didIn.String())
-	didOut := agent.NewDID("key")
+	didOut := agent.NewDID("key", "")
 	println(didOut.String())
-	didRoute1 := agent.NewDID("key")
+	didRoute1 := agent.NewDID("key", "")
 	println(didRoute1.String())
-	didRoute2 := agent.NewDID("key")
+	didRoute2 := agent.NewDID("key", "")
 	println(didRoute2.String())
 
 	require.NotNil(t, didIn)
@@ -109,7 +109,7 @@ func TestResolve(t *testing.T) {
 }
 
 func TestPackTowardsPubKeyOnly(t *testing.T) {
-	didIn := agent.NewDID("key")
+	didIn := agent.NewDID("key", "")
 	require.NotNil(t, didIn)
 	println(didIn.String())
 	didOut, err := agent.NewOutDID(key2, "")
@@ -132,11 +132,11 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	// The access to public key is not enough. It must first stored.
 
 	// create first agent2's input DID
-	didIn2 := agent2.NewDID("key")
+	didIn2 := agent2.NewDID("key", "")
 	require.NotNil(t, didIn2)
 	println("in2: ", didIn2.String())
 
-	didIn := agent.NewDID("key")
+	didIn := agent.NewDID("key", "")
 	require.NotNil(t, didIn)
 	println("in: ", didIn.String())
 
@@ -175,12 +175,12 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 }
 
 func TestIndyPipe(t *testing.T) {
-	didIn := agent.NewDID("indy")
+	didIn := agent.NewDID("indy", "")
 	str := didIn.String()
 	require.NotEmpty(t, str)
 	println(str)
 
-	didIn2 := agent2.NewDID("indy")
+	didIn2 := agent2.NewDID("indy", "")
 	did2 := didIn2.String()
 	require.NotEmpty(t, did2)
 	println(did2)
@@ -264,10 +264,10 @@ func TestPipe_pack(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
-	didIn := a.NewDID("indy")
-	didOut := a.NewDID("indy")
-	didRoute1 := a.NewDID("indy")
-	didRoute2 := a.NewDID("indy")
+	didIn := a.NewDID("indy", "")
+	didOut := a.NewDID("indy", "")
+	didRoute1 := a.NewDID("indy", "")
+	didRoute2 := a.NewDID("indy", "")
 
 	// Packing pipe with two routing keys
 	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),

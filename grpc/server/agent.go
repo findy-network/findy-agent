@@ -266,7 +266,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ssiWA := wa.(ssi.Agent)
 
 	// Build new DID for the pairwise and save it for the CONN_REQ??
-	ourPairwiseDID := ssiWA.NewDID("sov") // TODO: super
+	ourPairwiseDID := ssiWA.NewDID("sov", "")
 
 	// mark the pre-allocated pairwise DID with connection ID that we find it
 	_, ms := wa.ManagedWallet()
@@ -279,7 +279,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id
 	ep.VerKey = ourPairwiseDID.VerKey()
-	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID)) // TODO: super
+	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
 
 	// map PW that the endpoint address get activated for the http server
 	// when connection request arrives

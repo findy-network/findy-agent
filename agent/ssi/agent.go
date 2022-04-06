@@ -38,7 +38,7 @@ type Agent interface {
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
 	//CreateDID(seed string) (agentDid core.DID)
-	NewDID(method string) core.DID
+	NewDID(method string, seed string) core.DID
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -215,18 +215,18 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(method string) core.DID {
+func (a *DIDAgent) NewDID(method string, seed string) core.DID {
 	// TODO: under construction!
 
 	switch method {
 	case methodKey:
-		_ = a.VDR()
+		_ = a.VDR() // TODO: check if we could use VDR as method factory
 		return try.To1(didmethod.NewKey(a.StorageH))
 
 	case methodIndy, methodSov:
-		return a.myCreateDID("")
+		return a.myCreateDID(seed)
 	default:
-		return a.myCreateDID("")
+		return a.myCreateDID(seed)
 		//assert.That(false, "not supported")
 
 	}
