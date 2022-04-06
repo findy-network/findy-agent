@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -16,8 +15,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
-	"github.com/lainio/err2"
-	"github.com/lainio/err2/try"
 )
 
 const TestServiceName = agency.ProtocolPath
@@ -29,20 +26,13 @@ func StartTestHTTPServer() {
 	pattern := fmt.Sprintf("/%s/", TestServiceName)
 	mux.HandleFunc(pattern, protocolTransport)
 
-	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
-	mux.Handle("/static/", http.StripPrefix("/static", fs))
-
 	comm.SendAndWaitReq = testSendAndWaitHTTPRequest
-	comm.FileDownload = testDownloadFile
 }
 
 func StartTestHTTPServer2() *httptest.Server {
 	mux = http.NewServeMux()
 	pattern := fmt.Sprintf("/%s/", TestServiceName)
 	mux.HandleFunc(pattern, protocolTransport)
-
-	fs := http.FileServer(http.Dir(utils.Settings.ExportPath()))
-	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
 	srv := httptest.NewServer(mux)
 
@@ -68,37 +58,6 @@ func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (
 
 	data, err = ioutil.ReadAll(response.Body)
 	return data, err
-}
-
-func testDownloadFile(downloadDir, filepath, url string) (name string, err error) {
-	defer err2.Annotate("TDD download file", &err)
-
-	request, _ := http.NewRequest("GET", url, nil)
-	writer := httptest.NewRecorder()
-	mux.ServeHTTP(writer, request)
-
-	resp := writer.Result()
-
-	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download file: %s", resp.Status)
-	}
-
-	filename := filepath
-	if filename == "" {
-		filename = path.Base(request.URL.String())
-	}
-	filename = path.Join(downloadDir, filename)
-	out := try.To1(os.Create(filename))
-	defer func() {
-		_ = resp.Body.Close()
-		_ = out.Close()
-	}()
-
-	// Stream copy, can be used for large files as well
-	try.To1(io.Copy(out, resp.Body))
-
-	return filename, nil
 }
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
