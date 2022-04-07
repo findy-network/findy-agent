@@ -47,33 +47,14 @@ course it's Aries compatible.
 
 ## Get Started
 
-Easiest way to run Findy Agency is from docker container. You can communicate
-with your agency by gRPC and it offers a [CLI
-tool](https://github.com/findy-network/findy-agent-cli) as well.
+Findy Agency is a collection of services (Core - this service, [WebAuthn](https://github.com/findy-network/findy-agent-auth),
+[Findy Vault](https://github.com/findy-network/findy-agent-vault) and [Web Wallet](https://github.com/findy-network/findy-wallet-pwa)) that provide full SSI agency along with a web wallet for individuals. To start experimenting with Findy Agency we recommend you to start with [the documentation](https://findy-network.github.io/) and [set up the agency to your localhost environment](https://github.com/findy-network/findy-wallet-pwa/tree/dev/tools/env#agency-setup-for-local-development).
 
-### Running From Docker Container
+- [Documentation](https://findy-network.github.io/)
+- [Instructions for starting agency in Docker containers](https://github.com/findy-network/findy-wallet-pwa/tree/dev/tools/env#agency-setup-for-local-development)
 
-To setup running Findy Agency and all of its fellow services like
-[Findy WebAuthn](https://github.com/findy-network/findy-agent-auth) and
-[Findy Vault](https://github.com/findy-network/findy-agent-vault) can be done
-just entering _one_ command after downloading the proper docker compose file and
-setting up few folders for docker volumes. Please enter these commands in the
-dedicated directory of your selection to run the whole stack:
-
-```console
-curl -s -o "./docker-compose.yaml" \
- https://raw.githubusercontent.com/findy-network/findy-agent-cli/master/scripts/fullstack/docker-compose.yml
-mkdir -p .data/agent .data/auth .data/vault
-docker compose up
-```
-
-Please follow the
-[documentation](https://github.com/findy-network/findy-agent-cli#running-full-stack-agency)
-and samples from
-[`findy-agent-cli`](https://github.com/findy-network/findy-agent-cli) which is
-the source for the previous compose file. The CLI repo includes detailed
-examples how to allocate new agents and their wallets, make connection between
-agents and execute Aries protocols for them.
+You can communicate with your agency by gRPC and it offers
+a [CLI tool](https://github.com/findy-network/findy-agent-cli) as well. More documentation for testing with CLI can be found [here](https://github.com/findy-network/findy-agent-cli#running-full-stack-agency).
 
 ## Development
 
