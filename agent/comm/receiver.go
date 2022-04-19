@@ -27,6 +27,7 @@ type Receiver interface {
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	Pool() int
 	FindPWByDID(my string) (pw *storage.Connection, err error)
+	FindPWByID(connectionID string) (pw *storage.Connection, err error)
 	AttachSAImpl(implID string)
 	AddToPWMap(me, you core.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)

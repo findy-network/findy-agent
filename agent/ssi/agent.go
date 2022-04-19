@@ -418,3 +418,10 @@ func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
 	glog.V(10).Infoln("! connection NOT found")
 	return nil, nil
 }
+
+// FindPWByID finds pairwise by connection ID. This is a ReceiverEndp interface method.
+func (a *DIDAgent) FindPWByID(id string) (pw *storage.Connection, err error) {
+	a.AssertWallet()
+
+	return a.ConnectionStorage().GetConnection(id)
+}
