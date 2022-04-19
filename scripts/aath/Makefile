@@ -2,8 +2,8 @@ AGENT_DEFAULT?=acapy
 AGENT_BOB?=findy
 INCLUDE_TAGS?='@AcceptanceTest'
 
-run: clone agency-up tag test
-run-check: clone agency-up tag test-check
+run: clone agency-up services-up tag test
+run-check: clone agency-up services-up tag test-check
 
 record-logs:
 	mkdir -p .logs
@@ -51,11 +51,19 @@ agency-up:
 	cd ../dev/docker && \
 		make up-d
 
+services-up:
+	cd .docker/findy-agent-backchannel/env && \
+		make clone && \
+		make tails-up && \
+		make resolver-up
+
 tag:
 	docker pull ghcr.io/findy-network/findy-agent-backchannel:findy-bc-latest
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:findy-bc-latest findy-agent-backchannel:latest
 	docker pull ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest acapy-agent-backchannel:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel:javascript-bc-latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel:javascript-bc-latest javascript-agent-backchannel:latest
 	docker pull ghcr.io/findy-network/findy-agent-backchannel:aath-latest
 	docker tag ghcr.io/findy-network/findy-agent-backchannel:aath-latest aries-test-harness:latest
 
