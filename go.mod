@@ -3,7 +3,7 @@ module github.com/findy-network/findy-agent
 go 1.18
 
 require (
-	github.com/findy-network/findy-common-go v0.1.31-0.20220311092759-0ef91aa05954
+	github.com/findy-network/findy-common-go v0.1.33-0.20220425073220-a0f4fcce8729
 	github.com/findy-network/findy-wrapper-go v0.3.6
 	github.com/go-co-op/gocron v1.6.2
 	github.com/go-test/deep v1.0.7
@@ -16,7 +16,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.8.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	google.golang.org/grpc v1.40.0
 )
 
