@@ -5,6 +5,8 @@ import (
 	"encoding/gob"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type TestJSON struct {
@@ -155,4 +157,40 @@ func Test_pairwiseName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAccept(t *testing.T) {
+	p := PSM{
+		Key: StateKey{
+			DID:   mockStateDID,
+			Nonce: mockStateNonce,
+		},
+		ConnDID: "TEST",
+		States: []State{
+			{Sub: Received}, {Sub: Waiting}, {Sub: Waiting},
+		},
+	}
+	accept := p.Accept(Received)
+	require.True(t, accept)
+
+	accept = p.Accept(Sending)
+	require.True(t, accept)
+	accept = p.Accept(ReadyACK)
+	require.False(t, accept)
+
+	p.States = []State{{Sub: Received}, {Sub: Waiting}, {Sub: ReadyACK}}
+	accept = p.Accept(Waiting)
+	require.False(t, accept)
+
+	p.States = []State{{Sub: Received}, {Sub: Waiting}, {Sub: Failure}}
+	accept = p.Accept(Waiting)
+	require.False(t, accept)
+
+	p.States = []State{{Sub: Received}, {Sub: Decrypted}}
+	accept = p.Accept(Sending)
+	require.True(t, accept)
+
+	p.States = []State{{Sub: Received}}
+	accept = p.Accept(ReadyACK)
+	require.True(t, accept)
 }

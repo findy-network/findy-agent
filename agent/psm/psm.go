@@ -131,6 +131,13 @@ func (ss SubState) Pure() SubState {
 	return state
 }
 
+var rules = map[SubState][]SubState{
+	Waiting:   {Received, Sending},
+	Received:  {Sending, Decrypted, Failure, Ready},
+	Sending:   {Sending, Ready, Waiting, Failure},
+	Decrypted: {Waiting, Sending, Ready},
+}
+
 type StateKey struct {
 	DID   string
 	Nonce string
@@ -285,4 +292,16 @@ func (p *PSM) Protocol() string {
 // PresentTask returns latest state's Task of the PSM.
 func (p *PSM) PresentTask() (t comm.Task) {
 	return p.LastState().T
+}
+
+// Accept check that state transition rules are followed.
+func (p *PSM) Accept(state SubState) (yes bool) {
+	last := p.LastState().Sub.Pure()
+	accepts := rules[last]
+	for _, ss := range accepts {
+		if ss == state.Pure() {
+			return true
+		}
+	}
+	return false
 }

@@ -92,6 +92,11 @@ func UpdatePSM(
 		Sub:       stateType,
 	}
 	if foundPSM != nil { // update existing one
+		if !foundPSM.Accept(stateType) {
+			glog.Warningf("PSM doesn't acccept %v -> %v. Skipping..",
+				foundPSM.LastState().Sub, stateType)
+			return nil
+		}
 		if connDID != "" {
 			foundPSM.ConnDID = connDID
 		}
