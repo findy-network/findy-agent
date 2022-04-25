@@ -659,6 +659,7 @@ github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
 github.com/lainio/err2 v0.7.0/go.mod h1:+ogMLB0Z5wEp2/rHY/ykSaYcdnaLqIzgt1RrjMTFvdM=
 github.com/lainio/err2 v0.8.0 h1:UB+nNjfy9SjJefybjwKmd61M8j5w6hJjHw7o8C7wPxM=
 github.com/lainio/err2 v0.8.0/go.mod h1:FmcNs9IbLaDMScvPX4iO5dBsbHl8EnS3ybqP31z/RUk=
+github.com/lainio/err2 v0.8.3 h1:sUA6xV7ShYWCeVfh+vc+8iG7MNwvaIZTV/2i2KJD3MY=
 github.com/lainio/err2 v0.8.3/go.mod h1:3rbXKCMMXELY317HDv032a8rxJnmIK1e0vU6kLYRkUE=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.1.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
@@ -969,6 +970,7 @@ github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.7.1 h1:5TQK59W5E3v0r2duFAb7P95B6hEeOyEnHRa8MjYSMTY=
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
