@@ -175,8 +175,9 @@ func TestAccept(t *testing.T) {
 
 	accept = p.Accept(Sending)
 	require.True(t, accept)
-	accept = p.Accept(ReadyACK)
-	require.False(t, accept)
+
+	accept = p.Accept(ReadyACK) // important: JS agent's bug
+	require.True(t, accept, "waiting -> ready is ok for NOW")
 
 	p.States = []State{{Sub: Received}, {Sub: Waiting}, {Sub: ReadyACK}}
 	accept = p.Accept(Waiting)
