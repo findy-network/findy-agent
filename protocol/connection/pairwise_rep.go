@@ -43,12 +43,10 @@ func (p *pairwiseRep) Type() byte {
 func getPairwiseRep(key psm.StateKey) (rep *pairwiseRep, err error) {
 	defer err2.Return(&err)
 
-	var res psm.Rep
-	res = try.To1(psm.GetRep(bucketType, key))
+	res := try.To1(psm.GetRep(bucketType, key))
 
 	var ok bool
 	rep, ok = res.(*pairwiseRep)
-
 	assert.D.True(ok, "pairwise type mismatch")
 
 	return rep, nil
