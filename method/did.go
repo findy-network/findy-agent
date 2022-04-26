@@ -19,15 +19,16 @@ func String(d string) string {
 	return s[1]
 }
 
-type Method int
+type Type int
 
 const (
-	MethodKey Method = 0 + iota
-	//MethodPeer
+	TypeKey Type = 0 + iota
+	TypePeer
+	TypeSov
 )
 
-func New(hStorage managed.Wallet, method Method) (id core.DID, err error) {
-	assert.D.True(method == MethodKey)
+func New(hStorage managed.Wallet, method Type) (id core.DID, err error) {
+	assert.D.True(method == TypeKey)
 	return NewKey(hStorage)
 }
 
