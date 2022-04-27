@@ -11,6 +11,8 @@ type DID interface {
 	//	Resolve() DIDDoc
 	// Validate() error
 
+	DOC() DIDDoc
+
 	KID() string
 	Did() string // this is alias for KID() TODO: remove when done with ssi.DID
 
