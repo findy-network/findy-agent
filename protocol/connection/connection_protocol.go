@@ -19,6 +19,7 @@ import (
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/decorator"
 	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
@@ -119,7 +120,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
 
-	caller := ssiWA.NewDID("sov", "") // Create a new DID for our end
+	caller := ssiWA.NewDID(method.TypeSov, "") // Create a new DID for our end
 
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID

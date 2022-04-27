@@ -15,6 +15,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
+	"github.com/findy-network/findy-agent/method"
 	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
@@ -38,7 +39,7 @@ type Agent interface {
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
 	//CreateDID(seed string) (agentDid core.DID)
-	NewDID(method string, seed string) core.DID
+	NewDID(m method.Type, seed string) core.DID
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -215,15 +216,15 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(method string, seed string) core.DID {
+func (a *DIDAgent) NewDID(m method.Type, seed string) core.DID {
 	// TODO: under construction!
 
-	switch method {
-	case methodKey:
+	switch m {
+	case method.TypeKey:
 		_ = a.VDR() // TODO: check if we could use VDR as method factory
 		return try.To1(didmethod.NewKey(a.StorageH))
 
-	case methodIndy, methodSov:
+	case method.TypeSov:
 		return a.myCreateDID(seed)
 	default:
 		return a.myCreateDID(seed)

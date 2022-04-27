@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -120,7 +121,7 @@ func (p *Callee) ConnReqToRespWithSet(
 
 func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
-		p.Callee = p.agent.NewDID("", "")
+		p.Callee = p.agent.NewDID(method.TypeUnknown, "")
 	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,

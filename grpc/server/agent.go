@@ -13,6 +13,7 @@ import (
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vc"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
@@ -266,7 +267,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ssiWA := wa.(ssi.Agent)
 
 	// Build new DID for the pairwise and save it for the CONN_REQ??
-	ourPairwiseDID := ssiWA.NewDID("sov", "")
+	ourPairwiseDID := ssiWA.NewDID(method.TypeSov, "")
 
 	// mark the pre-allocated pairwise DID with connection ID that we find it
 	_, ms := wa.ManagedWallet()

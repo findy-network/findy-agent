@@ -17,6 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -87,7 +88,7 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyExists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	anchorDid := agent.NewDID("sov", seed)
+	anchorDid := agent.NewDID(method.TypeSov, seed)
 	if steward != nil {
 		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
 
