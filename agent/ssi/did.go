@@ -331,3 +331,7 @@ func (d *DID) Route() []string {
 	}
 	return []string{}
 }
+
+func (d *DID) DOC() core.DIDDoc {
+	return nil
+}
