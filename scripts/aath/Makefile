@@ -58,14 +58,14 @@ services-up:
 		make resolver-up
 
 tag:
-	docker pull ghcr.io/findy-network/findy-agent-backchannel:findy-bc-latest
-	docker tag ghcr.io/findy-network/findy-agent-backchannel:findy-bc-latest findy-agent-backchannel:latest
-	docker pull ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest
-	docker tag ghcr.io/findy-network/findy-agent-backchannel:acapy-bc-latest acapy-agent-backchannel:latest
-	docker pull ghcr.io/findy-network/findy-agent-backchannel:javascript-bc-latest
-	docker tag ghcr.io/findy-network/findy-agent-backchannel:javascript-bc-latest javascript-agent-backchannel:latest
-	docker pull ghcr.io/findy-network/findy-agent-backchannel:aath-latest
-	docker tag ghcr.io/findy-network/findy-agent-backchannel:aath-latest aries-test-harness:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel/findy-bc:latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel/findy-bc:latest findy-agent-backchannel:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel/acapy-bc:latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel/acapy-bc:latest acapy-agent-backchannel:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel/javascript-bc:latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel/javascript-bc:latest javascript-agent-backchannel:latest
+	docker pull ghcr.io/findy-network/findy-agent-backchannel/aath:latest
+	docker tag ghcr.io/findy-network/findy-agent-backchannel/aath:latest aries-test-harness:latest
 
 down:
 	cd ../dev/docker && \
