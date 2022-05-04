@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/mr-tron/base58"
 )
 
 var Creator = &Factor{}
@@ -99,19 +100,20 @@ func (m *RequestImpl) Did() string {
 }
 
 func (m *RequestImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.PublicKey) == 0 {
+	if len(m.Connection.Doc.VerificationMethod) == 0 {
 		return ""
 	}
-	return m.Connection.DIDDoc.PublicKey[0].PublicKeyBase58
+	return base58.Encode(m.Connection.Doc.VerificationMethod[0].Value)
+	//return m.Connection.Doc.VerificationMethod[0].PublicKeyBase58
 }
 
 func (m *RequestImpl) Endpoint() service.Addr {
-	if len(m.Connection.DIDDoc.Service) == 0 {
+	if len(m.Connection.Doc.Service) == 0 {
 		return service.Addr{}
 	}
 
-	addr := m.Connection.DIDDoc.Service[0].ServiceEndpoint
-	key := m.Connection.DIDDoc.Service[0].RecipientKeys[0]
+	addr := m.Connection.Doc.Service[0].ServiceEndpoint
+	key := m.Connection.Doc.Service[0].RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
 }

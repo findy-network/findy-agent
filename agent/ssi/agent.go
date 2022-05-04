@@ -16,7 +16,6 @@ import (
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
 	"github.com/findy-network/findy-agent/method"
-	didmethod "github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
@@ -39,7 +38,7 @@ type Agent interface {
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
 	//CreateDID(seed string) (agentDid core.DID)
-	NewDID(m method.Type, seed string) core.DID
+	NewDID(m method.Type, args ...string) core.DID
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -105,12 +104,6 @@ type DIDAgent struct {
 	saImplID string        // SA implementation ID, used mostly for tests
 	EAEndp   *service.Addr // EA endpoint if set, used for SA API and notifications
 }
-
-const (
-	methodKey  = "key"
-	methodIndy = "indy"
-	methodSov  = "sov"
-)
 
 func (a *DIDAgent) SAImplID() string {
 	a.Lock()
@@ -216,18 +209,18 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(m method.Type, seed string) core.DID {
+func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) core.DID {
 	// TODO: under construction!
 
-	switch m {
-	case method.TypeKey:
+	switch didMethod {
+	case method.TypeKey, method.TypePeer:
 		_ = a.VDR() // TODO: check if we could use VDR as method factory
-		return try.To1(didmethod.NewKey(a.StorageH))
+		return try.To1(method.New(didMethod, a.StorageH, args...))
 
 	case method.TypeSov:
-		return a.myCreateDID(seed)
+		return a.myCreateDID(args[0])
 	default:
-		return a.myCreateDID(seed)
+		return a.myCreateDID(args[0]) // TODO: remove after test
 		//assert.That(false, "not supported")
 
 	}
@@ -240,15 +233,15 @@ func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err 
 	glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
 		didStr, verKey)
 
-	switch didmethod.String(didStr) {
-	case methodKey:
+	switch method.MethodType(didStr) {
+	case method.TypeKey, method.TypePeer:
 		_ = a.VDR()
-		return didmethod.NewKeyFromDID(
+		return method.NewFromDID(
 			a.StorageH,
 			didStr,
 		)
 
-	case methodIndy, methodSov:
+	case method.TypeIndy, method.TypeSov:
 		d := indy.DID2KID(didStr)
 		var cached *DID
 		if d != "" {

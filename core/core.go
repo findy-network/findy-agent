@@ -12,6 +12,7 @@ type DID interface {
 	// Validate() error
 
 	DOC() DIDDoc
+	NewDoc(ae service.Addr) DIDDoc
 
 	KID() string
 	Did() string // this is alias for KID() TODO: remove when done with ssi.DID

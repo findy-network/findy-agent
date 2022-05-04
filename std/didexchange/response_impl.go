@@ -8,9 +8,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
+	"github.com/mr-tron/base58"
 )
 
 var ResponseCreator = &ResponseFactor{}
@@ -32,7 +33,7 @@ func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
 
 	if init.DIDObj != nil {
 		ep := service.Addr{Endp: init.Endpoint, Key: init.EndpVerKey}
-		doc = did.NewDoc(init.DIDObj, ep)
+		doc = init.DIDObj.NewDoc(ep).(*did.Doc)
 		DID = init.DIDObj.Did()
 	}
 
@@ -119,10 +120,11 @@ func (m *ResponseImpl) Did() string {
 }
 
 func (m *ResponseImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.PublicKey) == 0 {
+	if len(m.Connection.Doc.VerificationMethod) == 0 {
 		return ""
 	}
-	return m.Connection.DIDDoc.PublicKey[0].PublicKeyBase58
+	return base58.Encode(m.Connection.Doc.VerificationMethod[0].Value)
+	//return m.Connection.Doc.VerificationMethod[0].PublicKeyBase58
 }
 
 func (m *ResponseImpl) Name() string { // Todo: names should be Label

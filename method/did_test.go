@@ -25,3 +25,24 @@ func TestMethodString(t *testing.T) {
 		})
 	}
 }
+
+func TestMethodType(t *testing.T) {
+	tests := []struct {
+		name, did string
+		Type
+	}{
+		{"did key",
+			"did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso",
+			TypeKey,
+		},
+		{"did peer",
+			"did:peer:1zQmQSLFWySB3LACeSrUpvM48QN9frMayNHypnsQjk4GhQKG",
+			TypePeer,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.Type, MethodType(tt.did))
+		})
+	}
+}

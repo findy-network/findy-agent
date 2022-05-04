@@ -1,6 +1,8 @@
 package didexchange
 
 import (
+	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
 
@@ -9,8 +11,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-common-go/dto"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // Connection request taken from Python Agent output for example json.
@@ -74,6 +78,8 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
+	err2.StackStraceWriter = os.Stderr
+
 	var req Request
 
 	dto.FromJSONStr(connectionRequest, &req)
@@ -81,14 +87,21 @@ func TestConnection_ReadJSON(t *testing.T) {
 		t.Errorf("id (%v) not match", req.ID)
 	}
 
-	doc := req.Connection.DIDDoc
-	if doc == nil {
+	d := req.Connection.DIDDoc
+	if d == nil {
 		t.Fail()
 		return
 	}
 
+	b := try.To1(json.Marshal(d))
+	bs := string(b)
+	println(bs)
+
+	var doc did.Doc
+	try.To(json.Unmarshal(b, &doc))
+
 	if doc.Authentication == nil ||
-		doc.Authentication[0].Type != "Ed25519SignatureAuthentication2018" {
+		doc.Authentication[0].VerificationMethod.Type != "Ed25519SignatureAuthentication2018" {
 		t.Errorf("id (%v) not match", doc.Authentication)
 	}
 
@@ -106,7 +119,7 @@ func TestNewRequest(t *testing.T) {
 		Label: "TestLabel",
 		Connection: &Connection{
 			DID:    "CALLER_DID",
-			DIDDoc: did.NewDoc(caller, ae),
+			DIDDoc: caller.NewDoc(ae),
 		},
 		Thread: &decorator.Thread{ID: nonce},
 	})

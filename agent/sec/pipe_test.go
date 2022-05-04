@@ -22,6 +22,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
@@ -78,27 +79,38 @@ func setUp() {
 }
 
 func TestNewPipe(t *testing.T) {
-	didIn := agent.NewDID(method.TypeKey, "")
-	println(didIn.String())
-	didOut := agent.NewDID(method.TypeKey, "")
-	println(didOut.String())
-	didRoute1 := agent.NewDID(method.TypeKey, "")
-	println(didRoute1.String())
-	didRoute2 := agent.NewDID(method.TypeKey, "")
-	println(didRoute2.String())
+	tests := []struct {
+		name   string
+		method method.Type
+	}{
+		{"key method", method.TypeKey},
+		{"peer method", method.TypePeer},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			didIn := agent.NewDID(tt.method, "")
+			println(didIn.String())
+			didOut := agent.NewDID(tt.method, "")
+			println(didOut.String())
+			didRoute1 := agent.NewDID(tt.method, "")
+			println(didRoute1.String())
+			didRoute2 := agent.NewDID(tt.method, "")
+			println(didRoute2.String())
 
-	require.NotNil(t, didIn)
-	require.NotNil(t, didOut)
-	require.NotNil(t, didRoute1)
-	require.NotNil(t, didRoute2)
+			require.NotNil(t, didIn)
+			require.NotNil(t, didOut)
+			require.NotNil(t, didRoute1)
+			require.NotNil(t, didRoute2)
 
-	message := []byte("message")
+			message := []byte("message")
 
-	p := sec.Pipe{In: didIn, Out: didOut}
+			p := sec.Pipe{In: didIn, Out: didOut}
 
-	packed, _ := try.To2(p.Pack(message))
-	received, _ := try.To2(p.Unpack(packed))
-	require.Equal(t, message, received)
+			packed, _ := try.To2(p.Pack(message))
+			received, _ := try.To2(p.Unpack(packed))
+			require.Equal(t, message, received)
+		})
+	}
 }
 
 func TestResolve(t *testing.T) {
@@ -276,14 +288,103 @@ func TestPipe_pack(t *testing.T) {
 
 	// Simulate actual aries message
 	plID := utils.UUID()
+	doc := didIn.NewDoc(service.Addr{
+		Endp: "http://example.com",
+		Key:  didIn.VerKey(),
+	})
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: "test",
 		Connection: &didexchange.Connection{
-			DID: didIn.Did(),
-			DIDDoc: did.NewDoc(didIn, service.Addr{
-				Endp: "http://example.com",
-				Key:  didIn.VerKey(),
-			}),
+			DID:    didIn.Did(),
+			DIDDoc: doc.(*did.Doc),
+		},
+		Thread: &decorator.Thread{ID: utils.UUID()},
+	})
+	pl := aries.PayloadCreator.NewMsg(plID, pltype.AriesConnectionRequest, msg)
+
+	// Pack message
+	route2bytes, _, err := packPipe.Pack(pl.JSON())
+	require.NoError(t, err)
+	require.True(t, len(route2bytes) > 0)
+
+	// Unpack forward message with last routing key
+	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
+	require.NoError(t, err)
+	require.True(t, len(route2Keys) == 1)
+	require.Equal(t, didRoute2.VerKey(), route2Keys[0])
+
+	route1UnpackPipe := sec.NewPipeByVerkey(didRoute2, didIn.VerKey(), []string{})
+	route1FwBytes, _, err := route1UnpackPipe.Unpack(route2bytes)
+	require.NoError(t, err)
+
+	// Unpack next forward message with first routing key
+	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
+	route1Bytes := route1FwdMsg.Msg
+	route1Keys, err := getRecipientKeys(route1Bytes)
+	require.NoError(t, err)
+	require.True(t, len(route2Keys) == 1)
+	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
+	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
+
+	dstUnpackPipe := sec.NewPipeByVerkey(didOut, didIn.VerKey(), []string{})
+	dstFwBytes, _, err := dstUnpackPipe.Unpack(dto.ToJSONBytes(route1Bytes))
+	require.NoError(t, err)
+
+	// Unpack final (anon-crypted) forward message with destination key
+	dstFwdMsg := aries.PayloadCreator.NewFromData(dstFwBytes).MsgHdr().FieldObj().(*common.Forward)
+	dstPackedBytes := dto.ToJSONBytes(dstFwdMsg.Msg)
+	dstFwdKeys, err := getRecipientKeys(dstFwdMsg.Msg)
+	require.NoError(t, err)
+	require.True(t, len(dstFwdKeys) == 1)
+	require.Equal(t, didOut.VerKey(), dstFwdKeys[0])
+	require.Equal(t, didOut.VerKey(), dstFwdMsg.To)
+
+	// Unpack final (auth-crypted) message with destination key
+	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
+	require.NoError(t, err)
+	dstKeys, err := getRecipientKeysFromBytes(dstPackedBytes)
+	require.NoError(t, err)
+	require.True(t, len(dstFwdKeys) == 1)
+	require.Equal(t, didOut.VerKey(), dstKeys[0])
+
+	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
+	require.True(t, dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
+	require.True(t, dstMsg.MsgHdr().ID() == plID)
+	require.True(t, dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+}
+
+func TestPipe_packPeer(t *testing.T) {
+	err2.StackStraceWriter = os.Stderr
+	assert.D = assert.AsserterCallerInfo
+
+	defer err2.CatchTrace(func(err error) {
+		fmt.Println(err)
+	})
+	// Create test wallet and routing keys
+	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw.Create()
+	a := ssi.DIDAgent{}
+	a.OpenWallet(*aw)
+
+	didIn := a.NewDID(method.TypePeer, "http://example.com")
+	didOut := a.NewDID(method.TypePeer, "http://example.com")
+	didRoute1 := a.NewDID(method.TypePeer, "http://example.com")
+	didRoute2 := a.NewDID(method.TypePeer, "http://example.com")
+
+	// Packing pipe with two routing keys
+	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
+		[]string{didRoute1.VerKey(), didRoute2.VerKey()})
+
+	// Simulate actual aries message
+	plID := utils.UUID()
+	doc := didIn.DOC()
+
+	msg := didexchange.NewRequest(&didexchange.Request{
+		Label: "test",
+		Connection: &didexchange.Connection{
+			DID:    didIn.Did(),
+			DIDDoc: doc.(*did.Doc),
 		},
 		Thread: &decorator.Thread{ID: utils.UUID()},
 	})

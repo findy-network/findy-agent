@@ -5,21 +5,21 @@ import (
 )
 
 func (r *Response) Endpoint() service.Addr {
-	if len(r.Connection.DIDDoc.Service) == 0 {
+	if len(r.Connection.Doc.Service) == 0 {
 		return service.Addr{}
 	}
 
-	addr := r.Connection.DIDDoc.Service[0].ServiceEndpoint
-	key := r.Connection.DIDDoc.Service[0].RecipientKeys[0]
+	addr := r.Connection.Doc.Service[0].ServiceEndpoint
+	key := r.Connection.Doc.Service[0].RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
 }
 
 func (r *Response) SetEndpoint(ae service.Addr) {
-	if len(r.Connection.DIDDoc.Service) == 0 {
+	if len(r.Connection.Doc.Service) == 0 {
 		panic("we should not be here")
 	}
 
-	r.Connection.DIDDoc.Service[0].ServiceEndpoint = ae.Endp
-	r.Connection.DIDDoc.Service[0].RecipientKeys[0] = ae.Key
+	r.Connection.Doc.Service[0].ServiceEndpoint = ae.Endp
+	r.Connection.Doc.Service[0].RecipientKeys[0] = ae.Key
 }

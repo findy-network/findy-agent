@@ -3,7 +3,6 @@ package signature
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -40,7 +39,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (cs *didexchange.ConnectionSignature, err error) {
 	defer err2.Annotate("build connection sign", &err)
 
-	connectionJSON := try.To1(json.Marshal(connection))
+	connectionJSON := try.To1((connection.ToJSON()))
 
 	signedData, signature, verKey := try.To3(pipe.SignAndStamp(connectionJSON))
 
