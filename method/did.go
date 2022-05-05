@@ -32,6 +32,10 @@ func MethodType(s string) Type {
 	return t
 }
 
+func Accept(did core.DID, t Type) bool {
+	return MethodType(did.String()) == t
+}
+
 var methodTypes = map[string]Type{
 	"unknown": TypeUnknown,
 	"key":     TypeKey,
