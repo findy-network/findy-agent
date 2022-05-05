@@ -2,6 +2,7 @@ package didexchange
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -14,8 +15,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
-	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Connection request taken from Python Agent output for example json.
@@ -26,7 +26,7 @@ var connectionRequest = `  {
     "connection": {
       "DID": "ERYihzndieTdh4UA7Q6Y3C",
       "DIDDoc": {
-        "@context": "https://w3id.org/did/v1",
+        "@context": "https://www.w3.org/2019/did/v1",
         "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
         "publicKey": [
           {
@@ -38,9 +38,11 @@ var connectionRequest = `  {
         ],
         "authentication": [
           {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
+            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
             "type": "Ed25519SignatureAuthentication2018",
-            "publicKey": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
+            "publicKey": [
+		    "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
+		  ],
             "controller": "did:sov:ERYihzndieTdh4UA7Q6Y3C"
           }
         ],
@@ -116,46 +118,53 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 }
 
 func TestConnection_ReadDoc(t *testing.T) {
-	err2.StackStraceWriter = os.Stderr
-	var doc did.Doc
+	err2.StackTraceWriter = os.Stderr
+	defer err2.CatchTrace(func(err error) {
+		t.Error(err)
+	})
 
-	err := json.Unmarshal([]byte(didDocStr), &doc)
-	assert.NoError(t, err)
+	type args struct {
+		filename string
+	}
+	tests := []struct {
+		name string
+		args
+		ok bool
+	}{
+		{"w3c sample", args{"./w3c-doc-sample.json"}, false},
+		{"sov from afgo", args{"./sov.json"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var doc did.Doc
+			d, err := ioutil.ReadFile(tt.filename)
+			require.NoError(t, err)
 
+			if tt.ok {
+				require.NoError(t, json.Unmarshal(d, &doc))
+			} else {
+				require.Error(t, json.Unmarshal(d, &doc))
+			}
+		})
+	}
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
-	err2.StackStraceWriter = os.Stderr
+	err2.StackTraceWriter = os.Stderr
 
 	var req Request
 
-	dto.FromJSONStr(connectionRequest, &req)
-	if req.ID != "670bc804-2c06-453c-aee6-48d3c929b488" {
-		t.Errorf("id (%v) not match", req.ID)
-	}
+	err := json.Unmarshal([]byte(connectionRequest), &req)
+	require.NoError(t, err)
+	require.Equal(t, "670bc804-2c06-453c-aee6-48d3c929b488", req.ID)
 
-	d := req.Connection.DIDDoc
-	if d == nil {
-		t.Fail()
-		return
-	}
+	doc := req.Connection.DIDDoc
 
-	b := try.To1(json.Marshal(d))
-	bs := string(b)
-	println(bs)
-
-	var doc did.Doc
-	try.To(json.Unmarshal(b, &doc))
-
-	if doc.Authentication == nil ||
-		doc.Authentication[0].VerificationMethod.Type != "Ed25519SignatureAuthentication2018" {
-		t.Errorf("id (%v) not match", doc.Authentication)
-	}
+	require.NotNil(t, doc.Authentication)
+	require.Equal(t, "Ed25519VerificationKey2018", doc.Authentication[0].VerificationMethod.Type)
 
 	recipKey := doc.Service[0].RecipientKeys[0]
-	if recipKey != "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu" {
-		t.Errorf("id (%v) not match", recipKey)
-	}
+	require.Equal(t, "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
 }
 
 func TestNewRequest(t *testing.T) {
