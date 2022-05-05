@@ -21,12 +21,12 @@ import (
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/decorator"
-	diddoc "github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -130,7 +130,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
 			DID:    caller.Did(),
-			DIDDoc: caller.NewDoc(pubEndp.AE()),
+			DIDDoc: caller.NewDoc(pubEndp.AE()).(*did.Doc),
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
