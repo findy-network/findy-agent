@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/golang/glog"
 	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
@@ -36,6 +37,8 @@ type Pipe struct {
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public
 // key.
 func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
+	assert.That(method.Accept(did, method.TypeSov))
+
 	out := ssi.NewOutDid(verkey, route)
 
 	return &Pipe{

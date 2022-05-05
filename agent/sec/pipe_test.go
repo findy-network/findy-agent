@@ -17,10 +17,10 @@ import (
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -354,11 +354,16 @@ func TestPipe_pack(t *testing.T) {
 }
 
 func TestPipe_packPeer(t *testing.T) {
-	err2.StackStraceWriter = os.Stderr
+	err2.StackTraceWriter = os.Stderr
 	assert.D = assert.AsserterCallerInfo
+	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
 
-	defer err2.CatchTrace(func(err error) {
+	defer err2.CatchAll(func(err error) {
 		fmt.Println(err)
+		t.Fail()
+	}, func(v any) {
+		fmt.Println(v)
+		t.Error(v)
 	})
 	// Create test wallet and routing keys
 	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
@@ -378,13 +383,14 @@ func TestPipe_packPeer(t *testing.T) {
 
 	// Simulate actual aries message
 	plID := utils.UUID()
-	doc := didIn.DOC()
+	doc, ok := didIn.DOC().(*did.Doc)
+	require.True(t, ok)
 
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: "test",
 		Connection: &didexchange.Connection{
 			DID:    didIn.Did(),
-			DIDDoc: doc.(*did.Doc),
+			DIDDoc: doc,
 		},
 		Thread: &decorator.Thread{ID: utils.UUID()},
 	})
