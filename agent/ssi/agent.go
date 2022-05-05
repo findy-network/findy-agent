@@ -226,30 +226,32 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) core.DID {
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err error) {
+func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
 	// TODO: under construction!
 	defer err2.Return(&err)
 
-	glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
-		didStr, verKey)
-
-	switch method.MethodType(didStr) {
+	switch method.DIDType(didInfo[0]) {
 	case method.TypeKey, method.TypePeer:
 		_ = a.VDR()
 		return method.NewFromDID(
 			a.StorageH,
-			didStr,
+			didInfo...,
 		)
 
 	case method.TypeIndy, method.TypeSov:
-		d := indy.DID2KID(didStr)
+		assert.That(len(didInfo) >= 2)
+
+		glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
+			didInfo[0], didInfo[1])
+
+		d := indy.DID2KID(didInfo[0])
 		var cached *DID
 		if d != "" {
-			try.To(a.SaveTheirDID(d, verKey[0]))
+			try.To(a.SaveTheirDID(d, didInfo[1]))
 			cached = a.DidCache.Get(d, true)
-			assert.D.True(cached.wallet != nil)
+			assert.That(cached.wallet != nil)
 		} else {
-			newDID := NewDIDWithRouting("", verKey...)
+			newDID := NewDIDWithRouting("", didInfo[1:]...)
 			a.DidCache.Add(newDID)
 			cached = newDID
 		}

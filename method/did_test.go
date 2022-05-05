@@ -11,11 +11,18 @@ func TestMethodString(t *testing.T) {
 	tests := []struct {
 		did, method string
 	}{
-		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso", method: "key"},
-		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso#", method: "key"},
-		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso:test#", method: "key"},
-		{did: "did:sov:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso", method: "sov"},
-		{did: "did:indy:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso", method: "indy"},
+		{did: "did:key",
+			method: "key"},
+		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso",
+			method: "key"},
+		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso#",
+			method: "key"},
+		{did: "did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso:test#",
+			method: "key"},
+		{did: "did:sov:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso",
+			method: "sov"},
+		{did: "did:indy:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso",
+			method: "indy"},
 	}
 
 	for i, tt := range tests {
@@ -26,11 +33,15 @@ func TestMethodString(t *testing.T) {
 	}
 }
 
-func TestMethodType(t *testing.T) {
+func TestDIDType(t *testing.T) {
 	tests := []struct {
 		name, did string
 		Type
 	}{
+		{"did key only prefix",
+			"did:key",
+			TypeKey,
+		},
 		{"did key",
 			"did:key:z6Mkj5J66HkkrfSH2Ld63zvBbnEvDSk5E3cfhKRt7213Reso",
 			TypeKey,
@@ -42,7 +53,7 @@ func TestMethodType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.Type, MethodType(tt.did))
+			require.Equal(t, tt.Type, DIDType(tt.did))
 		})
 	}
 }

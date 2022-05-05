@@ -102,12 +102,12 @@ func TestConnection_ReadDoc(t *testing.T) {
 		{"w3c sample", args{"./json/w3c-doc-sample.json"}, true},
 		{"sov from afgo", args{"./json/sov.json"}, true},
 		{"our peer did doc", args{"./json/our-peer-did-doc.json"}, true},
-		// {"acapy 160", args{"json/160-acapy.json"}, true},
-		// {"acapy", args{"json/acapy.json"}, true},
-		// {"afgo def", args{"json/afgo-default.json"}, true},
-		// {"afgo interop", args{"json/afgo-interop.json"}, true},
+		{"acapy 160", args{"json/160-acapy.json"}, false},
+		{"acapy", args{"json/acapy.json"}, false},
+		{"afgo def", args{"json/afgo-default.json"}, false},
+		{"afgo interop", args{"json/afgo-interop.json"}, false},
 		{"dotnet", args{"json/dotnet.json"}, true},
-		//{"findy", args{"json/findy.json"}, true},
+		{"findy", args{"json/findy.json"}, false},
 		{"js", args{"json/javascript.json"}, false},
 	}
 	for _, tt := range tests {

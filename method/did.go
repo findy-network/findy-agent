@@ -23,7 +23,7 @@ func String(d string) string {
 	return s[1]
 }
 
-func MethodType(s string) Type {
+func DIDType(s string) Type {
 	t, ok := methodTypes[String(s)]
 	if !ok {
 		glog.Warningf("cannot compute did method from '%s'", s)
@@ -33,7 +33,7 @@ func MethodType(s string) Type {
 }
 
 func Accept(did core.DID, t Type) bool {
-	return MethodType(did.String()) == t
+	return DIDType(did.String()) == t
 }
 
 var methodTypes = map[string]Type{
@@ -151,25 +151,33 @@ func NewPeer(
 
 func NewFromDID(
 	hStorage managed.Wallet,
-	didStr string,
+	didStr ...string,
 ) (
 	id core.DID,
 	err error,
 ) {
-	switch MethodType(didStr) {
+	defer err2.Return(&err)
+
+	switch DIDType(didStr[0]) {
 	case TypePeer:
-		return NewPeerFromDID(hStorage, didStr)
+		assert.SLen(didStr, 2)
+		return NewPeerFromDID(hStorage, didStr[0],
+			try.To1(base58.Decode(didStr[1])))
 	case TypeKey:
-		return NewKeyFromDID(hStorage, didStr)
+		assert.SLen(didStr, 1)
+		return NewKeyFromDID(hStorage, didStr[0])
 	default:
 		assert.NotImplemented()
 	}
 	return
 }
 
+// NewPeerFromDID doesn't create a totally new did:peer but it saves its pubkey
+// to our kms for us to be able to use cryptos with them.
 func NewPeerFromDID(
 	hStorage managed.Wallet,
 	didStr string,
+	pubKey []byte,
 ) (
 	id core.DID,
 	err error,
@@ -181,13 +189,15 @@ func NewPeerFromDID(
 	// TODO: get pubkey from peer did string
 	//  - that cannot be done, the actual signing key has to get form diddoc
 
-	pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
+	//pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
 
-	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
+	kh := try.To1(keys.PubKeyBytesToHandle(pubKey, kms.ED25519))
 
-	return Key{Base{handle: hStorage, kid: "", pk: pk, vkh: kh}}, nil
+	return Key{Base{handle: hStorage, kid: "", pk: pubKey, vkh: kh}}, nil
 }
 
+// NewKeyFromDID doesn't create a totally new did:key but it stores its pubkey
+// to our KMS. We need it there for cryptos to work.
 func NewKeyFromDID(
 	hStorage managed.Wallet,
 	didStr string,
