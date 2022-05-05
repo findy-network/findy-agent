@@ -10,8 +10,8 @@ require (
 	github.com/golang/glog v1.0.0
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
-	github.com/hyperledger/aries-framework-go v0.1.7
-	github.com/hyperledger/aries-framework-go/spi v0.0.0-20220310162624-ca0bc656ea74
+	github.com/hyperledger/aries-framework-go v0.1.8
+	github.com/hyperledger/aries-framework-go/spi v0.0.0-20220322085443-50e8f9bd208b
 	github.com/lainio/err2 v0.8.3
 	github.com/mr-tron/base58 v1.1.3
 	github.com/spf13/cobra v1.2.1
