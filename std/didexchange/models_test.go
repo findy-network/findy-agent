@@ -2,17 +2,23 @@ package didexchange
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
-	"reflect"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/stretchr/testify/require"
@@ -32,18 +38,15 @@ var connectionRequest = `  {
           {
             "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
             "type": "Ed25519VerificationKey2018",
-            "controller": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
             "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
           }
         ],
         "authentication": [
           {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
             "type": "Ed25519SignatureAuthentication2018",
             "publicKey": [
 		    "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
-		  ],
-            "controller": "did:sov:ERYihzndieTdh4UA7Q6Y3C"
+		  ]
           }
         ],
         "service": [
@@ -59,41 +62,6 @@ var connectionRequest = `  {
     }
   }
 `
-
-var didDocStr = `{
-  "@context": [
-    "https://www.w3.org/ns/did/v1"
-  ],
-  "id": "did:peer:1zQmZkgq3q4eCXrKqV6DqR1DcADaC8vPgW1b2m4QambYjiMz",
-  "verificationMethod": [
-    {
-      "controller": "",
-      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
-      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
-      "type": "Ed25519VerificationKey2018"
-    }
-  ],
-  "service": [
-    {
-      "id": "didcomm",
-      "priority": 0,
-      "recipientKeys": [
-        "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s"
-      ],
-      "routingKeys": [],
-      "serviceEndpoint": "http://example.com",
-      "type": "did-communication"
-    }
-  ],
-  "authentication": [
-    {
-      "controller": "",
-      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
-      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
-      "type": "Ed25519VerificationKey2018"
-    }
-  ]
-}`
 
 // test json from service json testing.
 var serviceJSON = `{
@@ -133,6 +101,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 	}{
 		{"w3c sample", args{"./w3c-doc-sample.json"}, false},
 		{"sov from afgo", args{"./sov.json"}, true},
+		{"our peer did doc", args{"./our-peer-did-doc.json"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -168,33 +137,91 @@ func TestConnection_ReadJSON(t *testing.T) {
 }
 
 func TestNewRequest(t *testing.T) {
-	caller := ssi.NewDid("CALLER_DID", "CALLER_VERKEY")
-	nonce := "NONCE"
-	ae := service.Addr{Endp: "http://www.address.com", Key: "SERVICE_KEY"}
-	msg := NewRequest(&Request{
-		Label: "TestLabel",
-		Connection: &Connection{
-			DID:    "CALLER_DID",
-			DIDDoc: caller.NewDoc(ae).(*did.Doc),
-		},
-		Thread: &decorator.Thread{ID: nonce},
-	})
-	opl := aries.PayloadCreator.NewMsg(nonce, pltype.AriesConnectionRequest, msg)
-
-	json := opl.JSON()
-
-	ipl := aries.PayloadCreator.NewFromData(json)
-
-	if pltype.AriesConnectionRequest != ipl.Type() {
-		t.Errorf("wrong type %v", ipl.Type())
+	tests := []struct {
+		name   string
+		method method.Type
+	}{
+		{"sov method", method.TypeSov},
+		{"peer method", method.TypePeer},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			didIn := agent.NewDID(tt.method, "")
+			require.NotNil(t, didIn)
 
-	req := ipl.MsgHdr().FieldObj().(*Request)
-	if req == nil {
-		t.Error("request is nil")
-	}
+			nonce := "NONCE"
+			ae := service.Addr{
+				Endp: "http://www.address.com",
+				Key:  "SERVICE_KEY",
+			}
+			didDoc := didIn.NewDoc(ae).(*did.Doc)
 
-	if !reflect.DeepEqual(opl, ipl) {
-		t.Errorf("not equal, is (%v), want (%v)", req, msg)
+			msg := NewRequest(&Request{
+				Label: "TestLabel",
+				Connection: &Connection{
+					DID:    "CALLER_DID",
+					DIDDoc: didDoc,
+				},
+				Thread: &decorator.Thread{ID: nonce},
+			})
+
+			opl := aries.PayloadCreator.NewMsg(
+				nonce, pltype.AriesConnectionRequest, msg)
+			oplJSON := opl.JSON()
+
+			ipl := aries.PayloadCreator.NewFromData(oplJSON)
+			iplJSON := ipl.JSON()
+
+			require.Equal(t, oplJSON, iplJSON)
+
+			require.Equal(t, ipl.Type(), pltype.AriesConnectionRequest)
+
+			req := ipl.MsgHdr().FieldObj().(*Request)
+			require.NotNil(t, req)
+		})
 	}
+}
+
+func TestMain(m *testing.M) {
+	setUp()
+	code := m.Run()
+	tearDown()
+	os.Exit(code)
+}
+
+func tearDown() {
+	home := utils.IndyBaseDir()
+	removeFiles(home, "/.indy_client/wallet/pipe-test-agent*")
+}
+
+func removeFiles(home, nameFilter string) {
+	filter := filepath.Join(home, nameFilter)
+	files, _ := filepath.Glob(filter)
+	for _, f := range files {
+		if err := os.RemoveAll(f); err != nil {
+			panic(err)
+		}
+	}
+}
+
+var (
+	agent, agent2 = new(ssi.DIDAgent), new(ssi.DIDAgent)
+)
+
+func setUp() {
+	// init pipe package, TODO: try to find out how to get media profile
+	// from...
+	sec.Init(transport.MediaTypeProfileDIDCommAIP1)
+
+	// first, create agent 1 with the storages
+	walletID := fmt.Sprintf("pipe-test-agent-11%d", time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw.Create()
+	agent.OpenWallet(*aw)
+
+	// second, create agent 2 with the storages
+	walletID2 := fmt.Sprintf("pipe-test-agent-12%d", time.Now().Unix())
+	aw2 := ssi.NewRawWalletCfg(walletID2, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw2.Create()
+	agent2.OpenWallet(*aw2)
 }
