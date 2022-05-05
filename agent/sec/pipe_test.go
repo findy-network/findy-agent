@@ -378,8 +378,14 @@ func TestPipe_packPeer(t *testing.T) {
 	didRoute2 := a.NewDID(method.TypePeer, "http://example.com")
 
 	// Packing pipe with two routing keys
-	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
-		[]string{didRoute1.VerKey(), didRoute2.VerKey()})
+	_ = []string{didRoute1.VerKey(), didRoute2.VerKey()}
+	out, err := a.NewOutDID(didOut.String(), didOut.VerKey())
+	require.NoError(t, err)
+
+	packPipe := &sec.Pipe{
+		In:  didIn,
+		Out: out,
+	}
 
 	// Simulate actual aries message
 	plID := utils.UUID()
