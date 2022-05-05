@@ -43,7 +43,8 @@ type ConnectionSignature struct {
 // Connection connection
 type Connection struct {
 	DID    string   `json:"DID,omitempty"`
-	DIDDoc any `json:"DIDDoc,omitempty"` // todo: was did_doc
+	DIDDoc *did.Doc `json:"DIDDoc,omitempty"`
+	//DIDDoc any `json:"DIDDoc,omitempty"` // todo: was did_doc
 
 	Doc *did.Doc `json:"-"` // Actual Doc
 }

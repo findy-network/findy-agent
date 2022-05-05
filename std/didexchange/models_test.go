@@ -15,6 +15,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
+	"github.com/stretchr/testify/assert"
 )
 
 // Connection request taken from Python Agent output for example json.
@@ -37,8 +38,10 @@ var connectionRequest = `  {
         ],
         "authentication": [
           {
+            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
             "type": "Ed25519SignatureAuthentication2018",
-            "publicKey": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
+            "publicKey": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
+            "controller": "did:sov:ERYihzndieTdh4UA7Q6Y3C"
           }
         ],
         "service": [
@@ -54,6 +57,41 @@ var connectionRequest = `  {
     }
   }
 `
+
+var didDocStr = `{
+  "@context": [
+    "https://www.w3.org/ns/did/v1"
+  ],
+  "id": "did:peer:1zQmZkgq3q4eCXrKqV6DqR1DcADaC8vPgW1b2m4QambYjiMz",
+  "verificationMethod": [
+    {
+      "controller": "",
+      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
+      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
+      "type": "Ed25519VerificationKey2018"
+    }
+  ],
+  "service": [
+    {
+      "id": "didcomm",
+      "priority": 0,
+      "recipientKeys": [
+        "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s"
+      ],
+      "routingKeys": [],
+      "serviceEndpoint": "http://example.com",
+      "type": "did-communication"
+    }
+  ],
+  "authentication": [
+    {
+      "controller": "",
+      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
+      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
+      "type": "Ed25519VerificationKey2018"
+    }
+  ]
+}`
 
 // test json from service json testing.
 var serviceJSON = `{
@@ -75,6 +113,15 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 	if len(s.RecipientKeys) == 0 {
 		t.Errorf("error in service reading RecipientKeys length 0")
 	}
+}
+
+func TestConnection_ReadDoc(t *testing.T) {
+	err2.StackStraceWriter = os.Stderr
+	var doc did.Doc
+
+	err := json.Unmarshal([]byte(didDocStr), &doc)
+	assert.NoError(t, err)
+
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
@@ -119,7 +166,7 @@ func TestNewRequest(t *testing.T) {
 		Label: "TestLabel",
 		Connection: &Connection{
 			DID:    "CALLER_DID",
-			DIDDoc: caller.NewDoc(ae),
+			DIDDoc: caller.NewDoc(ae).(*did.Doc),
 		},
 		Thread: &decorator.Thread{ID: nonce},
 	})
