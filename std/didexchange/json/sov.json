@@ -1,0 +1,25 @@
+{
+  "@context": "https://www.w3.org/2019/did/v1",
+  "id": "did:sov:17hRTxZFuRqqwFPxXnnuLj",
+  "service": [
+    {
+      "type": "endpoint",
+      "serviceEndpoint": "http://172.17.0.1:9031"
+    }
+  ],
+  "authentication": [
+    {
+      "type": "Ed25519SignatureAuthentication2018",
+      "publicKey": [
+        "did:sov:17hRTxZFuRqqwFPxXnnuLj#key-1"
+      ]
+    }
+  ],
+  "publicKey": [
+    {
+      "id": "did:sov:17hRTxZFuRqqwFPxXnnuLj#key-1",
+      "type": "Ed25519VerificationKey2018",
+      "publicKeyBase58": "14ehnBh9oevUhQUADCRk5dmMCk3cmLukZcKNCTxLGiic"
+    }
+  ]
+}

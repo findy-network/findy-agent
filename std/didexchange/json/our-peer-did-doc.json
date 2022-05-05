@@ -1,0 +1,35 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/did/v1"
+  ],
+  "id": "did:peer:1zQmZkgq3q4eCXrKqV6DqR1DcADaC8vPgW1b2m4QambYjiMz",
+  "verificationMethod": [
+    {
+      "controller": "",
+      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
+      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
+      "type": "Ed25519VerificationKey2018"
+    }
+  ],
+  "service": [
+    {
+      "id": "didcomm",
+      "priority": 0,
+      "recipientKeys": [
+        "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s"
+      ],
+      "routingKeys": [],
+      "serviceEndpoint": "http://example.com",
+      "type": "did-communication"
+    }
+  ],
+  "authentication": [
+    {
+      "controller": "",
+      "id": "GPrfyh84g4qtKk4VyPihJuK5KSuTy_5apWYOTzE62to",
+      "publicKeyBase58": "6yQAVAebciDaprMxhStV3GpxqRP6d7JoeEApFvm56u3s",
+      "type": "Ed25519VerificationKey2018"
+    }
+  ]
+}
+
