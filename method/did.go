@@ -313,6 +313,13 @@ func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 	return doc
 }
 
+// String returns URI formated DID
+func (p Peer) String() string {
+	assert.NotNil(p.doc)
+
+	return p.doc.ID
+}
+
 // newPeerDID is copied from framework's tests to find smallest common divider
 // to create `did:peer` with only one dependcy which is here kms.KeyManager.
 func _(keys kms.KeyManager) (d *did.Doc, err error) {
