@@ -33,7 +33,7 @@ type DID interface {
 	VerKey() string
 	Storage() managed.Wallet
 
-	// URI() string // real URI, currently used in did doc
+	URI() string // real URI, currently used in did doc
 	// Did() == KID() alias for make old code easy to integrate
 }
 

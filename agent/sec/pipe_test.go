@@ -93,13 +93,13 @@ func TestNewPipe(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			didIn := agent.NewDID(tt.method, "")
-			println(didIn.String())
+			println(didIn.URI())
 			didOut := agent.NewDID(tt.method, "")
-			println(didOut.String())
+			println(didOut.URI())
 			didRoute1 := agent.NewDID(tt.method, "")
-			println(didRoute1.String())
+			println(didRoute1.URI())
 			didRoute2 := agent.NewDID(tt.method, "")
-			println(didRoute2.String())
+			println(didRoute2.URI())
 
 			require.NotNil(t, didIn)
 			require.NotNil(t, didOut)
@@ -383,7 +383,7 @@ func TestPipe_packPeer(t *testing.T) {
 	// Packing pipe with two routing keys
 	_ = []string{didRoute1.VerKey(), didRoute2.VerKey()}
 	docBytes := try.To1(json.Marshal(didOut.DOC()))
-	out, err := a.NewOutDID(didOut.String(), string(docBytes))
+	out, err := a.NewOutDID(didOut.URI(), string(docBytes))
 	require.NoError(t, err)
 
 	packPipe := &sec.Pipe{

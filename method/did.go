@@ -224,6 +224,10 @@ func (b Base) String() string {
 	return didkey
 }
 
+func (b Base) URI() string {
+	return b.String()
+}
+
 func (b Base) Did() string {
 	return b.kid
 }
@@ -342,6 +346,11 @@ func (p Peer) Route() []string {
 		route[recvKeysLen+i] = p.buildDIDKeyStr(rk)
 	}
 	return route
+}
+
+func (p Peer) URI() string {
+	assert.NotNil(p.doc)
+	return p.doc.ID
 }
 
 func (b Base) buildDIDKeyStr(rk string) string {
