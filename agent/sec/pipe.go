@@ -101,12 +101,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	media := p.defMediaType()
 	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
 
-	route := p.Out.Route()
-	toKeys := make([]string, len(route)+1)
-	toKeys[0] = p.Out.String()
-	for i, r := range route {
-		toKeys[i+1] = "did:sov:" + r
-	}
+	toKeys := p.Out.Route()
 
 	// pack a non-empty envelope using packer selected by mediaType - should pass
 	dst = try.To1(p.packager().PackMessage(&transport.Envelope{

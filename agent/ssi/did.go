@@ -329,7 +329,12 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 
 func (d *DID) Route() []string {
 	if d.pwMeta != nil {
-		return d.pwMeta.Route
+		toKeys := make([]string, len(d.pwMeta.Route)+1)
+		toKeys[0] = d.String()
+		for i, r := range d.pwMeta.Route {
+			toKeys[i+1] = indy.MethodPrefix + r
+		}
+		return toKeys
 	}
 	return []string{}
 }

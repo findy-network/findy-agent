@@ -257,7 +257,7 @@ func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
 		}
 		return cached, nil
 	default:
-		assert.That(false, "not supported")
+		assert.That(false, "did method not supported: %s", didInfo[0])
 		return nil, nil
 	}
 }

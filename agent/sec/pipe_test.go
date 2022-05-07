@@ -61,6 +61,10 @@ var (
 )
 
 func setUp() {
+	err2.StackTraceWriter = os.Stderr
+	assert.D = assert.AsserterCallerInfo
+	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
 	sec.Init(transport.MediaTypeProfileDIDCommAIP1)
@@ -106,8 +110,11 @@ func TestNewPipe(t *testing.T) {
 
 			p := sec.Pipe{In: didIn, Out: didOut}
 
-			packed, _ := try.To2(p.Pack(message))
-			received, _ := try.To2(p.Unpack(packed))
+			packed, _, err := p.Pack(message)
+			require.NoError(t, err)
+
+			received, _, err := p.Unpack(packed)
+			require.NoError(t, err)
 			require.Equal(t, message, received)
 		})
 	}
@@ -354,10 +361,6 @@ func TestPipe_pack(t *testing.T) {
 }
 
 func TestPipe_packPeer(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
-	assert.D = assert.AsserterCallerInfo
-	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
-
 	defer err2.CatchAll(func(err error) {
 		fmt.Println(err)
 		t.Fail()
@@ -379,7 +382,8 @@ func TestPipe_packPeer(t *testing.T) {
 
 	// Packing pipe with two routing keys
 	_ = []string{didRoute1.VerKey(), didRoute2.VerKey()}
-	out, err := a.NewOutDID(didOut.String(), didOut.VerKey())
+	docBytes := try.To1(json.Marshal(didOut.DOC()))
+	out, err := a.NewOutDID(didOut.String(), string(docBytes))
 	require.NoError(t, err)
 
 	packPipe := &sec.Pipe{

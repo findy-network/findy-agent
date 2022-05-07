@@ -2,6 +2,7 @@ package method
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
@@ -161,8 +162,7 @@ func NewFromDID(
 	switch DIDType(didStr[0]) {
 	case TypePeer:
 		assert.SLen(didStr, 2)
-		return NewPeerFromDID(hStorage, didStr[0],
-			try.To1(base58.Decode(didStr[1])))
+		return NewPeerFromDoc(hStorage, didStr[1])
 	case TypeKey:
 		assert.SLen(didStr, 1)
 		return NewKeyFromDID(hStorage, didStr[0])
@@ -172,28 +172,30 @@ func NewFromDID(
 	return
 }
 
-// NewPeerFromDID doesn't create a totally new did:peer but it saves its pubkey
+var _ = struct {
+	sync.Mutex
+	dids map[string]Peer
+}{
+	dids: make(map[string]Peer),
+}
+
+// NewPeerFromDoc doesn't create a totally new did:peer but it saves its pubkey
 // to our kms for us to be able to use cryptos with them.
-func NewPeerFromDID(
+func NewPeerFromDoc(
 	hStorage managed.Wallet,
-	didStr string,
-	pubKey []byte,
+	didDoc string,
 ) (
 	id core.DID,
 	err error,
 ) {
 	defer err2.Annotate("new did:peer from did", &err)
 
+	doc := try.To1(did.ParseDocument([]byte(didDoc)))
+	pk := doc.VerificationMethod[0].Value
 	keys := hStorage.Storage().KMS()
+	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
-	// TODO: get pubkey from peer did string
-	//  - that cannot be done, the actual signing key has to get form diddoc
-
-	//pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))
-
-	kh := try.To1(keys.PubKeyBytesToHandle(pubKey, kms.ED25519))
-
-	return Key{Base{handle: hStorage, kid: "", pk: pubKey, vkh: kh}}, nil
+	return Peer{Base{handle: hStorage, kid: "", pk: pk, vkh: kh, doc: doc}}, nil
 }
 
 // NewKeyFromDID doesn't create a totally new did:key but it stores its pubkey
@@ -216,7 +218,7 @@ func NewKeyFromDID(
 
 // String returns URI formated DID
 func (b Base) String() string {
-	// TODO: lazy fetch or move to constructor
+	// TODO: lazy fetch or move to constructor, ANSWER: cheap to calc
 	didkey, _ := fingerprint.CreateDIDKey(b.pk)
 
 	return didkey
@@ -266,11 +268,10 @@ func (b Base) SetAEndp(ae service.Addr) {
 	assert.D.NoImplementation()
 }
 
-func (b Base) Route() []string {
-	return []string{}
+func (k Key) Route() []string {
+	return []string{k.String()}
 }
 
-// TODO: this is mainly for indy but could be merged with SignKey?
 func (b Base) VerKey() string {
 	return string(b.pk)
 }
@@ -315,9 +316,40 @@ func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 
 // String returns URI formated DID
 func (p Peer) String() string {
-	assert.NotNil(p.doc)
+	return p.buildDIDKeyStr(p.VerKey())
+}
 
-	return p.doc.ID
+func (p Peer) VerKey() string {
+	assert.NotNil(p.doc)
+	assert.SNotEmpty(p.doc.VerificationMethod)
+
+	vk := base58.Encode(p.doc.VerificationMethod[0].Value)
+	return vk
+}
+
+func (p Peer) Route() []string {
+	assert.NotNil(p.doc)
+	doc := p.doc
+
+	services := doc.Service[0]
+	recvKeysLen := len(services.RecipientKeys)
+	route := make([]string, recvKeysLen+len(services.RoutingKeys))
+
+	for i, rk := range services.RecipientKeys {
+		route[i] = p.buildDIDKeyStr(rk)
+	}
+	for i, rk := range services.RoutingKeys {
+		route[recvKeysLen+i] = p.buildDIDKeyStr(rk)
+	}
+	return route
+}
+
+func (b Base) buildDIDKeyStr(rk string) string {
+	keys := b.handle.Storage().KMS()
+	pk := try.To1(base58.Decode(rk))
+	_ = try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519)) // we don't need handle
+	didkey, _ := fingerprint.CreateDIDKey(pk)
+	return didkey
 }
 
 // newPeerDID is copied from framework's tests to find smallest common divider
