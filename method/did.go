@@ -277,7 +277,7 @@ func (k Key) Route() []string {
 }
 
 func (b Base) VerKey() string {
-	return string(b.pk)
+	return base58.Encode(b.pk)
 }
 
 func (b Base) Packager() api.Packager {
