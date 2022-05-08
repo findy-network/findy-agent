@@ -159,7 +159,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
-	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
+	callee := try.To1(wa.NewOutDID(receiverKeys...))
 	secPipe := sec.Pipe{In: caller, Out: callee}
 	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
@@ -178,8 +178,9 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 }
 
 func buildRouting(rKey string, rKeys []string) []string {
-	retval := make([]string, 1, len(rKeys)+1)
-	retval[0] = rKey
+	retval := make([]string, 2, len(rKeys)+1)
+	retval[0] = "did:sov:"
+	retval[1] = rKey
 	return append(retval, rKeys...)
 }
 

@@ -276,6 +276,7 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 	return keys, nil
 }
 
+//nolint:funlen
 func TestPipe_pack(t *testing.T) {
 	// Create test wallet and routing keys
 	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())

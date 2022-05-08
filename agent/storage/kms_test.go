@@ -108,7 +108,7 @@ func TestKMSExportPubKeyBytes(t *testing.T) {
 			require.NotEmpty(t, keyID)
 			require.NotEmpty(t, handlePut)
 
-			bytes, err := store.ExportPubKeyBytes(keyID)
+			bytes, _, err := store.ExportPubKeyBytes(keyID)
 			require.NoError(t, err)
 			require.NotEmpty(t, bytes)
 		})
@@ -125,7 +125,7 @@ func TestKMSPubKeyBytesToHandle(t *testing.T) {
 			require.NotEmpty(t, keyID)
 			require.NotEmpty(t, handlePut)
 
-			bytes, err := store.ExportPubKeyBytes(keyID)
+			bytes, _, err := store.ExportPubKeyBytes(keyID)
 			require.NoError(t, err)
 			require.NotEmpty(t, bytes)
 
@@ -182,7 +182,7 @@ func TestKMSImportPrivateKey(t *testing.T) {
 			ksID, _, err := store.ImportPrivateKey(privKey, kms.ED25519Type)
 			require.NoError(t, err)
 
-			pubKeyBytes, err := store.ExportPubKeyBytes(ksID)
+			pubKeyBytes, _, err := store.ExportPubKeyBytes(ksID)
 			require.NoError(t, err)
 			require.EqualValues(t, pubKey, pubKeyBytes)
 		})

@@ -46,7 +46,7 @@ type VerificationMethod struct {
 	//	PublicKey `json:"public_key,omitempty"`
 }
 
-func oldNewDoc(did core.DID, ae service.Addr) *Doc {
+func _(did core.DID, ae service.Addr) *Doc {
 	didURI := did.String()
 	didURIRef := didURI + "#1"
 	pubK := PublicKey{
