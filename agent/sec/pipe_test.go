@@ -132,7 +132,7 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	didIn := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
 	println(didIn.String())
-	didOut, err := agent.NewOutDID(key2, "")
+	didOut, err := agent.NewOutDID(key2)
 	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println(didOut.String())
@@ -161,13 +161,13 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	println("in: ", didIn.String())
 
 	// give agent2's prime DID (input) to agent1's out DID
-	didOut, err := agent.NewOutDID(didIn2.String(), "")
+	didOut, err := agent.NewOutDID(didIn2.String())
 	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println("out: ", didOut.String())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
-	didOut2, err := agent2.NewOutDID(didIn.String(), "")
+	didOut2, err := agent2.NewOutDID(didIn.String())
 	require.NoError(t, err)
 	require.NotNil(t, didOut2)
 	println("out2: ", didOut2.String())
@@ -329,7 +329,7 @@ func TestPipe_pack(t *testing.T) {
 	route1Bytes := route1FwdMsg.Msg
 	route1Keys, err := getRecipientKeys(route1Bytes)
 	require.NoError(t, err)
-	require.True(t, len(route2Keys) == 1)
+	require.True(t, len(route1Keys) == 1)
 	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
 	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
 
@@ -416,7 +416,26 @@ func TestPipe_packPeer(t *testing.T) {
 	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
 	require.NoError(t, err)
 	require.Len(t, route2Keys, 3)
-	require.Equal(t, didRoute2.VerKey(), route2Keys[2])
+	lastRouteKey := route2Keys[2]
+	require.Equal(t, didRoute2.VerKey(), lastRouteKey)
+
+	firstUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  didRoute2, // start with last route
+		Out: didIn,     // and now reiver is original sender
+	}
+
+	route1FwBytes, _, err := firstUnpackPipe.Unpack(route2bytes)
+	require.NoError(t, err)
+	require.NotNil(t, route1FwBytes)
+
+	// Unpack next forward message with first routing key
+	//	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
+	//	route1Bytes := route1FwdMsg.Msg
+	//	route1Keys, err := getRecipientKeys(route1Bytes)
+	//	require.NoError(t, err)
+	//	require.Len(t, route1Keys, 2)
+	//	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
+	//	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
 
 	//	// Unpack final (auth-crypted) message with destination key
 	//	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)

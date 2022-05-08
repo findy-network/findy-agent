@@ -23,17 +23,20 @@ type DID interface {
 	StoreResult() error
 	AEndp() (ae service.Addr, err error)
 	SetAEndp(ae service.Addr)
-	Route() []string
 
-	String() string
+	Route() []string // this usefull for new did methods as well
+
+	String() string // Implementation (key, peer,...) specific behaviour
 	SignKey() any
 	Packager() api.Packager
 
 	// TODO: this is mainly for indy but could be merged with SignKey?
 	VerKey() string
+
 	Storage() managed.Wallet
 
 	URI() string // real URI, currently used in did doc
+
 	// Did() == KID() alias for make old code easy to integrate
 }
 
