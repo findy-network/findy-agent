@@ -71,8 +71,8 @@ func StartPSM(ts Initial) (err error) {
 		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
 	})
 
-	pipe := try.To1(wa.PwPipe(ts.T.ConnectionID()))
-	msgMeDID := pipe.In.Did()
+	connID := ts.T.ConnectionID()
+	pipe := try.To1(wa.PwPipe(connID))
 	agentEndp := try.To1(pipe.EA())
 	ts.T.SetReceiverEndp(agentEndp)
 
@@ -88,7 +88,7 @@ func StartPSM(ts Initial) (err error) {
 
 	opl := aries.PayloadCreator.NewMsg(ts.T.ID(), ts.SendNext, msg)
 
-	try.To(UpdatePSM(wDID, msgMeDID, ts.T, opl, psm.Sending))
+	try.To(UpdatePSM(wDID, connID, ts.T, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, ts.T, opl))
 
 	// sending went OK, update PSM for what we are doing next: waiting a
@@ -99,7 +99,7 @@ func StartPSM(ts Initial) (err error) {
 	}
 	wpl := aries.PayloadCreator.New(
 		didcomm.PayloadInit{ID: ts.T.ID(), Type: ts.WaitingNext})
-	try.To(UpdatePSM(wDID, msgMeDID, ts.T, wpl, nextState))
+	try.To(UpdatePSM(wDID, connID, ts.T, wpl, nextState))
 
 	return err
 }
@@ -126,18 +126,17 @@ func ContinuePSM(shift Again) (err error) {
 
 	presentTask := PSM.PresentTask()
 
-	msgMeDID := PSM.ConnDID
+	connID := PSM.ConnID
 	meDID := PSM.Key.DID
 
-	inDID := wa.LoadDID(msgMeDID)
-
-	pairwise := try.To1(wa.FindPWByDID(inDID.Did()))
+	pairwise := try.To1(wa.FindPWByID(connID))
 	assert.D.True(pairwise != nil, "pairwise should not be nil")
 
+	inDID := wa.LoadDID(pairwise.MyDID)
 	outDID := wa.LoadTheirDID(*pairwise)
 	_, storageH := wa.ManagedWallet()
 	outDID.StartEndp(storageH, pairwise.ID)
-	pipe := sec.Pipe{In: inDID, Out: outDID}
+	pipe := sec.Pipe{ConnID: connID, In: inDID, Out: outDID}
 
 	sendBack := shift.SendNext != pltype.Terminate
 	plType := shift.SendNext
@@ -167,15 +166,15 @@ func ContinuePSM(shift Again) (err error) {
 		agentEndp := try.To1(pipe.EA())
 		presentTask.SetReceiverEndp(agentEndp)
 
-		try.To(UpdatePSM(meDID, msgMeDID, presentTask, opl, psm.Sending))
+		try.To(UpdatePSM(meDID, connID, presentTask, opl, psm.Sending))
 		try.To(comm.SendPL(pipe, presentTask, opl))
 	}
 	if isLast {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: plType})
-		try.To(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Ready|ackFlag))
+		try.To(UpdatePSM(meDID, connID, presentTask, wpl, psm.Ready|ackFlag))
 	} else {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: presentTask.ID(), Type: shift.WaitingNext})
-		try.To(UpdatePSM(meDID, msgMeDID, presentTask, wpl, psm.Waiting))
+		try.To(UpdatePSM(meDID, connID, presentTask, wpl, psm.Waiting))
 	}
 
 	return err
@@ -193,6 +192,7 @@ func ExecPSM(ts Transition) (err error) {
 	sendBack := ts.SendNext != pltype.Terminate && ts.InOut != nil
 	plType := ts.SendNext
 	isLast := ts.WaitingNext == pltype.Terminate
+	connID := ts.Address.ConnID
 	if !sendBack {
 		plType = ts.Payload.Type()
 	}
@@ -207,32 +207,29 @@ func ExecPSM(ts Transition) (err error) {
 	// Create protocol task in protocol implementation
 	task := try.To1(CreateTask(ts.TaskHeader, nil))
 
-	msgMeDID := ts.Address.RcvrDID
-
 	defer err2.Handle(&err, func() {
-		_ = UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Failure)
+		_ = UpdatePSM(meDID, connID, task, ts.Payload, psm.Failure)
 	})
 
-	try.To(UpdatePSM(meDID, msgMeDID, task, ts.Payload, psm.Received))
+	try.To(UpdatePSM(meDID, connID, task, ts.Payload, psm.Received))
 
 	var om didcomm.MessageHdr
 	var ep sec.Pipe
 	if ts.InOut != nil {
-		inDID := ts.Receiver.LoadDID(ts.Address.RcvrDID)
 
-		pairwise := try.To1(ts.Receiver.FindPWByDID(inDID.Did()))
+		pairwise := try.To1(ts.Receiver.FindPWByID(connID))
 		assert.D.True(pairwise != nil, "pairwise should not be nil")
+		inDID := ts.Receiver.LoadDID(pairwise.MyDID)
 
-		connID := pairwise.ID
 		outDID := ts.Receiver.LoadTheirDID(*pairwise)
 		_, storageH := ts.Receiver.ManagedWallet()
 		outDID.StartEndp(storageH, pairwise.ID)
 
-		ep = sec.Pipe{In: inDID, Out: outDID}
+		ep = sec.Pipe{ConnID: connID, In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
 		opl := aries.PayloadCreator.NewMsg(task.ID(), ts.Payload.Type(), im)
-		try.To(UpdatePSM(meDID, msgMeDID, task, opl, psm.Decrypted))
+		try.To(UpdatePSM(meDID, connID, task, opl, psm.Decrypted))
 
 		om = aries.MsgCreator.Create(
 			didcomm.MsgInit{
@@ -257,16 +254,16 @@ func ExecPSM(ts Transition) (err error) {
 		agentEndp := try.To1(ep.EA())
 		task.SetReceiverEndp(agentEndp)
 
-		try.To(UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
+		try.To(UpdatePSM(meDID, connID, task, opl, psm.Sending))
 		try.To(comm.SendPL(ep, task, opl))
 	}
 
 	if isLast {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: plType})
-		try.To(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Ready|ackFlag))
+		try.To(UpdatePSM(meDID, connID, task, wpl, psm.Ready|ackFlag))
 	} else {
 		wpl := aries.PayloadCreator.New(didcomm.PayloadInit{ID: task.ID(), Type: ts.WaitingNext})
-		try.To(UpdatePSM(meDID, msgMeDID, task, wpl, psm.Waiting))
+		try.To(UpdatePSM(meDID, connID, task, wpl, psm.Waiting))
 	}
 	return nil
 }

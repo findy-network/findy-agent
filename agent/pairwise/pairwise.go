@@ -67,27 +67,13 @@ func NewCalleePairwise(msgFactor didcomm.MsgFactor, agent ssi.Agent,
 }
 
 func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
+	defer err2.Catch(func(err error) {
+		glog.Errorf("Error loading connection: %s (%v)", cnxAddr.ConnID, err)
+	})
+
 	a := p.agent.(comm.Receiver)
-	calleeDID := a.LoadDID(cnxAddr.RcvrDID)
-
-	if cnxAddr.EdgeToken == "" {
-		glog.V(1).Infof(
-			"===== Cannot use pw DID, NO connection found from addr: %s =====",
-			cnxAddr.Address(),
-		)
-		return
-	}
-
-	_, storageH := p.agent.ManagedWallet()
-	store := storageH.Storage().ConnectionStorage()
-	if _, err := store.GetConnection(cnxAddr.EdgeToken); err == nil {
-		glog.V(1).Infof("==== using preallocated pw DID  %s for connection id %s ====",
-			calleeDID.Did(), cnxAddr.EdgeToken)
-		p.Callee = calleeDID
-		return
-	}
-
-	glog.V(1).Infof("===== Cannot use pw DID, NO connection found with id %s =====", cnxAddr.EdgeToken)
+	conn := try.To1(a.FindPWByID(cnxAddr.ConnID))
+	p.Callee = a.LoadDID(conn.MyDID)
 }
 
 func (p *Callee) ConnReqToRespWithSet(

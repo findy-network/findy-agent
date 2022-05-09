@@ -260,7 +260,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	glog.V(5).Infoln("========== start prealloc:", id)
 
 	_, receiver := try.To2(ca(ctx))
-	ep = receiver.CAEndp()
+	ep = receiver.CAEndp(id)
 
 	wa := receiver.WorkerEA()
 	ssiWA := wa.(ssi.Agent)
@@ -276,7 +276,6 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 		MyDID: ourPairwiseDID.Did(),
 	}))
 
-	ep.RcvrDID = ourPairwiseDID.Did()
 	ep.EdgeToken = id
 	ep.VerKey = ourPairwiseDID.VerKey()
 	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))

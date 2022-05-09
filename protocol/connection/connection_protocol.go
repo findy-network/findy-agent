@@ -93,13 +93,13 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	meAddr := ca.CAEndp() // CA can give us w-EA's endpoint
+	deTask, ok := task.(*taskDIDExchange)
+	assert.P.True(ok)
+
+	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint
 	me := ca.WDID()
 	wa := ca.WorkerEA()
 	ssiWA := wa.(ssi.Agent)
-
-	deTask, ok := task.(*taskDIDExchange)
-	assert.P.True(ok)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
 		glog.V(3).Infof("it's us who waits connection (%v) to invitation",
@@ -121,9 +121,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	caller := ssiWA.NewDID("sov", "") // Create a new DID for our end
 
-	pubEndp := *meAddr             // and build an endpoint for..
-	pubEndp.RcvrDID = caller.Did() // our new PW DID
-
+	pubEndp := *meAddr // and build an endpoint for our new PW
 	// build a connection request message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
@@ -158,7 +156,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
 	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
-	secPipe := sec.Pipe{In: caller, Out: callee}
+	secPipe := sec.Pipe{ConnID: meAddr.ConnID, In: caller, Out: callee}
 	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
@@ -232,9 +230,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		msgMeDID = m.Did() // set our pw DID
 
 		// calculate our endpoint for the pairwise
-		pubEndp := *cnxAddr         // set our agent's URL as a base addr
-		pubEndp.RcvrDID = m.Did()   // set our pw DID to actual agent DID in addr
-		pubEndp.VerKey = m.VerKey() // set our pw VerKey as well
+		pubEndp := *cnxAddr           // set our agent's URL as a base addr
+		pubEndp.ConnID = connectionID // set our pw DID to actual agent DID in addr
+		pubEndp.VerKey = m.VerKey()   // set our pw VerKey as well
 
 		m.SetEndpoint(service.Addr{
 			Endp: pubEndp.Address(),
@@ -275,8 +273,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	// update caller with route information
 	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
 	pipe := sec.Pipe{
-		In:  calleePw.Callee, // This is us
-		Out: caller,          // This is the other end, who sent the Request
+		ConnID: connectionID,
+		In:     calleePw.Callee, // This is us
+		Out:    caller,          // This is the other end, who sent the Request
 	}
 
 	try.To(signature.Sign(res, pipe)) // we must sign the Response before send it

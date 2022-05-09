@@ -398,23 +398,7 @@ func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error)
 	return a.ConnectionStorage().GetConnection(name)
 }
 
-// FindPWByDID finds pairwise by my DID. This is a ReceiverEndp interface method.
-func (a *DIDAgent) FindPWByDID(my string) (pw *storage.Connection, err error) {
-	defer err2.Catch(func(err error) {
-		glog.Errorf("cannot find pw by DID(%s): %v", my, err)
-	})
-
-	a.AssertWallet()
-
-	connections := try.To1(a.ConnectionStorage().ListConnections())
-
-	glog.V(10).Infoln("connections from find: ", len(connections))
-	for _, item := range connections {
-		if item.MyDID == my {
-			glog.V(10).Infoln("connection found")
-			return &item, nil
-		}
-	}
-	glog.V(10).Infoln("! connection NOT found")
-	return nil, nil
+// FindPWByID finds pairwise by id. This is a ReceiverEndp interface method.
+func (a *DIDAgent) FindPWByID(id string) (pw *storage.Connection, err error) {
+	return a.FindPWByName(id)
 }

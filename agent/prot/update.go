@@ -60,13 +60,13 @@ func NotifyEdge(ne notifyEdge) {
 // The PSM key is meDID (worker agent) and the task.Nonce. The PSM includes all
 // state history.
 //  meDID = handling agent DID i.e. worker agent DID
-//  connDID = our end's connection aka pairwise DID (important!)
+//  connID = connection ID
 //  task  = current comm.Task struct for additional protocol information
 //  opl   = output payload we are building to send, state by state
 //  subs  = current sub state of the protocol state machine (PSM)
 func UpdatePSM(
 	agentDID,
-	connDID string,
+	connID string,
 	task comm.Task,
 	opl didcomm.Payload,
 	stateType psm.SubState,
@@ -97,8 +97,8 @@ func UpdatePSM(
 				foundPSM.LastState().Sub, stateType)
 			return nil
 		}
-		if connDID != "" {
-			foundPSM.ConnDID = connDID
+		if connID != "" {
+			foundPSM.ConnID = connID
 		}
 		foundPSM.States = append(foundPSM.States, currentState)
 		currentPSM = foundPSM
@@ -122,7 +122,7 @@ func UpdatePSM(
 
 		currentPSM = &psm.PSM{
 			Key:         PSMKey,
-			ConnDID:     connDID,
+			ConnID:      connID,
 			States:      states,
 			StartedByUs: startedByUs,
 			Role:        role,
@@ -142,7 +142,7 @@ func UpdatePSM(
 		subState:          stateType,
 		nonce:             task.ID(),
 		meDID:             agentDID,
-		pwName:            currentPSM.PairwiseName(),
+		pwName:            connID,
 		plType:            plType,
 		pendingUserAction: currentPSM.PendingUserAction(),
 		startedByUs:       currentPSM.StartedByUs,
@@ -185,7 +185,7 @@ func AddAndSetFlagUpdatePSM(
 			subState:          subState,
 			nonce:             machineKey.Nonce,
 			meDID:             machineKey.DID,
-			pwName:            machine.PairwiseName(),
+			pwName:            m.ConnID,
 			plType:            machine.FirstState().T.Type(),
 			pendingUserAction: machine.PendingUserAction(),
 			startedByUs:       machine.StartedByUs,

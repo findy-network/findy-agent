@@ -53,8 +53,8 @@ func Test_newPSM(t *testing.T) {
 			DID:   mockStateDID,
 			Nonce: mockStateNonce,
 		},
-		ConnDID: "TEST",
-		States:  nil,
+		ConnID: "TEST",
+		States: nil,
 	}
 	b := p.Data()
 	type args struct {
@@ -67,7 +67,7 @@ func Test_newPSM(t *testing.T) {
 	}{
 		{"1st",
 			args{d: b},
-			&PSM{Key: StateKey{DID: "TEST", Nonce: "1234"}, ConnDID: "TEST"}},
+			&PSM{Key: StateKey{DID: "TEST", Nonce: "1234"}, ConnID: "TEST"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,40 +132,13 @@ func Test_next(t *testing.T) {
 	}
 }
 
-func Test_pairwiseName(t *testing.T) {
-	type args struct {
-		d *PSM
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{"no pairwise",
-			args{d: testPSM(0)},
-			"",
-		},
-		{"with pairwise",
-			args{d: testPSM(123)},
-			"pairwise",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.args.d.PairwiseName(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Next() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestAccept(t *testing.T) {
 	p := PSM{
 		Key: StateKey{
 			DID:   mockStateDID,
 			Nonce: mockStateNonce,
 		},
-		ConnDID: "TEST",
+		ConnID: "TEST",
 		States: []State{
 			{Sub: Received}, {Sub: Waiting}, {Sub: Waiting},
 		},

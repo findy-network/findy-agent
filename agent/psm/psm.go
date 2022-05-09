@@ -7,8 +7,6 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
-	"github.com/lainio/err2"
-	"github.com/lainio/err2/try"
 )
 
 /*
@@ -186,9 +184,8 @@ type PSM struct {
 	// Role is a protocol role in the current DID protocol
 	Role pb.Protocol_Role
 
-	// ConnDID stores our end's pairwise/connection DID. Please note that the
-	// connection ID can be found from Key.
-	ConnDID string
+	// ConnID stores connection ID.
+	ConnID string
 
 	// States has all ouf the state history of this PSM in timestamp order
 	States []State
@@ -212,28 +209,6 @@ func (p *PSM) IsReady() bool {
 	return false
 }
 
-func (p *PSM) PairwiseName() string {
-	defer err2.CatchTrace(func(err error) {
-		glog.Error("error in get pw name:", err)
-	})
-
-	if state := p.FirstState(); state != nil && state.T.ConnectionID() != "" {
-		return state.T.ConnectionID()
-	}
-	if p.ConnDID != "" {
-		r := comm.ActiveRcvrs.Get(p.Key.DID)
-		if r == nil {
-			return ""
-		}
-		pw := try.To1(r.FindPWByDID(p.ConnDID))
-
-		if pw != nil {
-			return pw.ID
-		}
-	}
-	return ""
-}
-
 func (p *PSM) Timestamp() int64 {
 	if state := p.LastState(); state != nil {
 		return state.Timestamp
@@ -251,7 +226,7 @@ func (p *PSM) Next() string {
 			return aries.ProtocolMsgForType(state.PLInfo.Type)
 		}
 	}
-	glog.Warning("no payload type found for PSM!", p.ConnDID)
+	glog.Warning("no payload type found for PSM!", p.ConnID)
 	return ""
 }
 
