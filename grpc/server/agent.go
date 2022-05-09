@@ -276,7 +276,6 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 		MyDID: ourPairwiseDID.Did(),
 	}))
 
-	ep.EdgeToken = id
 	ep.VerKey = ourPairwiseDID.VerKey()
 	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
 

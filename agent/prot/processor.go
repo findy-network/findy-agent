@@ -136,7 +136,7 @@ func ContinuePSM(shift Again) (err error) {
 	outDID := wa.LoadTheirDID(*pairwise)
 	_, storageH := wa.ManagedWallet()
 	outDID.StartEndp(storageH, pairwise.ID)
-	pipe := sec.Pipe{ConnID: connID, In: inDID, Out: outDID}
+	pipe := sec.Pipe{In: inDID, Out: outDID}
 
 	sendBack := shift.SendNext != pltype.Terminate
 	plType := shift.SendNext
@@ -225,7 +225,7 @@ func ExecPSM(ts Transition) (err error) {
 		_, storageH := ts.Receiver.ManagedWallet()
 		outDID.StartEndp(storageH, pairwise.ID)
 
-		ep = sec.Pipe{ConnID: connID, In: inDID, Out: outDID}
+		ep = sec.Pipe{In: inDID, Out: outDID}
 		im := ts.Payload.MsgHdr()
 
 		opl := aries.PayloadCreator.NewMsg(task.ID(), ts.Payload.Type(), im)

@@ -197,7 +197,6 @@ func (a *Agent) PwPipe(connID string) (cp sec.Pipe, err error) {
 		return cp, errors.New("cannot find pw")
 	}
 
-	cp.ConnID = connID
 	cp.In = a.LoadDID(pw.MyDID)
 	outDID := a.LoadTheirDID(*pw)
 	outDID.StartEndp(a.ManagedStorage(), connID)
@@ -333,20 +332,18 @@ func (a *Agent) loadPWMap() {
 		outDID := a.LoadTheirDID(conn)
 		outDID.StartEndp(a.ManagedStorage(), conn.ID)
 		p := sec.Pipe{
-			ConnID: conn.ID,
-			In:     a.LoadDID(conn.MyDID),
-			Out:    outDID,
+			In:  a.LoadDID(conn.MyDID),
+			Out: outDID,
 		}
 
-		a.pws[p.ConnID] = p
+		a.pws[conn.ID] = p
 	}
 }
 
 func (a *Agent) AddToPWMap(me, you core.DID, connID string) sec.Pipe {
 	pipe := sec.Pipe{
-		ConnID: connID,
-		In:     me,
-		Out:    you,
+		In:  me,
+		Out: you,
 	}
 
 	a.pwLock.Lock()

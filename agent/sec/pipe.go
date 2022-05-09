@@ -29,9 +29,9 @@ func Init(defMediaType string) {
 // agent communication uses it. For its internal structure we must define the
 // direction of the pipe.
 type Pipe struct {
-	ConnID string
-	In     core.DID
-	Out    core.DID
+	//ConnID string
+	In  core.DID
+	Out core.DID
 }
 
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public

@@ -156,7 +156,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
 	callee := try.To1(wa.NewOutDID("did:sov:", receiverKeys...))
-	secPipe := sec.Pipe{ConnID: meAddr.ConnID, In: caller, Out: callee}
+	secPipe := sec.Pipe{In: caller, Out: callee}
+	// TODO: remove following row and NewPipeByVerkey function as it is no longer used
 	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
@@ -191,11 +192,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver := packet.Receiver
 
 	safeThreadID := ipl.ThreadID()
-	connectionID := safeThreadID
-	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("=== using URL edge, safe is", cnxAddr.EdgeToken, safeThreadID)
-		connectionID = cnxAddr.EdgeToken
-	}
+	connectionID := cnxAddr.ConnID
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
 	senderEP := service.Addr{
@@ -273,9 +270,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	// update caller with route information
 	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
 	pipe := sec.Pipe{
-		ConnID: connectionID,
-		In:     calleePw.Callee, // This is us
-		Out:    caller,          // This is the other end, who sent the Request
+		In:  calleePw.Callee, // This is us
+		Out: caller,          // This is the other end, who sent the Request
 	}
 
 	try.To(signature.Sign(res, pipe)) // we must sign the Response before send it
