@@ -13,24 +13,28 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: test findy as Bob with ACAPy
+        timeout-minutes: 30
         run: |
           cd ./scripts/aath
           make run-check AGENT_DEFAULT=acapy AGENT_BOB=findy
         env:
           NO_TTY: "1"
       - name: test findy as default agent with ACAPy
+        timeout-minutes: 30
         run: |
           cd ./scripts/aath
           make test-check AGENT_DEFAULT=findy AGENT_BOB=acapy
         env:
           NO_TTY: "1"
       - name: test findy as Bob with javascript
+        timeout-minutes: 30
         run: |
           cd ./scripts/aath
           make test-check AGENT_DEFAULT=javascript AGENT_BOB=findy
         env:
           NO_TTY: "1"
       - name: test findy as default with javascript
+        timeout-minutes: 30
         run: |
           cd ./scripts/aath
           make test-check AGENT_DEFAULT=findy AGENT_BOB=javascript
