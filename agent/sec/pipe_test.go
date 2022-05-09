@@ -376,6 +376,8 @@ func TestPipe_packPeer(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
+	wrongAgentDid := agent.NewDID(method.TypePeer, "http://example.com")
+
 	didIn := a.NewDID(method.TypePeer, "http://example.com")
 	didOut := a.NewDID(method.TypePeer, "http://example.com")
 
@@ -428,6 +430,26 @@ func TestPipe_packPeer(t *testing.T) {
 	route1FwBytes, _, err := firstUnpackPipe.Unpack(route2bytes)
 	require.NoError(t, err)
 	require.NotNil(t, route1FwBytes)
+
+	secondUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  didRoute1, // start with last route
+		Out: didIn,     // and now reiver is original sender
+	}
+
+	route2FwBytes, _, err := secondUnpackPipe.Unpack(route2bytes)
+	require.NoError(t, err)
+	require.NotNil(t, route2FwBytes)
+
+	err2.StackTraceWriter = nil
+
+	wrongUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  wrongAgentDid, // start with last route
+		Out: didIn,         // and now reiver is original sender
+	}
+
+	wrongFwBytes, _, err := wrongUnpackPipe.Unpack(route2bytes)
+	require.Error(t, err)
+	require.Nil(t, wrongFwBytes)
 
 	// Unpack next forward message with first routing key
 	//	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
