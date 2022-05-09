@@ -24,7 +24,8 @@ type DID interface {
 	AEndp() (ae service.Addr, err error)
 	SetAEndp(ae service.Addr)
 
-	Route() []string // this usefull for new did methods as well
+	Route() []string         // this usefull for new did methods as well
+	RecipientKeys() []string // this usefull for new did methods as well
 
 	String() string // Implementation (key, peer,...) specific behaviour
 	SignKey() any

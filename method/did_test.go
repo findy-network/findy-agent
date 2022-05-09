@@ -51,7 +51,8 @@ func TestPeer_Route(t *testing.T) {
 
 			route := didIn.Route()
 			require.NotNil(t, route)
-			require.Len(t, route, 1)
+			require.Len(t, route, 0)
+			require.Len(t, didIn.RecipientKeys(), 1)
 		})
 	}
 }

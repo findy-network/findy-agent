@@ -339,6 +339,10 @@ func (d *DID) Route() []string {
 	return []string{}
 }
 
+func (d *DID) RecipientKeys() []string {
+	return []string{d.URI()}
+}
+
 func (d *DID) DOC() core.DIDDoc {
 	return nil
 }
