@@ -53,9 +53,8 @@ type Agent struct {
 	ca *Agent
 
 	// all connections (pairwise) are cached by the Agent
-	pwLock  sync.Mutex // pw map lock, see below:
-	pws     PipeMap    // Map of pairwise secure pipes by DID
-	pwNames PipeMap    // Map of pairwise secure pipes by name
+	pwLock sync.Mutex // pw map lock, see below:
+	pws    PipeMap    // Map of pairwise secure pipes by connection id
 }
 
 type agentPtr struct {
@@ -168,13 +167,12 @@ func (a *Agent) MyCA() comm.Receiver {
 }
 
 // CAEndp returns endpoint of the CA.
-func (a *Agent) CAEndp() (endP *endp.Addr) {
+func (a *Agent) CAEndp(connID string) (endP *endp.Addr) {
 	assert.D.True(a.IsCA())
 
 	hostname := utils.Settings.HostAddr()
 	caDID := a.MyDID().Did()
 	vk := a.MyDID().VerKey()
-	rcvrDID := a.WDID()
 	serviceName := utils.Settings.ServiceName()
 
 	return &endp.Addr{
@@ -182,22 +180,18 @@ func (a *Agent) CAEndp() (endP *endp.Addr) {
 		Service:  serviceName,
 		PlRcvr:   caDID,
 		MsgRcvr:  caDID,
-		RcvrDID:  rcvrDID,
+		ConnID:   connID,
 		VerKey:   vk,
 	}
 }
 
-func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
+func (a *Agent) PwPipe(connID string) (cp sec.Pipe, err error) {
 	defer err2.Return(&err)
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	if secPipe, ok := a.pwNames[pwName]; ok {
-		return secPipe, nil
-	}
-
-	pw := try.To1(a.FindPWByName(pwName))
+	pw := try.To1(a.FindPWByName(connID))
 
 	if pw == nil || pw.MyDID == "" || pw.TheirDID == "" {
 		return cp, errors.New("cannot find pw")
@@ -205,7 +199,7 @@ func (a *Agent) PwPipe(pwName string) (cp sec.Pipe, err error) {
 
 	cp.In = a.LoadDID(pw.MyDID)
 	outDID := a.LoadTheirDID(*pw)
-	outDID.StartEndp(a.ManagedStorage(), pwName)
+	outDID.StartEndp(a.ManagedStorage(), connID)
 	cp.Out = outDID
 	return cp, nil
 }
@@ -239,10 +233,9 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 				Root:     ca.RootDid(),
 				DidCache: ca.DidCache.Clone(),
 			},
-			ca:      ca,
-			pws:     make(PipeMap),
-			pwNames: make(PipeMap),
-			myDID:   ca.myDID,
+			ca:    ca,
+			pws:   make(PipeMap),
+			myDID: ca.myDID,
 		}
 
 		wca.OpenWallet(*aWallet)
@@ -343,12 +336,11 @@ func (a *Agent) loadPWMap() {
 			Out: outDID,
 		}
 
-		a.pws[conn.MyDID] = p
-		a.pwNames[conn.ID] = p
+		a.pws[conn.ID] = p
 	}
 }
 
-func (a *Agent) AddToPWMap(me, you core.DID, name string) sec.Pipe {
+func (a *Agent) AddToPWMap(me, you core.DID, connID string) sec.Pipe {
 	pipe := sec.Pipe{
 		In:  me,
 		Out: you,
@@ -357,23 +349,21 @@ func (a *Agent) AddToPWMap(me, you core.DID, name string) sec.Pipe {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	a.pws[me.Did()] = pipe
-	a.pwNames[name] = pipe
+	a.pws[connID] = pipe
 
 	return pipe
 }
 
-func (a *Agent) AddPipeToPWMap(p sec.Pipe, name string) {
+func (a *Agent) AddPipeToPWMap(p sec.Pipe, connID string) {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	a.pws[p.In.Did()] = p
-	a.pwNames[name] = p
+	a.pws[connID] = p
 }
 
-func (a *Agent) SecPipe(meDID string) sec.Pipe {
+func (a *Agent) SecPipe(connID string) sec.Pipe {
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()
 
-	return a.pws[meDID]
+	return a.pws[connID]
 }

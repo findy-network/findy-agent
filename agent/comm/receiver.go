@@ -26,11 +26,11 @@ type Receiver interface {
 	Wallet() int
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	Pool() int
-	FindPWByDID(my string) (pw *storage.Connection, err error)
+	FindPWByID(id string) (pw *storage.Connection, err error)
 	AttachSAImpl(implID string)
 	AddToPWMap(me, you core.DID, name string) sec.Pipe
 	SaveTheirDID(did, vk string) (err error)
-	CAEndp() (endP *endp.Addr)
+	CAEndp(connID string) (endP *endp.Addr)
 	AddPipeToPWMap(p sec.Pipe, name string)
 	MasterSecret() (string, error)
 	AutoPermission() bool
