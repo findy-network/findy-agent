@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -73,12 +72,10 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 		glog.Errorf("Error loading connection: %s (%v)", cnxAddr.ConnID, err)
 	})
 
-	defMethod := utils.Settings.DIDMethod()
-	if defMethod == method.TypePeer {
-		return
-	}
-
+	// ssi.DIDAgent implments comm.Receiver interface
+	// ssi.Agent is other interface, that's why the cast
 	a := p.agent.(comm.Receiver)
+
 	conn := try.To1(a.FindPWByID(cnxAddr.ConnID))
 	p.Callee = a.LoadDID(conn.MyDID)
 }
@@ -95,7 +92,7 @@ func (p *Callee) ConnReqToRespWithSet(
 	p.Name = p.Msg.Nonce()
 	connReqDID := p.Msg.Did()
 	connReqVK := p.Msg.VerKey()
-	callerDID := ssi.NewDid(connReqDID, connReqVK)
+	callerDID := ssi.NewDid(connReqDID, connReqVK) // TODO: big stuff
 	p.agent.AddDIDCache(callerDID)
 
 	f(responseMsg) // let caller set msg values
@@ -113,7 +110,7 @@ func (p *Callee) ConnReqToRespWithSet(
 
 func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
-		p.Callee = p.agent.NewDID(utils.Settings.DIDMethod(), "")
+		p.Callee = try.To1(p.agent.NewDID(utils.Settings.DIDMethod(), ""))
 	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,

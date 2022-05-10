@@ -88,7 +88,7 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyExists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	anchorDid := agent.NewDID(method.TypeSov, seed)
+	anchorDid := try.To1(agent.NewDID(method.TypeSov, seed))
 	if steward != nil {
 		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
 

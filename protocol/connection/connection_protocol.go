@@ -128,7 +128,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	})
 
 	didMethod := task.DIDMethod()
-	caller := ssiWA.NewDID(didMethod, meAddr.Address()) // Create a new DID for our end
+	caller := try.To1(ssiWA.NewDID(didMethod, meAddr.Address())) // Create a new DID for our end
 
 	//pubEndp := *meAddr // and build an endpoint for our new PW
 	// build a connection request message to send to another agent

@@ -21,6 +21,7 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
+	apidoc "github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -38,7 +39,7 @@ type Agent interface {
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
 	//CreateDID(seed string) (agentDid core.DID)
-	NewDID(m method.Type, args ...string) core.DID
+	NewDID(m method.Type, args ...string) (_ core.DID, err error)
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -209,34 +210,52 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) core.DID {
-	// TODO: under construction!
+func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, err error) {
+	defer err2.Annotate("new DID", &err)
+
+	glog.V(3).Infof("New '%s': %v", didMethod.DIDString(), args)
 
 	switch didMethod {
 	case method.TypeKey, method.TypePeer:
 		//_ = a.VDR() // TODO: check if we could use VDR as method factory
-		return try.To1(method.New(didMethod, a.StorageH, args...))
+		coreDID := try.To1(method.New(didMethod, a.StorageH, args...))
+		try.To(a.saveDID(coreDID))
+		return coreDID, err
 
 	case method.TypeSov:
-		return a.myCreateDID(args[0])
+		return a.myCreateDID(args[0]), err
 	default:
-		return a.myCreateDID(args[0]) // TODO: remove after test
+		return a.myCreateDID(args[0]), err // TODO: remove after test
 		//assert.That(false, "not supported")
-
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
-	// TODO: under construction!
+func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 	defer err2.Return(&err)
+
+	sDID := storage.DID{
+		ID:  coreDID.URI(),
+		DID: coreDID.URI(),
+		Doc: &apidoc.DocResolution{
+			DIDDocument: coreDID.DOC().(*apidoc.Doc),
+		},
+	}
+	try.To(a.DIDStorage().SaveDID(sDID))
+	glog.V(3).Infoln("did saved:", sDID.ID, sDID.DID)
+	return nil
+}
+
+func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
+	defer err2.Annotate("new out DID", &err)
 
 	switch method.DIDType(didInfo[0]) {
 	case method.TypeKey, method.TypePeer:
-		// _ = a.VDR()
-		return method.NewFromDID(
+		coreDID := try.To1(method.NewFromDID(
 			a.StorageH,
 			didInfo...,
-		)
+		))
+		try.To(a.saveDID(coreDID))
+		return coreDID, nil
 
 	case method.TypeIndy, method.TypeSov:
 		assert.That(len(didInfo) >= 2)
@@ -360,17 +379,24 @@ func (a *DIDAgent) OpenDID(name string) *DID {
 }
 
 func (a *DIDAgent) LoadDID(did string) core.DID {
-	cached := a.DidCache.Get(did, true)
-	if cached != nil {
-		if cached.Wallet() == 0 {
-			cached.SetWallet(a.WalletH)
+	switch method.DIDType(did) {
+	case method.TypePeer:
+		storageDID := try.To1(a.DIDStorage().GetDID(did))
+		return try.To1(method.NewPeerFromDID(a.StorageH, storageDID))
+
+	default:
+		cached := a.DidCache.Get(did, true)
+		if cached != nil {
+			if cached.Wallet() == 0 {
+				cached.SetWallet(a.WalletH)
+			}
+			//log.Println("Return cached DID")
+			return cached
 		}
-		//log.Println("Return cached DID")
-		return cached
+		d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
+		a.DidCache.Add(d)
 	}
-	d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
-	a.DidCache.Add(d)
-	return d
+	return nil
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {

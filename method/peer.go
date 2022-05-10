@@ -3,6 +3,7 @@ package method
 import (
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -16,6 +17,23 @@ import (
 
 type Peer struct {
 	Base
+}
+
+func NewPeerFromDID(
+	hStorage managed.Wallet,
+	d *api.DID,
+) (
+	id core.DID,
+	err error,
+) {
+	defer err2.Return(&err)
+
+	doc := d.Doc.DIDDocument
+	pk := doc.VerificationMethod[0].Value
+	keys := hStorage.Storage().KMS()
+	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
+
+	return Peer{Base{handle: hStorage, kid: "", pk: pk, vkh: kh, doc: doc}}, nil
 }
 
 func NewPeer(
@@ -135,6 +153,11 @@ func (p Peer) RecipientKeys() []string {
 		route[i] = p.buildDIDKeyStr(rk)
 	}
 	return route
+}
+
+func (p Peer) Did() string {
+	assert.NotNil(p.doc)
+	return p.doc.ID
 }
 
 func (p Peer) URI() string {

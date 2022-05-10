@@ -53,7 +53,7 @@ func (a agencyService) Onboard(
 	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
 	ac := try.To1(handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed))
 
-	caDID := ac.NewDID(method.TypeSov, "")
+	caDID := try.To1(ac.NewDID(method.TypeSov, ""))
 	DIDStr := caDID.Did()
 	caVerKey := caDID.VerKey()
 

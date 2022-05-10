@@ -268,7 +268,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ssiWA := wa.(ssi.Agent)
 
 	// Build new DID for the pairwise and save it for the CONN_REQ??
-	ourPairwiseDID := ssiWA.NewDID(defDIDMethod, ep.Address())
+	ourPairwiseDID := try.To1(ssiWA.NewDID(defDIDMethod, ep.Address()))
 
 	// mark the pre-allocated pairwise DID with connection ID that we find it
 	_, ms := wa.ManagedWallet()

@@ -44,7 +44,7 @@ func TestPeer_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			didIn := agent.NewDID(tt.method, "https://www.address.com")
+			didIn, _ := agent.NewDID(tt.method, "https://www.address.com")
 			require.NotNil(t, didIn)
 
 			var docBytes []byte
@@ -74,7 +74,7 @@ func TestPeer_Route(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			didIn := agent.NewDID(tt.method, "https://www.address.com")
+			didIn, _ := agent.NewDID(tt.method, "https://www.address.com")
 			require.NotNil(t, didIn)
 
 			route := didIn.Route()

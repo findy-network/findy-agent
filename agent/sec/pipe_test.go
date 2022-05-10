@@ -92,13 +92,13 @@ func TestNewPipe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			didIn := agent.NewDID(tt.method, "")
+			didIn, _ := agent.NewDID(tt.method, "")
 			println(didIn.URI())
-			didOut := agent.NewDID(tt.method, "")
+			didOut, _ := agent.NewDID(tt.method, "")
 			println(didOut.URI())
-			didRoute1 := agent.NewDID(tt.method, "")
+			didRoute1, _ := agent.NewDID(tt.method, "")
 			println(didRoute1.URI())
-			didRoute2 := agent.NewDID(tt.method, "")
+			didRoute2, _ := agent.NewDID(tt.method, "")
 			println(didRoute2.URI())
 
 			require.NotNil(t, didIn)
@@ -129,7 +129,7 @@ func TestResolve(t *testing.T) {
 }
 
 func TestPackTowardsPubKeyOnly(t *testing.T) {
-	didIn := agent.NewDID(method.TypeKey, "")
+	didIn, _ := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
 	println(didIn.String())
 	didOut, err := agent.NewOutDID(key2)
@@ -152,11 +152,11 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	// The access to public key is not enough. It must first stored.
 
 	// create first agent2's input DID
-	didIn2 := agent2.NewDID(method.TypeKey, "")
+	didIn2, _ := agent2.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn2)
 	println("in2: ", didIn2.URI())
 
-	didIn := agent.NewDID(method.TypeKey, "")
+	didIn, _ := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
 	println("in: ", didIn.URI())
 
@@ -195,12 +195,12 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 }
 
 func TestIndyPipe(t *testing.T) {
-	didIn := agent.NewDID(method.TypeSov, "")
+	didIn, _ := agent.NewDID(method.TypeSov, "")
 	str := didIn.String()
 	require.NotEmpty(t, str)
 	println(str)
 
-	didIn2 := agent2.NewDID(method.TypeSov, "")
+	didIn2, _ := agent2.NewDID(method.TypeSov, "")
 	did2 := didIn2.String()
 	require.NotEmpty(t, did2)
 	println(did2)
@@ -285,10 +285,10 @@ func TestPipe_pack(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
-	didIn := a.NewDID(method.TypeSov, "")
-	didOut := a.NewDID(method.TypeSov, "")
-	didRoute1 := a.NewDID(method.TypeSov, "")
-	didRoute2 := a.NewDID(method.TypeSov, "")
+	didIn, _ := a.NewDID(method.TypeSov, "")
+	didOut, _ := a.NewDID(method.TypeSov, "")
+	didRoute1, _ := a.NewDID(method.TypeSov, "")
+	didRoute2, _ := a.NewDID(method.TypeSov, "")
 
 	// Packing pipe with two routing keys
 	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
@@ -376,13 +376,13 @@ func TestPipe_packPeer(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
-	wrongAgentDid := agent.NewDID(method.TypePeer, "http://example.com")
+	wrongAgentDid, _ := agent.NewDID(method.TypePeer, "http://example.com")
 
-	didIn := a.NewDID(method.TypePeer, "http://example.com")
-	didOut := a.NewDID(method.TypePeer, "http://example.com")
+	didIn, _ := a.NewDID(method.TypePeer, "http://example.com")
+	didOut, _ := a.NewDID(method.TypePeer, "http://example.com")
 
-	didRoute1 := a.NewDID(method.TypeKey, "")
-	didRoute2 := a.NewDID(method.TypeKey, "")
+	didRoute1, _ := a.NewDID(method.TypeKey, "")
+	didRoute2, _ := a.NewDID(method.TypeKey, "")
 
 	outDoc := didOut.DOC().(*did.Doc)
 	outDoc.Service[0].RoutingKeys = []string{didRoute1.VerKey(), didRoute2.VerKey()}

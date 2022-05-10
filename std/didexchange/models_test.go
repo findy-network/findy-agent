@@ -153,7 +153,7 @@ func TestNewRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			didIn := agent.NewDID(tt.method, "")
+			didIn, _ := agent.NewDID(tt.method, "")
 			require.NotNil(t, didIn)
 
 			nonce := "NONCE"
