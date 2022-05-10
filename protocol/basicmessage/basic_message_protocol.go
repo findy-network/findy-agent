@@ -97,7 +97,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Annotate("basic message", &err)
 
-		pw := try.To1(packet.Receiver.FindPWByDID(packet.Address.RcvrDID))
+		pw := try.To1(packet.Receiver.FindPWByID(connID))
 		assert.D.True(pw != nil, "pairwise is nil")
 
 		bm := im.FieldObj().(*basicmessage.Basicmessage)

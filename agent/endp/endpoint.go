@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/google/uuid"
 )
 
 /*
@@ -23,7 +24,7 @@ type Addr struct {
 	Service   string // Service name like findy for http
 	PlRcvr    string // PL receiver it is CA-DID (our CA) todo: CA or WA?
 	MsgRcvr   string // Receivers CA-DID which is used for Edge/Cloud communication
-	RcvrDID   string // This is the pairwise DID
+	ConnID    string // Connection ID
 	EdgeToken string // Final communication endpoint, now used for invitation ID
 	BasePath  string // The base address of the URL
 	VerKey    string // Associated VerKey, used for sending Payloads to this address
@@ -64,7 +65,7 @@ func NewServerAddr(s string) (ea *Addr) {
 		case 3:
 			ea.MsgRcvr = part
 		case 4:
-			ea.RcvrDID = part
+			ea.ConnID = part
 		case 5:
 			ea.EdgeToken = part
 		}
@@ -90,7 +91,7 @@ func NewClientAddr(s string) (ea *Addr) {
 		case 3:
 			ea.MsgRcvr = part
 		case 4:
-			ea.RcvrDID = part
+			ea.ConnID = part
 		case 5:
 			ea.EdgeToken = part
 		}
@@ -110,7 +111,7 @@ func NewAddrFromPublic(ae service.Addr) *Addr {
 
 func (e *Addr) Valid() bool {
 	if !IsInEndpoints(e.PlRcvr) {
-		return IsDID(e.PlRcvr) && IsDID(e.MsgRcvr) && IsDID(e.RcvrDID)
+		return IsDID(e.PlRcvr) && IsDID(e.MsgRcvr) && IsUUID(e.ConnID)
 	}
 	return true
 }
@@ -121,6 +122,11 @@ func IsDID(DID string) bool {
 	return lenOK && r.MatchString(DID)
 }
 
+func IsUUID(id string) bool {
+	_, err := uuid.Parse(id)
+	return err == nil
+}
+
 // ReceiverDID returns actual agent PL receiver.
 func (e *Addr) ReceiverDID() string {
 	if e.MsgRcvr == "" {
@@ -129,22 +135,13 @@ func (e *Addr) ReceiverDID() string {
 	return e.MsgRcvr
 }
 
-// MsgLevelDID returns the actual agent who receives and handles the PL. Note!
-// it's safer to use RcvrDID field instead!
-func (e *Addr) MsgLevelDID() string {
-	if e.RcvrDID != "" {
-		return e.RcvrDID
-	}
-	return e.ReceiverDID()
-}
-
 func (e *Addr) Address() string {
 	basePath := fmt.Sprintf("%s/%s/%s", e.BasePath, e.Service, e.PlRcvr)
 	if e.MsgRcvr != "" {
 		basePath += "/" + e.MsgRcvr
 	}
-	if e.RcvrDID != "" {
-		basePath += "/" + e.RcvrDID
+	if e.ConnID != "" {
+		basePath += "/" + e.ConnID
 	}
 	if e.EdgeToken != "" {
 		basePath += "/" + e.EdgeToken
@@ -186,8 +183,8 @@ func (e *Addr) TestAddress() string {
 	if e.MsgRcvr != "" {
 		basePath += "/" + e.MsgRcvr
 	}
-	if e.RcvrDID != "" {
-		basePath += "/" + e.RcvrDID
+	if e.ConnID != "" {
+		basePath += "/" + e.ConnID
 	}
 	return strings.TrimSuffix(basePath, "/")
 }

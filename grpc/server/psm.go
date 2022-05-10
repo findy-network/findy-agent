@@ -140,7 +140,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		ProtocolID: id,
 		State:      calcProtocolState(m),
 	}
-	connID = m.PairwiseName()
+	connID = m.ConnID
 	if m != nil {
 		state.ProtocolID.Role = m.Role
 	} else {

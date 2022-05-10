@@ -100,13 +100,13 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		glog.Error("ERROR in starting connection protocol:", err)
 	})
 
-	meAddr := ca.CAEndp() // CA can give us w-EA's endpoint
+	deTask, ok := task.(*taskDIDExchange)
+	assert.P.True(ok)
+
+	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint
 	me := ca.WDID()
 	wa := ca.WorkerEA()
 	ssiWA := wa.(ssi.Agent)
-
-	deTask, ok := task.(*taskDIDExchange)
-	assert.P.True(ok)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
 		glog.V(3).Infof("it's us who waits connection (%v) to invitation",
@@ -129,9 +129,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	didMethod := task.DIDMethod()
 	caller := ssiWA.NewDID(didMethod, "") // Create a new DID for our end
 
-	pubEndp := *meAddr             // and build an endpoint for..
-	pubEndp.RcvrDID = caller.Did() // our new PW DID
-
+	pubEndp := *meAddr // and build an endpoint for our new PW
 	// build a connection request message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
@@ -214,11 +212,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver := packet.Receiver
 
 	safeThreadID := ipl.ThreadID()
-	connectionID := safeThreadID
-	if cnxAddr.EdgeToken != "" {
-		glog.V(1).Infoln("=== using URL edge, safe is", cnxAddr.EdgeToken, safeThreadID)
-		connectionID = cnxAddr.EdgeToken
-	}
+	connectionID := cnxAddr.ConnID
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
 	senderEP := service.Addr{
@@ -253,9 +247,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		msgMeDID = m.Did() // set our pw DID
 
 		// calculate our endpoint for the pairwise
-		pubEndp := *cnxAddr         // set our agent's URL as a base addr
-		pubEndp.RcvrDID = m.Did()   // set our pw DID to actual agent DID in addr
-		pubEndp.VerKey = m.VerKey() // set our pw VerKey as well
+		pubEndp := *cnxAddr           // set our agent's URL as a base addr
+		pubEndp.ConnID = connectionID // set our pw DID to actual agent DID in addr
+		pubEndp.VerKey = m.VerKey()   // set our pw VerKey as well
 
 		m.SetEndpoint(service.Addr{
 			Endp: pubEndp.Address(),
