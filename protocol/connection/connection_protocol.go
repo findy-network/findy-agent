@@ -60,7 +60,13 @@ func init() {
 	comm.Proc.Add(pltype.AriesProtocolConnection, connectionProcessor)
 }
 
-func createConnectionTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
+func createConnectionTask(
+	header *comm.TaskHeader,
+	protocol *pb.Protocol,
+) (
+	t comm.Task,
+	err error,
+) {
 	defer err2.Annotate("createConnectionTask", &err)
 
 	var inv invitation.Invitation
@@ -120,7 +126,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Key:  deTask.Invitation.RecipientKeys[0],
 	})
 
-	caller := ssiWA.NewDID(method.TypeSov, "") // Create a new DID for our end
+	didMethod := task.DIDMethod()
+	caller := ssiWA.NewDID(didMethod, "") // Create a new DID for our end
 
 	pubEndp := *meAddr             // and build an endpoint for..
 	pubEndp.RcvrDID = caller.Did() // our new PW DID
@@ -129,19 +136,15 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
-			DID:    caller.Did(),
-			DIDDoc: caller.NewDoc(pubEndp.AE()).(*did.Doc),
+			DID:    caller.Did(),                           // todo: in peer method what?
+			DIDDoc: caller.NewDoc(pubEndp.AE()).(*did.Doc), // todo: should be ptr to doc
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
 		Thread: &decorator.Thread{ID: deTask.InvitationID},
 	})
 
-	// add to the cache until all lazy fetches are called
-	ssiWA.AddDIDCache(caller.(*ssi.DID)) // TODO: rethink cache stuff methods
-
-	// Write EA's new DID (caller) to CA's wallet (e.g. routing)
-	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
+	addToSovCacheIf(ssiWA, caller)
 
 	// Save needed data to PSM related Pairwise Representative
 	pwr := &pairwiseRep{
@@ -158,10 +161,10 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys)
+	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys,
+		didMethod)
 	callee := try.To1(wa.NewOutDID(receiverKeys...))
 	secPipe := sec.Pipe{In: caller, Out: callee}
-	//secPipe := *sec.NewPipeByVerkey(caller, receiverKey, deTask.Invitation.RoutingKeys)
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
@@ -177,9 +180,24 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	try.To(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
 }
 
-func buildRouting(rKey string, rKeys []string) []string {
-	retval := make([]string, 2, len(rKeys)+1)
-	retval[0] = "did:sov:"
+func addToSovCacheIf(ssiWA ssi.Agent, caller core.DID) {
+	d, ok := caller.(*ssi.DID)
+	if ok {
+		// add to the cache until all lazy fetches are called
+		ssiWA.AddDIDCache(d)
+	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func buildRouting(rKey string, rKeys []string, m method.Type) []string {
+	retval := make([]string, 2, max(2, len(rKeys)+1))
+	retval[0] = m.DIDString()
 	retval[1] = rKey
 	return append(retval, rKeys...)
 }

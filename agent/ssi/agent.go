@@ -214,7 +214,7 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) core.DID {
 
 	switch didMethod {
 	case method.TypeKey, method.TypePeer:
-		_ = a.VDR() // TODO: check if we could use VDR as method factory
+		//_ = a.VDR() // TODO: check if we could use VDR as method factory
 		return try.To1(method.New(didMethod, a.StorageH, args...))
 
 	case method.TypeSov:
@@ -232,7 +232,7 @@ func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
 
 	switch method.DIDType(didInfo[0]) {
 	case method.TypeKey, method.TypePeer:
-		_ = a.VDR()
+		// _ = a.VDR()
 		return method.NewFromDID(
 			a.StorageH,
 			didInfo...,

@@ -1,6 +1,7 @@
 package method
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -49,6 +50,10 @@ const (
 
 func (t Type) String() string {
 	return []string{"unknown", "key", "peer", "sov", "indy"}[t]
+}
+
+func (t Type) DIDString() string {
+	return fmt.Sprintf("did:%s:", t.String())
 }
 
 func New(

@@ -106,6 +106,10 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
+	err2.StackTraceWriter = os.Stderr
+	err2assert.D = err2assert.AsserterCallerInfo
+	err2assert.DefaultAsserter = err2assert.AsserterFormattedCallerInfo
+
 	defer err2.CatchTrace(func(err error) {
 		fmt.Println("error on setup", err)
 	})

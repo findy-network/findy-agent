@@ -17,6 +17,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestPeer_DIDString(t *testing.T) {
+	tests := []struct {
+		name   string
+		method method.Type
+		result string
+	}{
+		{"peer method", method.TypePeer, "did:peer:"},
+		{"key method", method.TypeKey, "did:key:"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.method.DIDString(), tt.result)
+		})
+	}
+}
+
 func TestPeer_String(t *testing.T) {
 	tests := []struct {
 		name   string
