@@ -37,18 +37,30 @@ func TestPeer_String(t *testing.T) {
 	tests := []struct {
 		name   string
 		method method.Type
+		useKey bool
 	}{
-		{"peer method", method.TypePeer},
+		{"peer method with its doc", method.TypePeer, true},
+		{"peer method wit build doc", method.TypePeer, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			didIn := agent.NewDID(tt.method, "https://www.address.com")
 			require.NotNil(t, didIn)
 
-			docBytes := try.To1(json.Marshal(didIn.DOC()))
-			out, err := agent.NewOutDID(didIn.String(), string(docBytes))
+			var docBytes []byte
+			if tt.useKey {
+				docBytes = try.To1(json.Marshal(didIn.DOC()))
+			} else {
+				doc, err := method.NewDoc(didIn.VerKey(), "https://www.address.com")
+				require.NoError(t, err)
+				require.NotNil(t, doc)
+				docBytes = try.To1(json.Marshal(doc))
+			}
+			out, err := agent.NewOutDID(didIn.URI(), string(docBytes))
 			require.NoError(t, err)
 			require.NotNil(t, out)
+			require.Equal(t, didIn.VerKey(), out.VerKey())
+			require.Equal(t, didIn.URI(), out.URI())
 		})
 	}
 }

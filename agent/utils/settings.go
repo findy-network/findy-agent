@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/findy-network/findy-agent/method"
 	"github.com/golang/glog"
 )
 
@@ -28,8 +29,17 @@ type Hub struct {
 	exportPath  string        // wallet export path
 
 	localTestMode bool // tells if are running unit tests, will be obsolete
+
+	didMethod method.Type // the DID method to use as a default
 }
 
+func (h *Hub) DIDMethod() method.Type {
+	return h.didMethod
+}
+
+func (h *Hub) SetDIDMethod(m method.Type) {
+	h.didMethod = m
+}
 func (h *Hub) GRPCAdmin() string {
 	return h.gRPCAdmin
 }

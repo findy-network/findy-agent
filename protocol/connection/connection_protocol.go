@@ -2,6 +2,7 @@ package connection
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 
 	"github.com/findy-network/findy-agent/agent/aries"
@@ -127,15 +128,15 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	})
 
 	didMethod := task.DIDMethod()
-	caller := ssiWA.NewDID(didMethod, "") // Create a new DID for our end
+	caller := ssiWA.NewDID(didMethod, meAddr.Address()) // Create a new DID for our end
 
-	pubEndp := *meAddr // and build an endpoint for our new PW
+	//pubEndp := *meAddr // and build an endpoint for our new PW
 	// build a connection request message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
-			DID:    caller.Did(),                           // todo: in peer method what?
-			DIDDoc: caller.NewDoc(pubEndp.AE()).(*did.Doc), // todo: should be ptr to doc
+			DID:    caller.URI(),            // todo: in peer method what?
+			DIDDoc: caller.DOC().(*did.Doc), // todo: should be ptr to doc
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
@@ -159,8 +160,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
-	receiverKeys := buildRouting(receiverKey, deTask.Invitation.RoutingKeys,
-		didMethod)
+	receiverKeys := buildRouting(task.ReceiverEndp().Endp, receiverKey,
+		deTask.Invitation.RoutingKeys, didMethod)
 	callee := try.To1(wa.NewOutDID(receiverKeys...))
 	secPipe := sec.Pipe{In: caller, Out: callee}
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
@@ -193,10 +194,14 @@ func max(a, b int) int {
 	return b
 }
 
-func buildRouting(rKey string, rKeys []string, m method.Type) []string {
+func buildRouting(addr, rKey string, rKeys []string, m method.Type) []string {
+	assert.That(utils.Settings.DIDMethod() == method.TypePeer)
+
 	retval := make([]string, 2, max(2, len(rKeys)+1))
 	retval[0] = m.DIDString()
-	retval[1] = rKey
+	doc := try.To1(method.NewDoc(rKey, addr))
+	docBytes := try.To1(json.Marshal(doc))
+	retval[1] = string(docBytes)
 	return append(retval, rKeys...)
 }
 

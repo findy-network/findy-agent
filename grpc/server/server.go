@@ -12,7 +12,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-agent/method"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
@@ -58,7 +57,7 @@ func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
 		TypeID:       uniqueTypeID(protocol.Role, protocol.TypeID),
 		ProtocolRole: protocol.GetRole(),
 		ConnID:       protocol.GetConnectionID(),
-		Method:       method.TypePeer,
+		Method:       utils.Settings.DIDMethod(),
 	}
 	return prot.CreateTask(header, protocol)
 }

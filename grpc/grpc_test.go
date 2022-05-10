@@ -24,6 +24,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/enclave"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
+	"github.com/findy-network/findy-agent/method"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
 	_ "github.com/findy-network/findy-agent/protocol/connection"
 	_ "github.com/findy-network/findy-agent/protocol/issuecredential"
@@ -178,6 +179,7 @@ func setUp() {
 	utils.Settings.SetTimeout(1 * time.Hour)
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
+	utils.Settings.SetDIDMethod(method.TypePeer)
 
 	//utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)

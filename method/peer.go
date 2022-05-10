@@ -32,7 +32,7 @@ func NewPeer(
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
 	key := did.VerificationMethod{
-		ID:         kid,
+		ID:         "1",
 		Type:       "Ed25519VerificationKey2018",
 		Controller: "",
 		Value:      pk,
@@ -77,7 +77,7 @@ func NewPeerFromDoc(
 
 func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 	key := did.VerificationMethod{
-		ID:         p.kid,
+		ID:         "1",
 		Type:       "Ed25519VerificationKey2018",
 		Controller: "",
 		Value:      p.pk,
@@ -150,21 +150,18 @@ func (b Base) buildDIDKeyStr(rk string) string {
 	return didkey
 }
 
-// newPeerDID is copied from framework's tests to find smallest common divider
-// to create `did:peer` with only one dependcy which is here kms.KeyManager.
-func _(keys kms.KeyManager) (d *did.Doc, err error) {
+func NewDoc(pk, addr string) (d *did.Doc, err error) {
 	defer err2.Return(&err)
 
-	kid, pubKey, err := keys.CreateAndExportPubKeyBytes(kms.ED25519)
-	err2.Check(err)
+	pubKey := try.To1(base58.Decode(pk))
 
 	key := did.VerificationMethod{
-		ID:         kid,
+		ID:         "1", // TODO: now just base58 pubkey
 		Type:       "Ed25519VerificationKey2018",
 		Controller: "",
 		Value:      pubKey,
 	}
-	doc, err := peer.NewDoc(
+	doc := try.To1(peer.NewDoc(
 		[]did.VerificationMethod{key},
 		did.WithAuthentication([]did.Verification{{
 			VerificationMethod: key,
@@ -176,10 +173,9 @@ func _(keys kms.KeyManager) (d *did.Doc, err error) {
 			Type:            "did-communication",
 			Priority:        0,
 			RecipientKeys:   []string{base58.Encode(pubKey)},
-			ServiceEndpoint: "http://example.com",
+			ServiceEndpoint: addr,
 		}}),
-	)
-	err2.Check(err)
+	))
 
 	return doc, nil
 }

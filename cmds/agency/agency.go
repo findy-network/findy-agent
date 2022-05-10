@@ -19,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/enclave"
+	"github.com/findy-network/findy-agent/method"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage" // protocols needed
 	_ "github.com/findy-network/findy-agent/protocol/connection"
 	_ "github.com/findy-network/findy-agent/protocol/issuecredential"
@@ -73,6 +74,8 @@ type Cmd struct {
 
 	GRPCAdmin      string
 	WalletPoolSize int
+
+	DIDMethod method.Type
 }
 
 var (
@@ -111,6 +114,7 @@ var (
 		WalletBackupTime:       "",
 		GRPCAdmin:              "findy-root",
 		WalletPoolSize:         10,
+		DIDMethod:              method.TypePeer,
 	}
 )
 
@@ -295,6 +299,7 @@ func (c *Cmd) setRuntimeSettings() {
 	utils.Settings.SetRegisterBackupName(c.RegisterBackupName)
 	utils.Settings.SetRegisterBackupInterval(c.RegisterBackupInterval)
 	utils.Settings.SetGRPCAdmin(c.GRPCAdmin)
+	utils.Settings.SetDIDMethod(c.DIDMethod)
 
 	ssi.SetWalletMgrPoolSize(c.WalletPoolSize)
 

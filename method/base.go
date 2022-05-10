@@ -86,5 +86,5 @@ func (b Base) AEndp() (ae service.Addr, err error) {
 }
 
 func (b Base) SetAEndp(ae service.Addr) {
-	assert.D.NoImplementation()
+	// Key don't use and peer has its document already
 }
