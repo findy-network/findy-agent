@@ -279,6 +279,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	}))
 
 	ep.VerKey = ourPairwiseDID.VerKey()
+
 	if defDIDMethod == method.TypeSov || defDIDMethod == method.TypeIndy {
 		ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
 	}

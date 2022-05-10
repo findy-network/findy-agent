@@ -27,7 +27,7 @@ func DIDType(s string) Type {
 }
 
 func Accept(did core.DID, t Type) bool {
-	return DIDType(did.String()) == t
+	return DIDType(did.URI()) == t
 }
 
 var methodTypes = map[string]Type{

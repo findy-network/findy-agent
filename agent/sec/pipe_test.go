@@ -154,23 +154,23 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	// create first agent2's input DID
 	didIn2 := agent2.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn2)
-	println("in2: ", didIn2.String())
+	println("in2: ", didIn2.URI())
 
 	didIn := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
-	println("in: ", didIn.String())
+	println("in: ", didIn.URI())
 
 	// give agent2's prime DID (input) to agent1's out DID
-	didOut, err := agent.NewOutDID(didIn2.String())
+	didOut, err := agent.NewOutDID(didIn2.URI())
 	require.NoError(t, err)
 	require.NotNil(t, didOut)
-	println("out: ", didOut.String())
+	println("out: ", didOut.URI())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
-	didOut2, err := agent2.NewOutDID(didIn.String())
+	didOut2, err := agent2.NewOutDID(didIn.URI())
 	require.NoError(t, err)
 	require.NotNil(t, didOut2)
-	println("out2: ", didOut2.String())
+	println("out2: ", didOut2.URI())
 
 	message := []byte("message")
 

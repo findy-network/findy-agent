@@ -100,7 +100,7 @@ func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 	return doc
 }
 
-// String returns URI formated DID
+// String returns URI formated 'did:key:' for verification method
 func (p Peer) String() string {
 	return p.buildDIDKeyStr(p.VerKey())
 }

@@ -353,7 +353,7 @@ func (d *DID) NewDoc(ae service.Addr) core.DIDDoc {
 
 func NewDoc(did core.DID, ae service.Addr) *diddoc.Doc {
 	pubKey := try.To1(base58.Decode(did.VerKey()))
-	didURI := did.String()
+	didURI := did.URI()
 	didURIRef := didURI + "#1"
 
 	vm := []diddoc.VerificationMethod{{

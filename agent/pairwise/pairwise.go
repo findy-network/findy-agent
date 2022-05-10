@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/ssi"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/didexchange"
@@ -72,6 +73,11 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 		glog.Errorf("Error loading connection: %s (%v)", cnxAddr.ConnID, err)
 	})
 
+	defMethod := utils.Settings.DIDMethod()
+	if defMethod == method.TypePeer {
+		return
+	}
+
 	a := p.agent.(comm.Receiver)
 	conn := try.To1(a.FindPWByID(cnxAddr.ConnID))
 	p.Callee = a.LoadDID(conn.MyDID)
@@ -107,7 +113,7 @@ func (p *Callee) ConnReqToRespWithSet(
 
 func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
 	if p.Callee == nil {
-		p.Callee = p.agent.NewDID(method.TypeUnknown, "")
+		p.Callee = p.agent.NewDID(utils.Settings.DIDMethod(), "")
 	}
 	responseMsg := p.factor.Create(didcomm.MsgInit{
 		DIDObj:   p.Callee,

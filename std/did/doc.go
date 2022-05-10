@@ -47,7 +47,7 @@ type VerificationMethod struct {
 }
 
 func _(did core.DID, ae service.Addr) *Doc {
-	didURI := did.String()
+	didURI := did.URI()
 	didURIRef := didURI + "#1"
 	pubK := PublicKey{
 		ID:              didURIRef,

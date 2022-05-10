@@ -47,7 +47,7 @@ type Connection struct {
 	DIDDoc *did.Doc `json:"DIDDoc,omitempty"`
 	//DIDDoc any `json:"DIDDoc,omitempty"` // todo: was did_doc
 
-	Doc *did.Doc `json:"-"` // Actual Doc
+	//Doc *did.Doc `json:"-"` // Actual Doc
 }
 
 func RouteForConnection(conn *Connection) (route []string) {

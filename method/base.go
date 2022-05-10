@@ -33,8 +33,9 @@ func (b Base) URI() string {
 	return b.String()
 }
 
+// Did function returns current KID of it exists.
 func (b Base) Did() string {
-	return b.kid
+	return b.URI()
 }
 
 func (b Base) KID() string {

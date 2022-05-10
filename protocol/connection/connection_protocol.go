@@ -210,6 +210,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// The agent DID, the PW DID is msgMeDID below
 	meDID := packet.Receiver.MyDID().Did()
+
+	// TODO: learn what this roles is when this function is clear
 	msgMeDID := "" // not known yet, will set it after pw is made
 
 	ipl := packet.Payload
@@ -234,7 +236,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		},
 	}
 
-	try.To(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received))
+	try.To(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received)) // TODO: use UUID for msgMeDID?
 
 	task.SwitchDirection()
 
