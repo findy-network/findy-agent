@@ -52,7 +52,7 @@ type Cmd struct {
 	EnclavePath       string
 	StewardDid        string
 	HandshakeRegister string
-	PsmDb             string
+	PsmDB             string
 	HTTPReqTimeout    time.Duration
 	ResetData         bool
 	URL               string
@@ -96,7 +96,7 @@ var (
 		EnclavePath:            "",
 		StewardDid:             "",
 		HandshakeRegister:      "findy.json",
-		PsmDb:                  "findy.bolt",
+		PsmDB:                  "findy.bolt",
 		HTTPReqTimeout:         utils.HTTPReqTimeout,
 		ResetData:              false,
 		URL:                    "",
@@ -129,7 +129,7 @@ func (c *Cmd) Validate() (err error) {
 	assert.P.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
 	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
 	assert.P.True(c.HostPort != 0, "host port cannot be zero")
-	assert.P.NotEmpty(c.PsmDb, "psmd database location must be given")
+	assert.P.NotEmpty(c.PsmDB, "psmd database location must be given")
 	assert.P.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
 	if c.RegisterBackupName == "" {
 		glog.Warning("handshake register backup should be empty in production")
@@ -163,7 +163,7 @@ func (c *Cmd) Setup() (err error) {
 	c.printStartupArgs()
 	try.To(c.initSealedBox())
 	c.startLoadingAgents()
-	try.To(psm.Open(c.PsmDb))
+	try.To(psm.Open(c.PsmDB))
 	pool.Open(c.PoolName)
 	c.checkSteward()
 	c.setRuntimeSettings()
@@ -261,7 +261,7 @@ func setProtocol(version uint64) {
 func (c *Cmd) printStartupArgs() {
 	fmt.Println(
 		"HandshakeRegister path:", c.HandshakeRegister,
-		"\nState machine db path:", c.PsmDb,
+		"\nState machine db path:", c.PsmDB,
 		"\nHost address:", c.HostAddr,
 		"\nHost port:", c.HostPort,
 		"\nServer port:", c.ServerPort,

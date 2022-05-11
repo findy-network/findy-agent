@@ -45,16 +45,13 @@ func (p *basicMessageRep) Type() byte {
 func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err error) {
 	defer err2.Return(&err)
 
-	var res psm.Rep
-	res = try.To1(psm.GetRep(bucketType, psm.StateKey{
+	res := try.To1(psm.GetRep(bucketType, psm.StateKey{
 		DID:   workerDID,
 		Nonce: taskID,
 	}))
 
-	var ok bool
-	rep, ok = res.(*basicMessageRep)
-
+	bmrep, ok := res.(*basicMessageRep)
 	assert.D.True(ok, "basic message type mismatch")
 
-	return rep, nil
+	return bmrep, nil
 }

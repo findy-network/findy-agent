@@ -84,7 +84,7 @@ func setUp() {
 		ExportPath:        exportPath,
 		StewardDid:        "Th7MpTaRZVRYnPiabds81Y",
 		HandshakeRegister: "findy.json",
-		PsmDb:             "findy.bolt",
+		PsmDB:             "findy.bolt",
 		ResetData:         true, // IMPORTANT for testing!
 		VersionInfo:       "test test",
 	}

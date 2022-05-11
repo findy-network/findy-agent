@@ -140,8 +140,8 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		ProtocolID: id,
 		State:      calcProtocolState(m),
 	}
-	connID = m.ConnID
 	if m != nil {
+		connID = m.ConnID
 		state.ProtocolID.Role = m.Role
 	} else {
 		glog.Warningf("cannot get protocol role for %s", key)

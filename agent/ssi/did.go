@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
-	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
 	"github.com/findy-network/findy-common-go/dto"
@@ -177,7 +176,7 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 
 	// Store the DID also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
-	try.To(mgdStorage.Storage().DIDStorage().SaveDID(storage.DID{
+	try.To(mgdStorage.Storage().DIDStorage().SaveDID(api.DID{
 		ID:         ds,
 		DID:        ds,
 		IndyVerKey: vk,
@@ -235,7 +234,7 @@ func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core
 	if ok {
 		connection, _ := mStorage.Storage().ConnectionStorage().GetConnection(pw.Name)
 		if connection == nil {
-			connection = &storage.Connection{
+			connection = &api.Connection{
 				ID: pw.Name,
 			}
 		}
