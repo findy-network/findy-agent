@@ -25,7 +25,7 @@ var treeCmd = &cobra.Command{
 		if len(args) == 0 {
 			printStructure(rootCmd, "", 0, true)
 		} else {
-			c, _  := try.To2(rootCmd.Find(args))
+			c, _ := try.To2(rootCmd.Find(args))
 			printStructure(c, "", 0, true)
 		}
 		return nil
