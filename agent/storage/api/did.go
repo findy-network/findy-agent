@@ -19,8 +19,9 @@ const (
 )
 
 type DID struct {
-	ID         string
+	ID         string // ID is the key. Use real DID value for that
 	DID        string
+	KID        string
 	IndyVerKey string
 	Doc        *did.DocResolution
 }

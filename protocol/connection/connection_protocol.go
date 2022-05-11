@@ -44,8 +44,8 @@ var connectionProcessor = comm.ProtProc{
 	Creator: createConnectionTask,
 	Starter: startConnectionProtocol,
 	Handlers: map[string]comm.HandlerFunc{
-		pltype.HandlerResponse: handleConnectionResponse,
-		pltype.HandlerRequest:  handleConnectionRequest,
+		pltype.HandlerResponse: handleConnectionResponse, // to Caller (sends the request)
+		pltype.HandlerRequest:  handleConnectionRequest,  // to Callee
 	},
 	FillStatus: fillPairwiseStatus,
 }
@@ -104,6 +104,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	deTask, ok := task.(*taskDIDExchange)
 	assert.P.True(ok)
 
+	connectionID := deTask.InvitationID
 	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint
 	me := ca.WDID()
 	wa := ca.WorkerEA()
@@ -118,7 +119,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 				ID:   task.ID(),
 				Type: pltype.AriesConnectionRequest,
 			})
-		try.To(prot.UpdatePSM(me, "", task, wpl, psm.Waiting))
+		try.To(prot.UpdatePSM(me, connectionID, task, wpl, psm.Waiting))
 		return
 	}
 
@@ -130,13 +131,12 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	didMethod := task.DIDMethod()
 	caller := try.To1(ssiWA.NewDID(didMethod, meAddr.Address())) // Create a new DID for our end
 
-	//pubEndp := *meAddr // and build an endpoint for our new PW
 	// build a connection request message to send to another agent
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
-			DID:    caller.URI(),            // todo: in peer method what?
-			DIDDoc: caller.DOC().(*did.Doc), // todo: should be ptr to doc
+			DID:    caller.URI(),
+			DIDDoc: caller.DOC().(*did.Doc),
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
@@ -167,7 +167,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Update PSM state, and send the payload to other end
-	try.To(prot.UpdatePSM(me, caller.Did(), task, opl, psm.Sending))
+	try.To(prot.UpdatePSM(me, connectionID, task, opl, psm.Sending))
 	try.To(comm.SendPL(secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
@@ -176,7 +176,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 			ID:   task.ID(),
 			Type: pltype.AriesConnectionResponse,
 		})
-	try.To(prot.UpdatePSM(me, caller.Did(), task, wpl, psm.Waiting))
+	try.To(prot.UpdatePSM(me, connectionID, task, wpl, psm.Waiting))
 }
 
 func addToSovCacheIf(ssiWA ssi.Agent, caller core.DID) {
@@ -205,14 +205,13 @@ func buildRouting(addr, rKey string, rKeys []string, m method.Type) []string {
 	return append(retval, rKeys...)
 }
 
+// handleConnectionRequest is handled by 'responder' aka callee.
+// The party who receives conn_req.
 func handleConnectionRequest(packet comm.Packet) (err error) {
 	defer err2.Annotate("connection req", &err)
 
 	// The agent DID, the PW DID is msgMeDID below
 	meDID := packet.Receiver.MyDID().Did()
-
-	// TODO: learn what this roles is when this function is clear
-	msgMeDID := "" // not known yet, will set it after pw is made
 
 	ipl := packet.Payload
 	cnxAddr := packet.Address
@@ -236,7 +235,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		},
 	}
 
-	try.To(prot.UpdatePSM(meDID, msgMeDID, task, ipl, psm.Received)) // TODO: use UUID for msgMeDID?
+	try.To(prot.UpdatePSM(meDID, connectionID, task, ipl, psm.Received))
 
 	task.SwitchDirection()
 
@@ -251,9 +250,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	calleePw.CheckPreallocation(cnxAddr)
 
 	msg := try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
-		msgMeDID = m.Did() // set our pw DID
+		// Legacy: calculate our endpoint for the pairwise
+		// when DIDDoc is used for all the DIDs extra info.
 
-		// calculate our endpoint for the pairwise
 		pubEndp := *cnxAddr           // set our agent's URL as a base addr
 		pubEndp.ConnID = connectionID // set our pw DID to actual agent DID in addr
 		pubEndp.VerKey = m.VerKey()   // set our pw VerKey as well
@@ -272,7 +271,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	msg.Thread().ID = safeThreadID
 
 	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
-	caller := calleePw.Caller                     // the other end, we'r here the callee
+	caller := calleePw.Caller                     // the other end, we're here the callee
 	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
@@ -287,20 +286,17 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	// SAVE ENDPOINT to wallet
 	try.To(saveConnectionEndpoint(managedStorage(receiver), connectionID, callerAddress))
 
-	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
-	// future routing. Everything goes thru CA.
-	// ca := agency.RcvrCA(cnxAddr)
-	// try.To(ca.SaveTheirDID(caller.Did(), caller.VerKey()))
-	// try.To(ca.SaveTheirDID(calleePw.Callee.Did(), calleePw.Callee.VerKey()))
+	// REMOVE!!!Create secure pipe to send payload to other end of the new PW
+	//	doc := ipl.MsgHdr().FieldObj().(*didexchange.Request).Connection.DIDDoc
+	//	docBytes := try.To1(json.Marshal(doc))
+	//	caller = try.To1(wca.NewOutDID(doc.ID, string(docBytes)))
 
-	res := msg.FieldObj().(*didexchange.Response)
-	// update caller with route information
-	caller = ssi.NewOutDid(caller.VerKey(), didexchange.RouteForConnection(req.Connection))
 	pipe := sec.Pipe{
 		In:  calleePw.Callee, // This is us
 		Out: caller,          // This is the other end, who sent the Request
 	}
 
+	res := msg.FieldObj().(*didexchange.Response)
 	try.To(signature.Sign(res, pipe)) // we must sign the Response before send it
 
 	caller.SetAEndp(IncomingPWMsg.Endpoint())
@@ -308,13 +304,13 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, msg)
-	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.Sending))
+	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, task, opl))
 
 	// update the PSM, we are ready at this end for this protocol
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	wpl := aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionResponse, emptyMsg)
-	try.To(prot.UpdatePSM(meDID, msgMeDID, task, wpl, psm.ReadyACK))
+	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
 
 	return nil
 }
@@ -322,9 +318,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 func handleConnectionResponse(packet comm.Packet) (err error) {
 	defer err2.Annotate("connection response", &err)
 
+	connectionID := packet.Address.ConnID
 	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
-	// cnxAddr := packet.Address
 	receiver := packet.Receiver
 
 	nonce := ipl.ThreadID()
@@ -345,17 +341,18 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		},
 	}
 
-	try.To(prot.UpdatePSM(meDID, "", task, ipl, psm.Received))
+	try.To(prot.UpdatePSM(meDID, connectionID, task, ipl, psm.Received))
 
 	pwr := try.To1(getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce}))
 	msgMeDID := pwr.Caller.DID
-	caller := receiver.LoadDID(pwr.Caller.DID)
+	caller := receiver.LoadDID(msgMeDID)
 
 	im := ipl.MsgHdr().(didcomm.PwMsg)
 
 	// Set pairwise info about other end to wallet
-	callee := ssi.NewDid(im.Did(), im.VerKey())
-	callee.Store(receiver.ManagedWallet())
+	callee := receiver.LoadDID(im.Did())
+	// callee := ssi.NewDid(im.Did(), im.VerKey())
+	callee.Store(receiver.ManagedWallet()) // for NewDid() if it stays
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
@@ -364,7 +361,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		Route: route,
 	})
 
-	// SAVE ENDPOINT to wallet
+	// SAVE ENDPOINT to wallet, todo: this is saved already!
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
 	try.To(saveConnectionEndpoint(managedStorage(receiver), pwName, calleeEndp.Address()))
 
@@ -378,19 +375,13 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	}
 	try.To(psm.AddRep(newPwr)) // updates the previously created
 
-	// It's important to SAVE new pairwise's DIDs to our CA's wallet for
-	// future routing. Everything goes thru CA.
-	// ca := agency.RcvrCA(cnxAddr)
-	// try.To(ca.SaveTheirDID(callee.Did(), callee.VerKey()))
-	// Caller DID saved when we sent Conn_Req, in case both parties are us
-
 	callee.SetAEndp(im.Endpoint())
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	// Update that PSM is successfully Ready
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	opl := aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, emptyMsg)
-	try.To(prot.UpdatePSM(meDID, msgMeDID, task, opl, psm.ReadyACK))
+	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.ReadyACK))
 
 	return nil
 }

@@ -289,7 +289,12 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ourPairwiseDID.SetAEndp(ep.AE())
 	wa.AddToPWMap(ourPairwiseDID, ourPairwiseDID, id)
 
-	glog.V(1).Infof("---- Using preallocated PW DID %s for connection id %s ---", ourPairwiseDID.Did(), id)
+	glog.V(1).Infof(
+		"---- Using pre-allocated PW:\n"+
+			"DID %s for connection id %s ---",
+		ourPairwiseDID.Did(), id)
+	myAE, _ := ourPairwiseDID.AEndp()
+	glog.V(5).Infoln("pre-alloc EndPoint: ", myAE.Endp)
 
 	return ep, nil
 }

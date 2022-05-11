@@ -21,7 +21,7 @@ type Base struct {
 	handle managed.Wallet
 }
 
-// String returns URI formated DID
+// String returns URI formatted DID
 func (b Base) String() string {
 	// TODO: lazy fetch or move to constructor, ANSWER: cheap to calc
 	didkey, _ := fingerprint.CreateDIDKey(b.pk)
@@ -73,7 +73,8 @@ func (b Base) Store(mgdWallet, mgdStorage managed.Wallet) {
 }
 
 func (b Base) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID, pw core.PairwiseMeta) {
-	// todo: check ssi.DID, propably not needed
+	// nothing to do at this level because we don't have virtual functions
+	// the implementation must be done at the lower impl level like Peer
 }
 
 func (b Base) StoreResult() error {

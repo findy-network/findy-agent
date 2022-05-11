@@ -5,6 +5,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
@@ -33,7 +34,8 @@ func NewPeerFromDID(
 	keys := hStorage.Storage().KMS()
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
-	return Peer{Base{handle: hStorage, kid: "", pk: pk, vkh: kh, doc: doc}}, nil
+	return Peer{Base{handle: hStorage, kid: d.KID, pk: pk, vkh: kh, doc: doc}},
+		nil
 }
 
 func NewPeer(
@@ -94,6 +96,13 @@ func NewPeerFromDoc(
 }
 
 func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
+	if p.doc != nil {
+		return p.doc
+	}
+
+	myAE, _ := p.AEndp()
+	assert.That(ae == myAE)
+
 	key := did.VerificationMethod{
 		ID:         "1",
 		Type:       "Ed25519VerificationKey2018",
@@ -171,6 +180,36 @@ func (b Base) buildDIDKeyStr(rk string) string {
 	_ = try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519)) // we don't need handle
 	didkey, _ := fingerprint.CreateDIDKey(pk)
 	return didkey
+}
+
+func (p Peer) AEndp() (ae service.Addr, err error) {
+	assert.NotNil(p.doc)
+	return service.Addr{
+		Endp: p.doc.Service[0].ServiceEndpoint,
+		Key:  p.doc.Service[0].RecipientKeys[0],
+	}, nil
+}
+
+func (p Peer) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID,
+	pw core.PairwiseMeta) {
+	defer err2.Catch(func(err error) {
+		glog.Warningf("save pairwise for DID error: %v", err)
+	})
+
+	connection, _ := mStorage.Storage().ConnectionStorage().GetConnection(pw.Name)
+
+	if connection == nil {
+		connection = &api.Connection{
+			ID: pw.Name,
+		}
+	}
+	connection.MyDID = p.Did()
+	connection.TheirDID = theirDID.Did()
+	connection.TheirRoute = pw.Route
+	glog.V(7).Infoln("=== save connection:",
+		connection.ID, connection.MyDID, connection.TheirDID)
+
+	try.To(mStorage.Storage().ConnectionStorage().SaveConnection(*connection))
 }
 
 func NewDoc(pk, addr string) (d *did.Doc, err error) {

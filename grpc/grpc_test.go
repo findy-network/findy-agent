@@ -181,7 +181,7 @@ func setUp() {
 	utils.Settings.SetGRPCAdmin("findy-root")
 	utils.Settings.SetDIDMethod(method.TypePeer)
 
-	//utils.Settings.SetCryptVerbose(true)
+	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
 	try.To(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
@@ -223,7 +223,7 @@ func prepareBuildOneTest() {
 	if os.Getenv("TEST_WORKDIR") != "" {
 		removeFiles(home, "/wallets/*")
 	}
-	//enclave.WipeSealedBox()
+	// enclave.WipeSealedBox()
 }
 
 func tearDown() {
@@ -303,7 +303,7 @@ func Test_NewOnboarding(t *testing.T) {
 
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
-// use only one wallet for all of the EAs. That's handy for web wallets.
+// use only one wallet for all the EAs. That's handy for web wallets.
 func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
@@ -694,11 +694,11 @@ func TestSetPermissive(t *testing.T) {
 		ctx := context.Background()
 		c := agency2.NewAgentServiceClient(conn)
 		implID := agency2.ModeCmd_AcceptModeCmd_AUTO_ACCEPT
-		//persistent := false
+		// persistent := false
 		if i == 0 && !allPermissive {
 			glog.V(1).Infoln("--- Using grpc impl ID for SA ---")
 			implID = agency2.ModeCmd_AcceptModeCmd_GRPC_CONTROL
-			//persistent = true
+			// persistent = true
 		}
 		r, err := c.Enter(ctx, &agency2.ModeCmd{
 			TypeID:  agency2.ModeCmd_ACCEPT_MODE,
@@ -1231,7 +1231,7 @@ func doListen(
 	handleStatus handleStatusFn,
 ) {
 	conn := client.TryOpen(caDID, baseCfg)
-	//defer conn.Close()
+	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch := try.To1(conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
@@ -1315,7 +1315,7 @@ func doListenResume(
 	handleStatus handleStatusFn,
 ) {
 	conn := client.TryOpen(caDID, baseCfg)
-	//defer conn.Close()
+	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch := try.To1(conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()}))

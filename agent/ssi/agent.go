@@ -38,8 +38,9 @@ type Agent interface {
 	Wallet() (h int)
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
-	//CreateDID(seed string) (agentDid core.DID)
+	// CreateDID(seed string) (agentDid core.DID)
 	NewDID(m method.Type, args ...string) (_ core.DID, err error)
+	NewOutDID(didInfo ...string) (id core.DID, err error)
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -217,7 +218,7 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, er
 
 	switch didMethod {
 	case method.TypeKey, method.TypePeer:
-		//_ = a.VDR() // TODO: check if we could use VDR as method factory
+		// _ = a.VDR() // TODO: check if we could use VDR as method factory
 		coreDID := try.To1(method.New(didMethod, a.StorageH, args...))
 		try.To(a.saveDID(coreDID))
 		return coreDID, err
@@ -226,7 +227,7 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, er
 		return a.myCreateDID(args[0]), err
 	default:
 		return a.myCreateDID(args[0]), err // TODO: remove after test
-		//assert.That(false, "not supported")
+		// assert.That(false, "not supported")
 	}
 }
 
@@ -234,6 +235,7 @@ func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 	defer err2.Return(&err)
 
 	sDID := storage.DID{
+		KID: coreDID.KID(),
 		ID:  coreDID.URI(),
 		DID: coreDID.URI(),
 		Doc: &apidoc.DocResolution{
@@ -241,7 +243,7 @@ func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 		},
 	}
 	try.To(a.DIDStorage().SaveDID(sDID))
-	glog.V(3).Infoln("did saved:", sDID.ID, sDID.DID)
+	glog.V(3).Infoln("did saved:", sDID.KID, sDID.ID)
 	return nil
 }
 
@@ -390,7 +392,7 @@ func (a *DIDAgent) LoadDID(did string) core.DID {
 			if cached.Wallet() == 0 {
 				cached.SetWallet(a.WalletH)
 			}
-			//log.Println("Return cached DID")
+			// log.Println("Return cached DID")
 			return cached
 		}
 		d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
