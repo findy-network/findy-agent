@@ -127,7 +127,7 @@ func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 	return doc
 }
 
-// String returns URI formated 'did:key:' for verification method
+// String returns URI formatted 'did:key:' for verification method
 func (p Peer) String() string {
 	return p.buildDIDKeyStr(p.VerKey())
 }
@@ -177,7 +177,7 @@ func (p Peer) URI() string {
 func (b Base) buildDIDKeyStr(rk string) string {
 	keys := b.handle.Storage().KMS()
 	pk := try.To1(base58.Decode(rk))
-	_ = try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519)) // we don't need handle
+	_ = try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 	didkey, _ := fingerprint.CreateDIDKey(pk)
 	return didkey
 }

@@ -107,7 +107,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 		{"afgo def", args{"json/afgo-default.json"}, false},
 		{"afgo interop", args{"json/afgo-interop.json"}, false},
 		{"dotnet", args{"json/dotnet.json"}, true},
-		{"findy", args{"json/findy.json"}, false},
+		{"ours", args{"json/ours-160-prepared.json"}, true},
 		{"js", args{"json/javascript.json"}, false},
 	}
 	for _, tt := range tests {

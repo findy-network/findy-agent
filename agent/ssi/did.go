@@ -105,7 +105,7 @@ func NewDid(did, verkey string) (d *DID) {
 	return &DID{data: f}
 }
 
-func NewDIDWithRouting(did string, verkey ...string) (d *DID) {
+func NewDIDWithRouting(_ string, verkey ...string) (d *DID) {
 	d = NewDid("", verkey[0])
 	d.pwMeta = &core.PairwiseMeta{Route: verkey[1:]}
 	return d
@@ -130,7 +130,7 @@ func (d *DID) Did() string {
 }
 
 func (d *DID) URI() string {
-	return "did:sov:" + d.Did()
+	return d.String() // It handles only VerKey out DIDs
 }
 
 func (d *DID) VerKey() (vk string) {

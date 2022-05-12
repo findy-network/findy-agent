@@ -223,7 +223,7 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, er
 		try.To(a.saveDID(coreDID))
 		return coreDID, err
 
-	case method.TypeSov:
+	case method.TypeSov, method.TypeIndy:
 		return a.myCreateDID(args[0]), err
 	default:
 		return a.myCreateDID(args[0]), err // TODO: remove after test
