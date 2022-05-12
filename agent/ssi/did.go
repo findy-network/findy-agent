@@ -326,12 +326,12 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 	return service.Addr{}, fmt.Errorf("no data")
 }
 
+// Route returns only routing keys not the actual receiver key.
 func (d *DID) Route() []string {
 	if d.pwMeta != nil {
-		toKeys := make([]string, len(d.pwMeta.Route)+1)
-		toKeys[0] = d.String()
+		toKeys := make([]string, len(d.pwMeta.Route))
 		for i, r := range d.pwMeta.Route {
-			toKeys[i+1] = indy.MethodPrefix + r
+			toKeys[i] = indy.MethodPrefix + r
 		}
 		return toKeys
 	}

@@ -1,4 +1,5 @@
 TEST_TIMEOUT:="70s"
+TEST_ARGS ?= -args -logtostderr -v=3
 
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER

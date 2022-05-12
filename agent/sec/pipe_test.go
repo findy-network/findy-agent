@@ -440,12 +440,12 @@ func TestPipe_packPeer(t *testing.T) {
 	// Unpack forward message with last routing key
 	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
 	require.NoError(t, err)
-	require.Len(t, route2Keys, 1)
+	require.Len(t, route2Keys, 3)
 
 	// these two rows haven't yet checked. API has changed and these haven't
 	// tested yet:
-	//lastRouteKey := route2Keys[0]
-	//require.Equal(t, didRoute2.VerKey(), lastRouteKey)
+	// lastRouteKey := route2Keys[0]
+	// require.Equal(t, didRoute2.VerKey(), lastRouteKey)
 
 	firstUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
 		In:  didRoute2, // start with last route

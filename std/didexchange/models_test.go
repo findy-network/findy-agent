@@ -21,6 +21,7 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -153,14 +154,18 @@ func TestNewRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			didIn, _ := agent.NewDID(tt.method, "")
-			require.NotNil(t, didIn)
-
-			nonce := "NONCE"
 			ae := service.Addr{
 				Endp: "http://www.address.com",
 				Key:  "SERVICE_KEY",
 			}
+			arg := ""
+			if tt.method == method.TypePeer {
+				arg = ae.Endp
+			}
+			didIn, _ := agent.NewDID(tt.method, arg)
+			require.NotNil(t, didIn)
+
+			nonce := "NONCE"
 			didDoc := didIn.NewDoc(ae).(*did.Doc)
 
 			msg := NewRequest(&Request{
@@ -216,6 +221,10 @@ var (
 )
 
 func setUp() {
+	err2.StackTraceWriter = os.Stderr
+	assert.D = assert.AsserterCallerInfo
+	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
 	sec.Init(transport.MediaTypeProfileDIDCommAIP1)
