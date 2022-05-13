@@ -314,9 +314,6 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 			IndyVerKey: didRes.Data.Str2,
 		}))
 		ch <- didRes
-		if didRes.Err() != nil {
-
-		}
 	}()
 	f.SetChan(ch)
 	d := NewAgentDid(a.WalletH, f)
