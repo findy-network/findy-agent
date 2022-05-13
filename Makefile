@@ -155,3 +155,6 @@ scratch:
 run:
 	./scripts/dev/dev.sh install_run $(LEDGER_NAME)
 # ****
+
+iop:
+	gh workflow run iop.yml
