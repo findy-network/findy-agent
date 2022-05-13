@@ -114,7 +114,7 @@ var (
 		WalletBackupTime:       "",
 		GRPCAdmin:              "findy-root",
 		WalletPoolSize:         10,
-		DIDMethod:              method.TypePeer,
+		DIDMethod:              method.TypeSov,
 	}
 )
 

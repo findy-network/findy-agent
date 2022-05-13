@@ -23,7 +23,7 @@ type DID struct {
 	DID        string
 	KID        string
 	IndyVerKey string
-	Doc        *did.DocResolution
+	Doc        *did.DocResolution // TODO: bring our own core.DIDDoc
 }
 
 // just playing around, this is probably not needed at this level

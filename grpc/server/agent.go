@@ -258,7 +258,7 @@ func (a *agentServer) CreateInvitation(
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
 	defer err2.Return(&err)
 
-	glog.V(5).Infoln("========== start prealloc:", id)
+	glog.V(5).Infoln("========== start pre-alloc:", id)
 	defDIDMethod := utils.Settings.DIDMethod()
 
 	_, receiver := try.To2(ca(ctx))

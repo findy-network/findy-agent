@@ -1,6 +1,7 @@
 package ssi
 
 import (
+	"net/url"
 	"path/filepath"
 	"sync"
 
@@ -288,6 +289,16 @@ func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
 // the performance reasons. Most cases seed should be empty string.
 func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	a.AssertWallet()
+
+	// If endpoint is sent to us instead of seed, we must ignore it.
+	// The actual endpoint will be sent to us when it's ready.
+	ap := seed
+	if _, err := url.Parse(seed); err == nil {
+		seed = ""
+	} else {
+		ap = ""
+	}
+
 	f := new(async.Future)
 	ch := make(findy.Channel, 1)
 	go func() {
@@ -303,9 +314,19 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 			IndyVerKey: didRes.Data.Str2,
 		}))
 		ch <- didRes
+		if didRes.Err() != nil {
+
+		}
 	}()
 	f.SetChan(ch)
-	return NewAgentDid(a.WalletH, f)
+	d := NewAgentDid(a.WalletH, f)
+	if ap != "" {
+		d.SetAEndp(service.Addr{
+			Endp: ap,
+			Key:  d.VerKey(),
+		})
+	}
+	return d
 }
 
 func (a *DIDAgent) RootDid() core.DID {
@@ -397,8 +418,8 @@ func (a *DIDAgent) LoadDID(did string) core.DID {
 		}
 		d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
 		a.DidCache.Add(d)
+		return d
 	}
-	return nil
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {

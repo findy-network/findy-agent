@@ -10,6 +10,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -102,13 +103,15 @@ func (p *Callee) ConnReqToRespWithSet(
 
 	connReqDID := p.Msg.Did()
 
-	// NOTE! we don't need this from here, it's in doc
-	// connReqVK := p.Msg.VerKey()
-
-	docBytes := try.To1(json.Marshal(reqDoc))
-	callerDID := try.To1(p.agent.NewOutDID(connReqDID, string(docBytes)))
-
-	// p.agent.AddDIDCache(callerDID)
+	var callerDID core.DID
+	if method.DIDType(connReqDID) == method.TypePeer {
+		docBytes := try.To1(json.Marshal(reqDoc))
+		callerDID = try.To1(p.agent.NewOutDID(connReqDID, string(docBytes)))
+	} else { // did:sov: is the default still
+		connReqVK := p.Msg.VerKey()
+		callerDID = try.To1(p.agent.NewOutDID(connReqDID, connReqVK))
+		p.agent.AddDIDCache(callerDID.(*ssi.DID))
+	}
 
 	f(responseMsg) // let caller set msg values
 

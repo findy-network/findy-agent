@@ -14,10 +14,18 @@ import (
 
 func String(d string) string {
 	s := strings.Split(d, ":")
+	if len(s) == 1 && s[0] == d {
+		// we have legacy DID format, i.e. no prefix
+		return unknownTypeStr
+	}
 	return s[1]
 }
 
 func DIDType(s string) Type {
+	if s == "" {
+		return TypeUnknown
+	}
+
 	t, ok := methodTypes[String(s)]
 	if !ok {
 		glog.Warningf("cannot compute did method from '%s'", s)
@@ -30,12 +38,15 @@ func Accept(did core.DID, t Type) bool {
 	return DIDType(did.URI()) == t
 }
 
+const unknownTypeStr = "unknown"
+
 var methodTypes = map[string]Type{
-	"unknown": TypeUnknown,
-	"key":     TypeKey,
-	"peer":    TypePeer,
-	"sov":     TypeSov,
-	"indy":    TypeIndy,
+	unknownTypeStr: TypeUnknown,
+
+	"key":  TypeKey,
+	"peer": TypePeer,
+	"sov":  TypeSov,
+	"indy": TypeIndy,
 }
 
 type Type int

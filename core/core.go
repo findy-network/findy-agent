@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
@@ -61,6 +63,14 @@ type TheirDID interface {
 	Verify() error
 }
 
+// Doc is DIDDoc interface used as a field in DIDComm messages and by its own.
+type Doc interface {
+	json.Marshaler
+	json.Unmarshaler
+
+	NeededOhterFunctions()
+}
+
 type DIDDoc interface {
 }
 
@@ -93,7 +103,7 @@ type Out interface {
 	Route() []string
 	Endpoint() string
 
-	//AEndp() (ae service.Addr, error error) // refactor
+	// AEndp() (ae service.Addr, error error) // refactor
 }
 
 type In interface {

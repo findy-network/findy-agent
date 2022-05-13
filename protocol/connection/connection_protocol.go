@@ -195,15 +195,27 @@ func max(a, b int) int {
 }
 
 func buildRouting(addr, rKey string, rKeys []string, m method.Type) []string {
-	assert.That(utils.Settings.DIDMethod() == method.TypePeer)
+	switch utils.Settings.DIDMethod() {
+	case method.TypePeer:
+		retval := make([]string, 2, max(2, len(rKeys)+1))
+		retval[0] = m.DIDString()
+		doc := try.To1(method.NewDoc(rKey, addr))
+		docBytes := try.To1(json.Marshal(doc))
+		retval[1] = string(docBytes)
+		return append(retval, rKeys...)
 
-	retval := make([]string, 2, max(2, len(rKeys)+1))
-	retval[0] = m.DIDString()
-	doc := try.To1(method.NewDoc(rKey, addr))
-	docBytes := try.To1(json.Marshal(doc))
-	retval[1] = string(docBytes)
-	return append(retval, rKeys...)
+	// case method.TypeSov, method.TypeIndy:
+	default:
+		retval := make([]string, 2, max(2, len(rKeys)+1))
+		retval[0] = m.DIDString()
+		retval[1] = rKey
+		return append(retval, rKeys...)
+	}
 }
+
+/*
+-func buildRouting(rKey string, rKeys []string) []string {
+*/
 
 // handleConnectionRequest is handled by 'responder' aka callee.
 // The party who receives conn_req.
@@ -350,8 +362,13 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	im := ipl.MsgHdr().(didcomm.PwMsg)
 
 	// Set pairwise info about other end to wallet
-	callee := receiver.LoadDID(im.Did())
-	// callee := ssi.NewDid(im.Did(), im.VerKey())
+	var callee core.DID
+	if method.TypePeer == utils.Settings.DIDMethod() {
+		callee = receiver.LoadDID(im.Did())
+	} else { // default method is did:sov:
+		callee = ssi.NewDid(im.Did(), im.VerKey())
+	}
+
 	callee.Store(receiver.ManagedWallet()) // for NewDid() if it stays
 
 	pwName := pwr.Name

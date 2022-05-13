@@ -179,7 +179,7 @@ func setUp() {
 	utils.Settings.SetTimeout(1 * time.Hour)
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
-	utils.Settings.SetDIDMethod(method.TypePeer)
+	utils.Settings.SetDIDMethod(method.TypeSov)
 
 	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)

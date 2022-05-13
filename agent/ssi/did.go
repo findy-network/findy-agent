@@ -343,7 +343,8 @@ func (d *DID) RecipientKeys() []string {
 }
 
 func (d *DID) DOC() core.DIDDoc {
-	return nil
+	ae := try.To1(d.AEndp())
+	return NewDoc(d, ae)
 }
 
 func (d *DID) NewDoc(ae service.Addr) core.DIDDoc {
