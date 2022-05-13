@@ -65,13 +65,13 @@ func StartPSM(ts Initial) (err error) {
 
 	wDID := ts.Ca.WDID()
 	wa := ts.Ca.WorkerEA()
+	connID := ts.T.ConnectionID()
 
 	defer err2.Handle(&err, func() {
 		opl := newPayload(ts)
-		_ = UpdatePSM(wDID, "", ts.T, opl, psm.Failure)
+		_ = UpdatePSM(wDID, connID, ts.T, opl, psm.Failure)
 	})
 
-	connID := ts.T.ConnectionID()
 	pipe := try.To1(wa.PwPipe(connID))
 	agentEndp := try.To1(pipe.EA())
 	ts.T.SetReceiverEndp(agentEndp)
@@ -304,7 +304,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 	})
 	wDID := receiver.WDID()
 	opl := aries.PayloadCreator.NewMsg(t.ID(), t.Type(), msg)
-	try.To(UpdatePSM(wDID, "", t, opl, state))
+	try.To(UpdatePSM(wDID, t.ConnectionID(), t, opl, state))
 }
 
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {

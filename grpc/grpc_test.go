@@ -16,6 +16,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -1408,16 +1409,27 @@ func handleStatusBMEcho(
 	status *agency2.AgentStatus,
 	_ bool,
 ) handleAction {
+	assert.True(t, endp.IsUUID(status.Notification.ConnectionID))
+
+	ctx := context.Background()
+	didComm := agency2.NewProtocolServiceClient(conn)
+	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+		TypeID:           status.Notification.ProtocolType,
+		Role:             agency2.Protocol_ADDRESSEE,
+		ID:               status.Notification.ProtocolID,
+		NotificationTime: status.Notification.Timestamp,
+	}))
+
 	switch status.Notification.ProtocolType {
+	case agency2.Protocol_DIDEXCHANGE:
+		res := statusResult.GetDIDExchange()
+		assert.NotEmpty(t, res.TheirDID)
+		assert.NotEmpty(t, res.MyDID)
+		assert.NotEmpty(t, res.TheirLabel)
+		assert.NotEmpty(t, res.TheirEndpoint)
+		assert.Equal(t, status.Notification.ConnectionID, res.ID)
+		return handleNotOurs
 	case agency2.Protocol_BASIC_MESSAGE:
-		ctx := context.Background()
-		didComm := agency2.NewProtocolServiceClient(conn)
-		statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
-			TypeID:           status.Notification.ProtocolType,
-			Role:             agency2.Protocol_ADDRESSEE,
-			ID:               status.Notification.ProtocolID,
-			NotificationTime: status.Notification.Timestamp,
-		}))
 		if statusResult.GetBasicMessage().SentByMe {
 			glog.V(0).Infoln("---------- ours, no reply")
 			return handleOK
