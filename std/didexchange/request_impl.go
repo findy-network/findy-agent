@@ -105,7 +105,6 @@ func (m *RequestImpl) VerKey() string {
 		return ""
 	}
 	return base58.Encode(m.Connection.DIDDoc.VerificationMethod[0].Value)
-	//return m.Connection.Doc.VerificationMethod[0].PublicKeyBase58
 }
 
 func (m *RequestImpl) Endpoint() service.Addr {

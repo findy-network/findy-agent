@@ -234,7 +234,7 @@ func NewDoc(pk, addr string) (d *did.Doc, err error) {
 			ID:              "didcomm",
 			Type:            "did-communication",
 			Priority:        0,
-			RecipientKeys:   []string{base58.Encode(pubKey)}, // TODO: why not to use the original encoded version?
+			RecipientKeys:   []string{pk},
 			ServiceEndpoint: addr,
 		}}),
 	))

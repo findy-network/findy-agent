@@ -298,11 +298,6 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	// SAVE ENDPOINT to wallet
 	try.To(saveConnectionEndpoint(managedStorage(receiver), connectionID, callerAddress))
 
-	// REMOVE!!!Create secure pipe to send payload to other end of the new PW
-	//	doc := ipl.MsgHdr().FieldObj().(*didexchange.Request).Connection.DIDDoc
-	//	docBytes := try.To1(json.Marshal(doc))
-	//	caller = try.To1(wca.NewOutDID(doc.ID, string(docBytes)))
-
 	pipe := sec.Pipe{
 		In:  calleePw.Callee, // This is us
 		Out: caller,          // This is the other end, who sent the Request
@@ -378,7 +373,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		Route: route,
 	})
 
-	// SAVE ENDPOINT to wallet, todo: this is saved already!
+	// SAVE ENDPOINT to wallet, TODO: this is saved already! TODO: where?
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
 	try.To(saveConnectionEndpoint(managedStorage(receiver), pwName, calleeEndp.Address()))
 
