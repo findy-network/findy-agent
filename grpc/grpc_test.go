@@ -642,9 +642,25 @@ func TestConnection_NoOneRun(t *testing.T) {
 			connID, ch, err := pairwise.Connection(ctx, ca.Invitation)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
+			assert.True(t, endp.IsUUID(connID))
+
 			for status := range ch {
 				glog.V(1).Infof("Connection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+
+				ctx := context.Background()
+				didComm := agency2.NewProtocolServiceClient(conn)
+				statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+					TypeID: agency2.Protocol_DIDEXCHANGE,
+					ID:     status.ProtocolID.ID,
+				}))
+				res := statusResult.GetDIDExchange()
+				assert.NotEmpty(t, res.TheirDID)
+				assert.NotEmpty(t, res.MyDID)
+				assert.NotEmpty(t, res.TheirLabel)
+				assert.NotEmpty(t, res.TheirEndpoint)
+				assert.Equal(t, connID, res.ID)
+
 			}
 			agents[0].ConnID[i-1] = connID
 			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
@@ -1478,25 +1494,17 @@ func handleStatusBMEcho(
 ) handleAction {
 	assert.True(t, endp.IsUUID(status.Notification.ConnectionID))
 
-	ctx := context.Background()
-	didComm := agency2.NewProtocolServiceClient(conn)
-	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
-		TypeID:           status.Notification.ProtocolType,
-		Role:             agency2.Protocol_ADDRESSEE,
-		ID:               status.Notification.ProtocolID,
-		NotificationTime: status.Notification.Timestamp,
-	}))
-
 	switch status.Notification.ProtocolType {
-	case agency2.Protocol_DIDEXCHANGE:
-		res := statusResult.GetDIDExchange()
-		assert.NotEmpty(t, res.TheirDID)
-		assert.NotEmpty(t, res.MyDID)
-		assert.NotEmpty(t, res.TheirLabel)
-		assert.NotEmpty(t, res.TheirEndpoint)
-		assert.Equal(t, status.Notification.ConnectionID, res.ID)
-		return handleNotOurs
 	case agency2.Protocol_BASIC_MESSAGE:
+		ctx := context.Background()
+		didComm := agency2.NewProtocolServiceClient(conn)
+		statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+			TypeID:           status.Notification.ProtocolType,
+			Role:             agency2.Protocol_ADDRESSEE,
+			ID:               status.Notification.ProtocolID,
+			NotificationTime: status.Notification.Timestamp,
+		}))
+
 		if statusResult.GetBasicMessage().SentByMe {
 			glog.V(0).Infoln("---------- ours, no reply")
 			return handleOK
