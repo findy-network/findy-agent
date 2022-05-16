@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -1042,55 +1044,72 @@ func TestListen(t *testing.T) {
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
 }
 
-func TestListenPW(t *testing.T) {
-	ca := agents[0]
-	ca2 := agents[1]
-	ctx := context.Background()
-	conn := client.TryOpen(ca.DID, baseCfg)
+func TestListen100(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		TestListen(t)
+	}
+}
+
+func TestListenPWStatus(t *testing.T) {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	connAdmin := client.TryOpen("findy-root", baseCfg)
+	agencyClient := pb.NewAgencyServiceClient(connAdmin)
+	oReply := try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: "agent1",
+	}))
+	agent1DID := oReply.Result.CADID
+	oReply = try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: "agent2",
+	}))
+	agent2DID := oReply.Result.CADID
+
+	conn1 := client.TryOpen(agent1DID, baseCfg)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	ch := try.To1(conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
+	ch := try.To1(conn1.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
 
-	var notification *agency2.Question
+	var notification agency2.Question
 	go func() {
+		defer err2.Catch(func(err error) {
+			if !errors.Is(err, context.Canceled) {
+				glog.Error(err)
+			}
+		})
 		for status := range ch {
-			notification = status
-			wg.Done()
+			if status.Status.Notification.TypeID == agency2.Notification_STATUS_UPDATE {
+				notification = *status
+				wg.Done()
+			}
 		}
 	}()
 
-	conn2 := client.TryOpen(ca2.DID, baseCfg)
+	conn2 := client.TryOpen(agent2DID, baseCfg)
 	c := agency2.NewAgentServiceClient(conn2)
-	r, _ := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+	id := utils.UUID()
+	r := try.To1(c.CreateInvitation(ctx, &agency2.InvitationBase{ID: id, Label: "agent2"}))
 
-	pw := async.NewPairwise(conn, ca.ConnID[0])
-	pw.Connection(ctx, r.JSON)
+	pw := async.NewPairwise(conn1, id)
+	try.To1(pw.Connection(ctx, r.JSON))
 	wg.Wait()
 
 	assert.True(t, endp.IsUUID(notification.Status.Notification.ConnectionID))
 
-	didComm := agency2.NewProtocolServiceClient(conn)
+	didComm := agency2.NewProtocolServiceClient(conn1)
 	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
 		TypeID: notification.Status.Notification.ProtocolType,
 		ID:     notification.Status.Notification.ProtocolID,
 	}))
 	res := statusResult.GetDIDExchange()
 
+	assert.Equal(t, notification.Status.Notification.ConnectionID, res.ID)
 	assert.NotEmpty(t, res.TheirDID)
 	assert.NotEmpty(t, res.MyDID)
-	assert.NotEmpty(t, res.TheirLabel)
-	assert.NotEmpty(t, res.TheirEndpoint)
-	assert.Equal(t, notification.Status.Notification.ConnectionID, res.ID)
-
-	close(ch)
-}
-
-func TestListen100(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		TestListen(t)
-	}
+	assert.Equal(t, "agent2", res.TheirLabel)
+	assert.NotEmpty(t, strings.Contains(res.TheirEndpoint, res.ID))
 }
 
 func BenchmarkIssue(b *testing.B) {
