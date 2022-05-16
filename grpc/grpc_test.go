@@ -1139,7 +1139,7 @@ func TestListenPWStatus(t *testing.T) {
 
 	ch := try.To1(conn1.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
 
-	var notification agency2.Question
+	var notification *agency2.Question
 	go func() {
 		defer err2.Catch(func(err error) {
 			if !errors.Is(err, context.Canceled) {
@@ -1148,7 +1148,7 @@ func TestListenPWStatus(t *testing.T) {
 		})
 		for status := range ch {
 			if status.Status.Notification.TypeID == agency2.Notification_STATUS_UPDATE {
-				notification = *status
+				notification = status
 				wg.Done()
 			}
 		}
