@@ -32,6 +32,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/findy-network/findy-common-go/agency/client"
+	"github.com/findy-network/findy-common-go/agency/client/async"
 	"github.com/findy-network/findy-common-go/dto"
 	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
@@ -588,12 +589,12 @@ func TestConnection_NoOneRun(t *testing.T) {
 					ID:     status.ProtocolID.ID,
 				}))
 				res := statusResult.GetDIDExchange()
+
 				assert.NotEmpty(t, res.TheirDID)
 				assert.NotEmpty(t, res.MyDID)
 				assert.NotEmpty(t, res.TheirLabel)
 				assert.NotEmpty(t, res.TheirEndpoint)
 				assert.Equal(t, connID, res.ID)
-
 			}
 			agents[0].ConnID[i-1] = connID
 			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
@@ -1039,6 +1040,51 @@ func TestListen(t *testing.T) {
 
 	glog.V(1).Infoln("*** closing..")
 	time.Sleep(1 * time.Millisecond) // make sure everything is clean after
+}
+
+func TestListenPW(t *testing.T) {
+	ca := agents[0]
+	ca2 := agents[1]
+	ctx := context.Background()
+	conn := client.TryOpen(ca.DID, baseCfg)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	ch := try.To1(conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
+
+	var notification *agency2.Question
+	go func() {
+		for status := range ch {
+			notification = status
+			wg.Done()
+		}
+	}()
+
+	conn2 := client.TryOpen(ca2.DID, baseCfg)
+	c := agency2.NewAgentServiceClient(conn2)
+	r, _ := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+
+	pw := async.NewPairwise(conn, ca.ConnID[0])
+	pw.Connection(ctx, r.JSON)
+	wg.Wait()
+
+	assert.True(t, endp.IsUUID(notification.Status.Notification.ConnectionID))
+
+	didComm := agency2.NewProtocolServiceClient(conn)
+	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+		TypeID: notification.Status.Notification.ProtocolType,
+		ID:     notification.Status.Notification.ProtocolID,
+	}))
+	res := statusResult.GetDIDExchange()
+
+	assert.NotEmpty(t, res.TheirDID)
+	assert.NotEmpty(t, res.MyDID)
+	assert.NotEmpty(t, res.TheirLabel)
+	assert.NotEmpty(t, res.TheirEndpoint)
+	assert.Equal(t, notification.Status.Notification.ConnectionID, res.ID)
+
+	close(ch)
 }
 
 func TestListen100(t *testing.T) {
