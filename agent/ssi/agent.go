@@ -1,6 +1,7 @@
 package ssi
 
 import (
+	"encoding/json"
 	"net/url"
 	"path/filepath"
 	"sync"
@@ -22,7 +23,6 @@ import (
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/findy-network/findy-wrapper-go/ledger"
 	"github.com/golang/glog"
-	apidoc "github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -239,9 +239,7 @@ func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 		KID: coreDID.KID(),
 		ID:  coreDID.URI(),
 		DID: coreDID.URI(),
-		Doc: &apidoc.DocResolution{
-			DIDDocument: coreDID.DOC().(*apidoc.Doc),
-		},
+		Doc: try.To1(json.Marshal(coreDID.DOC())),
 	}
 	try.To(a.DIDStorage().SaveDID(sDID))
 	glog.V(3).Infoln("did saved:", sDID.KID, sDID.ID)

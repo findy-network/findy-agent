@@ -26,8 +26,8 @@ type DID interface {
 	AEndp() (ae service.Addr, err error)
 	SetAEndp(ae service.Addr)
 
-	Route() []string         // this usefull for new did methods as well
-	RecipientKeys() []string // this usefull for new did methods as well
+	Route() []string         // this useful for new did methods as well
+	RecipientKeys() []string // this useful for new did methods as well
 
 	String() string // Implementation (key, peer,...) specific behaviour
 	SignKey() any
@@ -72,6 +72,14 @@ type Doc interface {
 }
 
 type DIDDoc interface {
+	json.Marshaler
+	json.Unmarshaler
+
+	// VMValue(i int) []byte
+	// VerificationMethods(vmrs ...did.VerificationRelationship) map[did.VerificationRelationship][]did.Verification
+
+	// Route() []string         // this usefull for new did methods as well
+	// RecipientKeys() []string // this usefull for new did methods as well
 }
 
 type Method interface {

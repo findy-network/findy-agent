@@ -1,10 +1,13 @@
 package method
 
 import (
+	"encoding/json"
+
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -29,8 +32,10 @@ func NewPeerFromDID(
 ) {
 	defer err2.Return(&err)
 
-	doc := d.Doc.DIDDocument
-	pk := doc.VerificationMethod[0].Value
+	var doc core.DIDDoc
+	try.To(json.Unmarshal(d.Doc, &doc))
+
+	pk := common.Value(doc, 0)
 	keys := hStorage.Storage().KMS()
 	kh := try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 
@@ -133,45 +138,41 @@ func (p Peer) String() string {
 }
 
 func (p Peer) VerKey() string {
-	assert.NotNil(p.doc)
-	assert.SNotEmpty(p.doc.VerificationMethod)
-
-	vk := base58.Encode(p.doc.VerificationMethod[0].Value)
+	vk := common.Value58(p.doc, 0)
 	return vk
 }
 
 func (p Peer) Route() []string {
-	assert.NotNil(p.doc)
+	assert.That(p.doc != nil)
 	doc := p.doc
 
-	services := doc.Service[0]
-	route := make([]string, len(services.RoutingKeys))
-	for i, rk := range services.RoutingKeys {
+	routingKeys := common.RountingKeys(doc, 0)
+	route := make([]string, len(routingKeys))
+	for i, rk := range routingKeys {
 		route[i] = p.buildDIDKeyStr(rk)
 	}
 	return route
 }
 
 func (p Peer) RecipientKeys() []string {
-	assert.NotNil(p.doc)
+	assert.That(p.doc != nil)
 	doc := p.doc
 
-	services := doc.Service[0]
-	route := make([]string, len(services.RecipientKeys))
-	for i, rk := range services.RecipientKeys {
+	recipientKeys := common.RecipientKeys(doc, 0)
+	route := make([]string, len(recipientKeys))
+	for i, rk := range recipientKeys {
 		route[i] = p.buildDIDKeyStr(rk)
 	}
 	return route
 }
 
 func (p Peer) Did() string {
-	assert.NotNil(p.doc)
-	return p.doc.ID
+	assert.That(p.doc != nil)
+	return common.ID(p.doc)
 }
 
 func (p Peer) URI() string {
-	assert.NotNil(p.doc)
-	return p.doc.ID
+	return p.Did()
 }
 
 func (b Base) buildDIDKeyStr(rk string) string {
@@ -183,10 +184,11 @@ func (b Base) buildDIDKeyStr(rk string) string {
 }
 
 func (p Peer) AEndp() (ae service.Addr, err error) {
-	assert.NotNil(p.doc)
+	assert.That(p.doc != nil)
+	srv := common.Service(p.doc, 0)
 	return service.Addr{
-		Endp: p.doc.Service[0].ServiceEndpoint,
-		Key:  p.doc.Service[0].RecipientKeys[0],
+		Endp: srv.ServiceEndpoint,
+		Key:  srv.RecipientKeys[0],
 	}, nil
 }
 

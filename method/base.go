@@ -5,7 +5,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
 	"github.com/lainio/err2/assert"
 	"github.com/mr-tron/base58"
@@ -16,7 +15,8 @@ type Base struct {
 	pk  []byte
 	vkh any
 
-	doc *did.Doc
+	//doc *did.Doc
+	doc core.DIDDoc
 
 	handle managed.Wallet
 }

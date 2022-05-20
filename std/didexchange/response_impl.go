@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
@@ -120,10 +121,11 @@ func (m *ResponseImpl) Did() string {
 }
 
 func (m *ResponseImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.VerificationMethod) == 0 {
+	vms := common.VMs(m.Connection.DIDDoc)
+	if len(vms) == 0 {
 		return ""
 	}
-	return base58.Encode(m.Connection.DIDDoc.VerificationMethod[0].Value)
+	return base58.Encode(vms[0].Value)
 }
 
 func (m *ResponseImpl) Name() string { // Todo: names should be Label

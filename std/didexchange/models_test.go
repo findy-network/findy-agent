@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/method"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
@@ -48,6 +49,43 @@ var connectionRequest = `  {
             "publicKey": [
 		    "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
 		  ]
+          }
+        ],
+        "service": [
+          {
+            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C;indy",
+            "type": "IndyAgent",
+            "priority": 0,
+            "recipientKeys": ["8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"],
+            "serviceEndpoint": "http://192.168.65.3:8030"
+          }
+        ]
+      }
+    }
+  }
+`
+
+var connectionRequestSov = `  {
+    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
+    "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
+    "label": "Alice Agent",
+    "connection": {
+      "DID": "ERYihzndieTdh4UA7Q6Y3C",
+      "DIDDoc": {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
+        "publicKey": [
+          {
+            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
+            "type": "Ed25519VerificationKey2018",
+            "controller": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
+            "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
+          }
+        ],
+        "authentication": [
+          {
+            "type": "Ed25519SignatureAuthentication2018",
+            "publicKey": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
           }
         ],
         "service": [
@@ -104,7 +142,6 @@ func TestConnection_ReadDoc(t *testing.T) {
 		{"sov from afgo", args{"./json/sov.json"}, true},
 		{"our peer did doc", args{"./json/our-peer-did-doc.json"}, true},
 		{"acapy 160", args{"json/160-acapy.json"}, false},
-		{"acapy", args{"json/acapy.json"}, false},
 		{"afgo def", args{"json/afgo-default.json"}, false},
 		{"afgo interop", args{"json/afgo-interop.json"}, false},
 		{"dotnet", args{"json/dotnet.json"}, true},
@@ -128,20 +165,35 @@ func TestConnection_ReadDoc(t *testing.T) {
 
 func TestConnection_ReadJSON(t *testing.T) {
 	err2.StackTraceWriter = os.Stderr
+	tests := []struct {
+		name string
+		req  string
+	}{
+		{"sov method", connectionRequestSov},
+		{"peer method", connectionRequest},
+	}
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req Request
 
-	var req Request
+			err := json.Unmarshal([]byte(tt.req), &req)
+			require.NoError(t, err)
+			require.Equal(t, "670bc804-2c06-453c-aee6-48d3c929b488", req.ID)
 
-	err := json.Unmarshal([]byte(connectionRequest), &req)
-	require.NoError(t, err)
-	require.Equal(t, "670bc804-2c06-453c-aee6-48d3c929b488", req.ID)
+			doc := req.Connection.DIDDoc
+			auths := common.Authentications(doc)
 
-	doc := req.Connection.DIDDoc
+			require.NotNil(t, auths)
+			if i == 0 {
+				require.Equal(t, "Ed25519SignatureAuthentication2018", auths[0].VerificationMethod.Type)
+			} else {
+				require.Equal(t, "Ed25519VerificationKey2018", auths[0].VerificationMethod.Type)
+			}
 
-	require.NotNil(t, doc.Authentication)
-	require.Equal(t, "Ed25519VerificationKey2018", doc.Authentication[0].VerificationMethod.Type)
-
-	recipKey := doc.Service[0].RecipientKeys[0]
-	require.Equal(t, "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
+			recipKey := common.Service(doc, 0).RecipientKeys[0]
+			require.Equal(t, "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
+		})
+	}
 }
 
 func TestNewRequest(t *testing.T) {
@@ -166,7 +218,7 @@ func TestNewRequest(t *testing.T) {
 			require.NotNil(t, didIn)
 
 			nonce := "NONCE"
-			didDoc := didIn.NewDoc(ae).(*did.Doc)
+			didDoc := didIn.NewDoc(ae)
 
 			msg := NewRequest(&Request{
 				Label: "TestLabel",

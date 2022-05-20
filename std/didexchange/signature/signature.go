@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
@@ -30,7 +31,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 	ok = r.Connection != nil
 
 	if ok {
-		rawDID := r.Connection.DIDDoc.ID
+		rawDID := common.ID(r.Connection.DIDDoc)
 		r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
 	}
 

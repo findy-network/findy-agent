@@ -21,6 +21,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-agent/std/didexchange/signature"
@@ -234,8 +235,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	req := ipl.MsgHdr().FieldObj().(*didexchange.Request)
 	senderEP := service.Addr{
-		Endp: req.Connection.DIDDoc.Service[0].ServiceEndpoint,
-		Key:  req.Connection.DIDDoc.Service[0].RecipientKeys[0],
+		Endp: common.Service(req.Connection.DIDDoc, 0).ServiceEndpoint,
+		Key:  common.RecipientKeys(req.Connection.DIDDoc, 0)[0],
 	}
 	receiverEP := cnxAddr.AE()
 	task := &comm.TaskBase{

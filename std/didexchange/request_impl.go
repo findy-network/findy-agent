@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
@@ -101,23 +102,22 @@ func (m *RequestImpl) Did() string {
 }
 
 func (m *RequestImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.VerificationMethod) == 0 {
-		return ""
-	}
-	return base58.Encode(m.Connection.DIDDoc.VerificationMethod[0].Value)
+	vm := common.VM(m.Connection.DIDDoc, 0)
+	return base58.Encode(vm.Value)
 }
 
 func (m *RequestImpl) Endpoint() service.Addr {
 	assert.NotNil(m)
 	assert.NotNil(m.Connection)
-	assert.NotNil(m.Connection.DIDDoc)
+	assert.That(m.Connection.DIDDoc != nil)
 
-	if len(m.Connection.DIDDoc.Service) == 0 {
+	if len(common.Services(m.Connection.DIDDoc)) == 0 {
 		return service.Addr{}
 	}
 
-	addr := m.Connection.DIDDoc.Service[0].ServiceEndpoint
-	key := m.Connection.DIDDoc.Service[0].RecipientKeys[0]
+	serv := common.Service(m.Connection.DIDDoc, 0)
+	addr := serv.ServiceEndpoint
+	key := serv.RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
 }
