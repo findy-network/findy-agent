@@ -8,6 +8,8 @@ API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
 GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
 
+CURRENT_BRANCH=$(shell scripts/branch.sh .)
+
 GO := go
 # GO := go1.18beta2
 
@@ -157,4 +159,4 @@ run:
 # ****
 
 iop:
-	gh workflow run iop.yml
+	gh workflow run iop.yml --ref $(CURRENT_BRANCH)
