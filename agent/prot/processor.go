@@ -304,7 +304,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 	})
 	wDID := receiver.WDID()
 	opl := aries.PayloadCreator.NewMsg(t.ID(), t.Type(), msg)
-	try.To(UpdatePSM(wDID, "", t, opl, state))
+	try.To(UpdatePSM(wDID, "", t, opl, state)) // TODO: t.ConnectionID
 }
 
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
