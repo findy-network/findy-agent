@@ -326,7 +326,7 @@ func TestPipe_pack(t *testing.T) {
 		Label: "test",
 		Connection: &didexchange.Connection{
 			DID:    didIn.Did(),
-			DIDDoc: doc.(*did.Doc),
+			DIDDoc: doc,
 		},
 		Thread: &decorator.Thread{ID: utils.UUID()},
 	})
