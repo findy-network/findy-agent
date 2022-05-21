@@ -74,6 +74,26 @@ func Services(d core.DIDDoc) []did.Service {
 	}
 }
 
+func SetServices(d core.DIDDoc, s []did.Service) {
+	switch doc := d.(type) {
+	case *did.Doc:
+		doc.Service = s
+	case *sov.Doc:
+		servCount := len(s)
+		retval := make([]sov.Service, servCount)
+		for i, service := range s {
+			retval[i].ServiceEndpoint = service.ServiceEndpoint
+			retval[i].Type = service.Type
+			retval[i].ID = service.ID
+			retval[i].RoutingKeys = service.RoutingKeys
+			retval[i].RecipientKeys = service.RecipientKeys
+		}
+		doc.Service = retval
+	default:
+		assert.NotImplemented()
+	}
+}
+
 func Authentications(d core.DIDDoc) []did.Verification {
 	switch doc := d.(type) {
 	case *did.Doc:
