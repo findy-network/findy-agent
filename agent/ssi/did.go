@@ -10,14 +10,13 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
+	sov "github.com/findy-network/findy-agent/std/sov/did"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
 	"github.com/golang/glog"
-	diddoc "github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
-	"github.com/mr-tron/base58"
 )
 
 type DidComm interface {
@@ -348,59 +347,64 @@ func (d *DID) DOC() core.DIDDoc {
 }
 
 func (d *DID) NewDoc(ae service.Addr) core.DIDDoc {
+	myAE := try.To1(d.AEndp())
+	if myAE.Endp != "" {
+		return NewDoc(d, myAE)
+	}
 	return NewDoc(d, ae)
 }
 
-func NewDoc(did core.DID, ae service.Addr) *diddoc.Doc {
-	pubKey := try.To1(base58.Decode(did.VerKey()))
+// NewDoc creates a new DIDDoc for the DID. Uses our legacy Doc.
+func NewDoc(did core.DID, ae service.Addr) *sov.Doc {
+	// pubKey := try.To1(base58.Decode(did.VerKey()))
 	didURI := did.URI()
 	didURIRef := didURI + "#1"
 
-	vm := []diddoc.VerificationMethod{{
-		ID:         didURIRef,
-		Type:       "Ed25519VerificationKey2018",
-		Controller: didURI,
-		Value:      pubKey,
-	}}
-	doc := diddoc.BuildDoc(
-		diddoc.WithVerificationMethod(vm),
-		diddoc.WithAuthentication([]diddoc.Verification{{
-			VerificationMethod: vm[0],
-			Relationship:       0,
-			Embedded:           true,
-		}}),
-		diddoc.WithService([]diddoc.Service{{
-			ID:              didURI,
-			Type:            "IndyAgent",
-			Priority:        0,
-			RecipientKeys:   []string{did.VerKey()},
-			ServiceEndpoint: ae.Endp,
-		}}),
-	)
-	doc.ID = didURI
-	return doc
+	//	vm := []diddoc.VerificationMethod{{
+	//		ID:         didURIRef,
+	//		Type:       "Ed25519VerificationKey2018",
+	//		Controller: didURI,
+	//		Value:      pubKey,
+	//	}}
+	//	doc := diddoc.BuildDoc(
+	//		diddoc.WithVerificationMethod(vm),
+	//		diddoc.WithAuthentication([]diddoc.Verification{{
+	//			VerificationMethod: vm[0],
+	//			Relationship:       0,
+	//			Embedded:           true,
+	//		}}),
+	//		diddoc.WithService([]diddoc.Service{{
+	//			ID:              didURI,
+	//			Type:            "IndyAgent",
+	//			Priority:        0,
+	//			RecipientKeys:   []string{did.VerKey()},
+	//			ServiceEndpoint: ae.Endp,
+	//		}}),
+	//	)
+	//	doc.ID = didURI
+	//	return doc
 
-	//	pubK := PublicKey{
-	//		ID:              didURIRef,
-	//		Type:            "Ed25519VerificationKey2018",
-	//		Controller:      didURI,
-	//		PublicKeyBase58: did.VerKey(),
-	//	}
-	//	service := Service{
-	//		ID:              didURI,
-	//		Type:            "IndyAgent",
-	//		Priority:        0,
-	//		RecipientKeys:   []string{did.VerKey()},
-	//		ServiceEndpoint: ae.Endp,
-	//	}
-	//	return &did.Doc{
-	//		Context:   "https://w3id.org/did/v1",
-	//		ID:        didURI,
-	//		PublicKey: []PublicKey{pubK},
-	//		Service:   []Service{service},
-	//		Authentication: []VerificationMethod{{
-	//			Type:      "Ed25519SignatureAuthentication2018",
-	//			PublicKey: didURIRef,
-	//		}},
-	// }
+	pubK := sov.PublicKey{
+		ID:              didURIRef,
+		Type:            "Ed25519VerificationKey2018",
+		Controller:      didURI,
+		PublicKeyBase58: did.VerKey(),
+	}
+	service := sov.Service{
+		ID:              didURI,
+		Type:            "IndyAgent",
+		Priority:        0,
+		RecipientKeys:   []string{did.VerKey()},
+		ServiceEndpoint: ae.Endp,
+	}
+	return &sov.Doc{DataDoc: &sov.DataDoc{
+		Context:   "https://w3id.org/did/v1",
+		ID:        didURI,
+		PublicKey: []sov.PublicKey{pubK},
+		Service:   []sov.Service{service},
+		Authentication: []sov.VerificationMethod{{
+			Type:      "Ed25519SignatureAuthentication2018",
+			PublicKey: didURIRef,
+		}},
+	}}
 }
