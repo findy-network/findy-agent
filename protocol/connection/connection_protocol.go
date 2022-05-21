@@ -28,7 +28,6 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -137,7 +136,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
 			DID:    caller.URI(),
-			DIDDoc: caller.DOC().(*did.Doc),
+			DIDDoc: caller.DOC(),
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
@@ -214,10 +213,6 @@ func buildRouting(addr, rKey string, rKeys []string, m method.Type) []string {
 	}
 }
 
-/*
--func buildRouting(rKey string, rKeys []string) []string {
-*/
-
 // handleConnectionRequest is handled by 'responder' aka callee.
 // The party who receives conn_req.
 func handleConnectionRequest(packet comm.Packet) (err error) {
@@ -283,9 +278,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	glog.V(1).Infoln("=== msg.Thread.ID", msg.Thread().ID, safeThreadID)
 	msg.Thread().ID = safeThreadID
 
-	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
-	caller := calleePw.Caller                     // the other end, we're here the callee
-	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
+	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg)                  // incoming pairwise message
+	caller := calleePw.Caller                                      // the other end, we're here the callee
+	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint()) // TODO: same call below
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
 		StateKey:   psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
