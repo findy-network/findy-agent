@@ -311,6 +311,8 @@ func (d *DID) SetAEndp(ae service.Addr) {
 	}
 }
 
+var ErrNoData = fmt.Errorf("no data")
+
 func (d *DID) AEndp() (ae service.Addr, err error) {
 	d.Lock()
 	endp := d.endp
@@ -322,7 +324,7 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 		endP, vk, _ := endp.Strs()
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
-	return service.Addr{}, fmt.Errorf("no data")
+	return service.Addr{}, ErrNoData
 }
 
 // Route returns only routing keys not the actual receiver key.
@@ -347,8 +349,8 @@ func (d *DID) DOC() core.DIDDoc {
 }
 
 func (d *DID) NewDoc(ae service.Addr) core.DIDDoc {
-	myAE := try.To1(d.AEndp())
-	if myAE.Endp != "" {
+	myAE, err := d.AEndp()
+	if !try.Is(err, ErrNoData) {
 		return NewDoc(d, myAE)
 	}
 	return NewDoc(d, ae)
