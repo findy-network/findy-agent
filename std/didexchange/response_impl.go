@@ -7,11 +7,11 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/mr-tron/base58"
 )
 
@@ -29,13 +29,13 @@ func (f *ResponseFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 }
 
 func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
-	var doc *did.Doc
+	var doc core.DIDDoc
 	DID := init.Did
 
 	if init.DIDObj != nil {
 		ep := service.Addr{Endp: init.Endpoint, Key: init.EndpVerKey}
-		doc = init.DIDObj.NewDoc(ep).(*did.Doc)
-		DID = init.DIDObj.Did()
+		doc = init.DIDObj.NewDoc(ep)
+		DID = init.DIDObj.URI()
 	}
 
 	resImpl := &ResponseImpl{Response: &Response{
@@ -100,7 +100,7 @@ func (m *ResponseImpl) SetType(t string) {
 }
 
 func (m *ResponseImpl) JSON() []byte {
-	//m.Response.Sign()
+	// m.Response.Sign()
 	return dto.ToJSONBytes(m)
 }
 
