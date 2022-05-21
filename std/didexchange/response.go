@@ -25,4 +25,6 @@ func (r *Response) SetEndpoint(ae service.Addr) {
 
 	services[0].ServiceEndpoint = ae.Endp
 	services[0].RecipientKeys[0] = ae.Key
+
+	common.SetServices(r.Connection.DIDDoc, services)
 }
