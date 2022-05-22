@@ -32,8 +32,8 @@ func NewPeerFromDID(
 ) {
 	defer err2.Return(&err)
 
-	var doc core.DIDDoc
-	try.To(json.Unmarshal(d.Doc, &doc))
+	doc := new(did.Doc)
+	try.To(json.Unmarshal(d.Doc, doc))
 
 	pk := common.Value(doc, 0)
 	keys := hStorage.Storage().KMS()
@@ -74,7 +74,7 @@ func NewPeer(
 			Type:            "did-communication",
 			Priority:        0,
 			RecipientKeys:   []string{base58.Encode(pk)},
-			ServiceEndpoint: args[0], // TODO: from where originally?
+			ServiceEndpoint: args[0],
 		}}),
 	))
 
@@ -220,12 +220,12 @@ func NewDoc(pk, addr string) (d *did.Doc, err error) {
 	pubKey := try.To1(base58.Decode(pk))
 
 	key := did.VerificationMethod{
-		ID:         "1", // TODO: now just base58 pubkey
+		ID:         "1",
 		Type:       "Ed25519VerificationKey2018",
 		Controller: "",
 		Value:      pubKey,
 	}
-	doc := try.To1(peer.NewDoc(
+	return try.To1(peer.NewDoc(
 		[]did.VerificationMethod{key},
 		did.WithAuthentication([]did.Verification{{
 			VerificationMethod: key,
@@ -239,7 +239,5 @@ func NewDoc(pk, addr string) (d *did.Doc, err error) {
 			RecipientKeys:   []string{pk},
 			ServiceEndpoint: addr,
 		}}),
-	))
-
-	return doc, nil
+	)), nil
 }
