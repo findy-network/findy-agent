@@ -76,7 +76,7 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 		glog.Errorf("Error loading connection: %s (%v)", cnxAddr.ConnID, err)
 	})
 
-	// ssi.DIDAgent implments comm.Receiver interface
+	// ssi.DIDAgent implements comm.Receiver interface
 	// ssi.Agent is other interface, that's why the cast
 	a := p.agent.(comm.Receiver)
 
