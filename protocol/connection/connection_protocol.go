@@ -194,20 +194,20 @@ func max(a, b int) int {
 	return b
 }
 
-func buildRouting(addr, rKey string, rKeys []string, m method.Type) []string {
-	switch utils.Settings.DIDMethod() {
+func buildRouting(addr, rKey string, rKeys []string, didMethod method.Type) []string {
+	switch didMethod {
 	case method.TypePeer:
 		retval := make([]string, 2, max(2, len(rKeys)+1))
-		retval[0] = m.DIDString()
+		retval[0] = didMethod.DIDString()
 		doc := try.To1(method.NewDoc(rKey, addr))
 		docBytes := try.To1(json.Marshal(doc))
 		retval[1] = string(docBytes)
 		return append(retval, rKeys...)
 
-	// case method.TypeSov, method.TypeIndy:
+	// Defaults still are method.TypeSov, method.TypeIndy:
 	default:
 		retval := make([]string, 2, max(2, len(rKeys)+1))
-		retval[0] = m.DIDString()
+		retval[0] = didMethod.DIDString()
 		retval[1] = rKey
 		return append(retval, rKeys...)
 	}
@@ -278,9 +278,9 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	glog.V(1).Infoln("=== msg.Thread.ID", msg.Thread().ID, safeThreadID)
 	msg.Thread().ID = safeThreadID
 
-	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg)                  // incoming pairwise message
-	caller := calleePw.Caller                                      // the other end, we're here the callee
-	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint()) // TODO: same call below
+	IncomingPWMsg := ipl.MsgHdr().(didcomm.PwMsg) // incoming pairwise message
+	caller := calleePw.Caller                     // the other end, we're here the callee
+	callerEndp := endp.NewAddrFromPublic(IncomingPWMsg.Endpoint())
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
 		StateKey:   psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
@@ -360,7 +360,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		callee = ssi.NewDid(im.Did(), im.VerKey())
 	}
 
-	callee.Store(receiver.ManagedWallet()) // for NewDid() if it stays
+	callee.Store(receiver.ManagedWallet())
 
 	pwName := pwr.Name
 	route := didexchange.RouteForConnection(response.Connection)
@@ -369,7 +369,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 		Route: route,
 	})
 
-	// SAVE ENDPOINT to wallet, TODO: this is saved already! TODO: where?
+	// SAVE ENDPOINT to wallet
 	calleeEndp := endp.NewAddrFromPublic(im.Endpoint())
 	try.To(saveConnectionEndpoint(managedStorage(receiver), pwName, calleeEndp.Address()))
 
