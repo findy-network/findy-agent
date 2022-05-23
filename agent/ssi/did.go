@@ -129,7 +129,8 @@ func (d *DID) Did() string {
 }
 
 func (d *DID) URI() string {
-	return d.String() // It handles only VerKey out DIDs
+	// We use String() because it handles VerKey out DIDs as well
+	return d.String()
 }
 
 func (d *DID) VerKey() (vk string) {
