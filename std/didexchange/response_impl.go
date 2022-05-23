@@ -35,7 +35,8 @@ func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
 	if init.DIDObj != nil {
 		ep := service.Addr{Endp: init.Endpoint, Key: init.EndpVerKey}
 		doc = init.DIDObj.NewDoc(ep)
-		DID = init.DIDObj.URI()
+		DID = init.DIDObj.Did()
+		glog.V(10).Infof("+++ Using DID '%s' in ConnResp", DID)
 	}
 
 	resImpl := &ResponseImpl{Response: &Response{
