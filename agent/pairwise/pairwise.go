@@ -2,6 +2,7 @@ package pairwise
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -108,6 +109,14 @@ func (p *Callee) ConnReqToRespWithSet(
 		docBytes := try.To1(json.Marshal(reqDoc))
 		callerDID = try.To1(p.agent.NewOutDID(connReqDID, string(docBytes)))
 	} else { // did:sov: is the default still
+		// old 160-connection protocol handles old DIDs as plain
+		rawDID := strings.TrimPrefix(connReqDID, "did:sov:")
+		if rawDID == connReqDID {
+			connReqDID = "did:sov:" + rawDID
+			glog.V(3).Infoln("+++ normalizing Did()",
+				rawDID, " ==>", connReqDID)
+		}
+
 		connReqVK := p.Msg.VerKey()
 		callerDID = try.To1(p.agent.NewOutDID(connReqDID, connReqVK))
 		p.agent.AddDIDCache(callerDID.(*ssi.DID))

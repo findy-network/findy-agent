@@ -2,6 +2,7 @@ package didexchange
 
 import (
 	"encoding/gob"
+	"strings"
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
@@ -98,7 +99,12 @@ func (m *RequestImpl) Name() string { // Todo: names should be Label
 }
 
 func (m *RequestImpl) Did() string {
-	return m.Connection.DID
+	glog.V(11).Infoln("Did() is returning:", m.Connection.DID)
+	rawDID := strings.TrimPrefix(m.Connection.DID, "did:sov:")
+	if rawDID != m.Connection.DID {
+		glog.V(3).Infoln("+++ normalizing Did()", m.Connection.DID, " ==>", rawDID)
+	}
+	return rawDID
 }
 
 func (m *RequestImpl) VerKey() string {

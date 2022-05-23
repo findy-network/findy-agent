@@ -135,7 +135,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: deTask.Label,
 		Connection: &didexchange.Connection{
-			DID:    caller.URI(),
+			DID:    caller.Did(),
 			DIDDoc: caller.DOC(),
 		},
 		// when out-of-bound and did-exchange protocols are supported we
