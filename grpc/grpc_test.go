@@ -166,7 +166,7 @@ func setUp() {
 
 	// IF DEBUGGING ONE TEST use always file ledger
 	if testMode == TestModeCI {
-		pool.Open("FINDY_MEM_LEDGER")
+		pool.Open("FINDY_LEDGER,von,FINDY_MEM_LEDGER,cache")
 	} else {
 		pool.Open("FINDY_FILE_LEDGER")
 	}
