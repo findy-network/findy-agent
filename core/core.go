@@ -12,11 +12,11 @@ type DID interface {
 	DOC() DIDDoc
 	NewDoc(ae service.Addr) DIDDoc
 
-	KID() string // same as KID todo: important!! get rid of another!!
+	KID() string // same as Did() TODO: get rid of another
 
 	// Did is method specific function. Old methods like 'did:sov:' return plain
-	// old did string. If they need whole stuff they must use URI.
-	// New method versions can use this or URI the result is same.
+	// old did string. NOTE! If they need whole stuff they must use URI.
+	// NOTE! New method versions can use this or URI the result is same.
 	Did() string // this is alias for KID() TODO: remove when done with ssi.DID
 
 	StartEndp(storageH managed.Wallet, connectionID string)
