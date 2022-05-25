@@ -291,7 +291,8 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	// If endpoint is sent to us instead of seed, we must ignore it.
 	// The actual endpoint will be sent to us when it's ready.
 	ap := seed
-	if _, err := url.Parse(seed); err == nil {
+	if u, err := url.Parse(seed); err == nil && u.Scheme != "" {
+		glog.V(10).Infoln("Seed is URL:", ap)
 		seed = ""
 	} else {
 		ap = ""
@@ -316,6 +317,7 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	f.SetChan(ch)
 	d := NewAgentDid(a.WalletH, f)
 	if ap != "" {
+		glog.V(10).Infoln("Setting Endpoint to sov.did")
 		d.SetAEndp(service.Addr{
 			Endp: ap,
 			Key:  d.VerKey(),
