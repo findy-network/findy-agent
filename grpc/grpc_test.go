@@ -79,6 +79,8 @@ var (
 	emptyAgents    [4]AgentData
 	prebuildAgents [4]AgentData
 	baseCfg        *rpc.ClientCfg
+
+	schemaCredDefWaitTime = 20000 * time.Millisecond
 )
 
 const bufSize = 1024 * 1024
@@ -166,7 +168,11 @@ func setUp() {
 
 	// IF DEBUGGING ONE TEST use always file ledger
 	if testMode == TestModeCI {
-		pool.Open("FINDY_LEDGER,von,FINDY_MEM_LEDGER,cache")
+		pool.Open("FINDY_MEM_LEDGER")
+		schemaCredDefWaitTime = 2 * time.Millisecond
+
+		// TODO: integrate ledger testing to CI
+		// pool.Open("FINDY_LEDGER,von")
 	} else {
 		pool.Open("FINDY_FILE_LEDGER")
 	}
@@ -180,7 +186,7 @@ func setUp() {
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
 
-	//utils.Settings.SetDIDMethod(method.TypePeer)
+	// utils.Settings.SetDIDMethod(method.TypePeer)
 	utils.Settings.SetDIDMethod(method.TypeSov)
 
 	// utils.Settings.SetCryptVerbose(true)
@@ -413,8 +419,10 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
+				glog.V(1).Infoln("==== START creating cred def please wait ====")
+				time.Sleep(schemaCredDefWaitTime)
 				glog.V(1).Infoln("==== creating cred def please wait ====")
-				time.Sleep(2 * time.Millisecond)
+
 				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 					SchemaID: schemaID,
 					Tag:      "TAG_1",
