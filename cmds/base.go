@@ -59,17 +59,13 @@ func ValidateKey(k string, name string) error {
 }
 
 func ValidateTime(t string) error {
-	if !r.MatchString(t) {
+	if !timeFmtRegExp.MatchString(t) {
 		return errors.New("time format mismatch (HH:MM or HH:MM:SS)")
 	}
 	return nil
 }
 
-var r *regexp.Regexp
-
-func init() {
-	r, _ = regexp.Compile(`^([0-1]?\d|2[0-3]):([0-5]?\d)(?::([0-5]?\d))?$`)
-}
+var timeFmtRegExp = regexp.MustCompile(`^([0-1]?\d|2[0-3]):([0-5]?\d)(?::([0-5]?\d))?$`)
 
 func ValidateSeed(seed string) error {
 	if seed != "" && len(seed) != 32 {
