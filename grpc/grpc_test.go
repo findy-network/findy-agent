@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
@@ -36,6 +38,7 @@ import (
 	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/rpc"
+	"github.com/findy-network/findy-wrapper-go"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
 	indypool "github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
@@ -81,6 +84,8 @@ var (
 	baseCfg        *rpc.ClientCfg
 
 	schemaCredDefWaitTime = 20000 * time.Millisecond
+
+	steward *cloud.Agent
 )
 
 const bufSize = 1024 * 1024
@@ -177,7 +182,7 @@ func setUp() {
 		pool.Open("FINDY_FILE_LEDGER")
 	}
 
-	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
+	steward = handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
 	utils.Settings.SetServiceName(server.TestServiceName)
 	utils.Settings.SetHostAddr("http://localhost:8080")
@@ -280,6 +285,44 @@ func Test_handleAgencyAPI(t *testing.T) {
 	}
 }
 
+var alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+func srand(size int) string {
+	buf := make([]byte, size)
+	for i := 0; i < size; i++ {
+		buf[i] = alpha[rand.Intn(len(alpha))]
+	}
+	return string(buf)
+}
+
+func createTrustAnchor(t *testing.T) (seed string) {
+	defer err2.Catch(func(err error) {
+		assert.NoError(t, err)
+	})
+
+	t.Helper()
+
+	if utils.Settings.DIDMethod() != method.TypeSov {
+		glog.Warning("trust anchors are did:sov: specific")
+		return
+	}
+
+	const seedSize = 32
+
+	seed = srand(seedSize)
+	assert.Len(t, seed, seedSize)
+
+	glog.V(3).Infoln("--- trust anchor seed:", seed)
+
+	anchorDid := try.To1(steward.NewDID(method.TypeSov, seed))
+	indyAnchor := anchorDid.(*ssi.DID)
+
+	try.To(steward.SendNYM(indyAnchor, steward.RootDid().Did(),
+		findy.NullString, "TRUST_ANCHOR"))
+
+	return
+}
+
 func Test_NewOnboarding(t *testing.T) {
 	ut := time.Now().Unix() - 1545924840
 	walletName := fmt.Sprintf("email%v", ut)
@@ -293,6 +336,13 @@ func Test_NewOnboarding(t *testing.T) {
 		{"totally new", walletName + "2", false},
 	}
 
+	// set steward to temporally nil to test situation when we don't have
+	// proper writing rights to the ledger
+	handshake.SetSteward(nil)
+	defer func() {
+		handshake.SetSteward(steward)
+	}()
+
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
@@ -300,7 +350,8 @@ func Test_NewOnboarding(t *testing.T) {
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyServiceClient(conn)
 			_, err := agencyClient.Onboard(ctx, &pb.Onboarding{
-				Email: tt.email,
+				Email:         tt.email,
+				PublicDIDSeed: createTrustAnchor(t),
 			})
 			testOK := (err != nil) == tt.wantErr
 			assert.True(t, testOK, "failing test", tt.email)

@@ -295,6 +295,7 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 		glog.V(10).Infoln("Seed is URL:", ap)
 		seed = ""
 	} else {
+		glog.V(10).Infoln("Seed is EXT-seed, using external Steward!")
 		ap = ""
 	}
 

@@ -195,11 +195,12 @@ func LoadRegistered(filename string) (err error) {
 
 // SetStewardFromWallet sets steward DID for us from pre-created wallet and
 // named DID string.
-func SetStewardFromWallet(wallet *ssi.Wallet, DID string) {
-	agent := cloud.Agent{}
+func SetStewardFromWallet(wallet *ssi.Wallet, DID string) (stwd *cloud.Agent) {
+	agent := new(cloud.Agent)
 	agent.OpenWallet(*wallet)
 	agent.SetRootDid(agent.OpenDID(DID))
-	SetSteward(&agent)
+	SetSteward(agent)
+	return agent
 }
 
 func RegisterGobs() {
