@@ -107,7 +107,9 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
-		glog.Errorln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
+		// don't pollute logs with errors when we aren't treating this as an
+		// error for now
+		glog.Warningln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
 		// TODO: pass invalid timestamps on for now, as some agents do not fill it at all
 		// should be fixed with new signature implementation
 		// return nil, nil
