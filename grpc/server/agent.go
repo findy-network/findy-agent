@@ -152,6 +152,10 @@ func (a *agentServer) CreateSchema(
 	try.To(sch.Create(ca.RootDid().Did()))
 	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
+	glog.V(5).Infoln("--- start to wait ledger to build SCHEMA tx")
+	time.Sleep(3 * time.Second)
+	glog.V(5).Infoln("--- END waiting ledger to build SCHEMA tx")
+
 	return &pb.Schema{ID: sch.ValidID()}, nil
 }
 
