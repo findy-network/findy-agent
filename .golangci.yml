@@ -129,9 +129,6 @@ issues:
       linters:
         - goconst
         - gosimple
-    - linters:
-        - revive
-      text: "dot-imports:"
 run:
   go: go1.18
 service:
