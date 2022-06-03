@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -195,8 +196,11 @@ func setUp() {
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
 
-	// utils.Settings.SetDIDMethod(method.TypePeer)
-	utils.Settings.SetDIDMethod(method.TypeSov)
+	didMethodType := method.TypeSov
+	if paramType, err := strconv.ParseInt(os.Getenv("FCLI_AGENCY_DID_METHOD"), 10, 32); err == nil {
+		didMethodType = method.Type(paramType)
+	}
+	utils.Settings.SetDIDMethod(didMethodType)
 
 	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)

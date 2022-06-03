@@ -21,6 +21,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    env:
+      TEST_WORKDIR: /github/home/.test/
+      CI: true
     steps:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
@@ -30,17 +33,32 @@ jobs:
           go-version: 1.18.x
       - name: checkout
         uses: actions/checkout@v2
+
+      # test round for sov-did (default)
       - name: test and measure coverage
-        run: make test_cov_out
-        env:
-          TEST_WORKDIR: /github/home/.test/
-          CI: true
+        run: make test_cov_out COV_FILE=coverage1.txt
+
       - name: store coverage file
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.sha }}-coverage.txt
-          path: ./coverage.txt
+          name: ${{ github.sha }}-coverage1.txt
+          path: ./coverage1.txt
           retention-days: 1
+
+      # test round for peer-did
+      - name: test and measure coverage
+        run: make test_cov_out COV_FILE=coverage2.txt
+        env:
+          FCLI_AGENCY_DID_METHOD: 2
+
+      - name: store coverage file
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage2.txt
+          path: ./coverage2.txt
+          retention-days: 1
+
+      # licence scan
       - name: scan
         run: make scan
 
@@ -61,11 +79,15 @@ jobs:
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-coverage.txt
+          name: ${{ github.sha }}-coverage1.txt
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage2.txt
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          files: ./coverage.txt
+          files: ./coverage1.txt, ./coverage2.txt
 
   e2e:
     runs-on: ubuntu-latest

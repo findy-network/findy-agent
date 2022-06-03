@@ -13,6 +13,8 @@ CURRENT_BRANCH=$(shell scripts/branch.sh .)
 GO := go
 # GO := go1.18beta2
 
+COV_FILE:=coverage.txt
+
 scan:
 	@scripts/scan.sh $(ARGS)
 
@@ -114,12 +116,13 @@ testv:
 test_cov_out:
 	$(GO) test -p 1 -failfast \
 		-coverpkg=github.com/findy-network/findy-agent/... \
-		-coverprofile=coverage.txt  \
+		-coverprofile=$(COV_FILE)  \
 		-covermode=atomic \
 		./...
 
 test_cov: test_cov_out
-	$(GO) tool cover -html=coverage.txt
+	$(GO) tool cover -html=$(COV_FILE)
+
 
 misspell:
 	@$(GO) get github.com/client9/misspell 
