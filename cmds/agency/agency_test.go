@@ -25,7 +25,7 @@ func TestCmd_Build(t *testing.T) {
 		ServerPort:        80,
 		StewardDid:        "did",
 		HandshakeRegister: "findy.json",
-		PsmDb:             "psm.bolt",
+		PsmDB:             "psm.bolt",
 	}
 	err = c.Validate()
 	assert.NoError(t, err)

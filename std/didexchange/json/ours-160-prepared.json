@@ -1,0 +1,28 @@
+{
+  "@context": "https://www.w3.org/2019/did/v1",
+  "id": "did:sov:UM5KQ1fypV9szjjrknFeNi",
+  "publicKey": [
+    {
+      "id": "did:sov:UM5KQ1fypV9szjjrknFeNi#1",
+      "type": "Ed25519VerificationKey2018",
+      "controller": "did:sov:UM5KQ1fypV9szjjrknFeNi",
+      "publicKeyBase58": "FuTwVvTVyN9JHEzGGiT5fYJVTaJ81yZw2tLeNyTc9ZZL"
+    }
+  ],
+  "service": [
+    {
+      "id": "did:sov:UM5KQ1fypV9szjjrknFeNi",
+      "type": "IndyAgent",
+      "recipientKeys": ["FuTwVvTVyN9JHEzGGiT5fYJVTaJ81yZw2tLeNyTc9ZZL"],
+      "serviceEndpoint": "http://host.docker.internal:9031/a2a/GhgGd7sgegyXZkMtkm2aTu/GhgGd7sgegyXZkMtkm2aTu/UM5KQ1fypV9szjjrknFeNi"
+    }
+  ],
+  "authentication": [
+    {
+      "type": "Ed25519SignatureAuthentication2018",
+      "publicKey": [
+         "did:sov:UM5KQ1fypV9szjjrknFeNi#1"
+      ]
+    }
+  ]
+}

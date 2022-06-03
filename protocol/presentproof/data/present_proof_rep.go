@@ -239,8 +239,7 @@ func getCredDefIDs(identifiers []anoncreds.IdentifiersObj) map[string]struct{} {
 func GetPresentProofRep(key psm.StateKey) (rep *PresentProofRep, err error) {
 	defer err2.Return(&err)
 
-	var res psm.Rep
-	res = try.To1(psm.GetRep(bucketType, key))
+	res := try.To1(psm.GetRep(bucketType, key))
 
 	// Allow not found
 	if res == nil {

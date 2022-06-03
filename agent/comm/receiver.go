@@ -22,7 +22,7 @@ type Receiver interface {
 	LoadTheirDID(connection storage.Connection) core.DID
 	WDID() string
 	PwPipe(pw string) (cp sec.Pipe, err error)
-	NewOutDID(didStr string, verKey ...string) (id core.DID, err error)
+	NewOutDID(didInfo ...string) (id core.DID, err error)
 	Wallet() int
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	Pool() int

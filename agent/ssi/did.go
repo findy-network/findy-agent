@@ -8,9 +8,9 @@ import (
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
-	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
+	sov "github.com/findy-network/findy-agent/std/sov/did"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
@@ -104,7 +104,7 @@ func NewDid(did, verkey string) (d *DID) {
 	return &DID{data: f}
 }
 
-func NewDIDWithRouting(did string, verkey ...string) (d *DID) {
+func NewDIDWithRouting(_ string, verkey ...string) (d *DID) {
 	d = NewDid("", verkey[0])
 	d.pwMeta = &core.PairwiseMeta{Route: verkey[1:]}
 	return d
@@ -129,7 +129,8 @@ func (d *DID) Did() string {
 }
 
 func (d *DID) URI() string {
-	return "did:sov:" + d.Did()
+	// We use String() because it handles VerKey out DIDs as well
+	return d.String()
 }
 
 func (d *DID) VerKey() (vk string) {
@@ -175,7 +176,7 @@ func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
 
 	// Store the DID also to the agent storage
 	glog.V(5).Infof("agent storage Store DID %s", ds)
-	try.To(mgdStorage.Storage().DIDStorage().SaveDID(storage.DID{
+	try.To(mgdStorage.Storage().DIDStorage().SaveDID(api.DID{
 		ID:         ds,
 		DID:        ds,
 		IndyVerKey: vk,
@@ -233,7 +234,7 @@ func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core
 	if ok {
 		connection, _ := mStorage.Storage().ConnectionStorage().GetConnection(pw.Name)
 		if connection == nil {
-			connection = &storage.Connection{
+			connection = &api.Connection{
 				ID: pw.Name,
 			}
 		}
@@ -311,6 +312,8 @@ func (d *DID) SetAEndp(ae service.Addr) {
 	}
 }
 
+var ErrNoData = fmt.Errorf("no data")
+
 func (d *DID) AEndp() (ae service.Addr, err error) {
 	d.Lock()
 	endp := d.endp
@@ -322,12 +325,89 @@ func (d *DID) AEndp() (ae service.Addr, err error) {
 		endP, vk, _ := endp.Strs()
 		return service.Addr{Endp: endP, Key: vk}, nil
 	}
-	return service.Addr{}, fmt.Errorf("no data")
+	return service.Addr{}, ErrNoData
 }
 
+// Route returns only routing keys not the actual receiver key.
 func (d *DID) Route() []string {
 	if d.pwMeta != nil {
-		return d.pwMeta.Route
+		toKeys := make([]string, len(d.pwMeta.Route))
+		for i, r := range d.pwMeta.Route {
+			toKeys[i] = indy.MethodPrefix + r
+		}
+		return toKeys
 	}
 	return []string{}
+}
+
+func (d *DID) RecipientKeys() []string {
+	return []string{d.URI()}
+}
+
+func (d *DID) DOC() core.DIDDoc {
+	ae := try.To1(d.AEndp())
+	return NewDoc(d, ae)
+}
+
+func (d *DID) NewDoc(ae service.Addr) core.DIDDoc {
+	myAE, err := d.AEndp()
+	if !try.Is(err, ErrNoData) {
+		return NewDoc(d, myAE)
+	}
+	return NewDoc(d, ae)
+}
+
+// NewDoc creates a new DIDDoc for the DID. Uses our legacy Doc.
+func NewDoc(did core.DID, ae service.Addr) *sov.Doc {
+	// pubKey := try.To1(base58.Decode(did.VerKey()))
+	didURI := did.URI()
+	didURIRef := didURI + "#1"
+
+	//	vm := []diddoc.VerificationMethod{{
+	//		ID:         didURIRef,
+	//		Type:       "Ed25519VerificationKey2018",
+	//		Controller: didURI,
+	//		Value:      pubKey,
+	//	}}
+	//	doc := diddoc.BuildDoc(
+	//		diddoc.WithVerificationMethod(vm),
+	//		diddoc.WithAuthentication([]diddoc.Verification{{
+	//			VerificationMethod: vm[0],
+	//			Relationship:       0,
+	//			Embedded:           true,
+	//		}}),
+	//		diddoc.WithService([]diddoc.Service{{
+	//			ID:              didURI,
+	//			Type:            "IndyAgent",
+	//			Priority:        0,
+	//			RecipientKeys:   []string{did.VerKey()},
+	//			ServiceEndpoint: ae.Endp,
+	//		}}),
+	//	)
+	//	doc.ID = didURI
+	//	return doc
+
+	pubK := sov.PublicKey{
+		ID:              didURIRef,
+		Type:            "Ed25519VerificationKey2018",
+		Controller:      didURI,
+		PublicKeyBase58: did.VerKey(),
+	}
+	service := sov.Service{
+		ID:              didURI,
+		Type:            "IndyAgent",
+		Priority:        0,
+		RecipientKeys:   []string{did.VerKey()},
+		ServiceEndpoint: ae.Endp,
+	}
+	return &sov.Doc{DataDoc: &sov.DataDoc{
+		Context:   "https://w3id.org/did/v1",
+		ID:        didURI,
+		PublicKey: []sov.PublicKey{pubK},
+		Service:   []sov.Service{service},
+		Authentication: []sov.VerificationMethod{{
+			Type:      "Ed25519SignatureAuthentication2018",
+			PublicKey: didURIRef,
+		}},
+	}}
 }

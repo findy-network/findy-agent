@@ -1,17 +1,22 @@
 package core
 
 import (
+	"encoding/json"
+
 	"github.com/findy-network/findy-agent/agent/managed"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/storage/api"
 )
 
 type DID interface {
+	DOC() DIDDoc
+	NewDoc(ae service.Addr) DIDDoc
 
-	//	Resolve() DIDDoc
-	// Validate() error
+	KID() string // same as Did() TODO: get rid of another
 
-	KID() string
+	// Did is method specific function. Old methods like 'did:sov:' return plain
+	// old did string. NOTE! If they need whole stuff they must use URI.
+	// NOTE! New method versions can use this or URI the result is same.
 	Did() string // this is alias for KID() TODO: remove when done with ssi.DID
 
 	StartEndp(storageH managed.Wallet, connectionID string)
@@ -20,17 +25,21 @@ type DID interface {
 	StoreResult() error
 	AEndp() (ae service.Addr, err error)
 	SetAEndp(ae service.Addr)
-	Route() []string
 
-	String() string
+	Route() []string         // this useful for new did methods as well
+	RecipientKeys() []string // this useful for new did methods as well
+
+	String() string // Implementation (key, peer,...) specific behaviour
 	SignKey() any
 	Packager() api.Packager
 
 	// TODO: this is mainly for indy but could be merged with SignKey?
 	VerKey() string
+
 	Storage() managed.Wallet
 
-	// URI() string // real URI, currently used in did doc
+	URI() string // real URI, currently used in did doc
+
 	// Did() == KID() alias for make old code easy to integrate
 }
 
@@ -54,7 +63,23 @@ type TheirDID interface {
 	Verify() error
 }
 
+// Doc is DIDDoc interface used as a field in DIDComm messages and by its own.
+type Doc interface {
+	json.Marshaler
+	json.Unmarshaler
+
+	NeededOhterFunctions()
+}
+
 type DIDDoc interface {
+	json.Marshaler
+	json.Unmarshaler
+
+	// VMValue(i int) []byte
+	// VerificationMethods(vmrs ...did.VerificationRelationship) map[did.VerificationRelationship][]did.Verification
+
+	// Route() []string         // this usefull for new did methods as well
+	// RecipientKeys() []string // this usefull for new did methods as well
 }
 
 type Method interface {
@@ -86,7 +111,7 @@ type Out interface {
 	Route() []string
 	Endpoint() string
 
-	//AEndp() (ae service.Addr, error error) // refactor
+	// AEndp() (ae service.Addr, error error) // refactor
 }
 
 type In interface {

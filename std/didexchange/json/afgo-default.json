@@ -1,0 +1,43 @@
+{
+  "@context": ["https://www.w3.org/ns/did/v1"],
+  "id": "did:peer:1zQmQBciyzLJXLGSpa1RKo1iHtE26aqFYTe4yZfyzzCzDgVG",
+  "verificationMethod": [
+    {
+      "controller": "",
+      "id": "#key-1",
+      "publicKeyBase58": "Bo9fGFjwDZYsxKhyUUGpdDK9sNxsBofvVywQ5mfF23eH",
+      "type": "Ed25519VerificationKey2018"
+    },
+    {
+      "controller": "",
+      "id": "#key-2",
+      "publicKeyJwk": {
+        "kty": "EC",
+        "kid": "chmCfuY1dgFgiOd5hDbkMAh4wUDx9WSowsFirgRoKE4",
+        "crv": "P-256",
+        "x": "pZLdWUzbBgufadfeCPmhSKGhtdGoW2kUZIBjr7xeZU8",
+        "y": "j0k1BJik8IKRwVv-bDIQN2MQ50fNNx2u558NGbHMyfQ"
+      },
+      "type": "JsonWebKey2020"
+    }
+  ],
+  "service": [
+    {
+      "id": "15c9272f-bb54-4eb9-8ee9-5c5212b69f89",
+      "priority": 0,
+      "recipientKeys": [
+        "did:key:z6MkqFQhrVzNZ73M4pYgA3EfUJs9gxEibgvHBzrKv3dFwGRf"
+      ],
+      "serviceEndpoint": {
+        "uri": "http://host.docker.internal:9031",
+        "accept": ["didcomm/aip2;env=rfc19"]
+      },
+      "type": "did-communication"
+    }
+  ],
+  "authentication": ["#key-1"],
+  "assertionMethod": ["#key-1"],
+  "keyAgreement": ["#key-2"],
+  "created": "2022-05-05T12:59:42.4425178Z",
+  "updated": "2022-05-05T12:59:42.4425178Z"
+}

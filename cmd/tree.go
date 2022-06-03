@@ -3,7 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	. "github.com/lainio/err2"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +21,11 @@ var treeCmd = &cobra.Command{
 	Long:  treeDoc,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer Return(&err)
+		defer err2.Return(&err)
 		if len(args) == 0 {
 			printStructure(rootCmd, "", 0, true)
 		} else {
-			c, _, e := rootCmd.Find(args)
-			Check(e)
+			c, _ := try.To2(rootCmd.Find(args))
 			printStructure(c, "", 0, true)
 		}
 		return nil

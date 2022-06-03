@@ -7,10 +7,12 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/mr-tron/base58"
 )
 
 var ResponseCreator = &ResponseFactor{}
@@ -27,13 +29,14 @@ func (f *ResponseFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 }
 
 func (f *ResponseFactor) Create(init didcomm.MsgInit) didcomm.MessageHdr {
-	var doc *did.Doc
+	var doc core.DIDDoc
 	DID := init.Did
 
 	if init.DIDObj != nil {
 		ep := service.Addr{Endp: init.Endpoint, Key: init.EndpVerKey}
-		doc = did.NewDoc(init.DIDObj, ep)
+		doc = init.DIDObj.NewDoc(ep)
 		DID = init.DIDObj.Did()
+		glog.V(10).Infof("+++ Using DID '%s' in ConnResp", DID)
 	}
 
 	resImpl := &ResponseImpl{Response: &Response{
@@ -98,7 +101,7 @@ func (m *ResponseImpl) SetType(t string) {
 }
 
 func (m *ResponseImpl) JSON() []byte {
-	//m.Response.Sign()
+	// m.Response.Sign()
 	return dto.ToJSONBytes(m)
 }
 
@@ -119,10 +122,11 @@ func (m *ResponseImpl) Did() string {
 }
 
 func (m *ResponseImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.PublicKey) == 0 {
+	vms := common.VMs(m.Connection.DIDDoc)
+	if len(vms) == 0 {
 		return ""
 	}
-	return m.Connection.DIDDoc.PublicKey[0].PublicKeyBase58
+	return base58.Encode(vms[0].Value)
 }
 
 func (m *ResponseImpl) Name() string { // Todo: names should be Label

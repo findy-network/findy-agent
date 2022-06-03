@@ -1,6 +1,8 @@
 package ssi
 
 import (
+	"encoding/json"
+	"net/url"
 	"path/filepath"
 	"sync"
 
@@ -15,7 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/vdr"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
-	didmethod "github.com/findy-network/findy-agent/method"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/did"
 	indyDto "github.com/findy-network/findy-wrapper-go/dto"
@@ -37,8 +39,9 @@ type Agent interface {
 	Wallet() (h int)
 	ManagedWallet() (managed.Wallet, managed.Wallet)
 	RootDid() core.DID
-	//CreateDID(seed string) (agentDid core.DID)
-	NewDID(method string, seed string) core.DID
+	// CreateDID(seed string) (agentDid core.DID)
+	NewDID(m method.Type, args ...string) (_ core.DID, err error)
+	NewOutDID(didInfo ...string) (id core.DID, err error)
 	SendNYM(targetDid *DID, submitterDid, alias, role string) error
 	AddDIDCache(DID *DID)
 }
@@ -104,12 +107,6 @@ type DIDAgent struct {
 	saImplID string        // SA implementation ID, used mostly for tests
 	EAEndp   *service.Addr // EA endpoint if set, used for SA API and notifications
 }
-
-const (
-	methodKey  = "key"
-	methodIndy = "indy"
-	methodSov  = "sov"
-)
 
 func (a *DIDAgent) SAImplID() string {
 	a.Lock()
@@ -215,53 +212,72 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 	return try.To1(vdr.New(aStorage))
 }
 
-func (a *DIDAgent) NewDID(method string, seed string) core.DID {
-	// TODO: under construction!
+func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, err error) {
+	defer err2.Annotate("new DID", &err)
 
-	switch method {
-	case methodKey:
-		_ = a.VDR() // TODO: check if we could use VDR as method factory
-		return try.To1(didmethod.NewKey(a.StorageH))
+	glog.V(3).Infof("New '%s': %v", didMethod.DIDString(), args)
 
-	case methodIndy, methodSov:
-		return a.myCreateDID(seed)
+	switch didMethod {
+	case method.TypeKey, method.TypePeer:
+		// _ = a.VDR() // TODO: check if we could use VDR as method factory
+		coreDID := try.To1(method.New(didMethod, a.StorageH, args...))
+		try.To(a.saveDID(coreDID))
+		return coreDID, err
+
+	case method.TypeSov, method.TypeIndy:
+		return a.myCreateDID(args[0]), err
 	default:
-		return a.myCreateDID(seed)
-		//assert.That(false, "not supported")
-
+		return a.myCreateDID(args[0]), err // TODO: remove after test
+		// assert.That(false, "not supported")
 	}
 }
 
-func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err error) {
-	// TODO: under construction!
+func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 	defer err2.Return(&err)
 
-	glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
-		didStr, verKey)
+	sDID := storage.DID{
+		KID: coreDID.KID(),
+		ID:  coreDID.URI(),
+		DID: coreDID.URI(),
+		Doc: try.To1(json.Marshal(coreDID.DOC())),
+	}
+	try.To(a.DIDStorage().SaveDID(sDID))
+	glog.V(3).Infoln("did saved:", sDID.KID, sDID.ID)
+	return nil
+}
 
-	switch didmethod.String(didStr) {
-	case methodKey:
-		_ = a.VDR()
-		return didmethod.NewKeyFromDID(
+func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
+	defer err2.Annotate("new out DID", &err)
+
+	switch method.DIDType(didInfo[0]) {
+	case method.TypeKey, method.TypePeer:
+		coreDID := try.To1(method.NewFromDID(
 			a.StorageH,
-			didStr,
-		)
+			didInfo...,
+		))
+		try.To(a.saveDID(coreDID))
+		return coreDID, nil
 
-	case methodIndy, methodSov:
-		d := indy.DID2KID(didStr)
+	case method.TypeIndy, method.TypeSov:
+		assert.That(len(didInfo) >= 2)
+
+		glog.V(10).Infof("NewOutDID(didstr= %s, verKey= %s)",
+			didInfo[0], didInfo[1])
+
+		d := indy.DID2KID(didInfo[0])
 		var cached *DID
 		if d != "" {
-			try.To(a.SaveTheirDID(d, verKey[0]))
+			try.To(a.SaveTheirDID(d, didInfo[1]))
 			cached = a.DidCache.Get(d, true)
-			assert.D.True(cached.wallet != nil)
+			assert.That(cached.wallet != nil)
 		} else {
-			newDID := NewDIDWithRouting("", verKey...)
+			newDID := NewDIDWithRouting("", didInfo[1:]...)
 			a.DidCache.Add(newDID)
 			cached = newDID
 		}
 		return cached, nil
 	default:
-		assert.That(false, "not supported")
+		assert.That(false, "did method not supported: %s", didInfo[0])
 		return nil, nil
 	}
 }
@@ -271,6 +287,18 @@ func (a *DIDAgent) NewOutDID(didStr string, verKey ...string) (id core.DID, err 
 // the performance reasons. Most cases seed should be empty string.
 func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	a.AssertWallet()
+
+	// If endpoint is sent to us instead of seed, we must ignore it.
+	// The actual endpoint will be sent to us when it's ready.
+	ap := seed
+	if u, err := url.Parse(seed); err == nil && u.Scheme != "" {
+		glog.V(10).Infoln("Seed is URL:", ap)
+		seed = ""
+	} else {
+		glog.V(10).Infoln("Seed is EXT-seed, using external Steward!")
+		ap = ""
+	}
+
 	f := new(async.Future)
 	ch := make(findy.Channel, 1)
 	go func() {
@@ -288,7 +316,15 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 		ch <- didRes
 	}()
 	f.SetChan(ch)
-	return NewAgentDid(a.WalletH, f)
+	d := NewAgentDid(a.WalletH, f)
+	if ap != "" {
+		glog.V(10).Infoln("Setting Endpoint to sov.did")
+		d.SetAEndp(service.Addr{
+			Endp: ap,
+			Key:  d.VerKey(),
+		})
+	}
+	return d
 }
 
 func (a *DIDAgent) RootDid() core.DID {
@@ -364,17 +400,24 @@ func (a *DIDAgent) OpenDID(name string) *DID {
 }
 
 func (a *DIDAgent) LoadDID(did string) core.DID {
-	cached := a.DidCache.Get(did, true)
-	if cached != nil {
-		if cached.Wallet() == 0 {
-			cached.SetWallet(a.WalletH)
+	switch method.DIDType(did) {
+	case method.TypePeer:
+		storageDID := try.To1(a.DIDStorage().GetDID(did))
+		return try.To1(method.NewPeerFromDID(a.StorageH, storageDID))
+
+	default:
+		cached := a.DidCache.Get(did, true)
+		if cached != nil {
+			if cached.Wallet() == 0 {
+				cached.SetWallet(a.WalletH)
+			}
+			// log.Println("Return cached DID")
+			return cached
 		}
-		//log.Println("Return cached DID")
-		return cached
+		d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
+		a.DidCache.Add(d)
+		return d
 	}
-	d := NewDidWithKeyFuture(a.WalletH, did, a.localKey(did))
-	a.DidCache.Add(d)
-	return d
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {

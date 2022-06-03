@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
@@ -24,6 +26,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/enclave"
 	grpcserver "github.com/findy-network/findy-agent/grpc/server"
+	"github.com/findy-network/findy-agent/method"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage"
 	_ "github.com/findy-network/findy-agent/protocol/connection"
 	_ "github.com/findy-network/findy-agent/protocol/issuecredential"
@@ -35,6 +38,7 @@ import (
 	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/rpc"
+	"github.com/findy-network/findy-wrapper-go"
 	_ "github.com/findy-network/findy-wrapper-go/addons"
 	indypool "github.com/findy-network/findy-wrapper-go/pool"
 	"github.com/findy-network/findy-wrapper-go/wallet"
@@ -78,6 +82,10 @@ var (
 	emptyAgents    [4]AgentData
 	prebuildAgents [4]AgentData
 	baseCfg        *rpc.ClientCfg
+
+	schemaCredDefWaitTime = 20000 * time.Millisecond
+
+	steward *cloud.Agent
 )
 
 const bufSize = 1024 * 1024
@@ -106,6 +114,10 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
+	err2.StackTraceWriter = os.Stderr
+	err2assert.D = err2assert.AsserterCallerInfo
+	err2assert.DefaultAsserter = err2assert.AsserterFormattedCallerInfo
+
 	defer err2.CatchTrace(func(err error) {
 		fmt.Println("error on setup", err)
 	})
@@ -162,11 +174,15 @@ func setUp() {
 	// IF DEBUGGING ONE TEST use always file ledger
 	if testMode == TestModeCI {
 		pool.Open("FINDY_MEM_LEDGER")
+		schemaCredDefWaitTime = 2 * time.Millisecond
+
+		// TODO: integrate ledger testing to CI
+		// pool.Open("FINDY_LEDGER,von")
 	} else {
 		pool.Open("FINDY_FILE_LEDGER")
 	}
 
-	handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
+	steward = handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
 	utils.Settings.SetServiceName(server.TestServiceName)
 	utils.Settings.SetHostAddr("http://localhost:8080")
@@ -175,7 +191,10 @@ func setUp() {
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
 
-	//utils.Settings.SetCryptVerbose(true)
+	// utils.Settings.SetDIDMethod(method.TypePeer)
+	utils.Settings.SetDIDMethod(method.TypeSov)
+
+	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
 	try.To(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
@@ -217,7 +236,7 @@ func prepareBuildOneTest() {
 	if os.Getenv("TEST_WORKDIR") != "" {
 		removeFiles(home, "/wallets/*")
 	}
-	//enclave.WipeSealedBox()
+	// enclave.WipeSealedBox()
 }
 
 func tearDown() {
@@ -231,8 +250,8 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/worker/email*")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
-	removeFiles(home, "/.indy_client/storage/unit_test_wallet*")
-	removeFiles(home, "/.indy_client/storage/email*")
+	removeFiles(home, "/storage/unit_test_wallet*")
+	removeFiles(home, "/storage/email*")
 	if os.Getenv("TEST_WORKDIR") != "" {
 		removeFiles(home, "/wallets/*")
 	}
@@ -266,6 +285,44 @@ func Test_handleAgencyAPI(t *testing.T) {
 	}
 }
 
+var alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+func srand(size int) string {
+	buf := make([]byte, size)
+	for i := 0; i < size; i++ {
+		buf[i] = alpha[rand.Intn(len(alpha))]
+	}
+	return string(buf)
+}
+
+func createTrustAnchor(t *testing.T) (seed string) {
+	defer err2.Catch(func(err error) {
+		assert.NoError(t, err)
+	})
+
+	t.Helper()
+
+	if utils.Settings.DIDMethod() != method.TypeSov {
+		glog.Warning("trust anchors are did:sov: specific")
+		return
+	}
+
+	const seedSize = 32
+
+	seed = srand(seedSize)
+	assert.Len(t, seed, seedSize)
+
+	glog.V(3).Infoln("--- trust anchor seed:", seed)
+
+	anchorDid := try.To1(steward.NewDID(method.TypeSov, seed))
+	indyAnchor := anchorDid.(*ssi.DID)
+
+	try.To(steward.SendNYM(indyAnchor, steward.RootDid().Did(),
+		findy.NullString, "TRUST_ANCHOR"))
+
+	return
+}
+
 func Test_NewOnboarding(t *testing.T) {
 	ut := time.Now().Unix() - 1545924840
 	walletName := fmt.Sprintf("email%v", ut)
@@ -279,6 +336,13 @@ func Test_NewOnboarding(t *testing.T) {
 		{"totally new", walletName + "2", false},
 	}
 
+	// set steward to temporally nil to test situation when we don't have
+	// proper writing rights to the ledger
+	handshake.SetSteward(nil)
+	defer func() {
+		handshake.SetSteward(steward)
+	}()
+
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
@@ -286,7 +350,8 @@ func Test_NewOnboarding(t *testing.T) {
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyServiceClient(conn)
 			_, err := agencyClient.Onboard(ctx, &pb.Onboarding{
-				Email: tt.email,
+				Email:         tt.email,
+				PublicDIDSeed: createTrustAnchor(t),
 			})
 			testOK := (err != nil) == tt.wantErr
 			assert.True(t, testOK, "failing test", tt.email)
@@ -297,7 +362,7 @@ func Test_NewOnboarding(t *testing.T) {
 
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
-// use only one wallet for all of the EAs. That's handy for web wallets.
+// use only one wallet for all the EAs. That's handy for web wallets.
 func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
@@ -405,8 +470,10 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
+				glog.V(1).Infoln("==== START creating cred def please wait ====")
+				time.Sleep(schemaCredDefWaitTime)
 				glog.V(1).Infoln("==== creating cred def please wait ====")
-				time.Sleep(2 * time.Millisecond)
+
 				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 					SchemaID: schemaID,
 					Tag:      "TAG_1",
@@ -688,11 +755,11 @@ func TestSetPermissive(t *testing.T) {
 		ctx := context.Background()
 		c := agency2.NewAgentServiceClient(conn)
 		implID := agency2.ModeCmd_AcceptModeCmd_AUTO_ACCEPT
-		//persistent := false
+		// persistent := false
 		if i == 0 && !allPermissive {
 			glog.V(1).Infoln("--- Using grpc impl ID for SA ---")
 			implID = agency2.ModeCmd_AcceptModeCmd_GRPC_CONTROL
-			//persistent = true
+			// persistent = true
 		}
 		r, err := c.Enter(ctx, &agency2.ModeCmd{
 			TypeID:  agency2.ModeCmd_ACCEPT_MODE,
@@ -1225,7 +1292,7 @@ func doListen(
 	handleStatus handleStatusFn,
 ) {
 	conn := client.TryOpen(caDID, baseCfg)
-	//defer conn.Close()
+	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch := try.To1(conn.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
@@ -1309,7 +1376,7 @@ func doListenResume(
 	handleStatus handleStatusFn,
 ) {
 	conn := client.TryOpen(caDID, baseCfg)
-	//defer conn.Close()
+	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	ch := try.To1(conn.ListenStatus(ctx, &agency2.ClientID{ID: utils.UUID()}))

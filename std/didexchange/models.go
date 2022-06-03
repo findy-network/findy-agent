@@ -6,10 +6,17 @@
 package didexchange
 
 import (
+	"encoding/json"
+
+	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
+	sov "github.com/findy-network/findy-agent/std/sov/did"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
+	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 // Request defines a2a DID exchange request
@@ -41,10 +48,60 @@ type ConnectionSignature struct {
 	SignVerKey string `json:"signer,omitempty"` // Todo: was signers
 }
 
-// Connection connection
+// Connection is a connection definition
 type Connection struct {
-	DID    string   `json:"DID,omitempty"`
-	DIDDoc *did.Doc `json:"DIDDoc,omitempty"` // todo: was did_doc
+	DID    string
+	DIDDoc core.DIDDoc // handles both types of DIDDoc: sov and AFGO
+}
+
+type AFGOConnection struct {
+	DID string   `json:"DID,omitempty"`
+	Doc *did.Doc `json:"DIDDoc,omitempty"`
+}
+
+type DataConnection struct {
+	DID string   `json:"DID,omitempty"`
+	Doc *sov.Doc `json:"DIDDoc,omitempty"`
+}
+
+func (c *Connection) MarshalJSON() (_ []byte, err error) {
+	defer err2.Annotate("marshal connection", &err)
+
+	switch doc := c.DIDDoc.(type) {
+	case *did.Doc:
+		out := AFGOConnection{
+			DID: c.DID,
+			Doc: doc,
+		}
+		return json.Marshal(out)
+	case *sov.Doc:
+		out := DataConnection{
+			DID: c.DID,
+			Doc: doc,
+		}
+		return json.Marshal(out)
+	default:
+		assert.NotImplemented()
+		return nil, nil
+	}
+}
+
+func (c *Connection) UnmarshalJSON(b []byte) (err error) {
+	defer err2.Annotate("unmarshal connection", &err)
+
+	data := new(AFGOConnection)
+	if err := json.Unmarshal(b, data); err == nil {
+		c.DID = data.DID
+		c.DIDDoc = data.Doc
+		return nil
+	}
+
+	dataSov := new(DataConnection)
+	try.To(json.Unmarshal(b, dataSov))
+	c.DID = dataSov.DID
+	c.DIDDoc = dataSov.Doc
+
+	return nil
 }
 
 func RouteForConnection(conn *Connection) (route []string) {
@@ -57,7 +114,6 @@ func RouteForConnection(conn *Connection) (route []string) {
 		glog.Warningln("RouteForConnection - request does not contain DIDDoc")
 		return
 	}
-	assert.D.True(len(conn.DIDDoc.Service) > 0)
-	route = conn.DIDDoc.Service[0].RoutingKeys
-	return
+	assert.D.True(len(common.Services(conn.DIDDoc)) > 0)
+	return common.Services(conn.DIDDoc)[0].RoutingKeys
 }

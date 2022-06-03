@@ -6,14 +6,14 @@ import (
 	"github.com/golang/glog"
 )
 
-// processor is a controller of all of the protocol handlers. It keeps
-// track of all of the protocols and delivers the message accordingly. The
+// processor is a controller of all the protocol handlers. It keeps
+// track of all the protocols and delivers the message accordingly. The
 // processor takes the message and finds the correct protocol which finds the
 // correct handler function.
 //
 // The protocol message processing structure has 2 levels. First level has
 // protocols and second level has the actual message handlers. Protocols are run
-// to achieve certain protocol out come. During the protocol both parties send
+// to achieve certain protocol outcome. During the protocol both parties send
 // and receive multiple messages. Protocols have state so to speak, but we don't
 // handle state here. It's better that protocol handling functions handle the
 // state by their selves.

@@ -14,13 +14,15 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/did"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/require"
 )
@@ -42,6 +44,9 @@ func TestMain(m *testing.M) {
 func tearDown() {
 	home := utils.IndyBaseDir()
 	removeFiles(home, "/.indy_client/wallet/pipe-test-agent*")
+
+	err2.StackTraceWriter = nil
+
 }
 
 func removeFiles(home, nameFilter string) {
@@ -59,6 +64,10 @@ var (
 )
 
 func setUp() {
+	err2.StackTraceWriter = os.Stderr
+	assert.D = assert.AsserterCallerInfo
+	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
 	sec.Init(transport.MediaTypeProfileDIDCommAIP1)
@@ -77,27 +86,41 @@ func setUp() {
 }
 
 func TestNewPipe(t *testing.T) {
-	didIn := agent.NewDID("key", "")
-	println(didIn.String())
-	didOut := agent.NewDID("key", "")
-	println(didOut.String())
-	didRoute1 := agent.NewDID("key", "")
-	println(didRoute1.String())
-	didRoute2 := agent.NewDID("key", "")
-	println(didRoute2.String())
+	tests := []struct {
+		name   string
+		method method.Type
+	}{
+		{"key method", method.TypeKey},
+		{"peer method", method.TypePeer},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			didIn, _ := agent.NewDID(tt.method, "")
+			println(didIn.URI())
+			didOut, _ := agent.NewDID(tt.method, "")
+			println(didOut.URI())
+			didRoute1, _ := agent.NewDID(tt.method, "")
+			println(didRoute1.URI())
+			didRoute2, _ := agent.NewDID(tt.method, "")
+			println(didRoute2.URI())
 
-	require.NotNil(t, didIn)
-	require.NotNil(t, didOut)
-	require.NotNil(t, didRoute1)
-	require.NotNil(t, didRoute2)
+			require.NotNil(t, didIn)
+			require.NotNil(t, didOut)
+			require.NotNil(t, didRoute1)
+			require.NotNil(t, didRoute2)
 
-	message := []byte("message")
+			message := []byte("message")
 
-	p := sec.Pipe{In: didIn, Out: didOut}
+			p := sec.Pipe{In: didIn, Out: didOut}
 
-	packed, _ := try.To2(p.Pack(message))
-	received, _ := try.To2(p.Unpack(packed))
-	require.Equal(t, message, received)
+			packed, _, err := p.Pack(message)
+			require.NoError(t, err)
+
+			received, _, err := p.Unpack(packed)
+			require.NoError(t, err)
+			require.Equal(t, message, received)
+		})
+	}
 }
 
 func TestResolve(t *testing.T) {
@@ -109,10 +132,10 @@ func TestResolve(t *testing.T) {
 }
 
 func TestPackTowardsPubKeyOnly(t *testing.T) {
-	didIn := agent.NewDID("key", "")
+	didIn, _ := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
 	println(didIn.String())
-	didOut, err := agent.NewOutDID(key2, "")
+	didOut, err := agent.NewOutDID(key2)
 	require.NoError(t, err)
 	require.NotNil(t, didOut)
 	println(didOut.String())
@@ -132,25 +155,25 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	// The access to public key is not enough. It must first stored.
 
 	// create first agent2's input DID
-	didIn2 := agent2.NewDID("key", "")
+	didIn2, _ := agent2.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn2)
-	println("in2: ", didIn2.String())
+	println("in2: ", didIn2.URI())
 
-	didIn := agent.NewDID("key", "")
+	didIn, _ := agent.NewDID(method.TypeKey, "")
 	require.NotNil(t, didIn)
-	println("in: ", didIn.String())
+	println("in: ", didIn.URI())
 
 	// give agent2's prime DID (input) to agent1's out DID
-	didOut, err := agent.NewOutDID(didIn2.String(), "")
+	didOut, err := agent.NewOutDID(didIn2.URI())
 	require.NoError(t, err)
 	require.NotNil(t, didOut)
-	println("out: ", didOut.String())
+	println("out: ", didOut.URI())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
-	didOut2, err := agent2.NewOutDID(didIn.String(), "")
+	didOut2, err := agent2.NewOutDID(didIn.URI())
 	require.NoError(t, err)
 	require.NotNil(t, didOut2)
-	println("out2: ", didOut2.String())
+	println("out2: ", didOut2.URI())
 
 	message := []byte("message")
 
@@ -175,15 +198,25 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 }
 
 func TestIndyPipe(t *testing.T) {
-	didIn := agent.NewDID("indy", "")
+	defer err2.CatchAll(func(err error) {
+		println(err)
+		utils.Settings.SetDIDMethod(method.TypeSov)
+	}, func(v any) {
+		println(v)
+		utils.Settings.SetDIDMethod(method.TypeSov)
+	})
+	utils.Settings.SetDIDMethod(method.TypeSov)
+
+	didIn, _ := agent.NewDID(method.TypeSov, "")
 	str := didIn.String()
 	require.NotEmpty(t, str)
 	println(str)
 
-	didIn2 := agent2.NewDID("indy", "")
+	didIn2, _ := agent2.NewDID(method.TypeSov, "")
 	did2 := didIn2.String()
 	require.NotEmpty(t, did2)
 	println(did2)
+	println(didIn2.VerKey())
 
 	did2 = "did:sov:"
 	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
@@ -197,7 +230,7 @@ func TestIndyPipe(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, packed)
 
-	didOut2, err := agent2.NewOutDID("did:sov:", didIn.VerKey())
+	didOut2, err := agent2.NewOutDID(did2, didIn.VerKey())
 	require.NoError(t, err)
 
 	p2 := sec.Pipe{In: didIn2, Out: didOut2}
@@ -256,7 +289,17 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 	return keys, nil
 }
 
+//nolint:funlen
 func TestPipe_pack(t *testing.T) {
+	defer err2.CatchAll(func(err error) {
+		println(err)
+		utils.Settings.SetDIDMethod(method.TypeSov)
+	}, func(v any) {
+		println(v)
+		utils.Settings.SetDIDMethod(method.TypeSov)
+	})
+	utils.Settings.SetDIDMethod(method.TypePeer)
+
 	// Create test wallet and routing keys
 	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
 	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
@@ -264,10 +307,10 @@ func TestPipe_pack(t *testing.T) {
 	a := ssi.DIDAgent{}
 	a.OpenWallet(*aw)
 
-	didIn := a.NewDID("indy", "")
-	didOut := a.NewDID("indy", "")
-	didRoute1 := a.NewDID("indy", "")
-	didRoute2 := a.NewDID("indy", "")
+	didIn, _ := a.NewDID(method.TypeSov, "")
+	didOut, _ := a.NewDID(method.TypeSov, "")
+	didRoute1, _ := a.NewDID(method.TypeSov, "")
+	didRoute2, _ := a.NewDID(method.TypeSov, "")
 
 	// Packing pipe with two routing keys
 	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
@@ -275,14 +318,15 @@ func TestPipe_pack(t *testing.T) {
 
 	// Simulate actual aries message
 	plID := utils.UUID()
+	doc := didIn.NewDoc(service.Addr{
+		Endp: "http://example.com",
+		Key:  didIn.VerKey(),
+	})
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: "test",
 		Connection: &didexchange.Connection{
-			DID: didIn.Did(),
-			DIDDoc: did.NewDoc(didIn, service.Addr{
-				Endp: "http://example.com",
-				Key:  didIn.VerKey(),
-			}),
+			DID:    didIn.Did(),
+			DIDDoc: doc,
 		},
 		Thread: &decorator.Thread{ID: utils.UUID()},
 	})
@@ -308,7 +352,7 @@ func TestPipe_pack(t *testing.T) {
 	route1Bytes := route1FwdMsg.Msg
 	route1Keys, err := getRecipientKeys(route1Bytes)
 	require.NoError(t, err)
-	require.True(t, len(route2Keys) == 1)
+	require.True(t, len(route1Keys) == 1)
 	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
 	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
 
@@ -337,4 +381,118 @@ func TestPipe_pack(t *testing.T) {
 	require.True(t, dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
 	require.True(t, dstMsg.MsgHdr().ID() == plID)
 	require.True(t, dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+}
+
+func TestPipe_packPeer(t *testing.T) {
+	defer err2.CatchAll(func(err error) {
+		fmt.Println(err)
+		t.Fail()
+	}, func(v any) {
+		fmt.Println(v)
+		t.Error(v)
+	})
+	// Create test wallet and routing keys
+	walletID := fmt.Sprintf("pipe-test-agent-%d", time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
+	aw.Create()
+	a := ssi.DIDAgent{}
+	a.OpenWallet(*aw)
+
+	wrongAgentDid, _ := agent.NewDID(method.TypePeer, "http://example.com")
+
+	didIn, _ := a.NewDID(method.TypePeer, "http://example.com")
+	didOut, _ := a.NewDID(method.TypePeer, "http://example.com")
+
+	didRoute1, _ := a.NewDID(method.TypeKey, "")
+	didRoute2, _ := a.NewDID(method.TypeKey, "")
+
+	outDoc := didOut.DOC().(*did.Doc)
+	outDoc.Service[0].RoutingKeys = []string{didRoute1.VerKey(), didRoute2.VerKey()}
+	docBytes := try.To1(json.Marshal(outDoc))
+	out, err := a.NewOutDID(didOut.URI(), string(docBytes))
+	require.NoError(t, err)
+
+	packPipe := &sec.Pipe{
+		In:  didIn,
+		Out: out,
+	}
+
+	// Simulate actual aries message
+	plID := utils.UUID()
+	doc, ok := didIn.DOC().(*did.Doc)
+	require.True(t, ok)
+
+	msg := didexchange.NewRequest(&didexchange.Request{
+		Label: "test",
+		Connection: &didexchange.Connection{
+			DID:    didIn.Did(),
+			DIDDoc: doc,
+		},
+		Thread: &decorator.Thread{ID: utils.UUID()},
+	})
+	pl := aries.PayloadCreator.NewMsg(plID, pltype.AriesConnectionRequest, msg)
+
+	// Pack message
+	route2bytes, _, err := packPipe.Pack(pl.JSON())
+	require.NoError(t, err)
+	require.True(t, len(route2bytes) > 0)
+
+	// Unpack forward message with last routing key
+	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
+	require.NoError(t, err)
+	require.Len(t, route2Keys, 3)
+
+	// these two rows haven't yet checked. API has changed and these haven't
+	// tested yet:
+	// lastRouteKey := route2Keys[0]
+	// require.Equal(t, didRoute2.VerKey(), lastRouteKey)
+
+	firstUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  didRoute2, // start with last route
+		Out: didIn,     // and now reiver is original sender
+	}
+
+	route1FwBytes, _, err := firstUnpackPipe.Unpack(route2bytes)
+	require.NoError(t, err)
+	require.NotNil(t, route1FwBytes)
+
+	secondUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  didRoute1, // start with last route
+		Out: didIn,     // and now reiver is original sender
+	}
+
+	route2FwBytes, _, err := secondUnpackPipe.Unpack(route2bytes)
+	require.NoError(t, err)
+	require.NotNil(t, route2FwBytes)
+
+	wrongUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
+		In:  wrongAgentDid, // start with last route
+		Out: didIn,         // and now reiver is original sender
+	}
+
+	wrongFwBytes, _, err := wrongUnpackPipe.Unpack(route2bytes)
+	require.Error(t, err)
+	require.Nil(t, wrongFwBytes)
+
+	// Unpack next forward message with first routing key
+	//	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
+	//	route1Bytes := route1FwdMsg.Msg
+	//	route1Keys, err := getRecipientKeys(route1Bytes)
+	//	require.NoError(t, err)
+	//	require.Len(t, route1Keys, 2)
+	//	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
+	//	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
+
+	//	// Unpack final (auth-crypted) message with destination key
+	//	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
+	//	require.NoError(t, err)
+	//	dstKeys, err := getRecipientKeysFromBytes(dstPackedBytes)
+	//	require.NoError(t, err)
+	//	require.True(t, len(dstFwdKeys) == 1)
+	//	require.Equal(t, didOut.VerKey(), dstKeys[0])
+	//
+	//	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
+	//	require.True(t, dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
+	//	require.True(t, dstMsg.MsgHdr().ID() == plID)
+	//	require.True(t, dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
 }

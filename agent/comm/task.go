@@ -6,6 +6,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/method"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 )
 
@@ -22,6 +23,7 @@ type Task interface {
 	ConnectionID() string           // Pairwise id
 	ReceiverEndp() service.Addr     // Pairwise receiver endpoint
 	SetReceiverEndp(r service.Addr)
+	DIDMethod() method.Type
 }
 
 type TaskHeader struct {
@@ -33,6 +35,8 @@ type TaskHeader struct {
 
 	Sender   service.Addr
 	Receiver service.Addr
+
+	Method method.Type
 }
 
 type TaskBase struct {
@@ -77,4 +81,8 @@ func (t *TaskHeader) SwitchDirection() {
 	tmp := t.Sender
 	t.Sender = t.Receiver
 	t.Receiver = tmp
+}
+
+func (t *TaskBase) DIDMethod() method.Type {
+	return t.Method
 }

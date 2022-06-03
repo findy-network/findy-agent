@@ -41,7 +41,8 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 
 	glog.V(1).Infof("Posting message to %s\n", urlStr)
 
-	request, _ := http.NewRequest("POST", URL.String(), msg)
+	request := try.To1(http.NewRequest("POST", URL.String(), msg))
+	request.Close = true // deferred response.Body.Close isn't always enough
 
 	// TODO: make configurable when there is support for application/didcomm-envelope-enc
 	request.Header.Set("Content-Type", "application/ssi-agent-wire")
@@ -49,7 +50,10 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 	response := try.To1(c.Do(request))
 
 	defer func() {
-		_ = response.Body.Close()
+		closeErr := response.Body.Close()
+		if closeErr != nil {
+			glog.Warningln("body.Close: ", closeErr)
+		}
 	}()
 
 	data, err = ioutil.ReadAll(response.Body)

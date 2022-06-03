@@ -10,6 +10,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -17,6 +18,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -87,7 +89,8 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	assert.P.True(!walletAlreadyExists, "wallet cannot exist when onboarding")
 	agent.OpenWallet(*aw)
 
-	anchorDid := agent.NewDID("sov", seed)
+	glog.V(10).Infof("--- Using seed '%s' in anchor agent", seed)
+	anchorDid := try.To1(agent.NewDID(method.TypeSov, seed))
 	if steward != nil {
 		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
 
@@ -95,6 +98,9 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 		// Promote new agent by Trusted Anchor DID if steward is available
 		try.To(steward.SendNYM(indyAnchor, steward.RootDid().Did(),
 			findy.NullString, "TRUST_ANCHOR"))
+		// let's give time for the ledger because NYM tx is so important!
+		time.Sleep(1200 * time.Millisecond)
+		glog.V(1).Infoln("waited for NYM tx ================")
 	}
 
 	// Use the anchor DID as a submitter/root DID to Ledger
@@ -189,11 +195,12 @@ func LoadRegistered(filename string) (err error) {
 
 // SetStewardFromWallet sets steward DID for us from pre-created wallet and
 // named DID string.
-func SetStewardFromWallet(wallet *ssi.Wallet, DID string) {
-	agent := cloud.Agent{}
+func SetStewardFromWallet(wallet *ssi.Wallet, DID string) (stwd *cloud.Agent) {
+	agent := new(cloud.Agent)
 	agent.OpenWallet(*wallet)
 	agent.SetRootDid(agent.OpenDID(DID))
-	SetSteward(&agent)
+	SetSteward(agent)
+	return agent
 }
 
 func RegisterGobs() {

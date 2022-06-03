@@ -14,7 +14,6 @@ import (
 	indycrypto "github.com/findy-network/findy-wrapper-go/crypto"
 	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/pkg/crypto"
-	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
@@ -47,7 +46,7 @@ func (p *Packager) KMS() kms.KeyManager {
 	return p.storage.KMS()
 }
 
-func (p *Packager) Crypto() cryptoapi.Crypto {
+func (p *Packager) Crypto() crypto.Crypto {
 	return &p.crypto
 }
 

@@ -59,7 +59,7 @@ func (k *KMS) Rotate(kt kms.KeyType, KID string) (string, interface{}, error) {
 	panic("implement me")
 }
 
-func (k *KMS) ExportPubKeyBytes(KID string) ([]byte, error) {
+func (k *KMS) ExportPubKeyBytes(KID string) ([]byte, kms.KeyType, error) {
 	//TODO implement me
 	panic("implement me")
 }

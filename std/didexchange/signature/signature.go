@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
@@ -30,7 +31,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 	ok = r.Connection != nil
 
 	if ok {
-		rawDID := r.Connection.DIDDoc.ID
+		rawDID := common.ID(r.Connection.DIDDoc)
 		r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
 	}
 
@@ -106,7 +107,9 @@ func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *di
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
-		glog.Errorln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
+		// don't pollute logs with errors when we aren't treating this as an
+		// error for now
+		glog.Warningln("connection signature timestamp is invalid: ", timestamp, time.Unix(timestamp, 0))
 		// TODO: pass invalid timestamps on for now, as some agents do not fill it at all
 		// should be fixed with new signature implementation
 		// return nil, nil

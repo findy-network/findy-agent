@@ -13,6 +13,7 @@ import (
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/agent/vc"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
@@ -151,6 +152,10 @@ func (a *agentServer) CreateSchema(
 	try.To(sch.Create(ca.RootDid().Did()))
 	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
+	glog.V(5).Infoln("--- start to wait ledger to build SCHEMA tx")
+	time.Sleep(3 * time.Second)
+	glog.V(5).Infoln("--- END waiting ledger to build SCHEMA tx")
+
 	return &pb.Schema{ID: sch.ValidID()}, nil
 }
 
@@ -257,7 +262,8 @@ func (a *agentServer) CreateInvitation(
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
 	defer err2.Return(&err)
 
-	glog.V(5).Infoln("========== start prealloc:", id)
+	glog.V(5).Infoln("========== start pre-alloc:", id)
+	defDIDMethod := utils.Settings.DIDMethod()
 
 	_, receiver := try.To2(ca(ctx))
 	ep = receiver.CAEndp(id)
@@ -266,7 +272,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	ssiWA := wa.(ssi.Agent)
 
 	// Build new DID for the pairwise and save it for the CONN_REQ??
-	ourPairwiseDID := ssiWA.NewDID("sov", "")
+	ourPairwiseDID := try.To1(ssiWA.NewDID(defDIDMethod, ep.Address()))
 
 	// mark the pre-allocated pairwise DID with connection ID that we find it
 	_, ms := wa.ManagedWallet()
@@ -277,14 +283,22 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 	}))
 
 	ep.VerKey = ourPairwiseDID.VerKey()
-	ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
+
+	if defDIDMethod == method.TypeSov || defDIDMethod == method.TypeIndy {
+		ssiWA.AddDIDCache(ourPairwiseDID.(*ssi.DID))
+	}
 
 	// map PW that the endpoint address get activated for the http server
 	// when connection request arrives
 	ourPairwiseDID.SetAEndp(ep.AE())
 	wa.AddToPWMap(ourPairwiseDID, ourPairwiseDID, id)
 
-	glog.V(1).Infof("---- Using preallocated PW DID %s for connection id %s ---", ourPairwiseDID.Did(), id)
+	glog.V(1).Infof(
+		"---- Using pre-allocated PW:\n"+
+			"DID %s for connection id %s ---",
+		ourPairwiseDID.Did(), id)
+	myAE, _ := ourPairwiseDID.AEndp()
+	glog.V(5).Infoln("pre-alloc EndPoint: ", myAE.Endp)
 
 	return ep, nil
 }

@@ -95,8 +95,7 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
 	defer err2.Return(&err)
 
-	var res psm.Rep
-	res = try.To1(psm.GetRep(bucketType, key))
+	res := try.To1(psm.GetRep(bucketType, key))
 
 	// Allow not found
 	if res == nil {

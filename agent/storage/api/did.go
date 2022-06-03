@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 )
 
 type DIDMethod string
@@ -19,10 +18,11 @@ const (
 )
 
 type DID struct {
-	ID         string
+	ID         string // ID is the key. Use real DID value for that
 	DID        string
+	KID        string
 	IndyVerKey string
-	Doc        *did.DocResolution
+	Doc        []byte
 }
 
 // just playing around, this is probably not needed at this level

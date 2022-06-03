@@ -1,4 +1,5 @@
 TEST_TIMEOUT:="70s"
+TEST_ARGS ?= -args -logtostderr -v=3
 
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
@@ -6,6 +7,8 @@ LEDGER_NAME:=FINDY_FILE_LEDGER
 API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
 GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
+
+CURRENT_BRANCH=$(shell scripts/branch.sh .)
 
 GO := go
 # GO := go1.18beta2
@@ -154,3 +157,6 @@ scratch:
 run:
 	./scripts/dev/dev.sh install_run $(LEDGER_NAME)
 # ****
+
+iop:
+	gh workflow run iop.yml --ref $(CURRENT_BRANCH)

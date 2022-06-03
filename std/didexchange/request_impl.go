@@ -2,14 +2,18 @@ package didexchange
 
 import (
 	"encoding/gob"
+	"strings"
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/lainio/err2/assert"
+	"github.com/mr-tron/base58"
 )
 
 var Creator = &Factor{}
@@ -95,23 +99,31 @@ func (m *RequestImpl) Name() string { // Todo: names should be Label
 }
 
 func (m *RequestImpl) Did() string {
-	return m.Connection.DID
+	glog.V(11).Infoln("Did() is returning:", m.Connection.DID)
+	rawDID := strings.TrimPrefix(m.Connection.DID, "did:sov:")
+	if rawDID != m.Connection.DID {
+		glog.V(3).Infoln("+++ normalizing Did()", m.Connection.DID, " ==>", rawDID)
+	}
+	return rawDID
 }
 
 func (m *RequestImpl) VerKey() string {
-	if len(m.Connection.DIDDoc.PublicKey) == 0 {
-		return ""
-	}
-	return m.Connection.DIDDoc.PublicKey[0].PublicKeyBase58
+	vm := common.VM(m.Connection.DIDDoc, 0)
+	return base58.Encode(vm.Value)
 }
 
 func (m *RequestImpl) Endpoint() service.Addr {
-	if len(m.Connection.DIDDoc.Service) == 0 {
+	assert.NotNil(m)
+	assert.NotNil(m.Connection)
+	assert.That(m.Connection.DIDDoc != nil)
+
+	if len(common.Services(m.Connection.DIDDoc)) == 0 {
 		return service.Addr{}
 	}
 
-	addr := m.Connection.DIDDoc.Service[0].ServiceEndpoint
-	key := m.Connection.DIDDoc.Service[0].RecipientKeys[0]
+	serv := common.Service(m.Connection.DIDDoc, 0)
+	addr := serv.ServiceEndpoint
+	key := serv.RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
 }

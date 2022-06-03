@@ -1,0 +1,21 @@
+{
+  "@context": "https://w3id.org/did/v1",
+  "id": "PQJq9rPo8U5bvc5LyCNJ2Q",
+  "publicKey": [
+    {
+      "id": "PQJq9rPo8U5bvc5LyCNJ2Q#keys-1",
+      "type": "Ed25519VerificationKey2018",
+      "controller": "PQJq9rPo8U5bvc5LyCNJ2Q",
+      "publicKeyBase58": "DDAfoCY7M4sdBx4zAgNQMrdahVJp6kEaNRHwzpzRSEkc"
+    }
+  ],
+  "service": [
+    {
+      "id": "PQJq9rPo8U5bvc5LyCNJ2Q;indy",
+      "type": "IndyAgent",
+      "recipientKeys": ["DDAfoCY7M4sdBx4zAgNQMrdahVJp6kEaNRHwzpzRSEkc"],
+      "routingKeys": ["HzaxyVv8o5pF9CFgdAR3x6m9kPzw9nkkqadK7bvGcq66"],
+      "serviceEndpoint": "http://host.docker.internal:9030"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/indy"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/golang/glog"
 	cryptoapi "github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
@@ -36,6 +37,8 @@ type Pipe struct {
 // NewPipeByVerkey creates a new secure pipe by our DID and other end's public
 // key.
 func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
+	assert.That(method.Accept(did, method.TypeSov))
+
 	out := ssi.NewOutDid(verkey, route)
 
 	return &Pipe{
@@ -98,12 +101,9 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 	media := p.defMediaType()
 	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
 
+	toKeys := p.Out.RecipientKeys()
 	route := p.Out.Route()
-	toKeys := make([]string, len(route)+1)
-	toKeys[0] = p.Out.String()
-	for i, r := range route {
-		toKeys[i+1] = "did:sov:" + r
-	}
+	toKeys = append(toKeys, route...)
 
 	// pack a non-empty envelope using packer selected by mediaType - should pass
 	dst = try.To1(p.packager().PackMessage(&transport.Envelope{
