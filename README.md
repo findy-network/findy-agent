@@ -336,24 +336,24 @@ to understand from the state machine diagram.
 
 ## Upcoming Features
 
-- [ ] Tests for fail cases.
-- [ ] Interoperability testing with Aries testing harness.
+- [ ] Tests for fail cases. WIP
+- [x] Interoperability testing with Aries testing harness.
 - [x] Indy wallet implementation with storage plug-in like PostgreSQL. Done: we
       have wallet pool.
 - [x] Crypto implementations for different server types, AWS Nitro, ...
 - [x] Backup system for current docker volumes.
 - [ ] The PSM runner for restarts and non-delivery messages and cleanup old
-      ones. Partially done, we have data pump and archiving now.
+      ones. *Partially done, we have data pump and archiving now.*
 - [ ] Haven't been able to test with stable ledger.
 - [ ] Check if we have received the message already.
-- [ ] Check incoming order of the messages, same as declared in the PSM.
+- [x] Check incoming order of the messages, same as declared in the PSM.
 - [x] libindy under pressure, wallet handles, etc. Done: wallet pool, more tests
       needed
 - [x] API for browsing connections, credentials etc. Done: we have `vault`
 - [x] PSM archive logic, dedicated storage for persistent client data (see the
       PSM runner).
 - [ ] Credential revocation, if wanted to use (check upcoming anoncreds 2.0)
-- [ ] Skipping DID-writes to ledger for individuals: moving to full `peer did`.
-- [ ] Real `peer did` implementation.
+- [x] Skipping DID-writes to ledger for individuals: moving to full `peer did`.
+- [x] Real `peer did` implementation. (Static `did:peer`)
 - [ ] Agent permissions. Separation of individuals and services in on-boarding
       -> e.g. no credential issuing for individuals (maybe Agency types).
