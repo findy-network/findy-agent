@@ -92,7 +92,6 @@ jobs:
       - name: scan
         run: make scan
 
-
   test-docker-image:
     runs-on: ubuntu-latest
     steps:
@@ -118,7 +117,7 @@ jobs:
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          files: ./coverage1.txt, ./coverage2.txt
+          files: ./coverage1.txt,./coverage2.txt
 
   e2e:
     runs-on: ubuntu-latest
