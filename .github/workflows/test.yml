@@ -18,7 +18,8 @@ jobs:
         with:
           version: v1.45.2
           args: --timeout=5m
-  test:
+
+  test-default:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     env:
@@ -45,11 +46,27 @@ jobs:
           path: ./coverage1.txt
           retention-days: 1
 
+  test-peer:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    env:
+      TEST_WORKDIR: /github/home/.test/
+      CI: true
+    steps:
+      - name: Install make & certs
+        run: apt-get update && apt-get install -y build-essential ca-certificates
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+      - name: checkout
+        uses: actions/checkout@v2
+
       # test round for peer-did
-      - name: test and measure coverage
+      - name: test and measure coverage (peer did)
         run: make test_cov_out COV_FILE=coverage2.txt
         env:
-          FCLI_AGENCY_DID_METHOD: 2
+          FCLI_AGENCY_DID_METHOD: "2"
 
       - name: store coverage file
         uses: actions/upload-artifact@v2
@@ -58,9 +75,23 @@ jobs:
           path: ./coverage2.txt
           retention-days: 1
 
+  license-scan:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    steps:
+      - name: Install make & certs
+        run: apt-get update && apt-get install -y build-essential ca-certificates
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+      - name: checkout
+        uses: actions/checkout@v2
+
       # licence scan
       - name: scan
         run: make scan
+
 
   test-docker-image:
     runs-on: ubuntu-latest
@@ -72,7 +103,7 @@ jobs:
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test-default, test-peer]
     steps:
       - name: checkout
         uses: actions/checkout@v2
