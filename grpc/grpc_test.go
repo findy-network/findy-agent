@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -18,6 +20,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
 	"github.com/findy-network/findy-agent/agent/psm"
@@ -34,6 +37,7 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/findy-network/findy-common-go/agency/client"
+	"github.com/findy-network/findy-common-go/agency/client/async"
 	"github.com/findy-network/findy-common-go/dto"
 	agency2 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
@@ -641,9 +645,25 @@ func TestConnection_NoOneRun(t *testing.T) {
 			connID, ch, err := pairwise.Connection(ctx, ca.Invitation)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, connID)
+			assert.True(t, endp.IsUUID(connID))
+
 			for status := range ch {
 				glog.V(1).Infof("Connection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
 				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+
+				ctx := context.Background()
+				didComm := agency2.NewProtocolServiceClient(conn)
+				statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+					TypeID: agency2.Protocol_DIDEXCHANGE,
+					ID:     status.ProtocolID.ID,
+				}))
+				res := statusResult.GetDIDExchange()
+
+				assert.NotEmpty(t, res.TheirDID)
+				assert.NotEmpty(t, res.MyDID)
+				assert.NotEmpty(t, res.TheirLabel)
+				assert.NotEmpty(t, res.TheirEndpoint)
+				assert.Equal(t, connID, res.ID)
 			}
 			agents[0].ConnID[i-1] = connID
 			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
@@ -1097,6 +1117,68 @@ func TestListen100(t *testing.T) {
 	}
 }
 
+func TestListenPWStatus(t *testing.T) {
+	ctx, cancelCtx := context.WithCancel(context.Background())
+	defer cancelCtx()
+
+	connAdmin := client.TryOpen("findy-root", baseCfg)
+	agencyClient := pb.NewAgencyServiceClient(connAdmin)
+	oReply := try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: "agent1",
+	}))
+	agent1DID := oReply.Result.CADID
+	oReply = try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: "agent2",
+	}))
+	agent2DID := oReply.Result.CADID
+
+	conn1 := client.TryOpen(agent1DID, baseCfg)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	ch := try.To1(conn1.Listen(ctx, &agency2.ClientID{ID: utils.UUID()}))
+
+	var notification *agency2.Question
+	go func() {
+		defer err2.Catch(func(err error) {
+			if !errors.Is(err, context.Canceled) {
+				glog.Error(err)
+			}
+		})
+		for status := range ch {
+			if status.Status.Notification.TypeID == agency2.Notification_STATUS_UPDATE {
+				notification = status
+				wg.Done()
+			}
+		}
+	}()
+
+	conn2 := client.TryOpen(agent2DID, baseCfg)
+	c := agency2.NewAgentServiceClient(conn2)
+	id := utils.UUID()
+	r := try.To1(c.CreateInvitation(ctx, &agency2.InvitationBase{ID: id, Label: "agent2"}))
+
+	pw := async.NewPairwise(conn1, id)
+	try.To1(pw.Connection(ctx, r.JSON))
+	wg.Wait()
+
+	assert.True(t, endp.IsUUID(notification.Status.Notification.ConnectionID))
+
+	didComm := agency2.NewProtocolServiceClient(conn1)
+	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
+		TypeID: notification.Status.Notification.ProtocolType,
+		ID:     notification.Status.Notification.ProtocolID,
+	}))
+	res := statusResult.GetDIDExchange()
+
+	assert.Equal(t, notification.Status.Notification.ConnectionID, res.ID)
+	assert.NotEmpty(t, res.TheirDID)
+	assert.NotEmpty(t, res.MyDID)
+	assert.Equal(t, "agent2", res.TheirLabel)
+	assert.NotEmpty(t, strings.Contains(res.TheirEndpoint, res.ID))
+}
+
 func BenchmarkIssue(b *testing.B) {
 	if testMode == TestModeRunOne {
 		TestSetPermissive(nil)
@@ -1475,6 +1557,8 @@ func handleStatusBMEcho(
 	status *agency2.AgentStatus,
 	_ bool,
 ) handleAction {
+	assert.True(t, endp.IsUUID(status.Notification.ConnectionID))
+
 	switch status.Notification.ProtocolType {
 	case agency2.Protocol_BASIC_MESSAGE:
 		ctx := context.Background()
@@ -1485,6 +1569,7 @@ func handleStatusBMEcho(
 			ID:               status.Notification.ProtocolID,
 			NotificationTime: status.Notification.Timestamp,
 		}))
+
 		if statusResult.GetBasicMessage().SentByMe {
 			glog.V(0).Infoln("---------- ours, no reply")
 			return handleOK
