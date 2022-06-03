@@ -3,8 +3,8 @@ module github.com/findy-network/findy-agent
 go 1.18
 
 require (
-	github.com/findy-network/findy-common-go v0.1.33-0.20220425073220-a0f4fcce8729
-	github.com/findy-network/findy-wrapper-go v0.24.3
+	github.com/findy-network/findy-common-go v0.1.37
+	github.com/findy-network/findy-wrapper-go v0.30.13
 	github.com/go-co-op/gocron v1.13.0
 	github.com/go-test/deep v1.0.8
 	github.com/golang/glog v1.0.0
@@ -33,7 +33,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/codenotary/immudb v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
+	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
