@@ -79,6 +79,11 @@ ConnID: [3]string{"%s","%s", "%s"},
 },`, d.DID, d.Invitation, d.CredDefID, d.ConnID[0], d.ConnID[1], d.ConnID[2])
 }
 
+const (
+	MaxWaitTime = time.Minute * 3
+	WaitTime    = time.Millisecond * 500
+)
+
 var (
 	testMode = TestModeCI
 
@@ -87,8 +92,6 @@ var (
 	emptyAgents    [4]AgentData
 	prebuildAgents [4]AgentData
 	baseCfg        *rpc.ClientCfg
-
-	schemaCredDefWaitTime = 20000 * time.Millisecond
 
 	steward *cloud.Agent
 )
@@ -140,11 +143,6 @@ func setUpLedger() {
 		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
 	}
 	pool.Open(ledgerStore)
-
-	// reduce waiting time for non-indy ledgers
-	if !strings.HasPrefix(ledgerStore, "FINDY_LEDGER") {
-		schemaCredDefWaitTime = 2 * time.Millisecond
-	}
 }
 
 func setUp() {
@@ -493,9 +491,15 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
-				glog.V(1).Infoln("==== START creating cred def please wait ====")
-				time.Sleep(schemaCredDefWaitTime)
-				glog.V(1).Infoln("==== creating cred def please wait ====")
+				_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+				var totalWaitTime time.Duration
+				for err != nil && totalWaitTime < MaxWaitTime {
+					totalWaitTime += WaitTime
+					glog.V(1).Infoln("Schema not found, waiting for schema to be found in ledger", schemaID)
+					time.Sleep(WaitTime)
+					_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+				}
+				assert.NoError(t, err)
 
 				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 					SchemaID: schemaID,
