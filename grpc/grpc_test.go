@@ -124,24 +124,25 @@ func setUpLedger() {
 		log.Panicln(r.Err())
 	}
 
-	// resolve ledger name
-	ledgerName := "FINDY_MEM_LEDGER"
+	// resolve ledger store
+	ledgerStore := "FINDY_MEM_LEDGER"
 	if name := os.Getenv("FCLI_AGENCY_POOL_NAME"); name != "" {
-		ledgerName = name
+		ledgerStore = name
 	} else if testMode != TestModeCI {
 		// IF DEBUGGING ONE TEST use always file ledger
-		ledgerName = "FINDY_FILE_LEDGER"
+		ledgerStore = "FINDY_FILE_LEDGER"
 	}
 
 	// create and open ledger handle
-	createCh := <-indypool.CreateConfig(ledgerName, indypool.Config{GenesisTxn: "../gen_txn_file"})
+	poolName := os.Getenv("FCLI_POOL_NAME")
+	createCh := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
 	if createCh.Err() != nil {
-		fmt.Printf("pool creation failed for ledger %s %v \n--> ignoring\n", ledgerName, createCh.Err())
+		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
 	}
-	pool.Open(ledgerName)
+	pool.Open(ledgerStore)
 
 	// reduce waiting time for non-indy ledgers
-	if !strings.HasPrefix(ledgerName, "FINDY_LEDGER") {
+	if !strings.HasPrefix(ledgerStore, "FINDY_LEDGER") {
 		schemaCredDefWaitTime = 2 * time.Millisecond
 	}
 }
