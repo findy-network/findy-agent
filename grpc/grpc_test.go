@@ -153,7 +153,7 @@ func getIndyLedgerTxnCount(t *testing.T) (count int) {
 	res := make(map[string]interface{})
 	try.To(json.Unmarshal(body, &res))
 
-	return res["total"].(int)
+	return int(res["total"].(float64))
 }
 
 func TestMain(m *testing.M) {
