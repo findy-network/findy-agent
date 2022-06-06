@@ -487,6 +487,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
+			time.Sleep(time.Second * 30)
 
 			// build schema and cred def for the first agent to use later
 			if i == 0 {
