@@ -21,13 +21,33 @@ jobs:
 
   test-default:
     runs-on: ubuntu-latest
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     env:
       TEST_WORKDIR: /github/home/.test/
       CI: true
     steps:
-      - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates
+      # setup von-network ledger
+      - uses: actions/checkout@v2
+        with:
+          repository: "bcgov/von-network"
+          ref: "22973513c99cc9a286a6f181ca5c5f354a4eb2ee"
+      - name: skip setting volumes for web server
+        run: |
+          sed '/      - .\/config:\/home\/indy\/config/d' docker-compose.yml > docker-compose.yml.tmp
+          sed '/      - .\/server:\/home\/indy\/server/d' docker-compose.yml.tmp > docker-compose.yml
+
+      - name: start indy ledger
+        run: |
+          ./manage build
+          ./manage start
+
+      # install indy
+      - uses: actions/checkout@v2
+        with:
+          repository: "findy-network/findy-wrapper-go"
+      - name: install indy
+        run: make indy_to_debian
+
+      # setup go-env
       - name: setup
         uses: actions/setup-go@v2
         with:
@@ -35,9 +55,13 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      # test round for sov-did (default)
+      # test round for sov-did (default) and indy ledger
       - name: test and measure coverage
-        run: make test_cov_out COV_FILE=coverage1.txt
+        run: |
+          curl http://localhost:9000/genesis > gen_txn_file
+          make test_cov_out COV_FILE=coverage1.txt
+        env:
+          FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
       - name: store coverage file
         uses: actions/upload-artifact@v2
@@ -62,7 +86,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      # test round for peer-did
+      # test round for peer-did and mem-ledger
       - name: test and measure coverage (peer did)
         run: make test_cov_out COV_FILE=coverage2.txt
         env:

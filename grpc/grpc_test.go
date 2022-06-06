@@ -118,6 +118,34 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func setUpLedger() {
+	r := <-indypool.SetProtocolVersion(2)
+	if r.Err() != nil {
+		log.Panicln(r.Err())
+	}
+
+	// resolve ledger name
+	ledgerName := "FINDY_MEM_LEDGER"
+	if name := os.Getenv("FCLI_AGENCY_POOL_NAME"); name != "" {
+		ledgerName = name
+	} else if testMode != TestModeCI {
+		// IF DEBUGGING ONE TEST use always file ledger
+		ledgerName = "FINDY_FILE_LEDGER"
+	}
+
+	// create and open ledger handle
+	createCh := <-indypool.CreateConfig(ledgerName, indypool.Config{GenesisTxn: "../gen_txn_file"})
+	if createCh.Err() != nil {
+		fmt.Printf("pool creation failed for ledger %s %v \n--> ignoring\n", ledgerName, createCh.Err())
+	}
+	pool.Open(ledgerName)
+
+	// reduce waiting time for non-indy ledgers
+	if !strings.HasPrefix(ledgerName, "FINDY_LEDGER") {
+		schemaCredDefWaitTime = 2 * time.Millisecond
+	}
+}
+
 func setUp() {
 	err2.StackTraceWriter = os.Stderr
 	err2assert.D = err2assert.AsserterCallerInfo
@@ -164,11 +192,6 @@ func setUp() {
 		server.ResetEnv(sw, exportPath)
 	}
 
-	r := <-indypool.SetProtocolVersion(2)
-	if r.Err() != nil {
-		log.Panicln(r.Err())
-	}
-
 	// IF DEBUGGING ONE TEST run first, todo: move cleanup to tear down? make it easier
 	if testMode == TestModeRunOne {
 		try.To(handshake.LoadRegistered(strLiteral("findy", ".json", -1)))
@@ -176,16 +199,7 @@ func setUp() {
 		try.To(agency.ResetRegistered(strLiteral("findy", ".json", -1)))
 	}
 
-	// IF DEBUGGING ONE TEST use always file ledger
-	if testMode == TestModeCI {
-		pool.Open("FINDY_MEM_LEDGER")
-		schemaCredDefWaitTime = 2 * time.Millisecond
-
-		// TODO: integrate ledger testing to CI
-		// pool.Open("FINDY_LEDGER,von")
-	} else {
-		pool.Open("FINDY_FILE_LEDGER")
-	}
+	setUpLedger()
 
 	steward = handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
