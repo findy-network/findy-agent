@@ -2,13 +2,16 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -93,6 +96,8 @@ var (
 	prebuildAgents [4]AgentData
 	baseCfg        *rpc.ClientCfg
 
+	ledgerStore = "FINDY_MEM_LEDGER"
+
 	steward *cloud.Agent
 )
 
@@ -100,6 +105,55 @@ const bufSize = 1024 * 1024
 
 func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
+}
+
+func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
+	ctx := context.Background()
+	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	var totalWaitTime time.Duration
+	for err != nil && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
+		time.Sleep(WaitTime)
+		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	}
+	assert.NoError(t, err)
+	t.Log("Schema created successfully:", schemaID)
+}
+
+func waitForTxnCount(t *testing.T, count int) {
+	if count <= 1 {
+		// if no txns, we are not running in indy ledger an no need to wait
+		return
+	}
+	currentCount := getIndyLedgerTxnCount(t)
+	var totalWaitTime time.Duration
+	for currentCount < count && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Txn not found, waiting for txn to be found in ledger")
+		time.Sleep(WaitTime)
+		currentCount = getIndyLedgerTxnCount(t)
+	}
+	t.Log("Txn count:", currentCount, "expected:", count)
+}
+
+func getIndyLedgerTxnCount(t *testing.T) (count int) {
+	defer err2.Catch(func(err error) {
+		t.Log("Failed to fetch txn count from ledger:", err, "ignoring...")
+	})
+
+	if !strings.HasPrefix(ledgerStore, "FINDY_LEDGER") {
+		// count txns only in indy ledger
+		return 0
+	}
+
+	resp := try.To1(http.Get("http://localhost:9000/ledger/domain"))
+	body := try.To1(io.ReadAll(resp.Body))
+	defer resp.Body.Close()
+	res := make(map[string]interface{})
+	try.To(json.Unmarshal(body, &res))
+
+	return res["total"].(int)
 }
 
 func TestMain(m *testing.M) {
@@ -128,7 +182,6 @@ func setUpLedger() {
 	}
 
 	// resolve ledger store
-	ledgerStore := "FINDY_MEM_LEDGER"
 	if name := os.Getenv("FCLI_AGENCY_POOL_NAME"); name != "" {
 		ledgerStore = name
 	} else if testMode != TestModeCI {
@@ -381,20 +434,6 @@ func Test_NewOnboarding(t *testing.T) {
 	}
 }
 
-func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
-	ctx := context.Background()
-	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-	var totalWaitTime time.Duration
-	for err != nil && totalWaitTime < MaxWaitTime {
-		totalWaitTime += WaitTime
-		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
-		time.Sleep(WaitTime)
-		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-	}
-	assert.NoError(t, err)
-	t.Log("Schema created successfully:", schemaID)
-}
-
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all the EAs. That's handy for web wallets.
@@ -476,6 +515,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			txnCount := getIndyLedgerTxnCount(t)
+
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyServiceClient(conn)
@@ -487,7 +528,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
-			time.Sleep(time.Second * 30)
+
+			waitForTxnCount(t, txnCount+1)
 
 			// build schema and cred def for the first agent to use later
 			if i == 0 {

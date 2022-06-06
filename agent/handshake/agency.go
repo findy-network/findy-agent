@@ -10,7 +10,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
@@ -98,9 +97,6 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 		// Promote new agent by Trusted Anchor DID if steward is available
 		try.To(steward.SendNYM(indyAnchor, steward.RootDid().Did(),
 			findy.NullString, "TRUST_ANCHOR"))
-		// let's give time for the ledger because NYM tx is so important!
-		time.Sleep(1200 * time.Millisecond)
-		glog.V(1).Infoln("waited for NYM tx ================")
 	}
 
 	// Use the anchor DID as a submitter/root DID to Ledger
