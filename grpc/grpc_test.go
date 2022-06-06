@@ -381,6 +381,20 @@ func Test_NewOnboarding(t *testing.T) {
 	}
 }
 
+func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
+	ctx := context.Background()
+	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	var totalWaitTime time.Duration
+	for err != nil && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
+		time.Sleep(WaitTime)
+		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	}
+	assert.NoError(t, err)
+	t.Log("Schema created successfully:", schemaID)
+}
+
 // Test_handshakeAgencyAPI is not actual test here. It's used for the build
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all the EAs. That's handy for web wallets.
@@ -491,15 +505,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
-				_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-				var totalWaitTime time.Duration
-				for err != nil && totalWaitTime < MaxWaitTime {
-					totalWaitTime += WaitTime
-					glog.V(1).Infoln("Schema not found, waiting for schema to be found in ledger", schemaID)
-					time.Sleep(WaitTime)
-					_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-				}
-				assert.NoError(t, err)
+				waitForSchema(t, c, schemaID)
 
 				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 					SchemaID: schemaID,
@@ -540,6 +546,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 			assert.NotEmpty(t, r.ID)
 			glog.V(1).Infoln(r.ID)
 			schemaID := r.ID
+
+			waitForSchema(t, c, schemaID)
 
 			cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 				SchemaID: schemaID,
