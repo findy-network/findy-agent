@@ -150,7 +150,7 @@ func getIndyLedgerTxnCount(t *testing.T) (count int) {
 	resp := try.To1(http.Get("http://localhost:9000/ledger/domain"))
 	body := try.To1(io.ReadAll(resp.Body))
 	defer resp.Body.Close()
-	res := make(map[string]interface{})
+	res := make(map[string]any)
 	try.To(json.Unmarshal(body, &res))
 
 	return int(res["total"].(float64))
@@ -189,12 +189,14 @@ func setUpLedger() {
 		ledgerStore = "FINDY_FILE_LEDGER"
 	}
 
-	// create and open ledger handle
+	// create ledger config (needed only when running with indy ledger in "clean" environment)
 	poolName := os.Getenv("FCLI_POOL_NAME")
 	createCh := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
 	if createCh.Err() != nil {
 		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
 	}
+
+	// open ledger handle
 	pool.Open(ledgerStore)
 }
 
