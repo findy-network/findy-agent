@@ -2,16 +2,20 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -78,6 +82,11 @@ ConnID: [3]string{"%s","%s", "%s"},
 },`, d.DID, d.Invitation, d.CredDefID, d.ConnID[0], d.ConnID[1], d.ConnID[2])
 }
 
+const (
+	MaxWaitTime = time.Minute * 3
+	WaitTime    = time.Millisecond * 500
+)
+
 var (
 	testMode = TestModeCI
 
@@ -87,7 +96,7 @@ var (
 	prebuildAgents [4]AgentData
 	baseCfg        *rpc.ClientCfg
 
-	schemaCredDefWaitTime = 20000 * time.Millisecond
+	ledgerStore = "FINDY_MEM_LEDGER"
 
 	steward *cloud.Agent
 )
@@ -96,6 +105,55 @@ const bufSize = 1024 * 1024
 
 func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
+}
+
+func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
+	ctx := context.Background()
+	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	var totalWaitTime time.Duration
+	for err != nil && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
+		time.Sleep(WaitTime)
+		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	}
+	assert.NoError(t, err)
+	t.Log("Schema created successfully:", schemaID)
+}
+
+func waitForTxnCount(t *testing.T, count int) {
+	if count <= 1 {
+		// if no txns, we are not running in indy ledger an no need to wait
+		return
+	}
+	currentCount := getIndyLedgerTxnCount(t)
+	var totalWaitTime time.Duration
+	for currentCount < count && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Txn not found, waiting for txn to be found in ledger")
+		time.Sleep(WaitTime)
+		currentCount = getIndyLedgerTxnCount(t)
+	}
+	t.Log("Txn count:", currentCount, "expected:", count)
+}
+
+func getIndyLedgerTxnCount(t *testing.T) (count int) {
+	defer err2.Catch(func(err error) {
+		t.Log("Failed to fetch txn count from ledger:", err, "ignoring...")
+	})
+
+	if !strings.HasPrefix(ledgerStore, "FINDY_LEDGER") {
+		// count txns only in indy ledger
+		return 0
+	}
+
+	resp := try.To1(http.Get("http://localhost:9000/ledger/domain"))
+	body := try.To1(io.ReadAll(resp.Body))
+	defer resp.Body.Close()
+	res := make(map[string]any)
+	try.To(json.Unmarshal(body, &res))
+
+	return int(res["total"].(float64))
 }
 
 func TestMain(m *testing.M) {
@@ -115,6 +173,31 @@ func TestMain(m *testing.M) {
 	tearDown()
 
 	os.Exit(code)
+}
+
+func setUpLedger() {
+	r := <-indypool.SetProtocolVersion(2)
+	if r.Err() != nil {
+		log.Panicln(r.Err())
+	}
+
+	// resolve ledger store
+	if name := os.Getenv("FCLI_AGENCY_POOL_NAME"); name != "" {
+		ledgerStore = name
+	} else if testMode != TestModeCI {
+		// IF DEBUGGING ONE TEST use always file ledger
+		ledgerStore = "FINDY_FILE_LEDGER"
+	}
+
+	// create ledger config (needed only when running with indy ledger in "clean" environment)
+	poolName := os.Getenv("FCLI_POOL_NAME")
+	createCh := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
+	if createCh.Err() != nil {
+		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
+	}
+
+	// open ledger handle
+	pool.Open(ledgerStore)
 }
 
 func setUp() {
@@ -163,11 +246,6 @@ func setUp() {
 		server.ResetEnv(sw, exportPath)
 	}
 
-	r := <-indypool.SetProtocolVersion(2)
-	if r.Err() != nil {
-		log.Panicln(r.Err())
-	}
-
 	// IF DEBUGGING ONE TEST run first, todo: move cleanup to tear down? make it easier
 	if testMode == TestModeRunOne {
 		try.To(handshake.LoadRegistered(strLiteral("findy", ".json", -1)))
@@ -175,16 +253,7 @@ func setUp() {
 		try.To(agency.ResetRegistered(strLiteral("findy", ".json", -1)))
 	}
 
-	// IF DEBUGGING ONE TEST use always file ledger
-	if testMode == TestModeCI {
-		pool.Open("FINDY_MEM_LEDGER")
-		schemaCredDefWaitTime = 2 * time.Millisecond
-
-		// TODO: integrate ledger testing to CI
-		// pool.Open("FINDY_LEDGER,von")
-	} else {
-		pool.Open("FINDY_FILE_LEDGER")
-	}
+	setUpLedger()
 
 	steward = handshake.SetStewardFromWallet(sw, "Th7MpTaRZVRYnPiabds81Y")
 
@@ -195,8 +264,11 @@ func setUp() {
 	utils.Settings.SetExportPath(exportPath)
 	utils.Settings.SetGRPCAdmin("findy-root")
 
-	// utils.Settings.SetDIDMethod(method.TypePeer)
-	utils.Settings.SetDIDMethod(method.TypeSov)
+	didMethodType := method.TypeSov
+	if paramType, err := strconv.ParseInt(os.Getenv("FCLI_AGENCY_DID_METHOD"), 10, 32); err == nil {
+		didMethodType = method.Type(paramType)
+	}
+	utils.Settings.SetDIDMethod(didMethodType)
 
 	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
@@ -445,6 +517,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			txnCount := getIndyLedgerTxnCount(t)
+
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyServiceClient(conn)
@@ -456,6 +530,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
+
+			waitForTxnCount(t, txnCount+1)
 
 			// build schema and cred def for the first agent to use later
 			if i == 0 {
@@ -474,9 +550,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
-				glog.V(1).Infoln("==== START creating cred def please wait ====")
-				time.Sleep(schemaCredDefWaitTime)
-				glog.V(1).Infoln("==== creating cred def please wait ====")
+				waitForSchema(t, c, schemaID)
 
 				cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 					SchemaID: schemaID,
@@ -517,6 +591,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 			assert.NotEmpty(t, r.ID)
 			glog.V(1).Infoln(r.ID)
 			schemaID := r.ID
+
+			waitForSchema(t, c, schemaID)
 
 			cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
 				SchemaID: schemaID,

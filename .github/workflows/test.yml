@@ -18,7 +18,89 @@ jobs:
         with:
           version: v1.45.2
           args: --timeout=5m
-  test:
+
+  test-default:
+    runs-on: ubuntu-latest
+    env:
+      TEST_WORKDIR: /github/home/.test/
+      CI: true
+    steps:
+      # setup von-network ledger
+      - uses: actions/checkout@v2
+        with:
+          repository: "bcgov/von-network"
+          ref: "22973513c99cc9a286a6f181ca5c5f354a4eb2ee"
+      - name: skip setting volumes for web server
+        run: |
+          sed '/      - .\/config:\/home\/indy\/config/d' docker-compose.yml > docker-compose.yml.tmp
+          sed '/      - .\/server:\/home\/indy\/server/d' docker-compose.yml.tmp > docker-compose.yml
+
+      - name: start indy ledger
+        run: |
+          ./manage build
+          ./manage start
+
+      # install indy
+      - uses: actions/checkout@v2
+        with:
+          repository: "findy-network/findy-wrapper-go"
+      - name: install indy
+        run: make indy_to_debian
+
+      # setup go-env
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+      - name: checkout
+        uses: actions/checkout@v2
+
+      # test round for sov-did (default) and indy ledger
+      - name: test and measure coverage
+        run: |
+          curl http://localhost:9000/genesis > gen_txn_file
+          make test_cov_out COV_FILE=coverage1.txt
+        env:
+          FCLI_POOL_NAME: "von"
+          FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
+
+      - name: store coverage file
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage1.txt
+          path: ./coverage1.txt
+          retention-days: 1
+
+  test-peer:
+    runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    env:
+      TEST_WORKDIR: /github/home/.test/
+      CI: true
+    steps:
+      - name: Install make & certs
+        run: apt-get update && apt-get install -y build-essential ca-certificates
+      - name: setup
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.x
+      - name: checkout
+        uses: actions/checkout@v2
+
+      # test round for peer-did and mem-ledger
+      - name: test and measure coverage (peer did)
+        run: make test_cov_out COV_FILE=coverage2.txt
+        env:
+          FCLI_AGENCY_DID_METHOD: "2"
+
+      - name: store coverage file
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage2.txt
+          path: ./coverage2.txt
+          retention-days: 1
+
+  license-scan:
     runs-on: ubuntu-latest
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
@@ -30,17 +112,8 @@ jobs:
           go-version: 1.18.x
       - name: checkout
         uses: actions/checkout@v2
-      - name: test and measure coverage
-        run: make test_cov_out
-        env:
-          TEST_WORKDIR: /github/home/.test/
-          CI: true
-      - name: store coverage file
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ github.sha }}-coverage.txt
-          path: ./coverage.txt
-          retention-days: 1
+
+      # licence scan
       - name: scan
         run: make scan
 
@@ -54,18 +127,22 @@ jobs:
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test-default, test-peer]
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
-          name: ${{ github.sha }}-coverage.txt
+          name: ${{ github.sha }}-coverage1.txt
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage2.txt
       - name: upload coverage
         uses: codecov/codecov-action@v2
         with:
-          files: ./coverage.txt
+          files: ./coverage1.txt,./coverage2.txt
 
   e2e:
     runs-on: ubuntu-latest
