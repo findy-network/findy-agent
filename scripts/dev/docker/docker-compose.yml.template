@@ -30,7 +30,7 @@ services:
       - core
     environment:
       FAA_PORT: '8888'
-      FAA_ORIGIN: 'localhost:8888'
+      FAA_ORIGIN: 'http://localhost:8888'
       FAA_AGENCY_ADDR: 'core'
       FAA_TIMEOUT_SECS: '60'
     ports:
