@@ -9,7 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
+	mathrand "math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -83,8 +83,8 @@ ConnID: [3]string{"%s","%s", "%s"},
 }
 
 const (
-	MaxWaitTime = time.Minute * 3
-	WaitTime    = time.Millisecond * 500
+	MaxWaitTime = time.Minute * 6
+	WaitTime    = time.Second
 )
 
 var (
@@ -147,13 +147,21 @@ func getIndyLedgerTxnCount(t *testing.T) (count int) {
 		return 0
 	}
 
-	resp := try.To1(http.Get("http://localhost:9000/ledger/domain"))
+	resp := try.To1(http.Get(fmt.Sprintf("%s/ledger/domain", getVonWebServerURL())))
 	body := try.To1(io.ReadAll(resp.Body))
 	defer resp.Body.Close()
 	res := make(map[string]any)
 	try.To(json.Unmarshal(body, &res))
 
 	return int(res["total"].(float64))
+}
+
+func getVonWebServerURL() string {
+	vonWebServerURL := os.Getenv("VON_WEB_SERVER_URL")
+	if vonWebServerURL == "" {
+		vonWebServerURL = "http://localhost:9000"
+	}
+	return vonWebServerURL
 }
 
 func TestMain(m *testing.M) {
@@ -366,7 +374,7 @@ var alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 func srand(size int) string {
 	buf := make([]byte, size)
 	for i := 0; i < size; i++ {
-		buf[i] = alpha[rand.Intn(len(alpha))]
+		buf[i] = alpha[mathrand.Intn(len(alpha))]
 	}
 	return string(buf)
 }
@@ -1758,4 +1766,54 @@ func TestInvitation_Multiple(t *testing.T) {
 
 	wg.Wait()
 	assert.NoError(t, conn.Close())
+}
+
+func TestInvitationForSamePublicDID(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+	// set steward to temporally nil to test situation when we don't have
+	// proper writing rights to the ledger
+	handshake.SetSteward(nil)
+	defer func() {
+		handshake.SetSteward(steward)
+	}()
+
+	caDID := ""
+	caDID2 := ""
+	ctx := context.Background()
+	{
+		seed := createTrustAnchor(t)
+
+		conn := client.TryOpen("findy-root", baseCfg)
+		agencyClient := pb.NewAgencyServiceClient(conn)
+
+		oReply := try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+			Email:         fmt.Sprintf("user-%v", time.Now().Unix()),
+			PublicDIDSeed: seed,
+		}))
+
+		oReply2 := try.To1(agencyClient.Onboard(ctx, &pb.Onboarding{
+			Email:         fmt.Sprintf("user-%v", time.Now().Unix()+1),
+			PublicDIDSeed: seed,
+		}))
+
+		caDID = oReply.Result.CADID
+		caDID2 = oReply2.Result.CADID
+	}
+
+	conn := client.TryOpen(caDID, baseCfg)
+	c := agency2.NewAgentServiceClient(conn)
+
+	r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, r.JSON)
+
+	conn2 := client.TryOpen(caDID2, baseCfg)
+	c2 := agency2.NewAgentServiceClient(conn2)
+
+	r2, err := c2.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, r2.JSON)
+
 }
