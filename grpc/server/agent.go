@@ -470,7 +470,7 @@ func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Questi
 	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", pb.Protocol_Type_name[int32(id.TypeID)], protocolName[id.TypeID])
-	ps, _ := tryProtocolStatus(id, key)
+	ps, _ := tryProtocolStatus(key)
 
 	switch notificationProtocolType {
 	case pb.Protocol_ISSUE_CREDENTIAL:
