@@ -246,7 +246,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 
 		if !walletInitializedBefore {
 			glog.V(2).Info("Creating a master secret into worker's wallet")
-			masterSec, err := enclave.NewWalletMasterSecret(ca.RootDid().Did())
+			masterSec, err := enclave.NewWalletMasterSecret(ca.myDID.Did())
 			if err != nil {
 				glog.Error(err)
 				panic(err)
@@ -268,7 +268,7 @@ func (a *Agent) ID() string {
 }
 
 func (a *Agent) MasterSecret() (string, error) {
-	return enclave.WalletMasterSecretByDID(a.RootDid().Did())
+	return enclave.WalletMasterSecretByDID(a.myDID.Did())
 }
 
 // WDID returns DID string of the WA and CALLED from CA.
