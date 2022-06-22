@@ -2,6 +2,7 @@ package comm
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,23 +26,27 @@ import (
 // include into the generated error message
 const errorMessageMaxLength = 80
 
-// SendAndWaitReq is proxy function to route actual call to http or pseudo http in tests.
-var SendAndWaitReq = sendAndWaitHTTPRequest
+var (
+	// SendAndWaitReq is proxy function to route actual call to http or pseudo http in tests.
+	SendAndWaitReq = sendAndWaitHTTPRequest
 
-// FileDownload is proxy function to route actual call to http or pseudo http in tests.
-var FileDownload = downloadFile
+	// FileDownload is proxy function to route actual call to http or pseudo http in tests.
+	FileDownload = downloadFile
+
+	c = &http.Client{}
+)
 
 func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration) (data []byte, err error) {
 	defer err2.Annotate("call http", &err)
 
-	c := &http.Client{
-		Timeout: timeout,
-	}
 	URL := try.To1(url.Parse(urlStr))
 
 	glog.V(1).Infof("Posting message to %s\n", urlStr)
 
-	request := try.To1(http.NewRequest("POST", URL.String(), msg))
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	request := try.To1(http.NewRequestWithContext(ctx, "POST", URL.String(), msg))
 	request.Close = true // deferred response.Body.Close isn't always enough
 
 	// TODO: make configurable when there is support for application/didcomm-envelope-enc
