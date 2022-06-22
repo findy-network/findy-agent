@@ -10,13 +10,11 @@ import (
 	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/handshake"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/method"
-	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
@@ -165,18 +163,13 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 	})
 
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
-	pid := &pb.ProtocolID{
-		TypeID: pltype.ProtocolTypeForFamily(notify.ProtocolFamily),
-		Role:   notify.Role,
-		ID:     notify.ProtocolID,
-	}
 
 	psmKey := psm.StateKey{
 		DID:   notify.AgentDID,
 		Nonce: notify.ProtocolID,
 	}
 
-	status, connID := tryProtocolStatus(pid, psmKey)
+	status, connID := tryProtocolStatus(psmKey)
 	glog.Infoln("connID:", connID)
 	agentStatus := ops.AgencyStatus{
 		DID:            tryCaDID(psmKey),

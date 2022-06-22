@@ -130,15 +130,19 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
 	glog.V(1).Infoln(caDID, "-agent protocol status:", id.TypeID, protocolName[id.TypeID])
-	ps, _ = tryProtocolStatus(id, key)
+	ps, _ = tryProtocolStatus(key)
 	return ps, nil
 }
 
-func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
+func tryProtocolStatus(key psm.StateKey) (ps *pb.ProtocolStatus, connID string) {
 	m := try.To1(psm.GetPSM(key))
+	protocolType := m.FirstState().T.ProtocolType()
 	state := &pb.ProtocolState{
-		ProtocolID: id,
-		State:      calcProtocolState(m),
+		ProtocolID: &pb.ProtocolID{
+			ID:     key.Nonce,
+			TypeID: protocolType,
+		},
+		State: calcProtocolState(m),
 	}
 	if m != nil {
 		connID = m.ConnID
@@ -151,7 +155,7 @@ func tryProtocolStatus(id *pb.ProtocolID, key psm.StateKey) (ps *pb.ProtocolStat
 		State: state,
 	}
 	// protocol implementors fill the status information
-	ps = prot.FillStatus(protocolName[id.TypeID], key, ps)
+	ps = prot.FillStatus(protocolName[protocolType], key, ps)
 	return ps, connID
 }
 
