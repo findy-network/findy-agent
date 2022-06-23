@@ -9,6 +9,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-common-go/agency/client"
 	pb "github.com/findy-network/findy-common-go/grpc/ops/v1"
@@ -59,7 +60,7 @@ func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 		Service:  "/", // use the root as a ping address
 	}
 
-	resp := try.To1(comm.SendAndWaitReq(endpointAdd.Address(), p, 0))
+	resp := try.To1(comm.SendAndWaitReq(endpointAdd.Address(), p, utils.HTTPReqTimeout))
 	cmds.Fprintln(w, string(resp))
 
 	return nil, nil
