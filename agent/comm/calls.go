@@ -41,8 +41,6 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 
 	URL := try.To1(url.Parse(urlStr))
 
-	glog.V(1).Infof("Posting message to %s\n", urlStr)
-
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -129,6 +127,13 @@ func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
 	defer err2.Annotate("send payload", &err)
 
 	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())
+
+	if glog.V(3) {
+		caption := fmt.Sprintf("===== Outgoing Aries TRANSPORT %s =====", opl.Type())
+		glog.Info(caption)
+		glog.Info(cnxAddr.Address())
+		glog.Info("=====")
+	}
 
 	cryptSendPL, _ := try.To2(sendPipe.Pack(opl.JSON()))
 

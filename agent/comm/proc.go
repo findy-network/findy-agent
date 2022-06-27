@@ -75,7 +75,7 @@ type FillStatus func(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb
 // Process delivers the protocol message inside the packet to correct protocol
 // function.
 func (p ProtProc) Process(packet Packet) (err error) {
-	glog.V(1).Info("PROTOCOL type " + packet.Payload.Type())
+	glog.V(1).Info("Incoming protocol type " + packet.Payload.Type())
 
 	handler, ok := p.Handlers[packet.Payload.ProtocolMsg()]
 	if !ok {

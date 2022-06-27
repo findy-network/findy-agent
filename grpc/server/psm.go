@@ -129,8 +129,9 @@ func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.P
 
 	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)
-	glog.V(1).Infoln(caDID, "-agent protocol status:", id.TypeID, protocolName[id.TypeID])
 	ps, _ = tryProtocolStatus(key)
+
+	glog.V(1).Infoln(caDID, "-agent protocol status:", ps.State.ProtocolID.TypeID, protocolName[ps.State.ProtocolID.TypeID])
 	return ps, nil
 }
 
