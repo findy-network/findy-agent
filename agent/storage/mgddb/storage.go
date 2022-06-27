@@ -1,6 +1,7 @@
 package mgddb
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
@@ -116,7 +117,7 @@ func (s *Storage) SaveDID(did api.DID) (err error) {
 }
 
 func (s *Storage) GetDID(id string) (did *api.DID, err error) {
-	defer err2.Annotate("did storage get did", &err)
+	defer err2.Annotate(fmt.Sprintf("did storage get did %s", id), &err)
 
 	bytes := try.To1(s.didStore.Get(id))
 
@@ -131,7 +132,7 @@ func (s *Storage) SaveConnection(conn api.Connection) error {
 }
 
 func (s *Storage) GetConnection(id string) (conn *api.Connection, err error) {
-	defer err2.Annotatew("conn storage get conn", &err)
+	defer err2.Annotatew(fmt.Sprintf("conn storage get conn %s", id), &err)
 
 	assert.That(id != "", "connection ID is empty")
 
