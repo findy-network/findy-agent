@@ -95,7 +95,7 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 		errorResponse(w)
 	})
 
-	ourAddress := logRequestInfo("Aries TRANSPORT", r)
+	ourAddress := logRequestInfo("Incoming Aries TRANSPORT", r)
 
 	data := try.To1(ioutil.ReadAll(r.Body))
 
@@ -121,8 +121,8 @@ func logRequestInfo(caption string, r *http.Request) *endp.Addr {
 	}
 	ourAddress.BasePath = utils.Settings.HostAddr()
 	if glog.V(1) {
-		caption = fmt.Sprintf("===== %s =====", caption)
-		glog.Info(caption, r.Method)
+		caption = fmt.Sprintf("===== %s (%s) =====", caption, r.Method)
+		glog.Info(caption)
 		glog.Info(ourAddress.Address())
 		glog.Info("=====")
 
