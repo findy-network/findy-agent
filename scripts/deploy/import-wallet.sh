@@ -13,6 +13,7 @@ fi
 
 if [ -z "$FCLI_IMPORT_WALLET_NAME" ]; then
   echo "Skipping wallet import as import wallet name is not configured."
+    ./findy-agent ledger steward create
   exit 0
 fi
 
