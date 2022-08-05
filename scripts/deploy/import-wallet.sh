@@ -11,6 +11,12 @@ if [ -z "$FCLI_AGENCY_STEWARD_DID" ]; then
   exit 0
 fi
 
+if [ -z "$FCLI_IMPORT_WALLET_NAME" ]; then
+  echo "Skipping wallet import as import wallet name is not configured."
+    ./findy-agent ledger steward create
+  exit 0
+fi
+
 FOLDER=~/.indy_client/wallet/$FCLI_IMPORT_WALLET_NAME/
 if [ -d "$FOLDER" ]; then
   echo "$FOLDER exists"
