@@ -70,7 +70,9 @@ func tellVersion(w http.ResponseWriter, r *http.Request) {
 	defer err2.Catch(func(err error) {
 		glog.Warningln(err)
 	})
-	glog.V(5).Info("/version requested")
+	if glog.V(12) {
+		glog.Info("/version requested")
+	}
 	try.To1(w.Write([]byte(utils.Version)))
 }
 
