@@ -184,6 +184,7 @@ func LoadRegistered(filename string) (err error) {
 			return true
 		})
 		glog.V(1).Info("LoadRegistered done")
+		agency.Ready.RegisteringComplete()
 	}()
 	glog.V(1).Info("LoadRegistered kicked to start")
 	return nil
