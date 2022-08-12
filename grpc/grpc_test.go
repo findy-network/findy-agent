@@ -332,8 +332,11 @@ func tearDown() {
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")
+	removeFiles(home, "/.indy_client/worker/agent?_worker")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	removeFiles(home, "/.indy_client/wallet/user-*")
+	removeFiles(home, "/.indy_client/wallet/agent?")
 	removeFiles(home, "/storage/unit_test_wallet*")
 	removeFiles(home, "/storage/email*")
 	if os.Getenv("TEST_WORKDIR") != "" {
@@ -1395,7 +1398,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 }
 
 func TestListenGrpcIssuingResume(t *testing.T) {
-	if testMode != TestModeRunOne { // todo: until all tests are ready
+	if testMode != TestModeRunOne { // TODO: until all tests are ready
 		glog.V(1).Infoln("========================\n========================\ntest skipped")
 		return
 	}
