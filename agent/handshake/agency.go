@@ -85,7 +85,8 @@ func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
 	agent = new(cloud.Agent)
 	aw := ssi.NewRawWalletCfg(rippedEmail, key)
 	walletAlreadyExists := aw.Create()
-	assert.P.True(!walletAlreadyExists, "wallet cannot exist when onboarding")
+	assert.P.Truef(!walletAlreadyExists,
+		"wallet (%s) cannot exist when onboarding", rippedEmail)
 	agent.OpenWallet(*aw)
 
 	glog.V(10).Infof("--- Using seed '%s' in anchor agent", seed)
