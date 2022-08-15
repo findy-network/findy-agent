@@ -1836,11 +1836,14 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	agencyClient := pb.NewAgencyServiceClient(adminConn)
 
 	// onboard issuer
+	txnCount := getIndyLedgerTxnCount(t)
+
 	oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
 		Email: fmt.Sprintf("issuer%d", time.Now().Unix()),
 	})
 	require.NoError(t, err)
 	issuerDID := oReply.Result.CADID
+	waitForTxnCount(t, txnCount+1)
 
 	// onboard holder
 	oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
