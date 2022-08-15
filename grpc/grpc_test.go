@@ -1828,6 +1828,10 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		return
 	}
 
+	// adding pool size, TODO: let's discuss this in meeting, and set it at
+	// system lvl
+	ssi.SetWalletMgrPoolSize(100)
+
 	sch := vc.Schema{
 		Name:    "email",
 		Version: "1.0",
