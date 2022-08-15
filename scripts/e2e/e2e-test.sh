@@ -1,7 +1,7 @@
 #!/bin/bash
 # e2e-test.sh
 
-CLI=$GOPATH/bin/findy-agent
+CLI=~/go/bin/findy-agent
 
 WALLET_KEY='9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY'
 
@@ -16,11 +16,30 @@ NC='\033[0m'
 set -e
 
 e2e() { 
+  clean_auth
+
+  dockerhost="host.docker.internal"
+  if [[ $(uname) == "Linux" ]] ; then
+      dockerhost=$(docker run --rm --net=host eclipse/che-ip)
+  fi
+  cd scripts/dev/docker && make gen-cert && cd ../../..
+
+  docker run -itd \
+    -v $PWD/scripts/dev/docker/cert:/grpc \
+    -v $PWD/.data:/data \
+    --name e2e-auth \
+    -p 8888:8888 \
+    -e FAA_AGENCY_ADDR="$dockerhost" \
+    ghcr.io/findy-network/findy-agent-auth
+
   agency_conf
   agency_flag
   agency_env
+  onboard
   other_cases
   rm_wallets
+
+  clean_auth
   echo -e "${BICYAN}*** E2E TEST FINISHED ***${NC}"
 }
 
@@ -29,6 +48,13 @@ test_cmds() {
   cmds_flag
   cmds_conf
   cmds_env
+}
+
+clean_auth() {
+  set +e
+  docker stop e2e-auth
+  docker rm e2e-auth
+  set -e
 }
 
 clean() {
@@ -210,6 +236,43 @@ agency_flag() {
     --grpc-jwt-secret="my-secret" &
     sleep 2
   test_cmds
+  stop_agency
+}
+
+onboard() {
+  init_agency
+  unset_envs
+
+  # run agency
+  echo -e "${BLUE}*** onboard ***${NC}"
+  $CLI agency start \
+    --pool-name=FINDY_FILE_LEDGER \
+    --host-port=8090 \
+    --server-port=8090 \
+    --grpc-cert-path="./scripts/dev/docker/cert" &
+  sleep 2
+  curl -f localhost:8090
+
+  export FCLI_KEY=$(findy-agent-cli new-key)
+  export FCLI_URL="http://localhost:8888"
+  export FCLI_ORIGIN="http://localhost:8888"
+  export FCLI_TLS_PATH="./scripts/dev/docker/cert"
+
+  # onoboard
+  timestamp=$(date +%s)
+  user="user-$timestamp"
+
+  findy-agent-cli authn register -u $user
+  jwt=$(findy-agent-cli authn login -u $user)
+  for i in {1..10}
+  do
+    invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+    findy-agent-cli authn register -u "$user$i"
+    new_jwt=$(findy-agent-cli authn login -u "$user$i")
+    findy-agent-cli agent connect --invitation="$invitation" --jwt="$new_jwt"
+  done
+
+
   stop_agency
 }
 
