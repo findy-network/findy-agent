@@ -36,6 +36,7 @@ func StartHTTPServer(serverPort uint) error {
 	pattern2 := buildNewTransportPath(pattern)
 	mux.HandleFunc(pattern2, protocolTransport)
 	mux.HandleFunc("/version", tellVersion)
+	mux.HandleFunc("/ready", checkReady)
 	mux.HandleFunc("/", tellVersion)
 
 	if glog.V(1) {
@@ -70,8 +71,23 @@ func tellVersion(w http.ResponseWriter, r *http.Request) {
 	defer err2.Catch(func(err error) {
 		glog.Warningln(err)
 	})
-	glog.V(5).Info("/version requested")
+	if glog.V(12) {
+		glog.Info("/version requested")
+	}
 	try.To1(w.Write([]byte(utils.Version)))
+}
+
+func checkReady(w http.ResponseWriter, r *http.Request) {
+	defer err2.Catch(func(err error) {
+		glog.Warningln(err)
+	})
+	if agency.Ready.IsReady() {
+		w.WriteHeader(http.StatusOK)
+		try.To1(w.Write([]byte("OK ready")))
+		return
+	}
+	w.WriteHeader(http.StatusServiceUnavailable)
+	try.To1(w.Write([]byte("Not ready")))
 }
 
 func setHandler(serviceName string,

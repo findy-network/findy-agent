@@ -3,6 +3,7 @@ package agency
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -14,9 +15,28 @@ import (
 
 var (
 	Register utils.Reg // stores Agents already on-boarded, has Email as key
+	Ready    readyTracker
 
 	lastBackup = time.Now()
 )
+
+type readyTracker struct {
+	ready bool
+	l     sync.RWMutex
+}
+
+func (r *readyTracker) IsReady() bool {
+	r.l.RLock()
+	defer r.l.RUnlock()
+	ready := r.ready
+	return ready
+}
+
+func (r *readyTracker) RegisteringComplete() {
+	r.l.Lock()
+	defer r.l.Unlock()
+	r.ready = true
+}
 
 func init() {
 	err := Register.Load("")

@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/findy-network/findy-common-go v0.1.39
 	github.com/findy-network/findy-wrapper-go v0.30.15
-	github.com/go-co-op/gocron v1.15.0
+	github.com/go-co-op/gocron v1.16.1
 	github.com/go-test/deep v1.0.8
 	github.com/golang/glog v1.0.0
 	github.com/google/tink/go v1.6.1
@@ -17,8 +17,8 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
-	github.com/stretchr/testify v1.7.5
-	google.golang.org/grpc v1.47.0
+	github.com/stretchr/testify v1.8.0
+	google.golang.org/grpc v1.48.0
 )
 
 require (
