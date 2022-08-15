@@ -1888,6 +1888,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		Conn: holderConn,
 	}
 	invitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	require.NoError(t, err)
 	connID, ch := try.To2(pairwise.Connection(ctx, invitation.JSON))
 	for status := range ch {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
@@ -1918,6 +1919,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 
 	// new connection holder and issuer
 	newInvitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	require.NoError(t, err)
 	newConnID, ch := try.To2(pairwise.Connection(ctx, newInvitation.JSON))
 	for status := range ch {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
