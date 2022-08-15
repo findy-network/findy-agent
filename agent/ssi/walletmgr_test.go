@@ -9,7 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/golang/glog"
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 const (
@@ -55,6 +55,9 @@ func createTestWallets() {
 }
 
 func TestMgr_NewOpen(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	tests := []struct {
 		name  string
 		count int
@@ -65,12 +68,15 @@ func TestMgr_NewOpen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			SetWalletMgrPoolSize(tt.count)
 
 			cfg := NewRawWalletCfg(walletName1, key)
 			w := wallets.Open(cfg)
 			glog.V(3).Info("read handle 1")
-			assert.Greater(t, w.Handle(), 0)
+			assert.That(w.Handle() > 0)
 
 			w.Handle()
 			w.Handle()
@@ -82,7 +88,7 @@ func TestMgr_NewOpen(t *testing.T) {
 
 			w2 := wallets.Open(cfg)
 			glog.V(3).Info("read handle 2")
-			assert.Greater(t, w2.Handle(), 0)
+			assert.That(w2.Handle() > 0)
 
 			w2.Handle()
 			w2.Handle()
@@ -91,7 +97,7 @@ func TestMgr_NewOpen(t *testing.T) {
 			glog.V(3).Info("read handle 1")
 			time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 
-			assert.Greater(t, w.Handle(), 0)
+			assert.That(w.Handle() > 0)
 			w.Handle()
 			w.Handle()
 			w.Handle()
@@ -100,10 +106,10 @@ func TestMgr_NewOpen(t *testing.T) {
 			time.Sleep(time.Nanosecond) // 'real' work for underlying algorithm
 			w3 := wallets.Open(cfg)
 			glog.V(3).Info("read handle 3")
-			assert.Greater(t, w3.Handle(), 0)
+			assert.That(w3.Handle() > 0)
 
 			glog.V(3).Info("read handle 2")
-			assert.Greater(t, w2.Handle(), 0)
+			assert.That(w2.Handle() > 0)
 			w2.Handle()
 			w2.Handle()
 

@@ -3,16 +3,19 @@ package agency
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 func TestCmd_Build(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	invalid := Cmd{
 		WalletName: "test",
 		WalletPwd:  "test-key",
 	}
 	err := invalid.Validate()
-	assert.Error(t, err)
+	assert.Error(err)
 
 	c := Cmd{
 		PoolName:          "tste",
@@ -28,5 +31,5 @@ func TestCmd_Build(t *testing.T) {
 		PsmDB:             "psm.bolt",
 	}
 	err = c.Validate()
-	assert.NoError(t, err)
+	assert.NoError(err)
 }

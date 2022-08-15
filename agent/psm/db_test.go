@@ -1,20 +1,16 @@
 package psm
 
 import (
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/findy-network/findy-common-go/crypto"
 	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/findy-network/findy-common-go/dto"
-	"github.com/go-test/deep"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -47,34 +43,29 @@ func tearDown() {
 }
 
 func Test_addPSM(t *testing.T) {
-	psm := testPSM(0)
-	assert.NotNil(t, psm)
+	assert.PushTester(t)
+	defer assert.PopTester()
 
-	k, err := hex.DecodeString(testKey)
-	require.NoError(t, err)
-	testCipher := crypto.NewCipher(k)
+	psm := testPSM(0)
+	assert.NotNil(psm)
 
 	tests := []struct {
 		name   string
-		cipher *crypto.Cipher
 	}{
-		{"add", nil},
-		{"add with cipher", testCipher},
+		{"add"},
+		{"add with cipher"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			theCipher = tt.cipher
+			assert.PushTester(t)
+			defer assert.PopTester()
 
 			err := AddPSM(psm)
-			if err != nil {
-				t.Errorf("AddPSM() %s error %v", tt.name, err)
-			}
-			got, err := GetPSM(StateKey{DID: mockStateDID, Nonce: mockStateNonce})
-			if diff := deep.Equal(psm, got); err != nil || diff != nil {
-				t.Errorf("GetPSM() diff %v, err %v", diff, err)
-			}
+			assert.NoError(err)
 
-			theCipher = nil
+			got, err := GetPSM(StateKey{DID: mockStateDID, Nonce: mockStateNonce})
+			assert.NoError(err)
+			assert.DeepEqual(psm, got)
 		})
 	}
 }
@@ -102,6 +93,9 @@ func NewTestRep(d []byte) Rep {
 }
 
 func Test_addBaseRep(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	msgRep := &testRep{
 		StateKey: StateKey{DID: mockStateDID, Nonce: mockStateNonce},
 	}
@@ -114,14 +108,15 @@ func Test_addBaseRep(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			err := AddRep(msgRep)
-			if err != nil {
-				t.Errorf("AddRep() %s error %v", tt.name, err)
-			}
+			assert.NoError(err)
+
 			got, err := GetRep(msgRep.Type(), msgRep.StateKey)
-			if diff := deep.Equal(msgRep, got); err != nil || diff != nil {
-				t.Errorf("GetRep() diff %v, err %v", diff, err)
-			}
+			assert.NoError(err)
+			assert.DeepEqual(msgRep, got)
 		})
 	}
 }

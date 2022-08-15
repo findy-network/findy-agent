@@ -7,10 +7,13 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-agent/agent/agency"
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 func TestNotReadyHandler(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	req := httptest.NewRequest(http.MethodGet, "/ready", nil)
 	w := httptest.NewRecorder()
 
@@ -18,12 +21,15 @@ func TestNotReadyHandler(t *testing.T) {
 	res := w.Result()
 	defer res.Body.Close()
 	data, err := ioutil.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, "Not ready", string(data))
-	assert.Equal(t, http.StatusServiceUnavailable, res.StatusCode)
+	assert.NoError(err)
+	assert.Equal("Not ready", string(data))
+	assert.Equal(http.StatusServiceUnavailable, res.StatusCode)
 }
 
 func TestReadyHandler(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	req := httptest.NewRequest(http.MethodGet, "/ready", nil)
 	w := httptest.NewRecorder()
 
@@ -32,7 +38,7 @@ func TestReadyHandler(t *testing.T) {
 	res := w.Result()
 	defer res.Body.Close()
 	data, err := ioutil.ReadAll(res.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, "OK ready", string(data))
-	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.NoError(err)
+	assert.Equal("OK ready", string(data))
+	assert.Equal(http.StatusOK, res.StatusCode)
 }

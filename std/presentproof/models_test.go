@@ -11,7 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 var request = `{
@@ -44,6 +44,9 @@ var presentation = `{
   }`
 
 func TestPropose_Start(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	ID := "TEST_ID"
 	credDefID := "CRED_DEF_ID"
 	values := []string{"email", "ssn"}
@@ -51,10 +54,13 @@ func TestPropose_Start(t *testing.T) {
 
 	data := p1.JSON()
 	p2 := Creator.NewMessage(data)
-	assert.Equal(t, p1, p2)
+	assert.DeepEqual(p1, p2)
 }
 
 func TestPropose_New(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	ID := "TEST_ID"
 	credDefID := "CRED_DEF_ID"
 	values := []string{"email", "ssn"}
@@ -75,10 +81,13 @@ func TestPropose_New(t *testing.T) {
 		t.Error("request is nil")
 	}
 
-	assert.Equal(t, opl, ipl)
+	assert.DeepEqual(opl, ipl)
 }
 
 func TestPresentation_ReadJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	var req Presentation
 
 	dto.FromJSONStr(presentation, &req)
@@ -87,7 +96,7 @@ func TestPresentation_ReadJSON(t *testing.T) {
 	}
 
 	data, err := base64.StdEncoding.DecodeString(req.PresentationAttaches[0].Data.Base64)
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	proof := make(map[string]interface{})
 	dto.FromJSON(data, &proof)
@@ -100,6 +109,9 @@ func TestPresentation_ReadJSON(t *testing.T) {
 }
 
 func TestPresentation_ReadJSONAndBuildNew(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	var p Presentation
 
 	dto.FromJSONStr(presentation, &p)
@@ -108,7 +120,7 @@ func TestPresentation_ReadJSONAndBuildNew(t *testing.T) {
 	}
 
 	data, err := Proof(&p)
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	proof := make(map[string]interface{})
 	dto.FromJSON(data, &proof)
@@ -136,6 +148,9 @@ func TestPresentation_ReadJSONAndBuildNew(t *testing.T) {
 }
 
 func TestPresentation_MsgPingPong(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	inviteID := "invite id"
 	firstMsgID := "prop id"
 
@@ -151,8 +166,8 @@ func TestPresentation_MsgPingPong(t *testing.T) {
 		Thread: prop.Thread(),
 	}).(*RequestImpl)
 
-	assert.Equal(t, req.Thread().PID, inviteID)
-	assert.Equal(t, req.Thread().ID, firstMsgID)
+	assert.Equal(req.Thread().PID, inviteID)
+	assert.Equal(req.Thread().ID, firstMsgID)
 
 	pres := aries.MsgCreator.Create(didcomm.MsgInit{
 		AID:    "pres id",
@@ -160,11 +175,14 @@ func TestPresentation_MsgPingPong(t *testing.T) {
 		Thread: req.Thread(),
 	}).(*PresentationImpl)
 
-	assert.Equal(t, pres.Thread().PID, inviteID)
-	assert.Equal(t, pres.Thread().ID, firstMsgID)
+	assert.Equal(pres.Thread().PID, inviteID)
+	assert.Equal(pres.Thread().ID, firstMsgID)
 }
 
 func TestRequest_ReadJSONAndBuildNew(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	var req Request
 
 	dto.FromJSONStr(request, &req)
@@ -173,7 +191,7 @@ func TestRequest_ReadJSONAndBuildNew(t *testing.T) {
 	}
 
 	proofReq, err := ProofReq(&req)
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	nonce, ok := proofReq["nonce"]
 	if !ok {
@@ -193,7 +211,7 @@ func TestRequest_ReadJSONAndBuildNew(t *testing.T) {
 
 	// we use the same proof req parsed from original message
 	data, err := ProofReqData(&req)
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	req2.RequestPresentations = NewRequestPresentation(
 		"a1f23394-df26-4cd4-8afb-8068244ca7f9", data)
@@ -203,17 +221,20 @@ func TestRequest_ReadJSONAndBuildNew(t *testing.T) {
 	req2.Thread = nil
 	readJSON := dto.ToJSON(req)
 	buildJSON := dto.ToJSON(req2)
-	assert.Equal(t, readJSON, buildJSON)
+	assert.Equal(readJSON, buildJSON)
 
 	ack := aries.MsgCreator.Create(didcomm.MsgInit{
 		AID:    req.ID,
 		Type:   pltype.PresentProofACK,
 		Thread: req2.Thread,
 	})
-	assert.NotNil(t, ack)
+	assert.INotNil(ack)
 }
 
 func TestNewRequest(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	var b64 = `
 eyJuYW1lIjogIlByb29mIG9mIEVkdWNhdGlvbiIsICJ2ZXJzaW9uIjogIjEuMCIsICJub25jZSI6ICIzMTMyNDIzMTMzODYyMDExMDAyODk1NTk5OTUwNTE3MTY4MTY0ODgiLCAicmVxdWVzdGVkX2F0dHJpYnV0ZXMiOiB7IjBfbmFtZV91dWlkIjogeyJuYW1lIjogIm5hbWUiLCAicmVzdHJpY3Rpb25zIjogW3siaXNzdWVyX2RpZCI6ICI1TGd4NEtMUlROZ2V4RHFUN1dEQUx1In1dfSwgIjBfZGF0ZV91dWlkIjogeyJuYW1lIjogImRhdGUiLCAicmVzdHJpY3Rpb25zIjogW3siaXNzdWVyX2RpZCI6ICI1TGd4NEtMUlROZ2V4RHFUN1dEQUx1In1dfSwgIjBfZGVncmVlX3V1aWQiOiB7Im5hbWUiOiAiZGVncmVlIiwgInJlc3RyaWN0aW9ucyI6IFt7Imlzc3Vlcl9kaWQiOiAiNUxneDRLTFJUTmdleERxVDdXREFMdSJ9XX0sICIwX3NlbGZfYXR0ZXN0ZWRfdGhpbmdfdXVpZCI6IHsibmFtZSI6ICJzZWxmX2F0dGVzdGVkX3RoaW5nIn19LCAicmVxdWVzdGVkX3ByZWRpY2F0ZXMiOiB7IjBfYWdlX0dFX3V1aWQiOiB7Im5hbWUiOiAiYWdlIiwgInBfdHlwZSI6ICI+PSIsICJwX3ZhbHVlIjogMTgsICJyZXN0cmljdGlvbnMiOiBbeyJpc3N1ZXJfZGlkIjogIjVMZ3g0S0xSVE5nZXhEcVQ3V0RBTHUifV19fX0=`
 
@@ -223,15 +244,15 @@ eyJuYW1lIjogIlByb29mIG9mIEVkdWNhdGlvbiIsICJ2ZXJzaW9uIjogIjEuMCIsICJub25jZSI6ICIz
 	var third = `eyJuYW1lIjogIlByb29mIG9mIEVkdWNhdGlvbiIsICJ2ZXJzaW9uIjogIjEuMCIsICJub25jZSI6ICIxMDAyNzgwNjUyNDc0NjM0NTQ1NTc3NzY2MTMyMTA1MzM1NDAyMTgiLCAicmVxdWVzdGVkX2F0dHJpYnV0ZXMiOiB7IjBfbmFtZV91dWlkIjogeyJuYW1lIjogIm5hbWUiLCAicmVzdHJpY3Rpb25zIjogW3siaXNzdWVyX2RpZCI6ICI1TGd4NEtMUlROZ2V4RHFUN1dEQUx1In1dfSwgIjBfZGF0ZV91dWlkIjogeyJuYW1lIjogImRhdGUiLCAicmVzdHJpY3Rpb25zIjogW3siaXNzdWVyX2RpZCI6ICI1TGd4NEtMUlROZ2V4RHFUN1dEQUx1In1dfSwgIjBfZGVncmVlX3V1aWQiOiB7Im5hbWUiOiAiZGVncmVlIiwgInJlc3RyaWN0aW9ucyI6IFt7Imlzc3Vlcl9kaWQiOiAiNUxneDRLTFJUTmdleERxVDdXREFMdSJ9XX0sICIwX3NlbGZfYXR0ZXN0ZWRfdGhpbmdfdXVpZCI6IHsibmFtZSI6ICJzZWxmX2F0dGVzdGVkX3RoaW5nIn19LCAicmVxdWVzdGVkX3ByZWRpY2F0ZXMiOiB7IjBfYWdlX0dFX3V1aWQiOiB7Im5hbWUiOiAiYWdlIiwgInBfdHlwZSI6ICI+PSIsICJwX3ZhbHVlIjogMTgsICJyZXN0cmljdGlvbnMiOiBbeyJpc3N1ZXJfZGlkIjogIjVMZ3g0S0xSVE5nZXhEcVQ3V0RBTHUifV19fX0=`
 
 	str, err := base64.StdEncoding.DecodeString(b64)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, str)
+	assert.NoError(err)
+	assert.SNotEmpty(str)
 
 	str, err = base64.StdEncoding.DecodeString(second)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, str)
+	assert.NoError(err)
+	assert.SNotEmpty(str)
 
 	str, err = base64.StdEncoding.DecodeString(third)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, str)
+	assert.NoError(err)
+	assert.SNotEmpty(str)
 
 }

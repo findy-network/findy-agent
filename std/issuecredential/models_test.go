@@ -7,7 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 var offerData = `  {
@@ -123,6 +123,9 @@ var issueDataDIDOrg = `{
   }`
 
 func TestOffer_ReadJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	ipl := aries.PayloadCreator.NewFromData([]byte(offerData))
 
 	if ipl.ID() != "3dc323d4-17ec-4a4a-9d3a-uc903e94d253b" {
@@ -130,11 +133,11 @@ func TestOffer_ReadJSON(t *testing.T) {
 	}
 
 	offer, ok := ipl.MsgHdr().FieldObj().(*Offer)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	oa, err := OfferAttach(offer)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(oa), 1)
+	assert.NoError(err)
+	assert.That(len(oa) >= 1)
 
 	ipl = aries.PayloadCreator.NewFromData([]byte(offerDataDIDCommOrg))
 
@@ -143,66 +146,75 @@ func TestOffer_ReadJSON(t *testing.T) {
 	}
 
 	offer2, ok := ipl.MsgHdr().FieldObj().(*Offer)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	oa2, err := OfferAttach(offer2)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(oa2), 1)
+	assert.NoError(err)
+	assert.That(len(oa2) >= 1)
 }
 
 func TestRequest_ReadJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	ipl := aries.PayloadCreator.NewFromData([]byte(requestData))
 
-	assert.Equal(t, "dfd5dcaa-67f4-4c84-aed7-767cf7291f1e", ipl.ID())
-	assert.Equal(t, "3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
+	assert.Equal("dfd5dcaa-67f4-4c84-aed7-767cf7291f1e", ipl.ID())
+	assert.Equal("3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
 
 	msg, ok := ipl.MsgHdr().FieldObj().(*Request)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	attach, err := RequestAttach(msg)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(attach), 1)
+	assert.NoError(err)
+	assert.That(len(attach) >= 1)
 
 	ipl2 := aries.PayloadCreator.NewFromData([]byte(requestDataDIDOrg))
 
-	assert.Equal(t, "dfd5dcaa-67f4-4c84-aed7-767cf7291f1e", ipl2.ID())
-	assert.Equal(t, "3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl2.ThreadID())
+	assert.Equal("dfd5dcaa-67f4-4c84-aed7-767cf7291f1e", ipl2.ID())
+	assert.Equal("3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl2.ThreadID())
 
 	msg2, ok := ipl.MsgHdr().FieldObj().(*Request)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	attach2, err := RequestAttach(msg2)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(attach2), 1)
+	assert.NoError(err)
+	assert.That(len(attach2) >= 1)
 }
 
 func TestIssue_ReadJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	ipl := aries.PayloadCreator.NewFromData([]byte(issueData))
 
-	assert.Equal(t, "ac8120e9-ee55-4f64-a385-5e429916a1e1", ipl.ID())
-	assert.Equal(t, "3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
+	assert.Equal("ac8120e9-ee55-4f64-a385-5e429916a1e1", ipl.ID())
+	assert.Equal("3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
 
 	msg, ok := ipl.MsgHdr().FieldObj().(*Issue)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	attach, err := CredentialAttach(msg)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(attach), 1)
+	assert.NoError(err)
+	assert.That(len(attach) >= 1)
 
 	ipl = aries.PayloadCreator.NewFromData([]byte(issueDataDIDOrg))
 
-	assert.Equal(t, "ac8120e9-ee55-4f64-a385-5e429916a1e1", ipl.ID())
-	assert.Equal(t, "3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
+	assert.Equal("ac8120e9-ee55-4f64-a385-5e429916a1e1", ipl.ID())
+	assert.Equal("3dc323d4-17ec-4a4a-9d3a-c903e94d253b", ipl.ThreadID())
 
 	msg, ok = ipl.MsgHdr().FieldObj().(*Issue)
-	assert.True(t, ok)
+	assert.That(ok)
 
 	attach, err = CredentialAttach(msg)
-	assert.NoError(t, err)
-	assert.GreaterOrEqual(t, len(attach), 1)
+	assert.NoError(err)
+	assert.That(len(attach) >= 1)
 }
 
 func TestIssueCredential_MsgPingPong(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	inviteID := "invite id"
 	firstMsgID := "prop id"
 
@@ -211,58 +223,61 @@ func TestIssueCredential_MsgPingPong(t *testing.T) {
 		Type:   pltype.IssueCredentialPropose,
 		Thread: decorator.NewThread(firstMsgID, inviteID),
 	}).(*ProposeImpl)
-	assert.True(t, pok)
+	assert.That(pok)
 
 	offer, ook := aries.MsgCreator.Create(didcomm.MsgInit{
 		AID:    "offer id",
 		Type:   pltype.IssueCredentialOffer,
 		Thread: prop.Thread(),
 	}).(*OfferImpl)
-	assert.True(t, ook)
-	assert.Equal(t, offer.Thread().PID, inviteID)
-	assert.Equal(t, offer.Thread().ID, firstMsgID)
+	assert.That(ook)
+	assert.Equal(offer.Thread().PID, inviteID)
+	assert.Equal(offer.Thread().ID, firstMsgID)
 
 	pres, presOK := aries.MsgCreator.Create(didcomm.MsgInit{
 		AID:    "pres id",
 		Type:   pltype.IssueCredentialRequest,
 		Thread: offer.Thread(),
 	}).(*RequestImpl)
-	assert.True(t, presOK)
-	assert.Equal(t, pres.Thread().PID, inviteID)
-	assert.Equal(t, pres.Thread().ID, firstMsgID)
+	assert.That(presOK)
+	assert.Equal(pres.Thread().PID, inviteID)
+	assert.Equal(pres.Thread().ID, firstMsgID)
 
 	issue, iok := aries.MsgCreator.Create(didcomm.MsgInit{
 		AID:    "issue id",
 		Type:   pltype.IssueCredentialIssue,
 		Thread: offer.Thread(),
 	}).(*IssueImpl)
-	assert.True(t, iok)
-	assert.Equal(t, issue.Thread().PID, inviteID)
-	assert.Equal(t, issue.Thread().ID, firstMsgID)
+	assert.That(iok)
+	assert.Equal(issue.Thread().PID, inviteID)
+	assert.Equal(issue.Thread().ID, firstMsgID)
 
 }
 
 func TestNewPreviewCredential(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	coded := `{"email":{"raw":"name@site.net","encoded":"105946137995126203168177080265064725288488683801335157827153404099229214262953"}}`
 	pc0 := NewPreviewCredentialRaw(coded)
-	assert.Len(t, pc0.Attributes, 1)
+	assert.SLen(pc0.Attributes, 1)
 	codedBuild := PreviewCredentialToCodedValues(pc0)
-	assert.Equal(t, coded, codedBuild)
+	assert.Equal(coded, codedBuild)
 
 	pc := NewPreviewCredential(`[{"name":"TODO","value":"TODO"}]`)
-	assert.Len(t, pc.Attributes, 1)
+	assert.SLen(pc.Attributes, 1)
 
 	pc = NewPreviewCredential(`[{"name":"TODO","value":"TODO"},
 {"name":"Test2","value":"TODO"}]`)
-	assert.Len(t, pc.Attributes, 2)
+	assert.SLen(pc.Attributes, 2)
 
 	s3 := `[{"name":"TODO","value":"TODO"},{"name":"Test2","value":"TODO"},{"name":"Test3","value":"TODO"}]`
 	pc = NewPreviewCredential(s3)
-	assert.Len(t, pc.Attributes, 3)
+	assert.SLen(pc.Attributes, 3)
 
 	pc.Attributes[0].MimeType = "type"
 	pc.Attributes[1].MimeType = "type"
 	pc.Attributes[2].MimeType = "type"
 	attr3 := PreviewCredentialToValues(pc)
-	assert.Equal(t, s3, attr3)
+	assert.Equal(s3, attr3)
 }

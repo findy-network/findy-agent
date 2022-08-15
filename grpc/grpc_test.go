@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -468,7 +467,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want error
+		want bool
 	}{
 		{"1st",
 			args{
@@ -481,7 +480,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 1),
 			},
-			nil,
+			false,
 		},
 		{"2nd",
 			args{
@@ -494,7 +493,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 2),
 			},
-			nil,
+			false,
 		},
 		{"third",
 			args{
@@ -507,7 +506,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 3),
 			},
-			nil,
+			false,
 		},
 		{"fourth",
 			args{
@@ -520,7 +519,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 4),
 			},
-			nil,
+			false,
 		},
 	}
 	for i, tt := range tests {
@@ -533,8 +532,11 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
 				Email: tt.args.email,
 			})
-			if got := err; !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("handshake API = %v, want %v", got, tt.want)
+			if !tt.want {
+				t.Log(err, tt.args.email)
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
