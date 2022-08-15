@@ -55,6 +55,7 @@ import (
 	err2assert "github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -1816,4 +1817,124 @@ func TestInvitationForSamePublicDID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, r2.JSON)
 
+}
+
+// go test -v -p 1 -failfast -run TestOnboardInBetweenIssue ./grpc/...
+func TestOnboardInBetweenIssue(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+
+	sch := vc.Schema{
+		Name:    "email",
+		Version: "1.0",
+		Attrs:   []string{"email"},
+	}
+
+	adminConn := client.TryOpen("findy-root", baseCfg)
+	ctx := context.Background()
+	agencyClient := pb.NewAgencyServiceClient(adminConn)
+
+	// onboard issuer
+	oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: fmt.Sprintf("issuer%d", time.Now().Unix()),
+	})
+	require.NoError(t, err)
+	issuerDID := oReply.Result.CADID
+
+	// onboard holder
+	oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: fmt.Sprintf("holder%d", time.Now().Unix()),
+	})
+	require.NoError(t, err)
+	holderDID := oReply.Result.CADID
+
+	// create schema + cred def for issuer
+	issuerConn := client.TryOpen(issuerDID, baseCfg)
+
+	issuerSC := agency2.NewAgentServiceClient(issuerConn)
+	r, err := issuerSC.CreateSchema(ctx, &agency2.SchemaCreate{
+		Name:       sch.Name,
+		Version:    sch.Version,
+		Attributes: sch.Attrs,
+	})
+	require.NoError(t, err)
+	schemaID := r.ID
+	waitForSchema(t, issuerSC, schemaID)
+
+	cdResult, err := issuerSC.CreateCredDef(ctx, &agency2.CredDefCreate{
+		SchemaID: schemaID,
+		Tag:      "TAG_1",
+	})
+	require.NoError(t, err)
+	credDefID := cdResult.ID
+
+	// holder auto accept creds
+	holderConn := client.TryOpen(holderDID, baseCfg)
+	holderSC := agency2.NewAgentServiceClient(holderConn)
+	_, err = holderSC.Enter(ctx, &agency2.ModeCmd{
+		TypeID:  agency2.ModeCmd_ACCEPT_MODE,
+		IsInput: true,
+		ControlCmd: &agency2.ModeCmd_AcceptMode{
+			AcceptMode: &agency2.ModeCmd_AcceptModeCmd{
+				Mode: agency2.ModeCmd_AcceptModeCmd_AUTO_ACCEPT,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// connect issuer to holder
+	pairwise := &client.Pairwise{
+		Conn: holderConn,
+	}
+	invitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	connID, ch := try.To2(pairwise.Connection(ctx, invitation.JSON))
+	for status := range ch {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	// issue first cred
+	issueCh, err := client.Pairwise{
+		ID:   connID,
+		Conn: issuerConn,
+	}.IssueWithAttrs(ctx, credDefID,
+		&agency2.Protocol_IssuingAttributes{
+			Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+				Name:  "email",
+				Value: "test",
+			}}})
+	require.NoError(t, err)
+	for status := range issueCh {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	// onboard agents in between issuing
+	for i := 0; i < 10; i++ {
+		oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
+			Email: fmt.Sprintf("user%d%d", i, time.Now().Unix()),
+		})
+		require.NoError(t, err)
+	}
+
+	// new connection holder and issuer
+	newInvitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	newConnID, ch := try.To2(pairwise.Connection(ctx, newInvitation.JSON))
+	for status := range ch {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	// issue second cred
+	issueCh, err = client.Pairwise{
+		ID:   newConnID,
+		Conn: issuerConn,
+	}.IssueWithAttrs(ctx, credDefID,
+		&agency2.Protocol_IssuingAttributes{
+			Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+				Name:  "email",
+				Value: "test",
+			}}})
+	require.NoError(t, err)
+	for status := range issueCh {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
 }
