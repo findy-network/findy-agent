@@ -128,7 +128,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 				defer err2.Annotate("start issuing prot", &err)
 
 				r := <-anoncreds.IssuerCreateCredentialOffer(
-					ca.Wallet(), credTask.CredDefID)
+					ca.WorkerEA().Wallet(), credTask.CredDefID)
 				try.To(r.Err())
 				credOffer := r.Str1()
 
