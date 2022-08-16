@@ -171,11 +171,11 @@ func (a *agentServer) CreateCredDef(
 	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
-		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
+		ca.WorkerEA().Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
 	try.To(r.Err())
 	cd := r.Str2()
-	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
+	err = ledger.WriteCredDef(ca.Pool(), ca.WorkerEA().Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
 }
 
