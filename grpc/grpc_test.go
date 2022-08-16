@@ -1828,10 +1828,6 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		return
 	}
 
-	// adding pool size, TODO: let's discuss this in meeting, and set it at
-	// system lvl
-	ssi.SetWalletMgrPoolSize(100)
-
 	sch := vc.Schema{
 		Name:    "email",
 		Version: "1.0",
@@ -1842,7 +1838,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	ctx := context.Background()
 	agencyClient := pb.NewAgencyServiceClient(adminConn)
 
-	// onboard issuer
+	glog.Info("===  onboard issuer")
 	txnCount := getIndyLedgerTxnCount(t)
 
 	oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
@@ -1852,14 +1848,14 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	issuerDID := oReply.Result.CADID
 	waitForTxnCount(t, txnCount+1)
 
-	// onboard holder
+	glog.Info("===  onboard holder")
 	oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
 		Email: fmt.Sprintf("holder%d", time.Now().Unix()),
 	})
 	require.NoError(t, err)
 	holderDID := oReply.Result.CADID
 
-	// create schema + cred def for issuer
+	glog.Info("===  create schema + cred def for issuer")
 	issuerConn := client.TryOpen(issuerDID, baseCfg)
 
 	issuerSC := agency2.NewAgentServiceClient(issuerConn)
@@ -1879,7 +1875,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	require.NoError(t, err)
 	credDefID := cdResult.ID
 
-	// holder auto accept creds
+	glog.Info("--- holder auto accept creds") 
 	holderConn := client.TryOpen(holderDID, baseCfg)
 	holderSC := agency2.NewAgentServiceClient(holderConn)
 	_, err = holderSC.Enter(ctx, &agency2.ModeCmd{
@@ -1893,7 +1889,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// connect issuer to holder
+	glog.Info("===  connect issuer to holder")
 	pairwise := &client.Pairwise{
 		Conn: holderConn,
 	}
@@ -1904,7 +1900,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
 	}
 
-	// issue first cred
+	glog.Info("===  issue first cred")
 	issueCh, err := client.Pairwise{
 		ID:   connID,
 		Conn: issuerConn,
@@ -1919,7 +1915,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
 	}
 
-	// onboard agents in between issuing
+	glog.Info("===  onboard agents in between issuing")
 	for i := 0; i < 10; i++ {
 		oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
 			Email: fmt.Sprintf("user%d%d", i, time.Now().Unix()),
@@ -1927,7 +1923,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// new connection holder and issuer
+	glog.Info("===  new connection holder and issuer")
 	newInvitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
 	require.NoError(t, err)
 	newConnID, ch := try.To2(pairwise.Connection(ctx, newInvitation.JSON))
@@ -1935,7 +1931,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
 	}
 
-	// issue second cred
+	glog.Info("===  issue second cred")
 	issueCh, err = client.Pairwise{
 		ID:   newConnID,
 		Conn: issuerConn,
