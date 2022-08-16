@@ -123,8 +123,6 @@ func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) 
 	wait(t, "schema: "+schemaID, test)
 	assert.True(t, test())
 	t.Log("Schema created successfully:", schemaID)
-
-	err2.StackTraceWriter = defaultStackTraceWriter
 }
 
 func waitForCredDef(t *testing.T, c agency2.AgentServiceClient, credDefID string) {
