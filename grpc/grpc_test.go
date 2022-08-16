@@ -123,6 +123,8 @@ func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) 
 	wait(t, "schema: "+schemaID, test)
 	assert.True(t, test())
 	t.Log("Schema created successfully:", schemaID)
+
+	err2.StackTraceWriter = defaultStackTraceWriter
 }
 
 func waitForCredDef(t *testing.T, c agency2.AgentServiceClient, credDefID string) {
@@ -1543,7 +1545,9 @@ loop:
 	}
 
 	<-intCh
+
 	cancel()
+
 	glog.V(0).Infoln("interrupted by user, cancel() called")
 }
 
@@ -1951,7 +1955,6 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	}
 
 	glog.Info("===  issue second cred")
-
 	issueCh, err = client.Pairwise{
 		ID:   newConnID,
 		Conn: issuerConn,
@@ -1965,6 +1968,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	for status := range issueCh {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
 	}
+
 	require.NoError(t, holderConn.Close())
 	require.NoError(t, issuerConn.Close())
 	require.NoError(t, adminConn.Close())
