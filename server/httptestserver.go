@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -42,19 +43,16 @@ func StartTestHTTPServer2() *httptest.Server {
 
 func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (data []byte, err error) {
 	ea := endp.NewClientAddr(urlStr)
-	request, _ := http.NewRequest("POST", ea.TestAddress(), msg)
+	request, _ := http.NewRequestWithContext(context.TODO(), "POST", ea.TestAddress(), msg)
 	writer := httptest.NewRecorder()
 	mux.ServeHTTP(writer, request)
 
 	response := writer.Result()
+	response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("error: %v", writer.Code)
 	}
-
-	defer func() {
-		_ = response.Body.Close()
-	}()
 
 	data, err = ioutil.ReadAll(response.Body)
 	return data, err
