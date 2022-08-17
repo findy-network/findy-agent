@@ -49,7 +49,7 @@ func (a agencyService) Onboard(
 	}
 
 	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
-	ac := try.To1(handshake.AnchorAgent(onboarding.Email, onboarding.PublicDIDSeed))
+	ac := try.To1(handshake.AnchorAgent(agentName, onboarding.PublicDIDSeed))
 
 	caDID := try.To1(ac.NewDID(method.TypeSov, ""))
 	DIDStr := caDID.Did()

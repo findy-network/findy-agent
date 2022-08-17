@@ -72,21 +72,20 @@ type Agency struct{}
 // AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
-func AnchorAgent(email, seed string) (agent *cloud.Agent, err error) {
+func AnchorAgent(agentName, seed string) (agent *cloud.Agent, err error) {
 	defer err2.Annotate("create archor", &err)
 
-	key := try.To1(enclave.NewWalletKey(email))
+	key := try.To1(enclave.NewWalletKey(agentName))
 	defer func() {
 		key = ""
 	}()
-	rippedEmail := strings.Replace(email, "@", "_", -1)
 
 	// Build new agent with wallet
 	agent = new(cloud.Agent)
-	aw := ssi.NewRawWalletCfg(rippedEmail, key)
+	aw := ssi.NewRawWalletCfg(agentName, key)
 	walletAlreadyExists := aw.Create()
 	assert.P.Truef(!walletAlreadyExists,
-		"wallet (%s) cannot exist when onboarding", rippedEmail)
+		"wallet (%s) cannot exist when onboarding", agentName)
 	agent.OpenWallet(*aw)
 
 	glog.V(10).Infof("--- Using seed '%s' in anchor agent", seed)
