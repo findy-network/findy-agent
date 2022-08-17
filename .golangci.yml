@@ -72,7 +72,7 @@ linters:
     #    - godot
     #    - godox
     #    - goerr113
-    - gofmt
+    # gofmt
     #    - gofumpt
     - goheader
     - goimports
@@ -112,7 +112,7 @@ linters:
     #    - testpackage
     #    - thelper
     - tparallel
-    - typecheck
+    # typecheck
     - unconvert
     - unparam
     - unused
