@@ -181,7 +181,7 @@ func (a *DIDAgent) CloseWallet() {
 
 func (a *DIDAgent) Wallet() (h int) {
 	if a.IsCA() {
-		glog.V(10).Infof("WARN: is CA, ID: %v", a.WalletH.Config().ID())
+		glog.V(3).Infof("WARN: is CA, ID: %v", a.WalletH.Config().ID())
 	}
 	return a.WalletH.Handle()
 }
