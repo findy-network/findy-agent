@@ -149,8 +149,9 @@ func getIndyLedgerTxnCount(t *testing.T) (count int) {
 	}
 
 	resp := try.To1(http.Get(fmt.Sprintf("%s/ledger/domain", getVonWebServerURL())))
-	body := try.To1(io.ReadAll(resp.Body))
 	defer resp.Body.Close()
+
+	body := try.To1(io.ReadAll(resp.Body))
 	res := make(map[string]any)
 	try.To(json.Unmarshal(body, &res))
 
@@ -1514,13 +1515,13 @@ loop:
 				glog.V(1).Infoln("--- THIS a question")
 				switch status.TypeID {
 				case agency2.Question_PING_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_ISSUE_PROPOSE_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_PROOF_PROPOSE_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_PROOF_VERIFY_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				}
 			} else {
 				glog.V(1).Infoln("======= both notification types are None")
@@ -1543,8 +1544,9 @@ func doListenResume(
 	intCh chan struct{},
 	readyCh chan struct{},
 	wait chan struct{},
-	handleStatus handleStatusFn,
+	_ handleStatusFn,
 ) {
+	t.Helper()
 	conn := client.TryOpen(caDID, baseCfg)
 	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -1678,13 +1680,13 @@ func handleStatusBMEcho(
 	return handleNotOurs
 }
 
-func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
+func reply(conn *grpc.ClientConn, status *agency2.Question) {
 	ctx := context.Background()
 	c := agency2.NewAgentServiceClient(conn)
 	cid := try.To1(c.Give(ctx, &agency2.Answer{
 		ID:       status.Status.Notification.ID,
 		ClientID: status.Status.ClientID,
-		Ack:      ack,
+		Ack:      true,
 		Info:     "testing says hello!",
 	}))
 	glog.V(1).Infof("Sending the answer (%s) send to client:%s\n", status.Status.Notification.ID, cid.ID)
@@ -1875,7 +1877,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	require.NoError(t, err)
 	credDefID := cdResult.ID
 
-	glog.Info("--- holder auto accept creds") 
+	glog.Info("=== holder auto accept creds")
 	holderConn := client.TryOpen(holderDID, baseCfg)
 	holderSC := agency2.NewAgentServiceClient(holderConn)
 	_, err = holderSC.Enter(ctx, &agency2.ModeCmd{
@@ -1917,7 +1919,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 
 	glog.Info("===  onboard agents in between issuing")
 	for i := 0; i < 10; i++ {
-		oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
+		_, err = agencyClient.Onboard(ctx, &pb.Onboarding{
 			Email: fmt.Sprintf("user%d%d", i, time.Now().Unix()),
 		})
 		require.NoError(t, err)
