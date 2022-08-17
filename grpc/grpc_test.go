@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	mathrand "math/rand"
 	"net"
@@ -222,7 +221,7 @@ func setUp() {
 	calcTestMode()
 
 	if testMode == TestModeRunOne {
-		gob := try.To1(ioutil.ReadFile("ONEdata.gob"))
+		gob := try.To1(os.ReadFile("ONEdata.gob"))
 		dto.FromGOB(gob, &prebuildAgents)
 		agents = &prebuildAgents
 	} else {
@@ -766,7 +765,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 		glog.V(1).Infoln(agent.String())
 	}
 	if testMode == TestModeBuildEnv {
-		try.To(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
+		try.To(os.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
 	}
 }
 

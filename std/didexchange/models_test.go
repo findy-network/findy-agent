@@ -3,7 +3,6 @@ package didexchange
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -151,7 +150,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var doc did.Doc
-			d, err := ioutil.ReadFile(tt.filename)
+			d, err := os.ReadFile(tt.filename)
 			require.NoError(t, err)
 
 			if tt.ok {

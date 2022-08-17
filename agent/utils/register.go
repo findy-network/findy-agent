@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -98,12 +97,12 @@ func (r *Reg) Reset(filename string) (err error) {
 }
 
 func writeJSONFile(name string, json []byte) error {
-	err := ioutil.WriteFile(name, json, 0644)
+	err := os.WriteFile(name, json, 0644)
 	return err
 }
 
 func readJSONFile(name string) ([]byte, error) {
-	result, err := ioutil.ReadFile(name)
+	result, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
