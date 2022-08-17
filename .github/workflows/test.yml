@@ -2,7 +2,8 @@ name: test
 on:
   push:
 jobs:
-  lint:
+  golangci:
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -10,7 +11,6 @@ jobs:
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.48.0
-          args: --timeout=5m
 
   test-default:
     runs-on: ubuntu-latest
