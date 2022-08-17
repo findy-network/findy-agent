@@ -3,7 +3,7 @@ module github.com/findy-network/findy-agent
 go 1.18
 
 require (
-	github.com/findy-network/findy-common-go v0.1.39
+	github.com/findy-network/findy-common-go v0.1.41
 	github.com/findy-network/findy-wrapper-go v0.30.15
 	github.com/go-co-op/gocron v1.16.1
 	github.com/go-test/deep v1.0.8
@@ -87,7 +87,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
