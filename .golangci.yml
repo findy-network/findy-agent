@@ -130,7 +130,6 @@ issues:
         - goconst
         - gosimple
 run:
-  go: go1.19
 service:
   golangci-lint-version: 1.48.0 # use the fixed version to not introduce new linters unexpectedly
   prepare:
