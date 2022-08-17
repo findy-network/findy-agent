@@ -4,7 +4,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    # container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
