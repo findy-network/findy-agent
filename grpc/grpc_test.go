@@ -1830,6 +1830,11 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		return
 	}
 
+	// TODO: we cannot get old value now, this is the laste test here
+	// one for steward one for rest, it works with one even because we don't
+	// run real threads here
+	ssi.SetWalletMgrPoolSize(2)
+
 	sch := vc.Schema{
 		Name:    "email",
 		Version: "1.0",
