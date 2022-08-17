@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -54,7 +53,7 @@ func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (
 		return nil, fmt.Errorf("error: %v", writer.Code)
 	}
 
-	data, err = ioutil.ReadAll(response.Body)
+	data, err = io.ReadAll(response.Body)
 	return data, err
 }
 
@@ -71,7 +70,7 @@ func ResetEnv(w *ssi.Wallet, exportPath string) {
 	}
 
 	registry := []byte("{}")
-	err = ioutil.WriteFile("./findy.json", registry, 0644)
+	err = os.WriteFile("./findy.json", registry, 0644)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
