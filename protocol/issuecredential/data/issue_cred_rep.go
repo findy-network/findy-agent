@@ -74,10 +74,8 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 func (rep *IssueCredRep) IssuerBuildCred(packet comm.Packet, credReq string) (c string, err error) {
 	defer err2.Annotate("build cred req", &err)
 
-	// ca := packet.Receiver.MyCA() // we need to use CA here for proper rights.
-	// TODO: we must test if we can keep everything in wa-wallet
-	ca := packet.Receiver
-	w := ca.Wallet()
+	wa := packet.Receiver
+	w := wa.Wallet()
 
 	r := <-anoncreds.IssuerCreateCredential(w, rep.CredOffer, credReq, rep.Values,
 		findy.NullString, findy.NullHandle)
