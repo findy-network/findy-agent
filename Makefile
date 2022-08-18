@@ -114,7 +114,7 @@ testv:
 	$(GO) test -v -p 1 -failfast ./...
 
 test_cov_out:
-	$(GO) test -p 1 -failfast \
+	$(GO) test -p 1 -failfast -timeout=1200s \
 		-coverpkg=github.com/findy-network/findy-agent/... \
 		-coverprofile=$(COV_FILE)  \
 		-covermode=atomic \
