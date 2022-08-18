@@ -50,7 +50,6 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	err2assert "github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,9 +166,6 @@ func getVonWebServerURL() string {
 func TestMain(m *testing.M) {
 	try.To(flag.Set("logtostderr", "true"))
 
-	// we want panics from every err2/assert
-	err2assert.DefaultAsserter = err2assert.D
-
 	prepareBuildOneTest()
 	setUp()
 	code := m.Run()
@@ -209,10 +205,6 @@ func setUpLedger() {
 }
 
 func setUp() {
-	err2.StackTraceWriter = os.Stderr
-	err2assert.D = err2assert.AsserterCallerInfo
-	err2assert.DefaultAsserter = err2assert.AsserterFormattedCallerInfo
-
 	defer err2.CatchTrace(func(err error) {
 		fmt.Println("error on setup", err)
 	})
@@ -1950,4 +1942,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	for status := range issueCh {
 		require.Equal(t, agency2.ProtocolState_OK, status.State)
 	}
+	require.NoError(t, holderConn.Close())
+	require.NoError(t, issuerConn.Close())
+	require.NoError(t, adminConn.Close())
 }
