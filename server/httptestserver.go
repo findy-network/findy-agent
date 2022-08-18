@@ -15,6 +15,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 const TestServiceName = agency.ProtocolPath
@@ -58,23 +60,14 @@ func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (
 }
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
+	defer err2.Catch(func(err error) {
+		fmt.Println(err)
+	})
 	// Remove files
-	err := os.RemoveAll(utils.IndyBaseDir() + "/.indy_client")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	err = os.RemoveAll(exportPath)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
+	try.To(os.RemoveAll(utils.IndyBaseDir() + "/.indy_client"))
+	try.To(os.RemoveAll(exportPath))
 	registry := []byte("{}")
-	err = os.WriteFile("./findy.json", registry, 0644)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
+	try.To(os.WriteFile("./findy.json", registry, 0644))
 	// Create wallet
 	w.Create()
 	handle := w.Open().Int()
