@@ -179,9 +179,18 @@ func (a *agentServer) CreateCredDef(
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.WorkerEA().Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
+	rCA := <-anoncreds.IssuerCreateAndStoreCredentialDef(
+		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
+		cdc.Tag, findy.NullString, findy.NullString)
 	try.To(r.Err())
+	try.To(rCA.Err())
+
 	cd := r.Str2()
-	err = ledger.WriteCredDef(ca.Pool(), ca.WorkerEA().Wallet(), ca.RootDid().Did(), cd)
+	if r.Str1() != rCA.Str1() {
+		glog.Warning("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
+	}
+	glog.V(1).Infoln("=== starting legded writer with CA cred def")
+	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
 }
 
