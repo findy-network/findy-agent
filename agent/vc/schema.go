@@ -21,7 +21,8 @@ type Schema struct {
 }
 
 func (s *Schema) Create(DID string) (err error) {
-	defer err2.Annotate("create schema", &err)
+	defer err2.Returnf(&err, "create schema by DID (%v)", DID)
+
 	attrsStr := try.To1(json.Marshal(s.Attrs))
 
 	s.Stored = &async.Future{}

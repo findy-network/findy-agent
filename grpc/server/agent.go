@@ -149,6 +149,9 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.ID())
+
 	try.To(sch.Create(ca.RootDid().Did()))
 	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
@@ -167,6 +170,9 @@ func (a *agentServer) CreateCredDef(
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
+
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.WorkerEA().ID())
 
 	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
