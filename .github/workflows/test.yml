@@ -43,9 +43,10 @@ jobs:
       - name: test and measure coverage
         run: |
           curl http://localhost:9000/genesis > gen_txn_file
-          make test_cov_out COV_FILE=coverage1.txt
+          make test_grpcv_cov_out COV_FILE=coverage1.txt
         env:
-          test_timeout: 6000s
+          TEST_TIMEOUT: 6000s
+          TEST_ARGS: "-vmodule=grpc_test*=5 -v=0 -logtostderr"
           FCLI_POOL_NAME: "von"
           FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
