@@ -84,7 +84,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 
 const (
 	MaxWaitTime = time.Minute * 6
-	WaitTime    = time.Second
+	WaitTime    = 2 * time.Second
 )
 
 var (
@@ -117,7 +117,7 @@ func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) 
 		time.Sleep(WaitTime)
 		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
 	}
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	t.Log("Schema created successfully:", schemaID)
 }
 
@@ -200,9 +200,9 @@ func setUpLedger() {
 
 	// create ledger config (needed only when running with indy ledger in "clean" environment)
 	poolName := os.Getenv("FCLI_POOL_NAME")
-	createCh := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
-	if createCh.Err() != nil {
-		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
+	cfg := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
+	if cfg.Err() != nil {
+		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, cfg.Err())
 	}
 
 	// open ledger handle
@@ -537,7 +537,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
 				Email: tt.args.email,
 			})
-			if got := err; !reflect.DeepEqual(got, tt.want) {
+			if err != tt.want {
 				t.Errorf("handshake API = %v, want %v", got, tt.want)
 			}
 			cadid := oReply.Result.CADID
