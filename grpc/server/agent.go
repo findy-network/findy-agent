@@ -204,9 +204,11 @@ func (a *agentServer) GetSchema(
 	defer err2.Annotate("get schema", &err)
 
 	caDID, ca := try.To2(ca(ctx))
+	rootDID := ca.RootDid().Did()
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
+	defer err2.Returnf(&err, "get schema (%v) by root (%v)", s.ID, rootDID)
 
-	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID))
+	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), rootDID, s.ID))
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -221,6 +223,7 @@ func (a *agentServer) GetCredDef(
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
+	defer err2.Returnf(&err, "get credDef (%v) by root (%v)", cd.ID, ca.RootDid().Did())
 
 	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil

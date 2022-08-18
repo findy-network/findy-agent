@@ -51,7 +51,7 @@ func (rep *IssueCredRep) Type() byte {
 // BuildCredRequest builds credential request which is PROVER/HOLDER SIDE
 // action.
 func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err error) {
-	defer err2.Annotate("build cred req", &err)
+	defer err2.Returnf(&err, "build cred req by: %v", packet.Receiver.ID())
 
 	a := packet.Receiver
 	w := a.Wallet()
@@ -72,7 +72,7 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 // IssuerBuildCred builds credentials in -- ISSUER SIDE --. Note! values are
 // needed here!!
 func (rep *IssueCredRep) IssuerBuildCred(packet comm.Packet, credReq string) (c string, err error) {
-	defer err2.Annotate("build cred req", &err)
+	defer err2.Returnf(&err, "build cred req by: %v", packet.Receiver.ID())
 
 	wa := packet.Receiver
 	w := wa.Wallet()
