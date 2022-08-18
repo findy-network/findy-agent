@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -538,7 +537,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				Email: tt.args.email,
 			})
 			if err != tt.want {
-				t.Errorf("handshake API = %v, want %v", got, tt.want)
+				t.Errorf("handshake API = %v, want %v", err, tt.want)
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
