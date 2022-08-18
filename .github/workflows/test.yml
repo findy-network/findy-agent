@@ -45,6 +45,7 @@ jobs:
           curl http://localhost:9000/genesis > gen_txn_file
           make test_cov_out COV_FILE=coverage1.txt
         env:
+          test_timeout: 6000s
           FCLI_POOL_NAME: "von"
           FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
