@@ -187,7 +187,7 @@ func (a *agentServer) CreateCredDef(
 
 	cd := r.Str2()
 	if r.Str1() != rCA.Str1() {
-		glog.Warning("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
+		glog.Error("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
 	}
 	glog.V(1).Infoln("=== starting legded writer with CA cred def")
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
