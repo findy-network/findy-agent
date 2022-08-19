@@ -47,7 +47,8 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred offer ask user", &err)
+			defer err2.Returnf(&err, "cred offer ask user (%v)",
+				packet.Receiver.RootDid().Did())
 
 			offer := im.FieldObj().(*issuecredential.Offer)
 			values := issuecredential.PreviewCredentialToValues(
@@ -66,6 +67,8 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			if credDefID, ok := subMsg["cred_def_id"]; ok {
 				rep.CredDefID = credDefID.(string)
 			}
+			defer err2.Returnf(&err, "cred def (%v)", rep.CredDefID)
+
 			rep.Values = values
 			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 
