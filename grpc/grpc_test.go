@@ -105,18 +105,35 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
+func wait(t *testing.T, label string, test func() bool) {
+	var totalWaitTime time.Duration
+	for !test() && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Waiting for", label)
+		time.Sleep(WaitTime)
+	}
+}
+
 func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
 	ctx := context.Background()
-	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-	var totalWaitTime time.Duration
-	for err != nil && totalWaitTime < MaxWaitTime {
-		totalWaitTime += WaitTime
-		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
-		time.Sleep(WaitTime)
-		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	test := func() bool {
+		_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+		return err == nil
 	}
-	require.NoError(t, err)
+	wait(t, "schema: "+schemaID, test)
+	assert.True(t, test())
 	t.Log("Schema created successfully:", schemaID)
+}
+
+func waitForCredDef(t *testing.T, c agency2.AgentServiceClient, credDefID string) {
+	ctx := context.Background()
+	test := func() bool {
+		_, err := c.GetCredDef(ctx, &agency2.CredDef{ID: credDefID})
+		return err == nil
+	}
+	wait(t, "cred def: "+credDefID, test)
+	assert.True(t, test())
+	t.Log("Cred def created successfully:", credDefID)
 }
 
 func waitForTxnCount(t *testing.T, count int) {
@@ -124,15 +141,13 @@ func waitForTxnCount(t *testing.T, count int) {
 		// if no txns, we are not running in indy ledger an no need to wait
 		return
 	}
-	currentCount := getIndyLedgerTxnCount(t)
-	var totalWaitTime time.Duration
-	for currentCount < count && totalWaitTime < MaxWaitTime {
-		totalWaitTime += WaitTime
-		t.Log("Txn not found, waiting for txn to be found in ledger")
-		time.Sleep(WaitTime)
-		currentCount = getIndyLedgerTxnCount(t)
+
+	test := func() bool {
+		return getIndyLedgerTxnCount(t) >= count
 	}
-	t.Log("Txn count:", currentCount, "expected:", count)
+	wait(t, fmt.Sprintf("txn count %d", count), test)
+	assert.True(t, test())
+	t.Log("Txn count ok")
 }
 
 func getIndyLedgerTxnCount(t *testing.T) (count int) {
@@ -563,6 +578,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				assert.NotEmpty(t, cdResult.ID)
 				agents[0].CredDefID = cdResult.ID
 
+				waitForCredDef(t, c, agents[0].CredDefID)
+
 				assert.NoError(t, conn.Close())
 			}
 		})
@@ -603,6 +620,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 			})
 			assert.NoError(t, err)
 			assert.NotEmpty(t, cdResult.ID)
+
+			waitForCredDef(t, c, cdResult.ID)
 
 			assert.NoError(t, conn.Close())
 		})
@@ -1873,7 +1892,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	credDefID := cdResult.ID
 
 	glog.Infoln("credDefID =", credDefID, "wait for credDefID ready")
-	time.Sleep(3*time.Second)
+	waitForCredDef(t, issuerSC, credDefID)
 	glog.Info("=== holder auto accept creds")
 
 	holderConn := client.TryOpen(holderDID, baseCfg)
