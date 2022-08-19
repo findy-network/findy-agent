@@ -107,6 +107,21 @@ test_grpc_rv:
 test_grpc_r:
 	$(GO) test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./grpc/... $(TEST_ARGS) | tee ../testr.log
 
+test_grpc_cov_out:
+	$(GO) test -p 1 -failfast -timeout $(TEST_TIMEOUT) \
+		-coverpkg=github.com/findy-network/findy-agent/... \
+		-coverprofile=$(COV_FILE)  \
+		-covermode=atomic \
+		./grpc/...
+
+test_grpcv_cov_out:
+	$(GO) test -v -p 1 -failfast -timeout $(TEST_TIMEOUT) \
+		-coverpkg=github.com/findy-network/findy-agent/... \
+		-coverprofile=$(COV_FILE)  \
+		-covermode=atomic \
+		./grpc/... \
+		$(TEST_ARGS) | tee ../testr.log
+
 testrv:
 	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log
 
@@ -114,7 +129,7 @@ testv:
 	$(GO) test -v -p 1 -failfast ./...
 
 test_cov_out:
-	$(GO) test -p 1 -failfast \
+	$(GO) test -p 1 -failfast -timeout=1200s \
 		-coverpkg=github.com/findy-network/findy-agent/... \
 		-coverprofile=$(COV_FILE)  \
 		-covermode=atomic \

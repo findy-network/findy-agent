@@ -37,8 +37,8 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Annotate("credential propose handler", &err)
 
-			agent := packet.Receiver
-			meDID := agent.MyDID().Did()
+			wa := packet.Receiver
+			meDID := wa.MyDID().Did()
 
 			prop := im.FieldObj().(*issuecredential.Propose)
 
@@ -57,7 +57,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 			// TODO: support changing values
 
 			r := <-anoncreds.IssuerCreateCredentialOffer(
-				agent.MyCA().Wallet(), prop.CredDefID)
+				wa.Wallet(), prop.CredDefID)
 			try.To(r.Err())
 			credOffer := r.Str1()
 

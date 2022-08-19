@@ -149,6 +149,9 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.ID())
+
 	try.To(sch.Create(ca.RootDid().Did()))
 	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
@@ -168,13 +171,25 @@ func (a *agentServer) CreateCredDef(
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.WorkerEA().ID())
+
 	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
+		ca.WorkerEA().Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
+		cdc.Tag, findy.NullString, findy.NullString)
+	rCA := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
 	try.To(r.Err())
+	try.To(rCA.Err())
+
 	cd := r.Str2()
+	if r.Str1() != rCA.Str1() {
+		glog.Error("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
+	}
+	glog.V(1).Infoln("=== starting legded writer with CA cred def")
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
 }
@@ -189,9 +204,11 @@ func (a *agentServer) GetSchema(
 	defer err2.Annotate("get schema", &err)
 
 	caDID, ca := try.To2(ca(ctx))
+	rootDID := ca.RootDid().Did()
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
+	defer err2.Returnf(&err, "get schema (%v) by root (%v)", s.ID, rootDID)
 
-	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID))
+	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), rootDID, s.ID))
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -206,6 +223,7 @@ func (a *agentServer) GetCredDef(
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
+	defer err2.Returnf(&err, "get credDef (%v) by root (%v)", cd.ID, ca.RootDid().Did())
 
 	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil

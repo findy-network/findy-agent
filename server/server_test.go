@@ -1,7 +1,7 @@
 package server
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +17,7 @@ func TestNotReadyHandler(t *testing.T) {
 	checkReady(w, req)
 	res := w.Result()
 	defer res.Body.Close()
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, "Not ready", string(data))
 	assert.Equal(t, http.StatusServiceUnavailable, res.StatusCode)
@@ -31,7 +31,7 @@ func TestReadyHandler(t *testing.T) {
 	checkReady(w, req)
 	res := w.Result()
 	defer res.Body.Close()
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, "OK ready", string(data))
 	assert.Equal(t, http.StatusOK, res.StatusCode)

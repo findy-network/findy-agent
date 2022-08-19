@@ -45,7 +45,7 @@ linters:
   enable:
     - asciicheck
     - bidichk
-    - bodyclose
+    # bodyclose
     - contextcheck
     #    - cyclop
     - deadcode
@@ -72,7 +72,7 @@ linters:
     #    - godot
     #    - godox
     #    - goerr113
-    - gofmt
+    # gofmt
     #    - gofumpt
     - goheader
     - goimports
@@ -95,7 +95,7 @@ linters:
     - nilerr
     #    - nilnil
     #    - nlreturn
-    - noctx
+    # noctx
     #    - nolintlint
     #    - paralleltest
     - prealloc
@@ -112,7 +112,7 @@ linters:
     #    - testpackage
     #    - thelper
     - tparallel
-    - typecheck
+    # typecheck
     - unconvert
     - unparam
     - unused
@@ -125,13 +125,16 @@ linters:
 
 issues:
   exclude-rules:
-    - path: _test\.go
+    - path: (.*)_test\.go
       linters:
+        - funlen
         - goconst
         - gosimple
+    - path: /
+      linters:
+      - typecheck
 run:
-  go: go1.18
 service:
-  golangci-lint-version: 1.45.x # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.48.0 # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"

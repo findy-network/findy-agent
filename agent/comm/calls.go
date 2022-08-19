@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -59,7 +58,7 @@ func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration)
 		}
 	}()
 
-	data, err = ioutil.ReadAll(response.Body)
+	data, err = io.ReadAll(response.Body)
 
 	return checkHTTPStatus(response, data)
 }

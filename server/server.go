@@ -6,7 +6,7 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -113,7 +113,7 @@ func protocolTransport(w http.ResponseWriter, r *http.Request) {
 
 	ourAddress := logRequestInfo("Incoming Aries TRANSPORT", r)
 
-	data := try.To1(ioutil.ReadAll(r.Body))
+	data := try.To1(io.ReadAll(r.Body))
 
 	canContinue := ourAddress != nil &&
 		agency.IsHandlerInThisAgency(ourAddress.PlRcvr) &&

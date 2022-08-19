@@ -109,10 +109,6 @@ func (w *Wallet) Create() (exist bool) {
 	return false
 }
 
-func (w *Wallet) SyncOpen() int {
-	return w.Open().Int()
-}
-
 func (w *Wallet) Open() (f *async.Future) {
 	if glog.V(3) {
 		glog.Info("opening wallet: ", w.Config.ID)
@@ -168,10 +164,6 @@ func (w *Wallet) UniqueID() string {
 		path = workerWalletPath()
 	}
 	return filepath.Join(path, w.Config.ID)
-}
-
-func (w *Wallet) SyncClose(handle int) (err error) {
-	return w.Close(handle).Result().Err()
 }
 
 func (w *Wallet) Close(handle int) (f *async.Future) {

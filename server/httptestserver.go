@@ -1,9 +1,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,6 +15,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-wrapper-go/did"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 const TestServiceName = agency.ProtocolPath
@@ -42,42 +44,30 @@ func StartTestHTTPServer2() *httptest.Server {
 
 func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (data []byte, err error) {
 	ea := endp.NewClientAddr(urlStr)
-	request, _ := http.NewRequest("POST", ea.TestAddress(), msg)
+	request, _ := http.NewRequestWithContext(context.TODO(), "POST", ea.TestAddress(), msg)
 	writer := httptest.NewRecorder()
 	mux.ServeHTTP(writer, request)
 
 	response := writer.Result()
+	response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("error: %v", writer.Code)
 	}
 
-	defer func() {
-		_ = response.Body.Close()
-	}()
-
-	data, err = ioutil.ReadAll(response.Body)
+	data, err = io.ReadAll(response.Body)
 	return data, err
 }
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
+	defer err2.Catch(func(err error) {
+		fmt.Println(err)
+	})
 	// Remove files
-	err := os.RemoveAll(utils.IndyBaseDir() + "/.indy_client")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	err = os.RemoveAll(exportPath)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
+	try.To(os.RemoveAll(utils.IndyBaseDir() + "/.indy_client"))
+	try.To(os.RemoveAll(exportPath))
 	registry := []byte("{}")
-	err = ioutil.WriteFile("./findy.json", registry, 0644)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
+	try.To(os.WriteFile("./findy.json", registry, 0644))
 	// Create wallet
 	w.Create()
 	handle := w.Open().Int()

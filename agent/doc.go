@@ -26,27 +26,27 @@ likely will not happen in the near future.
 Now you can find more information about each specific
 package. Summary of the packages:
 
- agency     encapsulates services for multi-tenancy
- aries      is implementation of Aries messages
- bus        offers implementation of notification bus for internal use
- cloud      is a package for cloud agent (CA)
- comm       communication receivers, packages, handlers and helpers
- didcomm    DIDComm messaging interfaces
- e2         err2 error type helpers
- endp       agent endpoint services to parse and calculate URLs
- handshake  onboarding services to allocate CAs for EAs
- mesg       indy agent-to-agent messages used old DIDComm, CA API, ...
- pairwise   services to make a pairwise
- pltype     payload and message types
- prot       protocol processors, state machine update, status info, notify
- psm        Protocol State Machine and Representatives save state
- sa         service agent implementation, used for integration tests
- sec        secure pipe for DIDComm transfers
- service    namespace for common and simple service.Addr aka agent endpoint
- ssi        indy specifics: DID, Agent, ledger, schema, wallet, future, ..
- status     task status helpers
- trans      secure transport implementation
- txp        transport interface for agent-to-agent connections
- utils      helpers for version, settings, salts, JSON register, nonce, ..
+	agency     encapsulates services for multi-tenancy
+	aries      is implementation of Aries messages
+	bus        offers implementation of notification bus for internal use
+	cloud      is a package for cloud agent (CA)
+	comm       communication receivers, packages, handlers and helpers
+	didcomm    DIDComm messaging interfaces
+	e2         err2 error type helpers
+	endp       agent endpoint services to parse and calculate URLs
+	handshake  onboarding services to allocate CAs for EAs
+	mesg       indy agent-to-agent messages used old DIDComm, CA API, ...
+	pairwise   services to make a pairwise
+	pltype     payload and message types
+	prot       protocol processors, state machine update, status info, notify
+	psm        Protocol State Machine and Representatives save state
+	sa         service agent implementation, used for integration tests
+	sec        secure pipe for DIDComm transfers
+	service    namespace for common and simple service.Addr aka agent endpoint
+	ssi        indy specifics: DID, Agent, ledger, schema, wallet, future, ..
+	status     task status helpers
+	trans      secure transport implementation
+	txp        transport interface for agent-to-agent connections
+	utils      helpers for version, settings, salts, JSON register, nonce, ..
 */
 package agent
