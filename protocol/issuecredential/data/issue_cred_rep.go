@@ -51,7 +51,7 @@ func (rep *IssueCredRep) Type() byte {
 // BuildCredRequest builds credential request which is PROVER/HOLDER SIDE
 // action.
 func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err error) {
-	defer err2.Returnf(&err, "build cred req by: %v", packet.Receiver.ID())
+	defer err2.Returnf(&err, "get cred req from ledger by: %v", packet.Receiver.ID())
 
 	a := packet.Receiver
 	w := a.Wallet()
@@ -59,6 +59,10 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 
 	// Get CRED DEF from the ledger
 	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID))
+
+	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.MyCA().RootDid().Did(), rep.CredDefID))
+
+	defer err2.Returnf(&err, "build request from cred def ID: %v", rep.CredDefID)
 
 	// build credential request to send back to an issuer
 	r := <-anoncreds.ProverCreateCredentialReq(w, a.RootDid().Did(), rep.CredOffer,
