@@ -1872,7 +1872,10 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	require.NoError(t, err)
 	credDefID := cdResult.ID
 
+	glog.Infoln("credDefID =", credDefID, "wait for credDefID ready")
+	time.Sleep(3*time.Second)
 	glog.Info("=== holder auto accept creds")
+
 	holderConn := client.TryOpen(holderDID, baseCfg)
 	holderSC := agency2.NewAgentServiceClient(holderConn)
 	_, err = holderSC.Enter(ctx, &agency2.ModeCmd{
@@ -1929,6 +1932,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	}
 
 	glog.Info("===  issue second cred")
+
 	issueCh, err = client.Pairwise{
 		ID:   newConnID,
 		Conn: issuerConn,
