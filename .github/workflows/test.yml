@@ -3,14 +3,33 @@ on:
   push:
 jobs:
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.18.x
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: "--out-${NO_FUTURE}format colored-line-number --timeout=3m"
+          version: v1.48.0
+          skip-cache: true
+          # Optional: if set to true then the action don't cache or restore ~/go/pkg.
+          skip-pkg-cache: true
+          # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
+          skip-build-cache: true
+
   test-default:
     runs-on: ubuntu-latest
+    needs: [lint]
     env:
       TEST_WORKDIR: /github/home/.test/
       CI: true
     steps:
       # setup von-network ledger
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "bcgov/von-network"
           ref: "22973513c99cc9a286a6f181ca5c5f354a4eb2ee"
@@ -25,7 +44,7 @@ jobs:
           ./manage start
 
       # install indy
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
@@ -33,11 +52,11 @@ jobs:
 
       # setup go-env
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # test round for sov-did (default) and indy ledger
       - name: test and measure coverage
@@ -59,6 +78,7 @@ jobs:
 
   test-peer:
     runs-on: ubuntu-latest
+    needs: [lint]
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     env:
       TEST_WORKDIR: /github/home/.test/
@@ -67,11 +87,11 @@ jobs:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # test round for peer-did and mem-ledger
       - name: test and measure coverage (peer did)
@@ -88,16 +108,17 @@ jobs:
 
   license-scan:
     runs-on: ubuntu-latest
+    needs: [lint]
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # licence scan
       - name: scan
@@ -105,9 +126,10 @@ jobs:
 
   test-docker-image:
     runs-on: ubuntu-latest
+    needs: [lint]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: docker image
         run: make image
 
@@ -116,7 +138,7 @@ jobs:
     needs: [test-default, test-peer]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
@@ -132,19 +154,20 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    needs: [lint]
     steps:
       # install indy
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
         run: make indy_to_debian
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: install cli
         run: |
           curl https://raw.githubusercontent.com/findy-network/findy-agent-cli/HEAD/install.sh > install.sh
