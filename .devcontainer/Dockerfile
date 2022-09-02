@@ -14,14 +14,13 @@ COPY --from=indy-base /usr/lib/libindy.so /usr/lib/libindy.so
 RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.48.0
 
 ENV GO_TOOLS="\
-    golang.org/x/tools/gopls@latest \
-    honnef.co/go/tools/cmd/staticcheck@latest \
-    golang.org/x/lint/golint@latest \
-    github.com/mgechev/revive@latest \
-    github.com/uudashr/gopkgs/v2/cmd/gopkgs@latest \
-    github.com/ramya-rao-a/go-outline@latest \
+    github.com/cweill/gotests/gotests@latest \
+    github.com/fatih/gomodifytags@latest \
+    github.com/josharian/impl@latest \
+    github.com/haya14busa/goplay/cmd/goplay@latest \
     github.com/go-delve/delve/cmd/dlv@latest \
-    github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+    honnef.co/go/tools/cmd/staticcheck@latest \
+    golang.org/x/tools/gopls@latest"
 
 RUN echo "${GO_TOOLS}" | xargs -n 1 go install -v
 
