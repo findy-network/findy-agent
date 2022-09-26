@@ -36,6 +36,7 @@ e2e() {
   agency_flag
   agency_env
   onboard
+  onboard_no_steward
   other_cases
   rm_wallets
 
@@ -258,7 +259,7 @@ onboard() {
   export FCLI_ORIGIN="http://localhost:8888"
   export FCLI_TLS_PATH="./scripts/dev/docker/cert"
 
-  # onoboard
+  # onboard
   timestamp=$(date +%s)
   user="user-$timestamp"
 
@@ -272,6 +273,53 @@ onboard() {
     findy-agent-cli agent connect --invitation="$invitation" --jwt="$new_jwt"
   done
 
+
+  stop_agency
+}
+
+onboard_no_steward() {
+  init_agency
+  unset_envs
+
+  export FCLI_AGENCY_POOL_NAME="FINDY_FILE_LEDGER"
+  export FCLI_AGENCY_STEWARD_WALLET_NAME=""
+  export FCLI_AGENCY_STEWARD_WALLET_KEY=""
+  export FCLI_AGENCY_STEWARD_DID=""
+  export FCLI_AGENCY_HOST_PORT="8090"
+  export FCLI_AGENCY_SERVER_PORT="8090"
+  export FCLI_AGENCY_GRPC_CERT_PATH="./scripts/dev/docker/cert"
+
+  # run agency
+  echo -e "${BLUE}*** onboard - no steward ***${NC}"
+  $CLI agency start &
+  sleep 2
+  curl -f localhost:8090
+
+  export FCLI_KEY=$(findy-agent-cli new-key)
+  export FCLI_URL="http://localhost:8888"
+  export FCLI_ORIGIN="http://localhost:8888"
+  export FCLI_TLS_PATH="$FCLI_AGENCY_GRPC_CERT_PATH"
+  export FCLI_SEED="3eAISpafea4pmIZOyRixC5x2eOFGFiSk"
+
+  # onboard
+  timestamp=$(date +%s)
+  user="user-$timestamp"
+
+  findy-agent-cli authn register -u $user
+  jwt=$(findy-agent-cli authn login -u $user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+
+  # restart agency
+  stop_agency
+  sleep 2
+  $CLI agency start &
+  sleep 2
+  curl -f localhost:8090
+
+  jwt=$(findy-agent-cli authn login -u $user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+
+  echo "Invitation: $invitation"
 
   stop_agency
 }
