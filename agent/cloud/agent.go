@@ -211,15 +211,14 @@ func (a *Agent) PwPipe(connID string) (cp sec.Pipe, err error) {
 func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 	ca := a // to help us to read the code, receiver is CA
 	return ca.worker.testAndSet(func() *Agent {
-		glog.V(2).Infoln("starting worker agent creation process")
+		glog.V(2).Infof("starting worker agent (%s) creation process", waDID)
 		assert.P.True(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
 
 		cfg := ca.WalletH.Config().(*ssi.Wallet)
 		aWallet := cfg.WorkerWalletBy(suffix)
 
 		// getting wallet credentials
-		// CA and EA wallets have same key, they have same root DID
-		key, err := enclave.WalletKeyByDID(ca.RootDid().KID())
+		key, err := enclave.WalletKeyByDID(ca.myDID.Did())
 		if err != nil {
 			glog.Error("cannot get wallet key:", err)
 			panic(err)
@@ -245,7 +244,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		comm.ActiveRcvrs.Add(waDID, wca)
 
 		if !walletInitializedBefore {
-			glog.V(2).Info("Creating a master secret into worker's wallet")
+			glog.V(2).Infof("Creating a master secret into worker's wallet (%s)", ca.myDID.Did())
 			masterSec, err := enclave.NewWalletMasterSecret(ca.myDID.Did())
 			if err != nil {
 				glog.Error(err)
