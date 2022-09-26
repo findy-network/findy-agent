@@ -79,6 +79,7 @@ init_agency(){
   rm -rf ~/.indy_client/
   rm findy.bolt
   set -e
+  echo "{}" > findy.json
 }
 
 init_ledger() {
@@ -289,12 +290,11 @@ onboard_no_steward() {
   export FCLI_AGENCY_HOST_PORT="8090"
   export FCLI_AGENCY_SERVER_PORT="8090"
   export FCLI_AGENCY_GRPC_CERT_PATH="./scripts/dev/docker/cert"
-  export FCLI_LOGGING="-logtostderr=true -v=7"
 
 
   # run agency
   echo -e "${BLUE}*** onboard - no steward ***${NC}"
-  $CLI agency start &
+  $CLI agency start --logging="-logtostderr=true -v=7" &
   sleep 2
   curl -f localhost:8090
 
@@ -315,7 +315,7 @@ onboard_no_steward() {
   # restart agency
   stop_agency
   sleep 2
-  $CLI agency start &
+  $CLI agency start --logging="-logtostderr=true -v=7" &
   sleep 2
   curl -f localhost:8090
 
