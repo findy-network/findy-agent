@@ -307,6 +307,10 @@ onboard_no_steward() {
   # onboard
   timestamp=$(date +%s)
   user="user-$timestamp"
+  same_seed_user="same-seed-user-$timestamp"
+
+  # first register user with same seed
+  findy-agent-cli authn register -u $same_seed_user
 
   findy-agent-cli authn register -u $user
   jwt=$(findy-agent-cli authn login -u $user)
@@ -320,6 +324,7 @@ onboard_no_steward() {
   sleep 2
   curl -f localhost:8090
 
+  # check that we can create invitations after users are reloaded
   jwt=$(findy-agent-cli authn login -u $user)
   invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
 
