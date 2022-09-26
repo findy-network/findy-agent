@@ -315,6 +315,7 @@ onboard_no_steward() {
   # restart agency
   stop_agency
   sleep 2
+  cat findy.json
   $CLI agency start --logging="-logtostderr=true -v=7" &
   sleep 2
   curl -f localhost:8090
