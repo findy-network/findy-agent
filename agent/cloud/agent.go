@@ -218,8 +218,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 		aWallet := cfg.WorkerWalletBy(suffix)
 
 		// getting wallet credentials
-		// CA and EA wallets have same key, they have same root DID
-		key, err := enclave.WalletKeyByDID(ca.RootDid().KID())
+		key, err := enclave.WalletKeyByDID(ca.myDID.Did())
 		if err != nil {
 			glog.Error("cannot get wallet key:", err)
 			panic(err)

@@ -16,6 +16,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
@@ -72,7 +73,7 @@ type Agency struct{}
 // AnchorAgent Builds new trust anchor agent and its wallet. This is quite slow process. In
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
-func AnchorAgent(agentName, seed string) (agent *cloud.Agent, err error) {
+func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, err error) {
 	defer err2.Annotate("create archor", &err)
 
 	key := try.To1(enclave.NewWalletKey(agentName))
@@ -109,9 +110,10 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, err error) {
 	accessmgr.Send(agent.WalletH)
 
 	glog.V(2).Infof("--- Saving enclave key for %s", anchorDid.KID())
-	try.To(enclave.SetKeysDID(key, anchorDid.KID()))
+	caDid = try.To1(agent.NewDID(method.TypeSov, ""))
+	try.To(enclave.SetKeysDID(key, caDid.Did()))
 
-	return agent, nil
+	return agent, caDid, nil
 }
 
 // SetSteward sets the steward agent of this Agency.
@@ -137,13 +139,13 @@ func LoadRegistered(filename string) (err error) {
 		// still JSON file there is possibility for a human error.
 		alreadyRegistered := make(map[string]bool)
 
-		agency.Register.EnumValues(func(rootDid string, values []string) (next bool) {
+		agency.Register.EnumValues(func(caDID string, values []string) (next bool) {
 			// default is to continue even on cached errors, set this that
 			// even on panics we will continue
 			next = true
 
 			email := values[0]
-			caDID := values[1]
+			rootDid := values[1]
 			caVerKey := ""
 			if len(values) == 3 {
 				caVerKey = values[2]
@@ -160,12 +162,12 @@ func LoadRegistered(filename string) (err error) {
 				glog.V(2).Infof("Loading enclave key for root: %s, ca: %s", rootDid, caDID)
 
 				key := try.To1(enclave.WalletKeyByEmail(email))
-				keyByDid := try.To1(enclave.WalletKeyByDID(rootDid))
+				keyByDid := try.To1(enclave.WalletKeyByDID(caDID))
 
 				if key != keyByDid {
 					// key values are left out from logs in purpose
 					glog.Warningf("-------------------------------\n"+
-						"key by email (%s) don't match key by rootDid\n"+
+						"key by email (%s) don't match key by caDid\n"+
 						"using key by email", email)
 				}
 

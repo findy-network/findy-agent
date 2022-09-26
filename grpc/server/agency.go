@@ -14,7 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/enclave"
-	"github.com/findy-network/findy-agent/method"
 	ops "github.com/findy-network/findy-common-go/grpc/ops/v1"
 	"github.com/findy-network/findy-common-go/jwt"
 	"github.com/golang/glog"
@@ -49,14 +48,13 @@ func (a agencyService) Onboard(
 	}
 
 	agentName := strings.Replace(onboarding.Email, "@", "_", -1)
-	ac := try.To1(handshake.AnchorAgent(agentName, onboarding.PublicDIDSeed))
+	ac, caDID := try.To2(handshake.AnchorAgent(agentName, onboarding.PublicDIDSeed))
 
-	caDID := try.To1(ac.NewDID(method.TypeSov, ""))
 	DIDStr := caDID.Did()
 	caVerKey := caDID.VerKey()
 
 	agency.AddHandler(DIDStr, ac)
-	agency.Register.Add(ac.RootDid().Did(), agentName, DIDStr, caVerKey)
+	agency.Register.Add(DIDStr, agentName, ac.RootDid().Did(), caVerKey)
 
 	ac.SetMyDID(caDID)
 
