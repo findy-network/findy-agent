@@ -108,6 +108,7 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, err error) {
 	// from a pairwise only CA wallet in continuous backup process.
 	accessmgr.Send(agent.WalletH)
 
+	glog.V(2).Infof("--- Saving enclave key for %s", anchorDid.KID())
 	try.To(enclave.SetKeysDID(key, anchorDid.KID()))
 
 	return agent, nil
@@ -156,6 +157,8 @@ func LoadRegistered(filename string) (err error) {
 			})
 
 			if !alreadyRegistered[name] {
+				glog.V(2).Infof("Loading enclave key for root: %s, ca: %s", rootDid, caDID)
+
 				key := try.To1(enclave.WalletKeyByEmail(email))
 				keyByDid := try.To1(enclave.WalletKeyByDID(rootDid))
 
