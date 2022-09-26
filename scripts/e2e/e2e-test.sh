@@ -65,6 +65,7 @@ clean() {
   set +e
   rm findy.bolt
   set -e
+  echo "{}" > findy.json
 }
 
 stop_agency() {
@@ -288,6 +289,8 @@ onboard_no_steward() {
   export FCLI_AGENCY_HOST_PORT="8090"
   export FCLI_AGENCY_SERVER_PORT="8090"
   export FCLI_AGENCY_GRPC_CERT_PATH="./scripts/dev/docker/cert"
+  export FCLI_LOGGING="-logtostderr=true -v=7"
+
 
   # run agency
   echo -e "${BLUE}*** onboard - no steward ***${NC}"
