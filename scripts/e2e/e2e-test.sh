@@ -309,26 +309,26 @@ onboard_no_steward() {
   user="user-$timestamp"
   same_seed_user="same-seed-user-$timestamp"
 
-  # first register user with same seed
+  # register two users with same seed
   findy-agent-cli authn register -u $same_seed_user
-
   findy-agent-cli authn register -u $user
-  jwt=$(findy-agent-cli authn login -u $user)
-  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
 
   # restart agency
   stop_agency
   sleep 2
-  cat findy.json
+
   $CLI agency start --logging="-logtostderr=true -v=7" &
   sleep 2
   curl -f localhost:8090
 
   # check that we can create invitations after users are reloaded
+  jwt=$(findy-agent-cli authn login -u $same_seed_user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "First invitation: $invitation"
+
   jwt=$(findy-agent-cli authn login -u $user)
   invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
-
-  echo "Invitation: $invitation"
+  echo "Second invitation: $invitation"
 
   stop_agency
 }
