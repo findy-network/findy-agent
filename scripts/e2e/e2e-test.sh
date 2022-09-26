@@ -311,7 +311,14 @@ onboard_no_steward() {
 
   # register two users with same seed
   findy-agent-cli authn register -u $same_seed_user
+  jwt=$(findy-agent-cli authn login -u $same_seed_user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "First invitation: $invitation"
+
   findy-agent-cli authn register -u $user
+  jwt=$(findy-agent-cli authn login -u $user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "Second invitation: $invitation"
 
   # restart agency
   stop_agency
