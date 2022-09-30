@@ -22,7 +22,6 @@ func (f *Factor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 		Content:  init.Info,
 		SentTime: AriesTime{Time: time.Now()},
 		Thread:   decorator.CheckThread(init.Thread, init.AID),
-		//SentTime: AriesTime(time.Now()),
 	}
 	return NewBasicmessage(m)
 }

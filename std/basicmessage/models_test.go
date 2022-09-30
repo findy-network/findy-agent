@@ -6,12 +6,14 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
+	"github.com/findy-network/findy-common-go/dto"
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/stretchr/testify/assert"
 )
 
-var timeJSON = "2020-03-20 12:06:36.225671Z"
+var timeJSON = "{\"sent_time\":\"2020-03-20 12:06:36.225671Z\"}"
+var timeJSONRFC3339 = "{\"sent_time\":\"2022-09-30T12:31:05.923762Z\"}"
 
 var mbJSON = `{
     "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/basicmessage/1.0/message",
@@ -21,13 +23,26 @@ var mbJSON = `{
   }`
 
 func TestNewTimeField(t *testing.T) {
-	//timeValue, err := time.Parse(time.RFC3339, timeJSON)
-	timeValue, err := time.Parse(ISO8601, timeJSON)
-	assert.NoError(t, err)
+	var testMsg Basicmessage
+	dto.FromJSON([]byte(timeJSON), &testMsg)
+	timeValue := testMsg.SentTime
+
 	assert.NotNil(t, timeValue)
 	assert.Equal(t, timeValue.Year(), 2020)
 	assert.Equal(t, timeValue.Month(), time.March)
 	assert.Equal(t, timeValue.Day(), 20)
+
+}
+
+func TestNewTimeFieldRFC3339(t *testing.T) {
+	var testMsg Basicmessage
+	dto.FromJSON([]byte(timeJSONRFC3339), &testMsg)
+	timeValue := testMsg.SentTime
+
+	assert.NotNil(t, timeValue)
+	assert.Equal(t, timeValue.Year(), 2022)
+	assert.Equal(t, timeValue.Month(), time.September)
+	assert.Equal(t, timeValue.Day(), 30)
 }
 
 func TestNewBasicmessage(t *testing.T) {

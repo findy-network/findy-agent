@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/lainio/err2"
+	"github.com/lainio/err2/try"
 )
 
 // todo: move this to right place later!
@@ -14,7 +16,7 @@ type AriesTime struct {
 }
 
 // use generate errors with ACAPy when sending basic messages
-//const ISO8601 = "2006-01-02 15:04:05.999999999Z"
+// const ISO8601 = "2006-01-02 15:04:05.999999999Z"
 const ISO8601 = "2006-01-02 15:04:05.999999Z"
 
 type Basicmessage struct {
@@ -25,14 +27,23 @@ type Basicmessage struct {
 	SentTime AriesTime         `json:"sent_time"`
 }
 
-func (at *AriesTime) UnmarshalJSON(b []byte) error {
-	s := strings.Trim(string(b), "\"")
-	t, err := time.Parse(ISO8601, s)
-	if err != nil {
-		return err
+func validateTimestamp(timeStr string) (t time.Time, err error) {
+	acceptedFormats := []string{ISO8601, time.RFC3339}
+	for _, fmt := range acceptedFormats {
+		if t, err = time.Parse(fmt, timeStr); err == nil {
+			break
+		}
 	}
+	return
+}
+
+func (at *AriesTime) UnmarshalJSON(b []byte) (err error) {
+	defer err2.Return(&err)
+
+	t := try.To1(validateTimestamp(strings.Trim(string(b), "\"")))
+
 	*at = AriesTime{Time: t}
-	return nil
+	return
 }
 
 func (at AriesTime) MarshalJSON() ([]byte, error) {
