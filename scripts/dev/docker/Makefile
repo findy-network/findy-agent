@@ -18,7 +18,11 @@ clone:
 	cd .docker/von-network && git reset --hard $(VON_NETWORK_VERSION)
 
 von-up: clone
-	cd .docker/von-network && ./manage build && ./manage up
+#	cd .docker/von-network && ./manage build && ./manage up
+# TODO: use von-network image when ARM is supported
+	docker pull ghcr.io/lauravuo/von-network:latest
+	docker tag ghcr.io/lauravuo/von-network:latest von-network-base
+	cd .docker/von-network && ./manage up
 
 # resolve docker host similarly as is done in von-network
 docker-host:
