@@ -68,5 +68,9 @@ tag:
 	docker tag ghcr.io/findy-network/findy-agent-backchannel/aath:latest aries-test-harness:latest
 
 down:
-	cd ../dev/docker && \
-		make down
+	cd ../dev/docker && make down
+	cd .docker/findy-agent-backchannel/env/.docker/aries-agent-test-harness && \
+		./manage service stop von-network && ./manage service clean von-network && \
+		./manage service stop uniresolver && ./manage service clean uniresolver && \
+		./manage service stop indy-tails && ./manage service clean indy-tails
+
