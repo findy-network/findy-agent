@@ -115,7 +115,7 @@ loop:
 	return nil
 }
 
-//startPermanentPSMCleanup
+// startPermanentPSMCleanup
 func startPermanentPSMCleanup(ctx context.Context) {
 	clientID := utils.UUID()
 	listenKey := bus.AgentKeyType{

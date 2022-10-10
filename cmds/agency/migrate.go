@@ -20,7 +20,7 @@ type MigrateCmd struct {
 	OutputReg string
 }
 
-type seedAgent struct {
+type _ /*seedAgent*/ struct {
 	RootDID  string
 	Name     string
 	CADID    string

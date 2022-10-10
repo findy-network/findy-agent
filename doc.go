@@ -25,7 +25,7 @@ recommend to use findy CLI.
 are Go helpers to onboard EAs to agency and the Client, which hides the
 connections to the agency.
 
-About the build-in CLI
+# About the build-in CLI
 
 The agency's compilation includes command and flag sets to operate it with
 minimal dependencies to other repos or utilities. The offered command set is
@@ -33,21 +33,21 @@ minimal, but it offers everything to set up and maintain an agency. There is a
 separate CLI UI in other repo, which includes an extended command set with
 auto-completion scripts.
 
-Documentation
+# Documentation
 
 The whole codebase is still heavily under construction, but the main principles
 are ready and ok. Documentation is very minimal and partially missing.
 
-Sub-packages
+# Sub-packages
 
 findy-agent can be used as a service, as a framework and a CLI tool. It's
 structured to the following sub-packages:
 
- agent    includes framework packages like agency, agents, didcomm, endp, ..
- client   is a package to connect the agency from remote
- enclave  implements a secure enclave (interfaces) for the server
- protocol includes processors for Aries agent-to-agent protocols
- server   implements the http server for APIs, endpoints, etc.
- std      a root package for Aries protocol messages
+	agent    includes framework packages like agency, agents, didcomm, endp, ..
+	client   is a package to connect the agency from remote
+	enclave  implements a secure enclave (interfaces) for the server
+	protocol includes processors for Aries agent-to-agent protocols
+	server   implements the http server for APIs, endpoints, etc.
+	std      a root package for Aries protocol messages
 */
 package main
