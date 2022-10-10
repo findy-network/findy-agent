@@ -90,7 +90,7 @@ func (r *Reg) EnumValues(handler func(k keyDID, v []string) bool) {
 }
 
 func (r *Reg) Reset(filename string) (err error) {
-	defer err2.Annotate("resetting", &err)
+	defer err2.Returnf(&err, "resetting")
 	try.To(r.Load(""))       // reset data
 	try.To(r.Save(filename)) // save reset data to file
 	return err

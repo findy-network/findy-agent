@@ -104,7 +104,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.IssueCredentialACK,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("issuing user action handler", &err)
+			defer err2.Returnf(&err, "issuing user action handler")
 
 			iMsg := im.(didcomm.Msg)
 			ack = iMsg.Ready()
@@ -149,7 +149,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		WaitingNext: pltype.Terminate, // no next state, we are fine
 
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred issue", &err)
+			defer err2.Returnf(&err, "cred issue")
 
 			issue := im.FieldObj().(*issuecredential.Issue)
 			agent := packet.Receiver

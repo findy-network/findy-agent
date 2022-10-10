@@ -65,7 +65,7 @@ type DataConnection struct {
 }
 
 func (c *Connection) MarshalJSON() (_ []byte, err error) {
-	defer err2.Annotate("marshal connection", &err)
+	defer err2.Returnf(&err, "marshal connection")
 
 	switch doc := c.DIDDoc.(type) {
 	case *did.Doc:
@@ -87,7 +87,7 @@ func (c *Connection) MarshalJSON() (_ []byte, err error) {
 }
 
 func (c *Connection) UnmarshalJSON(b []byte) (err error) {
-	defer err2.Annotate("unmarshal connection", &err)
+	defer err2.Returnf(&err, "unmarshal connection")
 
 	data := new(AFGOConnection)
 	if err := json.Unmarshal(b, data); err == nil {

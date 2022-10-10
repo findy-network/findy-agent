@@ -43,7 +43,7 @@ func NewPackager(
 	p *Packager,
 	err error,
 ) {
-	defer err2.Annotate("packager new", &err)
+	defer err2.Returnf(&err, "packager new")
 
 	p = &Packager{
 		storage:  agentStorage,

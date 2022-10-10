@@ -74,7 +74,7 @@ type Agency struct{}
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
 func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, err error) {
-	defer err2.Annotate("create archor", &err)
+	defer err2.Returnf(&err, "create archor")
 
 	key := try.To1(enclave.NewWalletKey(agentName))
 	defer func() {

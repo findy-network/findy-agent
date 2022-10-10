@@ -45,7 +45,9 @@ func Execute() {
 
 // RootCmd returns a current root command which can be used for adding own
 // commands in an own repo.
-//  	implCmd.AddCommand(listCmd)
+//
+//	implCmd.AddCommand(listCmd)
+//
 // That's a helper function to extend this CLI with own commands and offering
 // same base commands as this CLI.
 func RootCmd() *cobra.Command {

@@ -40,7 +40,7 @@ func (a *agentServer) Enter(
 	rm *pb.ModeCmd,
 	err error,
 ) {
-	defer err2.Annotate("agent server enter mode cmd", &err)
+	defer err2.Returnf(&err, "agent server enter mode cmd")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent enter mode:", mode.TypeID, mode.IsInput)
@@ -109,7 +109,7 @@ func (a *agentServer) Ping(
 	_ *pb.PingMsg,
 	err error,
 ) {
-	defer err2.Annotate("agent server ping", &err)
+	defer err2.Returnf(&err, "agent server ping")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent ping:", pm.ID)
@@ -139,7 +139,7 @@ func (a *agentServer) CreateSchema(
 	os *pb.Schema,
 	err error,
 ) {
-	defer err2.Annotate("create schema", &err)
+	defer err2.Returnf(&err, "create schema")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
@@ -165,7 +165,7 @@ func (a *agentServer) CreateCredDef(
 	_ *pb.CredDef,
 	err error,
 ) {
-	defer err2.Annotate("create creddef", &err)
+	defer err2.Returnf(&err, "create creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
@@ -201,7 +201,7 @@ func (a *agentServer) GetSchema(
 	_ *pb.SchemaData,
 	err error,
 ) {
-	defer err2.Annotate("get schema", &err)
+	defer err2.Returnf(&err, "get schema")
 
 	caDID, ca := try.To2(ca(ctx))
 	rootDID := ca.RootDid().Did()
@@ -219,7 +219,7 @@ func (a *agentServer) GetCredDef(
 	_ *pb.CredDefData,
 	err error,
 ) {
-	defer err2.Annotate("get creddef", &err)
+	defer err2.Returnf(&err, "get creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
@@ -236,7 +236,7 @@ func (a *agentServer) CreateInvitation(
 	i *pb.Invitation,
 	err error,
 ) {
-	defer err2.Annotate("create invitation", &err)
+	defer err2.Returnf(&err, "create invitation")
 
 	id := base.ID
 
@@ -318,7 +318,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer err2.Annotate("give answer", &err)
+	defer err2.Returnf(&err, "give answer")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
@@ -454,7 +454,7 @@ loop:
 }
 
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
-	defer err2.Annotate("processQuestion", &err)
+	defer err2.Returnf(&err, "processQuestion")
 
 	notificationType := notificationTypeID[notify.NotificationType]
 	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)

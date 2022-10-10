@@ -34,7 +34,7 @@ func (a agencyService) Onboard(
 	st *ops.OnboardResult,
 	err error,
 ) {
-	defer err2.Annotate("CA Onboard API", &err)
+	defer err2.Returnf(&err, "CA Onboard API")
 	st = &ops.OnboardResult{Ok: false}
 
 	user := jwt.User(ctx)
@@ -115,7 +115,7 @@ loop:
 	return nil
 }
 
-//startPermanentPSMCleanup
+// startPermanentPSMCleanup
 func startPermanentPSMCleanup(ctx context.Context) {
 	clientID := utils.UUID()
 	listenKey := bus.AgentKeyType{
