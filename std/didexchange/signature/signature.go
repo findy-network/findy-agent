@@ -39,7 +39,7 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 }
 
 func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (cs *didexchange.ConnectionSignature, err error) {
-	defer err2.Annotate("build connection sign", &err)
+	defer err2.Returnf(&err, "build connection sign")
 
 	connectionJSON := try.To1(json.Marshal(connection))
 
@@ -79,7 +79,7 @@ func verifyTimestamp(data []byte) (timestamp int64, valid bool) {
 // given, it uses the key from the signature structure. If succeeded it returns
 // a Connection structure, else nil.
 func verifySignature(cs *didexchange.ConnectionSignature, pipe *sec.Pipe) (c *didexchange.Connection, err error) {
-	defer err2.Annotate("verify sign", &err)
+	defer err2.Returnf(&err, "verify sign")
 
 	if pipe != nil && pipe.Out.VerKey() != cs.SignVerKey {
 		s := "programming error, we shouldn't be here"

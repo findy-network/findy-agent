@@ -216,7 +216,7 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 }
 
 func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, err error) {
-	defer err2.Annotate("new DID", &err)
+	defer err2.Returnf(&err, "new DID")
 
 	glog.V(3).Infof("New '%s': %v", didMethod.DIDString(), args)
 
@@ -250,7 +250,7 @@ func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 }
 
 func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
-	defer err2.Annotate("new out DID", &err)
+	defer err2.Returnf(&err, "new out DID")
 
 	switch method.DIDType(didInfo[0]) {
 	case method.TypeKey, method.TypePeer:

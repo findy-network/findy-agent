@@ -36,7 +36,7 @@ var (
 )
 
 func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration) (data []byte, err error) {
-	defer err2.Annotate("call http", &err)
+	defer err2.Returnf(&err, "call http")
 
 	URL := try.To1(url.Parse(urlStr))
 
@@ -90,7 +90,7 @@ func min(a, b int) int {
 // downloadFile from url and sets the filepath to name of the local file.
 // If filepath is empty uses the filename of the download URL.
 func downloadFile(downloadDir, filepath, url string) (name string, err error) {
-	defer err2.Annotate("download file", &err)
+	defer err2.Returnf(&err, "download file")
 
 	// Get the data stream from server
 	resp := try.To1(http.Get(url))
@@ -123,7 +123,7 @@ defined in the Task.ReceiverEndp. Function will encrypt messages before sending.
 It doesn't resend PL in case of failure. The recovering in done at PSM level.
 */
 func SendPL(sendPipe sec.Pipe, task Task, opl didcomm.Payload) (err error) {
-	defer err2.Annotate("send payload", &err)
+	defer err2.Returnf(&err, "send payload")
 
 	cnxAddr := endp.NewAddrFromPublic(task.ReceiverEndp())
 

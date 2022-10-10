@@ -60,7 +60,7 @@ func (p *Packager) UnpackMessage(
 	e *transport.Envelope,
 	err error,
 ) {
-	defer err2.Annotate("indy unpack message", &err)
+	defer err2.Returnf(&err, "indy unpack message")
 
 	wallet := p.handle()
 
@@ -87,7 +87,7 @@ func (p *Packager) UnpackMessage(
 }
 
 func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err error) {
-	defer err2.Annotate("indy pack message", &err)
+	defer err2.Returnf(&err, "indy pack message")
 
 	wallet := p.handle()
 	toDID := envelope.ToKeys[0]
@@ -188,7 +188,7 @@ func (c *Crypto) Decrypt(cipher []byte, aad []byte, nonce []byte, kh interface{}
 // 		signature in []byte
 //		error in case of errors
 func (c *Crypto) Sign(msg []byte, kh interface{}) (s []byte, err error) {
-	defer err2.Annotate("indy packager sign", &err)
+	defer err2.Returnf(&err, "indy packager sign")
 
 	handle := kh.(*Handle)
 	r := <-indycrypto.SignMsg(handle.Wallet, handle.VerKey, msg)
@@ -201,7 +201,7 @@ func (c *Crypto) Sign(msg []byte, kh interface{}) (s []byte, err error) {
 // returns:
 // 		error in case of errors or nil if signature verification was successful
 func (c *Crypto) Verify(signature []byte, msg []byte, kh interface{}) (err error) {
-	defer err2.Annotate("indy packager verify", &err)
+	defer err2.Returnf(&err, "indy packager verify")
 
 	handle := kh.(*Handle)
 	r := <-indycrypto.VerifySignature(handle.VerKey, msg, signature)

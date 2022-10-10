@@ -38,7 +38,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof req handler", &err)
+			defer err2.Returnf(&err, "proof req handler")
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
@@ -77,7 +77,7 @@ func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.PresentProofACK,
 		SendOnNACK:  pltype.PresentProofNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof user action handler", &err)
+			defer err2.Returnf(&err, "proof user action handler")
 
 			// Does user allow continue?
 			iMsg := im.(didcomm.Msg)

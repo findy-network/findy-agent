@@ -41,7 +41,7 @@ func init() {
 }
 
 func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Annotate("createBasicMessageTask", &err)
+	defer err2.Returnf(&err, "createBasicMessageTask")
 
 	var content string
 	if protocol != nil {
@@ -95,7 +95,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 
 func handleBasicMessage(packet comm.Packet) (err error) {
 	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-		defer err2.Annotate("basic message", &err)
+		defer err2.Returnf(&err, "basic message")
 
 		pw := try.To1(packet.Receiver.FindPWByID(connID))
 		assert.D.True(pw != nil, "pairwise is nil")

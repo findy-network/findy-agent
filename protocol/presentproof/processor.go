@@ -58,7 +58,7 @@ func init() {
 }
 
 func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Annotate("createIssueCredentialTask", &err)
+	defer err2.Returnf(&err, "createIssueCredentialTask")
 
 	var proofAttrs []didcomm.ProofAttribute
 	var proofPredicates []didcomm.ProofPredicate
@@ -278,7 +278,7 @@ func handleProofACK(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof ACK handler", &err)
+			defer err2.Returnf(&err, "proof ACK handler")
 			return true, nil
 		},
 	})
@@ -294,7 +294,7 @@ func handleProofNACK(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof NACK handler", &err)
+			defer err2.Returnf(&err, "proof NACK handler")
 			return false, nil
 		},
 	})
