@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -40,91 +40,101 @@ func tearDown() {
 }
 
 func TestOpen(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	s := New(testConfig)
 	err := s.Init()
-	require.NoError(t, err)
-	require.NotNil(t, s)
+	assert.NoError(err)
+	assert.INotNil(s)
 
 	err = s.Close()
-	require.NoError(t, err)
+	assert.NoError(err)
 }
 
 func TestOpenStore(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	s := New(testConfig)
 	err := s.Init()
-	require.NoError(t, err)
-	require.NotNil(t, s)
+	assert.NoError(err)
+	assert.INotNil(s)
 
 	store1, err := s.OpenStore(testConfig.BucketIDs[0])
-	require.NoError(t, err)
-	require.NotNil(t, store1)
+	assert.NoError(err)
+	assert.INotNil(store1)
 
 	store2, err := s.OpenStore(testConfig.BucketIDs[1])
-	require.NoError(t, err)
-	require.NotNil(t, store2)
+	assert.NoError(err)
+	assert.INotNil(store2)
 
 	store3, err := s.OpenStore("notExist")
-	require.Error(t, err)
-	require.Nil(t, store3)
+	assert.Error(err)
+	assert.INil(store3)
 
 	err = s.Close()
-	require.NoError(t, err)
+	assert.NoError(err)
 }
 
 func TestReadData(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	s := New(testConfig)
 	err := s.Init()
-	require.NoError(t, err)
-	require.NotNil(t, s)
+	assert.NoError(err)
+	assert.INotNil(s)
 
 	store1, err := s.OpenStore(testConfig.BucketIDs[0])
-	require.NoError(t, err)
-	require.NotNil(t, store1)
+	assert.NoError(err)
+	assert.INotNil(store1)
 
 	var (
 		key   = "key1"
 		value = []byte("value1")
 	)
 	err = store1.Put(key, value)
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	got, err := store1.Get(key)
-	require.NoError(t, err)
-	require.Equal(t, value, got)
+	assert.NoError(err)
+	assert.DeepEqual(value, got)
 
 	err = s.Close()
-	require.NoError(t, err)
+	assert.NoError(err)
 }
 
 func TestDeleteData(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	s := New(testConfig)
 	err := s.Init()
-	require.NoError(t, err)
-	require.NotNil(t, s)
+	assert.NoError(err)
+	assert.INotNil(s)
 
 	store1, err := s.OpenStore(testConfig.BucketIDs[0])
-	require.NoError(t, err)
-	require.NotNil(t, store1)
+	assert.NoError(err)
+	assert.INotNil(store1)
 
 	err = store1.Put(testKey, testValue)
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	got, err := store1.Get(testKey)
-	require.NoError(t, err)
-	require.Equal(t, testValue, got)
+	assert.NoError(err)
+	assert.DeepEqual(testValue, got)
 
 	err = store1.Delete(testKey)
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	got, err = store1.Get(testKey)
-	require.Error(t, err)
-	require.Nil(t, got)
+	assert.Error(err)
+	assert.SNil(got)
 
 	err = s.Close()
-	require.NoError(t, err)
+	assert.NoError(err)
 }
 
 func TestConcurrentDataAccess(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	s := New(testConfig)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 5; i++ {
@@ -132,22 +142,22 @@ func TestConcurrentDataAccess(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			err := s.Init()
-			require.NoError(t, err)
-			require.NotNil(t, s)
+			assert.NoError(err)
+			assert.INotNil(s)
 
 			store1, err := s.OpenStore(testConfig.BucketIDs[0])
-			require.NoError(t, err)
-			require.NotNil(t, store1)
+			assert.NoError(err)
+			assert.INotNil(store1)
 
 			err = store1.Put(testKey, testValue)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			got, err := store1.Get(testKey)
-			require.NoError(t, err)
-			require.Equal(t, testValue, got)
+			assert.NoError(err)
+			assert.DeepEqual(testValue, got)
 		}()
 	}
 	wg.Wait()
 	err := s.Close()
-	require.NoError(t, err)
+	assert.NoError(err)
 }

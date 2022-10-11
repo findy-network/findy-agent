@@ -6,7 +6,6 @@ require (
 	github.com/findy-network/findy-common-go v0.1.45
 	github.com/findy-network/findy-wrapper-go v0.30.19
 	github.com/go-co-op/gocron v1.17.0
-	github.com/go-test/deep v1.0.8
 	github.com/golang/glog v1.0.0
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
@@ -17,7 +16,6 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
-	github.com/stretchr/testify v1.8.0
 	google.golang.org/grpc v1.49.0
 )
 
@@ -72,6 +70,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693 // indirect
+	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/teserakt-io/golang-ed25519 v0.0.0-20210104091850-3888c087a4c8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect

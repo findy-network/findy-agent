@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/lainio/err2/assert"
 )
 
 type TestJSON struct {
@@ -14,6 +14,8 @@ type TestJSON struct {
 }
 
 func TestPSM_data(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	registerGobs()
 
 	s := State{
@@ -33,6 +35,8 @@ func TestPSM_data(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			p := PSM{
 				Key:    tt.fields.Key,
 				States: tt.fields.States,
@@ -48,6 +52,8 @@ func TestPSM_data(t *testing.T) {
 }
 
 func Test_newPSM(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	p := PSM{
 		Key: StateKey{
 			DID:   mockStateDID,
@@ -71,6 +77,8 @@ func Test_newPSM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			if got := NewPSM(tt.args.d); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("newPSM() = %v, want %v", got, tt.want)
 			}
@@ -79,6 +87,8 @@ func Test_newPSM(t *testing.T) {
 }
 
 func Test_timestamp(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	type args struct {
 		d *PSM
 	}
@@ -98,6 +108,8 @@ func Test_timestamp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			if got := tt.args.d.Timestamp(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Timestamp() = %v, want %v", got, tt.want)
 			}
@@ -106,6 +118,8 @@ func Test_timestamp(t *testing.T) {
 }
 
 func Test_next(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	type args struct {
 		d *PSM
 	}
@@ -125,6 +139,8 @@ func Test_next(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			if got := tt.args.d.Next(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Next() = %v, want %v", got, tt.want)
 			}
@@ -133,6 +149,8 @@ func Test_next(t *testing.T) {
 }
 
 func TestAccept(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	p := PSM{
 		Key: StateKey{
 			DID:   mockStateDID,
@@ -144,27 +162,27 @@ func TestAccept(t *testing.T) {
 		},
 	}
 	accept := p.Accept(Received)
-	require.True(t, accept)
+	assert.That(accept)
 
 	accept = p.Accept(Sending)
-	require.True(t, accept)
+	assert.That(accept)
 
 	accept = p.Accept(ReadyACK) // important: JS agent's bug
-	require.True(t, accept, "waiting -> ready is ok for NOW")
+	assert.That(accept, "waiting -> ready is ok for NOW")
 
 	p.States = []State{{Sub: Received}, {Sub: Waiting}, {Sub: ReadyACK}}
 	accept = p.Accept(Waiting)
-	require.False(t, accept)
+	assert.ThatNot(accept)
 
 	p.States = []State{{Sub: Received}, {Sub: Waiting}, {Sub: Failure}}
 	accept = p.Accept(Waiting)
-	require.False(t, accept)
+	assert.ThatNot(accept)
 
 	p.States = []State{{Sub: Received}, {Sub: Decrypted}}
 	accept = p.Accept(Sending)
-	require.True(t, accept)
+	assert.That(accept)
 
 	p.States = []State{{Sub: Received}}
 	accept = p.Accept(ReadyACK)
-	require.True(t, accept)
+	assert.That(accept)
 }

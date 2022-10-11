@@ -14,8 +14,8 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMain(m *testing.M) {
@@ -52,22 +52,24 @@ func setUp() {
 }
 
 func TestPackAndUnpack(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	ourVdr, err := vdr.New(agent.Storage())
-	require.NoError(t, err)
-	require.NotEmpty(t, ourVdr)
+	assert.NoError(err)
+	assert.NotNil(ourVdr)
 
 	packager, err := mgddb.NewPackagerFromStorage(agent.Storage(), ourVdr.Registry())
-	require.NoError(t, err)
-	require.NotEmpty(t, packager)
+	assert.NoError(err)
+	assert.NotNil(packager)
 
 	mediaType := transport.MediaTypeProfileDIDCommAIP1
 
 	_, fromPkBytes, err := agent.Storage().KMS().CreateAndExportPubKeyBytes(kms.ED25519)
-	require.NoError(t, err)
+	assert.NoError(err)
 	fromDIDKey, _ := fingerprint.CreateDIDKey(fromPkBytes)
 
 	_, toPkBytes, err := agent.Storage().KMS().CreateAndExportPubKeyBytes(kms.ED25519)
-	require.NoError(t, err)
+	assert.NoError(err)
 	toDIDKey, _ := fingerprint.CreateDIDKey(toPkBytes)
 
 	msg := []byte("msg")
@@ -77,12 +79,12 @@ func TestPackAndUnpack(t *testing.T) {
 		FromKey:          []byte(fromDIDKey),
 		ToKeys:           []string{toDIDKey},
 	})
-	require.NoError(t, err)
-	require.NotEmpty(t, resBytes)
-	require.NotEqual(t, msg, resBytes)
+	assert.NoError(err)
+	assert.SNotEmpty(resBytes)
+	assert.NotDeepEqual(msg, resBytes)
 
 	resEnvelope, err := packager.UnpackMessage(resBytes)
-	require.NoError(t, err)
-	require.NotEmpty(t, resEnvelope)
-	require.Equal(t, msg, resEnvelope.Message)
+	assert.NoError(err)
+	assert.NotNil(resEnvelope)
+	assert.DeepEqual(msg, resEnvelope.Message)
 }

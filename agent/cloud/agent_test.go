@@ -6,10 +6,12 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/stretchr/testify/require"
+	"github.com/lainio/err2/assert"
 )
 
 func TestCAEndp(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	a := Agent{
 		DIDAgent: ssi.DIDAgent{
 			Type: ssi.Worker,
@@ -24,7 +26,7 @@ func TestCAEndp(t *testing.T) {
 	utils.Settings.SetHostAddr(hostAddr)
 
 	endpoint := a.CAEndp(connID)
-	require.Equal(t, endp.Addr{
+	assert.Equal(endp.Addr{
 		ID:        0,
 		Service:   serviceName,
 		PlRcvr:    a.myDID.Did(),
