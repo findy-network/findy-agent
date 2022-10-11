@@ -12,7 +12,7 @@ import (
 )
 
 func TestConnection_ReadDoc(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	defer err2.CatchTrace(func(err error) {
 		t.Error(err)
 	})

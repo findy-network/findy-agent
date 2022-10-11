@@ -45,7 +45,7 @@ func tearDown() {
 	home := utils.IndyBaseDir()
 	removeFiles(home, "/.indy_client/wallet/pipe-test-agent*")
 
-	err2.StackTraceWriter = nil
+	err2.SetTracers(nil)
 
 }
 
@@ -64,7 +64,7 @@ var (
 )
 
 func setUp() {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
 	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
 

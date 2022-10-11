@@ -124,7 +124,7 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 }
 
 func TestConnection_ReadDoc(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	defer err2.CatchTrace(func(err error) {
 		t.Error(err)
 	})
@@ -163,7 +163,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	tests := []struct {
 		name string
 		req  string
@@ -272,7 +272,7 @@ var (
 )
 
 func setUp() {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
 	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
 
