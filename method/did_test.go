@@ -13,8 +13,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPeer_DIDString(t *testing.T) {
@@ -28,7 +28,10 @@ func TestPeer_DIDString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.method.DIDString(), tt.result)
+			assert.PushTester(t)
+			defer assert.PopTester()
+
+			assert.Equal(tt.method.DIDString(), tt.result)
 		})
 	}
 }
@@ -44,23 +47,26 @@ func TestPeer_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			didIn, _ := agent.NewDID(tt.method, "https://www.address.com")
-			require.NotNil(t, didIn)
+			assert.INotNil(didIn)
 
 			var docBytes []byte
 			if tt.useKey {
 				docBytes = try.To1(json.Marshal(didIn.DOC()))
 			} else {
 				doc, err := method.NewDoc(didIn.VerKey(), "https://www.address.com")
-				require.NoError(t, err)
-				require.NotNil(t, doc)
+				assert.NoError(err)
+				assert.NotNil(doc)
 				docBytes = try.To1(json.Marshal(doc))
 			}
 			out, err := agent.NewOutDID(didIn.URI(), string(docBytes))
-			require.NoError(t, err)
-			require.NotNil(t, out)
-			require.Equal(t, didIn.VerKey(), out.VerKey())
-			require.Equal(t, didIn.URI(), out.URI())
+			assert.NoError(err)
+			assert.INotNil(out)
+			assert.Equal(didIn.VerKey(), out.VerKey())
+			assert.Equal(didIn.URI(), out.URI())
 		})
 	}
 }
@@ -74,13 +80,16 @@ func TestPeer_Route(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			didIn, _ := agent.NewDID(tt.method, "https://www.address.com")
-			require.NotNil(t, didIn)
+			assert.INotNil(didIn)
 
 			route := didIn.Route()
-			require.NotNil(t, route)
-			require.Len(t, route, 0)
-			require.Len(t, didIn.RecipientKeys(), 1)
+			assert.INotNil(route)
+			assert.SLen(route, 0)
+			assert.SLen(didIn.RecipientKeys(), 1)
 		})
 	}
 }
@@ -106,7 +115,10 @@ func TestMethodString(t *testing.T) {
 	for i, tt := range tests {
 		name := fmt.Sprintf("test_%d", i)
 		t.Run(name, func(t *testing.T) {
-			require.Equal(t, tt.method, method.String(tt.did))
+			assert.PushTester(t)
+			defer assert.PopTester()
+
+			assert.Equal(tt.method, method.String(tt.did))
 		})
 	}
 }
@@ -131,7 +143,10 @@ func TestDIDType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.Type, method.DIDType(tt.did))
+			assert.PushTester(t)
+			defer assert.PopTester()
+
+			assert.Equal(tt.Type, method.DIDType(tt.did))
 		})
 	}
 }
