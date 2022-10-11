@@ -24,7 +24,6 @@ import (
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -86,6 +85,8 @@ func setUp() {
 }
 
 func TestNewPipe(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	tests := []struct {
 		name   string
 		method method.Type
@@ -95,6 +96,8 @@ func TestNewPipe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			didIn, _ := agent.NewDID(tt.method, "")
 			println(didIn.URI())
 			didOut, _ := agent.NewDID(tt.method, "")
@@ -104,40 +107,44 @@ func TestNewPipe(t *testing.T) {
 			didRoute2, _ := agent.NewDID(tt.method, "")
 			println(didRoute2.URI())
 
-			require.NotNil(t, didIn)
-			require.NotNil(t, didOut)
-			require.NotNil(t, didRoute1)
-			require.NotNil(t, didRoute2)
+			assert.INotNil(didIn)
+			assert.INotNil(didOut)
+			assert.INotNil(didRoute1)
+			assert.INotNil(didRoute2)
 
 			message := []byte("message")
 
 			p := sec.Pipe{In: didIn, Out: didOut}
 
 			packed, _, err := p.Pack(message)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			received, _, err := p.Unpack(packed)
-			require.NoError(t, err)
-			require.Equal(t, message, received)
+			assert.NoError(err)
+			assert.DeepEqual(message, received)
 		})
 	}
 }
 
 func TestResolve(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	vdr := agent.VDR() // .Registry()
 	docR := try.To1(vdr.Registry().Resolve(key1))
-	require.NotNil(t, docR)
+	assert.INotNil(docR)
 	bytes := try.To1(docR.DIDDocument.JSONBytes())
-	require.NotNil(t, bytes)
+	assert.INotNil(bytes)
 }
 
 func TestPackTowardsPubKeyOnly(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	didIn, _ := agent.NewDID(method.TypeKey, "")
-	require.NotNil(t, didIn)
+	assert.INotNil(didIn)
 	println(didIn.String())
 	didOut, err := agent.NewOutDID(key2)
-	require.NoError(t, err)
-	require.NotNil(t, didOut)
+	assert.NoError(err)
+	assert.INotNil(didOut)
 	println(didOut.String())
 
 	message := []byte("message")
@@ -145,10 +152,12 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	p := sec.Pipe{In: didIn, Out: didOut}
 
 	packed, _ := try.To2(p.Pack(message))
-	require.NotNil(t, packed)
+	assert.INotNil(packed)
 }
 
 func TestSignVerifyWithSeparatedWallets(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	// we need to use two different agents that we have 2 different key and
 	// other storages. The AFGO (Tink) needs to have other agent's PubKey saved
 	// to its storage (to have key handle) that it can e.g. verify signatur.
@@ -156,23 +165,23 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 
 	// create first agent2's input DID
 	didIn2, _ := agent2.NewDID(method.TypeKey, "")
-	require.NotNil(t, didIn2)
+	assert.INotNil(didIn2)
 	println("in2: ", didIn2.URI())
 
 	didIn, _ := agent.NewDID(method.TypeKey, "")
-	require.NotNil(t, didIn)
+	assert.INotNil(didIn)
 	println("in: ", didIn.URI())
 
 	// give agent2's prime DID (input) to agent1's out DID
 	didOut, err := agent.NewOutDID(didIn2.URI())
-	require.NoError(t, err)
-	require.NotNil(t, didOut)
+	assert.NoError(err)
+	assert.INotNil(didOut)
 	println("out: ", didOut.URI())
 
 	// similarly, give agent1's in-DID to agent2's out-DID
 	didOut2, err := agent2.NewOutDID(didIn.URI())
-	require.NoError(t, err)
-	require.NotNil(t, didOut2)
+	assert.NoError(err)
+	assert.INotNil(didOut2)
 	println("out2: ", didOut2.URI())
 
 	message := []byte("message")
@@ -181,23 +190,25 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	p2 := sec.Pipe{In: didIn2, Out: didOut2}
 
 	packed, _ := try.To2(p.Pack(message))
-	require.NotNil(t, packed)
+	assert.INotNil(packed)
 	received, _ := try.To2(p2.Unpack(packed))
-	require.Equal(t, message, received)
+	assert.DeepEqual(message, received)
 
 	sign, _, err := p.Sign(message)
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	// Signature verification must done from p2 because p2 has only pubKey of
 	// the DID in the 'wallet' where p2 is connected to. This way the test
 	// follows the real world situation
 	ok, _, err := p2.Verify(message, sign)
-	require.NoError(t, err)
+	assert.NoError(err)
 
-	require.True(t, ok)
+	assert.That(ok)
 }
 
 func TestIndyPipe(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	defer err2.CatchAll(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
@@ -209,53 +220,53 @@ func TestIndyPipe(t *testing.T) {
 
 	didIn, _ := agent.NewDID(method.TypeSov, "")
 	str := didIn.String()
-	require.NotEmpty(t, str)
+	assert.NotEmpty(str)
 	println(str)
 
 	didIn2, _ := agent2.NewDID(method.TypeSov, "")
 	did2 := didIn2.String()
-	require.NotEmpty(t, did2)
+	assert.NotEmpty(did2)
 	println(did2)
 	println(didIn2.VerKey())
 
 	did2 = "did:sov:"
 	didOut, err := agent.NewOutDID(did2, didIn2.VerKey())
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	p := sec.Pipe{In: didIn, Out: didOut}
 
 	message := []byte("message")
 
 	packed, _, err := p.Pack(message)
-	require.NoError(t, err)
-	require.NotNil(t, packed)
+	assert.NoError(err)
+	assert.INotNil(packed)
 
 	didOut2, err := agent2.NewOutDID(did2, didIn.VerKey())
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	p2 := sec.Pipe{In: didIn2, Out: didOut2}
 	received, _ := try.To2(p2.Unpack(packed))
-	require.Equal(t, message, received)
+	assert.DeepEqual(message, received)
 
 	sign, vk, err := p.Sign(message)
-	require.NoError(t, err)
-	require.Equal(t, p2.Out.VerKey(), vk)
+	assert.NoError(err)
+	assert.Equal(p2.Out.VerKey(), vk)
 
 	// Signature verification must be done from p2 because p2 has only pubKey
 	// of the DID in the 'wallet' where p2 is connected to. This way the test
 	// follows the real world situation
 	ok, _, err := p2.Verify(message, sign)
-	require.NoError(t, err)
+	assert.NoError(err)
 
-	require.True(t, ok)
+	assert.That(ok)
 
 	p3 := sec.Pipe{Out: didOut2}
 
 	// Signature verification must be done from p2 because p2 has only pubKey
 	// Now we test the pipe which have only one end, no sender
 	ok, _, err = p3.Verify(message, sign)
-	require.NoError(t, err)
-	require.True(t, ok)
+	assert.NoError(err)
+	assert.That(ok)
 }
 
 type protected struct {
@@ -291,6 +302,8 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 
 //nolint:funlen
 func TestPipe_pack(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	defer err2.CatchAll(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
@@ -334,56 +347,58 @@ func TestPipe_pack(t *testing.T) {
 
 	// Pack message
 	route2bytes, _, err := packPipe.Pack(pl.JSON())
-	require.NoError(t, err)
-	require.True(t, len(route2bytes) > 0)
+	assert.NoError(err)
+	assert.That(len(route2bytes) > 0)
 
 	// Unpack forward message with last routing key
 	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
-	require.NoError(t, err)
-	require.True(t, len(route2Keys) == 1)
-	require.Equal(t, didRoute2.VerKey(), route2Keys[0])
+	assert.NoError(err)
+	assert.That(len(route2Keys) == 1)
+	assert.Equal(didRoute2.VerKey(), route2Keys[0])
 
 	route1UnpackPipe := sec.NewPipeByVerkey(didRoute2, didIn.VerKey(), []string{})
 	route1FwBytes, _, err := route1UnpackPipe.Unpack(route2bytes)
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	// Unpack next forward message with first routing key
 	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
 	route1Bytes := route1FwdMsg.Msg
 	route1Keys, err := getRecipientKeys(route1Bytes)
-	require.NoError(t, err)
-	require.True(t, len(route1Keys) == 1)
-	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
-	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
+	assert.NoError(err)
+	assert.That(len(route1Keys) == 1)
+	assert.Equal(didRoute1.VerKey(), route1Keys[0])
+	assert.Equal(didRoute1.VerKey(), route1FwdMsg.To)
 
 	dstUnpackPipe := sec.NewPipeByVerkey(didOut, didIn.VerKey(), []string{})
 	dstFwBytes, _, err := dstUnpackPipe.Unpack(dto.ToJSONBytes(route1Bytes))
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	// Unpack final (anon-crypted) forward message with destination key
 	dstFwdMsg := aries.PayloadCreator.NewFromData(dstFwBytes).MsgHdr().FieldObj().(*common.Forward)
 	dstPackedBytes := dto.ToJSONBytes(dstFwdMsg.Msg)
 	dstFwdKeys, err := getRecipientKeys(dstFwdMsg.Msg)
-	require.NoError(t, err)
-	require.True(t, len(dstFwdKeys) == 1)
-	require.Equal(t, didOut.VerKey(), dstFwdKeys[0])
-	require.Equal(t, didOut.VerKey(), dstFwdMsg.To)
+	assert.NoError(err)
+	assert.That(len(dstFwdKeys) == 1)
+	assert.Equal(didOut.VerKey(), dstFwdKeys[0])
+	assert.Equal(didOut.VerKey(), dstFwdMsg.To)
 
 	// Unpack final (auth-crypted) message with destination key
 	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
-	require.NoError(t, err)
+	assert.NoError(err)
 	dstKeys, err := getRecipientKeysFromBytes(dstPackedBytes)
-	require.NoError(t, err)
-	require.True(t, len(dstFwdKeys) == 1)
-	require.Equal(t, didOut.VerKey(), dstKeys[0])
+	assert.NoError(err)
+	assert.That(len(dstFwdKeys) == 1)
+	assert.Equal(didOut.VerKey(), dstKeys[0])
 
 	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
-	require.True(t, dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
-	require.True(t, dstMsg.MsgHdr().ID() == plID)
-	require.True(t, dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	assert.That(dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
+	assert.That(dstMsg.MsgHdr().ID() == plID)
+	assert.That(dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
 }
 
 func TestPipe_packPeer(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	defer err2.CatchAll(func(err error) {
 		fmt.Println(err)
 		t.Fail()
@@ -410,7 +425,7 @@ func TestPipe_packPeer(t *testing.T) {
 	outDoc.Service[0].RoutingKeys = []string{didRoute1.VerKey(), didRoute2.VerKey()}
 	docBytes := try.To1(json.Marshal(outDoc))
 	out, err := a.NewOutDID(didOut.URI(), string(docBytes))
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	packPipe := &sec.Pipe{
 		In:  didIn,
@@ -420,7 +435,7 @@ func TestPipe_packPeer(t *testing.T) {
 	// Simulate actual aries message
 	plID := utils.UUID()
 	doc, ok := didIn.DOC().(*did.Doc)
-	require.True(t, ok)
+	assert.That(ok)
 
 	msg := didexchange.NewRequest(&didexchange.Request{
 		Label: "test",
@@ -434,18 +449,18 @@ func TestPipe_packPeer(t *testing.T) {
 
 	// Pack message
 	route2bytes, _, err := packPipe.Pack(pl.JSON())
-	require.NoError(t, err)
-	require.True(t, len(route2bytes) > 0)
+	assert.NoError(err)
+	assert.That(len(route2bytes) > 0)
 
 	// Unpack forward message with last routing key
 	route2Keys, err := getRecipientKeysFromBytes(route2bytes)
-	require.NoError(t, err)
-	require.Len(t, route2Keys, 3)
+	assert.NoError(err)
+	assert.SLen(route2Keys, 3)
 
 	// these two rows haven't yet checked. API has changed and these haven't
 	// tested yet:
 	// lastRouteKey := route2Keys[0]
-	// require.Equal(t, didRoute2.VerKey(), lastRouteKey)
+	// assert.Equal( didRoute2.VerKey(), lastRouteKey)
 
 	firstUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
 		In:  didRoute2, // start with last route
@@ -453,8 +468,8 @@ func TestPipe_packPeer(t *testing.T) {
 	}
 
 	route1FwBytes, _, err := firstUnpackPipe.Unpack(route2bytes)
-	require.NoError(t, err)
-	require.NotNil(t, route1FwBytes)
+	assert.NoError(err)
+	assert.INotNil(route1FwBytes)
 
 	secondUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
 		In:  didRoute1, // start with last route
@@ -462,8 +477,8 @@ func TestPipe_packPeer(t *testing.T) {
 	}
 
 	route2FwBytes, _, err := secondUnpackPipe.Unpack(route2bytes)
-	require.NoError(t, err)
-	require.NotNil(t, route2FwBytes)
+	assert.NoError(err)
+	assert.INotNil(route2FwBytes)
 
 	wrongUnpackPipe := &sec.Pipe{ // this is receiver pipe, i.e. opposite direction
 		In:  wrongAgentDid, // start with last route
@@ -471,28 +486,28 @@ func TestPipe_packPeer(t *testing.T) {
 	}
 
 	wrongFwBytes, _, err := wrongUnpackPipe.Unpack(route2bytes)
-	require.Error(t, err)
-	require.Nil(t, wrongFwBytes)
+	assert.Error(err)
+	assert.SNil(wrongFwBytes)
 
 	// Unpack next forward message with first routing key
 	//	route1FwdMsg := aries.PayloadCreator.NewFromData(route1FwBytes).MsgHdr().FieldObj().(*common.Forward)
 	//	route1Bytes := route1FwdMsg.Msg
 	//	route1Keys, err := getRecipientKeys(route1Bytes)
-	//	require.NoError(t, err)
-	//	require.Len(t, route1Keys, 2)
-	//	require.Equal(t, didRoute1.VerKey(), route1Keys[0])
-	//	require.Equal(t, didRoute1.VerKey(), route1FwdMsg.To)
+	//	assert.NoError( err)
+	//	assert.SLen( route1Keys, 2)
+	//	assert.Equal( didRoute1.VerKey(), route1Keys[0])
+	//	assert.Equal( didRoute1.VerKey(), route1FwdMsg.To)
 
 	//	// Unpack final (auth-crypted) message with destination key
 	//	dstBytes, _, err := dstUnpackPipe.Unpack(dstPackedBytes)
-	//	require.NoError(t, err)
+	//	assert.NoError( err)
 	//	dstKeys, err := getRecipientKeysFromBytes(dstPackedBytes)
-	//	require.NoError(t, err)
-	//	require.True(t, len(dstFwdKeys) == 1)
-	//	require.Equal(t, didOut.VerKey(), dstKeys[0])
+	//	assert.NoError( err)
+	//	assert.That( len(dstFwdKeys) == 1)
+	//	assert.Equal( didOut.VerKey(), dstKeys[0])
 	//
 	//	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
-	//	require.True(t, dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
-	//	require.True(t, dstMsg.MsgHdr().ID() == plID)
-	//	require.True(t, dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	//	assert.That( dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
+	//	assert.That( dstMsg.MsgHdr().ID() == plID)
+	//	assert.That( dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
 }
