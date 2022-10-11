@@ -51,7 +51,7 @@ func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
 // Note! It throws err2 type of error and needs an error handler in the call
 // stack.
 func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
-	defer err2.Annotate("pipe sign", &err)
+	defer err2.Returnf(&err, "pipe sign")
 
 	c := p.crypto()
 	try.To(c.Verify(signature, msg, p.Out.SignKey()))
@@ -62,7 +62,7 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
 // Sign sings the message and returns the verification key. Note! It throws err2
 // type of error and needs an error handler in the call stack.
 func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
-	defer err2.Annotate("pipe sign", &err)
+	defer err2.Returnf(&err, "pipe sign")
 
 	c := p.crypto()
 	kms := p.packager().KMS()
@@ -96,7 +96,7 @@ func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string, err error) 
 
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
-	defer err2.Annotate("sec pipe pack", &err)
+	defer err2.Returnf(&err, "sec pipe pack")
 
 	media := p.defMediaType()
 	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
@@ -118,7 +118,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
-	defer err2.Annotate("sec pipe unpack", &err)
+	defer err2.Returnf(&err, "sec pipe unpack")
 
 	env := try.To1(p.packager().UnpackMessage(src))
 	dst = env.Message

@@ -17,8 +17,8 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/lainio/err2"
-	"github.com/lainio/err2/try"
 	"github.com/lainio/err2/assert"
+	"github.com/lainio/err2/try"
 )
 
 const (

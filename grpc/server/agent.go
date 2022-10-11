@@ -40,7 +40,7 @@ func (a *agentServer) Enter(
 	rm *pb.ModeCmd,
 	err error,
 ) {
-	defer err2.Annotate("agent server enter mode cmd", &err)
+	defer err2.Returnf(&err, "agent server enter mode cmd")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent enter mode:", mode.TypeID, mode.IsInput)
@@ -109,7 +109,7 @@ func (a *agentServer) Ping(
 	_ *pb.PingMsg,
 	err error,
 ) {
-	defer err2.Annotate("agent server ping", &err)
+	defer err2.Returnf(&err, "agent server ping")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent ping:", pm.ID)
@@ -139,7 +139,7 @@ func (a *agentServer) CreateSchema(
 	os *pb.Schema,
 	err error,
 ) {
-	defer err2.Annotate("create schema", &err)
+	defer err2.Returnf(&err, "create schema")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
@@ -149,6 +149,9 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.ID())
+
 	try.To(sch.Create(ca.RootDid().Did()))
 	try.To(sch.ToLedger(ca.Wallet(), ca.RootDid().Did()))
 
@@ -162,19 +165,31 @@ func (a *agentServer) CreateCredDef(
 	_ *pb.CredDef,
 	err error,
 ) {
-	defer err2.Annotate("create creddef", &err)
+	defer err2.Returnf(&err, "create creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
+	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+		ca.RootDid().Did(), ca.WorkerEA().ID())
+
 	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
 	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
+		ca.WorkerEA().Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
+		cdc.Tag, findy.NullString, findy.NullString)
+	rCA := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
 	try.To(r.Err())
+	try.To(rCA.Err())
+
 	cd := r.Str2()
+	if r.Str1() != rCA.Str1() {
+		glog.Error("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
+	}
+	glog.V(1).Infoln("=== starting legded writer with CA cred def")
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
 	return &pb.CredDef{ID: r.Str1()}, nil
 }
@@ -186,12 +201,14 @@ func (a *agentServer) GetSchema(
 	_ *pb.SchemaData,
 	err error,
 ) {
-	defer err2.Annotate("get schema", &err)
+	defer err2.Returnf(&err, "get schema")
 
 	caDID, ca := try.To2(ca(ctx))
+	rootDID := ca.RootDid().Did()
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
+	defer err2.Returnf(&err, "get schema (%v) by root (%v)", s.ID, rootDID)
 
-	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), ca.RootDid().Did(), s.ID))
+	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), rootDID, s.ID))
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
 }
 
@@ -202,10 +219,11 @@ func (a *agentServer) GetCredDef(
 	_ *pb.CredDefData,
 	err error,
 ) {
-	defer err2.Annotate("get creddef", &err)
+	defer err2.Returnf(&err, "get creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
+	defer err2.Returnf(&err, "get credDef (%v) by root (%v)", cd.ID, ca.RootDid().Did())
 
 	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
@@ -218,7 +236,7 @@ func (a *agentServer) CreateInvitation(
 	i *pb.Invitation,
 	err error,
 ) {
-	defer err2.Annotate("create invitation", &err)
+	defer err2.Returnf(&err, "create invitation")
 
 	id := base.ID
 
@@ -300,7 +318,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer err2.Annotate("give answer", &err)
+	defer err2.Returnf(&err, "give answer")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
@@ -436,7 +454,7 @@ loop:
 }
 
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
-	defer err2.Annotate("processQuestion", &err)
+	defer err2.Returnf(&err, "processQuestion")
 
 	notificationType := notificationTypeID[notify.NotificationType]
 	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)

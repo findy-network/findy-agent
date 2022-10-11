@@ -51,7 +51,7 @@ const fetchMax = 2
 
 // CreateProof is PROVER side helper.
 func (rep *PresentProofRep) CreateProof(packet comm.Packet, rootDID string) (err error) {
-	defer err2.Annotate("create proof", &err)
+	defer err2.Returnf(&err, "create proof")
 
 	if glog.V(6) {
 		glog.Info(rep.Key(), rootDID)
@@ -174,7 +174,7 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 }
 
 func credDefs(DID string, credDefIDs map[string]struct{}) (cJSON string, err error) {
-	defer err2.Annotate("cred defs", &err)
+	defer err2.Returnf(&err, "cred defs")
 
 	credDefs := make(map[string]map[string]interface{}, len(credDefIDs))
 	for cdID := range credDefIDs {
@@ -188,7 +188,7 @@ func credDefs(DID string, credDefIDs map[string]struct{}) (cJSON string, err err
 }
 
 func schemas(DID string, schemaIDs map[string]struct{}) (sJSON string, err error) {
-	defer err2.Annotate("get schemas", &err)
+	defer err2.Returnf(&err, "get schemas")
 
 	schemas := make(map[string]map[string]interface{}, len(schemaIDs))
 	for schemaID := range schemaIDs {
@@ -203,7 +203,7 @@ func schemas(DID string, schemaIDs map[string]struct{}) (sJSON string, err error
 }
 
 func (rep *PresentProofRep) VerifyProof(packet comm.Packet) (ack bool, err error) {
-	defer err2.Annotate("verify proof", &err)
+	defer err2.Returnf(&err, "verify proof")
 
 	var proof anoncreds.Proof
 	dto.FromJSONStr(rep.Proof, &proof)

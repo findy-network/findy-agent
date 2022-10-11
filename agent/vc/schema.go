@@ -21,7 +21,8 @@ type Schema struct {
 }
 
 func (s *Schema) Create(DID string) (err error) {
-	defer err2.Annotate("create schema", &err)
+	defer err2.Returnf(&err, "create schema by DID (%v)", DID)
+
 	attrsStr := try.To1(json.Marshal(s.Attrs))
 
 	s.Stored = &async.Future{}
@@ -45,14 +46,14 @@ func (s *Schema) ToLedger(wallet int, DID string) error {
 }
 
 func CredDefFromLedger(DID, credDefID string) (cd string, err error) {
-	defer err2.Annotate("process get cred def", &err)
+	defer err2.Returnf(&err, "process get cred def")
 
 	_, cd, err = ledger.ReadCredDef(pool.Handle(), DID, credDefID)
 	return cd, err
 }
 
 func (s *Schema) FromLedger(DID string) (err error) {
-	defer err2.Annotate("schema from ledger", &err)
+	defer err2.Returnf(&err, "schema from ledger")
 
 	sID, schema := try.To2(ledger.ReadSchema(pool.Handle(), DID, s.ValidID()))
 	s.Stored = &async.Future{V: indyDto.Result{Data: indyDto.Data{Str1: sID, Str2: schema}}, On: async.Consumed}

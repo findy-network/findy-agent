@@ -50,7 +50,7 @@ func NewPeer(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Annotate("new did:peer", &err)
+	defer err2.Returnf(&err, "new did:peer")
 
 	keys := hStorage.Storage().KMS()
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
@@ -90,7 +90,7 @@ func NewPeerFromDoc(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Annotate("new did:peer from did", &err)
+	defer err2.Returnf(&err, "new did:peer from did")
 
 	doc := try.To1(did.ParseDocument([]byte(didDoc)))
 	pk := doc.VerificationMethod[0].Value

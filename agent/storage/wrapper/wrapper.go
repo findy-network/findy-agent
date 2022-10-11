@@ -53,7 +53,7 @@ func New(config Config) *StorageProvider {
 }
 
 func (s *StorageProvider) Init() (err error) {
-	defer err2.Annotate("afgo storage open", &err)
+	defer err2.Returnf(&err, "afgo storage open")
 
 	s.l.Lock()
 	defer s.l.Unlock()
@@ -119,7 +119,7 @@ func (s *StorageProvider) OpenStore(name string) (storage.Store, error) {
 }
 
 func (s *StorageProvider) Close() (err error) {
-	defer err2.Annotate("afgo storage close", &err)
+	defer err2.Returnf(&err, "afgo storage close")
 
 	// We need to just read values here. We don't update s.db = nil
 	// because we don't want to reinitialize everything. Underlying db

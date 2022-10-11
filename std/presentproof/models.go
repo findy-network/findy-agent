@@ -53,7 +53,8 @@ type Attribute struct {
 }
 
 // Predicate is definition type of Preview struct.
-//  https://github.com/hyperledger/aries-rfcs/blob/master/features/0037-present-proof/README.md#predicates
+//
+//	https://github.com/hyperledger/aries-rfcs/blob/master/features/0037-present-proof/README.md#predicates
 type Predicate struct {
 	Name      string `json:"name"`
 	CredDefID string `json:"cred_def_id"`

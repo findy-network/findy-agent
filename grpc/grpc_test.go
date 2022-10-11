@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	mathrand "math/rand"
 	"net"
@@ -51,9 +50,9 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	err2assert "github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -83,7 +82,7 @@ ConnID: [3]string{"%s","%s", "%s"},
 
 const (
 	MaxWaitTime = time.Minute * 6
-	WaitTime    = time.Second
+	WaitTime    = 2 * time.Second
 )
 
 var (
@@ -106,18 +105,35 @@ func bufDialer(context.Context, string) (net.Conn, error) {
 	return lis.Dial()
 }
 
+func wait(t *testing.T, label string, test func() bool) {
+	var totalWaitTime time.Duration
+	for !test() && totalWaitTime < MaxWaitTime {
+		totalWaitTime += WaitTime
+		t.Log("Waiting for", label)
+		time.Sleep(WaitTime)
+	}
+}
+
 func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) {
 	ctx := context.Background()
-	_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
-	var totalWaitTime time.Duration
-	for err != nil && totalWaitTime < MaxWaitTime {
-		totalWaitTime += WaitTime
-		t.Log("Schema not found, waiting for schema to be found in ledger", schemaID)
-		time.Sleep(WaitTime)
-		_, err = c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+	test := func() bool {
+		_, err := c.GetSchema(ctx, &agency2.Schema{ID: schemaID})
+		return err == nil
 	}
-	assert.NoError(t, err)
+	wait(t, "schema: "+schemaID, test)
+	assert.True(t, test())
 	t.Log("Schema created successfully:", schemaID)
+}
+
+func waitForCredDef(t *testing.T, c agency2.AgentServiceClient, credDefID string) {
+	ctx := context.Background()
+	test := func() bool {
+		_, err := c.GetCredDef(ctx, &agency2.CredDef{ID: credDefID})
+		return err == nil
+	}
+	wait(t, "cred def: "+credDefID, test)
+	assert.True(t, test())
+	t.Log("Cred def created successfully:", credDefID)
 }
 
 func waitForTxnCount(t *testing.T, count int) {
@@ -125,15 +141,13 @@ func waitForTxnCount(t *testing.T, count int) {
 		// if no txns, we are not running in indy ledger an no need to wait
 		return
 	}
-	currentCount := getIndyLedgerTxnCount(t)
-	var totalWaitTime time.Duration
-	for currentCount < count && totalWaitTime < MaxWaitTime {
-		totalWaitTime += WaitTime
-		t.Log("Txn not found, waiting for txn to be found in ledger")
-		time.Sleep(WaitTime)
-		currentCount = getIndyLedgerTxnCount(t)
+
+	test := func() bool {
+		return getIndyLedgerTxnCount(t) >= count
 	}
-	t.Log("Txn count:", currentCount, "expected:", count)
+	wait(t, fmt.Sprintf("txn count %d", count), test)
+	assert.True(t, test())
+	t.Log("Txn count ok")
 }
 
 func getIndyLedgerTxnCount(t *testing.T) (count int) {
@@ -147,8 +161,9 @@ func getIndyLedgerTxnCount(t *testing.T) (count int) {
 	}
 
 	resp := try.To1(http.Get(fmt.Sprintf("%s/ledger/domain", getVonWebServerURL())))
-	body := try.To1(io.ReadAll(resp.Body))
 	defer resp.Body.Close()
+
+	body := try.To1(io.ReadAll(resp.Body))
 	res := make(map[string]any)
 	try.To(json.Unmarshal(body, &res))
 
@@ -165,9 +180,6 @@ func getVonWebServerURL() string {
 
 func TestMain(m *testing.M) {
 	try.To(flag.Set("logtostderr", "true"))
-
-	// we want panics from every err2/assert
-	err2assert.DefaultAsserter = err2assert.D
 
 	prepareBuildOneTest()
 	setUp()
@@ -198,9 +210,9 @@ func setUpLedger() {
 
 	// create ledger config (needed only when running with indy ledger in "clean" environment)
 	poolName := os.Getenv("FCLI_POOL_NAME")
-	createCh := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
-	if createCh.Err() != nil {
-		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, createCh.Err())
+	cfg := <-indypool.CreateConfig(poolName, indypool.Config{GenesisTxn: "../gen_txn_file"})
+	if cfg.Err() != nil {
+		fmt.Printf("pool creation failed for ledger %s (%s) %v \n--> ignoring\n", poolName, ledgerStore, cfg.Err())
 	}
 
 	// open ledger handle
@@ -208,10 +220,6 @@ func setUpLedger() {
 }
 
 func setUp() {
-	err2.StackTraceWriter = os.Stderr
-	err2assert.D = err2assert.AsserterCallerInfo
-	err2assert.DefaultAsserter = err2assert.AsserterFormattedCallerInfo
-
 	defer err2.CatchTrace(func(err error) {
 		fmt.Println("error on setup", err)
 	})
@@ -219,7 +227,7 @@ func setUp() {
 	calcTestMode()
 
 	if testMode == TestModeRunOne {
-		gob := try.To1(ioutil.ReadFile("ONEdata.gob"))
+		gob := try.To1(os.ReadFile("ONEdata.gob"))
 		dto.FromGOB(gob, &prebuildAgents)
 		agents = &prebuildAgents
 	} else {
@@ -331,8 +339,11 @@ func tearDown() {
 
 	removeFiles(home, "/.indy_client/worker/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/worker/email*")
+	removeFiles(home, "/.indy_client/worker/agent?_worker")
 	removeFiles(home, "/.indy_client/wallet/unit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/email*")
+	removeFiles(home, "/.indy_client/wallet/user-*")
+	removeFiles(home, "/.indy_client/wallet/agent?")
 	removeFiles(home, "/storage/unit_test_wallet*")
 	removeFiles(home, "/storage/email*")
 	if os.Getenv("TEST_WORKDIR") != "" {
@@ -467,7 +478,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want error
 	}{
 		{"1st",
 			args{
@@ -480,7 +491,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 1),
 			},
-			false,
+			nil,
 		},
 		{"2nd",
 			args{
@@ -493,7 +504,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 2),
 			},
-			false,
+			nil,
 		},
 		{"third",
 			args{
@@ -506,7 +517,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 3),
 			},
-			false,
+			nil,
 		},
 		{"fourth",
 			args{
@@ -519,7 +530,7 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				},
 				email: strLiteral("email", "", 4),
 			},
-			false,
+			nil,
 		},
 	}
 	for i, tt := range tests {
@@ -532,11 +543,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 			oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
 				Email: tt.args.email,
 			})
-			if !tt.want {
-				t.Log(err, tt.args.email)
-				assert.NoError(t, err)
-			} else {
-				assert.Error(t, err)
+			if err != tt.want {
+				t.Errorf("handshake API = %v, want %v", err, tt.want)
 			}
 			cadid := oReply.Result.CADID
 			agents[i].DID = cadid
@@ -569,6 +577,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotEmpty(t, cdResult.ID)
 				agents[0].CredDefID = cdResult.ID
+
+				waitForCredDef(t, c, agents[0].CredDefID)
 
 				assert.NoError(t, conn.Close())
 			}
@@ -610,6 +620,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 			})
 			assert.NoError(t, err)
 			assert.NotEmpty(t, cdResult.ID)
+
+			waitForCredDef(t, c, cdResult.ID)
 
 			assert.NoError(t, conn.Close())
 		})
@@ -763,7 +775,7 @@ func TestConnection_NoOneRun(t *testing.T) {
 		glog.V(1).Infoln(agent.String())
 	}
 	if testMode == TestModeBuildEnv {
-		try.To(ioutil.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
+		try.To(os.WriteFile("ONEdata.gob", dto.ToGOB(agents), 0644))
 	}
 }
 
@@ -1397,7 +1409,7 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 }
 
 func TestListenGrpcIssuingResume(t *testing.T) {
-	if testMode != TestModeRunOne { // todo: until all tests are ready
+	if testMode != TestModeRunOne { // TODO: until all tests are ready
 		glog.V(1).Infoln("========================\n========================\ntest skipped")
 		return
 	}
@@ -1512,13 +1524,13 @@ loop:
 				glog.V(1).Infoln("--- THIS a question")
 				switch status.TypeID {
 				case agency2.Question_PING_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_ISSUE_PROPOSE_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_PROOF_PROPOSE_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				case agency2.Question_PROOF_VERIFY_WAITS:
-					reply(conn.ClientConn, status, true)
+					reply(conn.ClientConn, status)
 				}
 			} else {
 				glog.V(1).Infoln("======= both notification types are None")
@@ -1541,8 +1553,9 @@ func doListenResume(
 	intCh chan struct{},
 	readyCh chan struct{},
 	wait chan struct{},
-	handleStatus handleStatusFn,
+	_ handleStatusFn,
 ) {
+	t.Helper()
 	conn := client.TryOpen(caDID, baseCfg)
 	// defer conn.Close()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -1676,13 +1689,13 @@ func handleStatusBMEcho(
 	return handleNotOurs
 }
 
-func reply(conn *grpc.ClientConn, status *agency2.Question, ack bool) {
+func reply(conn *grpc.ClientConn, status *agency2.Question) {
 	ctx := context.Background()
 	c := agency2.NewAgentServiceClient(conn)
 	cid := try.To1(c.Give(ctx, &agency2.Answer{
 		ID:       status.Status.Notification.ID,
 		ClientID: status.Status.ClientID,
-		Ack:      ack,
+		Ack:      true,
 		Info:     "testing says hello!",
 	}))
 	glog.V(1).Infof("Sending the answer (%s) send to client:%s\n", status.Status.Notification.ID, cid.ID)
@@ -1818,4 +1831,141 @@ func TestInvitationForSamePublicDID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, r2.JSON)
 
+}
+
+// go test -v -p 1 -failfast -run TestOnboardInBetweenIssue ./grpc/...
+func TestOnboardInBetweenIssue(t *testing.T) {
+	if testMode == TestModeRunOne {
+		return
+	}
+
+	// TODO: we cannot get old value now, this is the laste test here
+	// one for steward one for rest, it works with one even because we don't
+	// run real threads here
+	ssi.SetWalletMgrPoolSize(2)
+
+	sch := vc.Schema{
+		Name:    "email",
+		Version: "1.0",
+		Attrs:   []string{"email"},
+	}
+
+	adminConn := client.TryOpen("findy-root", baseCfg)
+	ctx := context.Background()
+	agencyClient := pb.NewAgencyServiceClient(adminConn)
+
+	glog.Info("===  onboard issuer")
+	txnCount := getIndyLedgerTxnCount(t)
+
+	oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: fmt.Sprintf("issuer%d", time.Now().Unix()),
+	})
+	require.NoError(t, err)
+	issuerDID := oReply.Result.CADID
+	waitForTxnCount(t, txnCount+1)
+
+	glog.Info("===  onboard holder")
+	oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
+		Email: fmt.Sprintf("holder%d", time.Now().Unix()),
+	})
+	require.NoError(t, err)
+	holderDID := oReply.Result.CADID
+
+	glog.Info("===  create schema + cred def for issuer")
+	issuerConn := client.TryOpen(issuerDID, baseCfg)
+
+	issuerSC := agency2.NewAgentServiceClient(issuerConn)
+	r, err := issuerSC.CreateSchema(ctx, &agency2.SchemaCreate{
+		Name:       sch.Name,
+		Version:    sch.Version,
+		Attributes: sch.Attrs,
+	})
+	require.NoError(t, err)
+	schemaID := r.ID
+	waitForSchema(t, issuerSC, schemaID)
+
+	cdResult, err := issuerSC.CreateCredDef(ctx, &agency2.CredDefCreate{
+		SchemaID: schemaID,
+		Tag:      "TAG_1",
+	})
+	require.NoError(t, err)
+	credDefID := cdResult.ID
+
+	glog.Infoln("credDefID =", credDefID, "wait for credDefID ready")
+	waitForCredDef(t, issuerSC, credDefID)
+	glog.Info("=== holder auto accept creds")
+
+	holderConn := client.TryOpen(holderDID, baseCfg)
+	holderSC := agency2.NewAgentServiceClient(holderConn)
+	_, err = holderSC.Enter(ctx, &agency2.ModeCmd{
+		TypeID:  agency2.ModeCmd_ACCEPT_MODE,
+		IsInput: true,
+		ControlCmd: &agency2.ModeCmd_AcceptMode{
+			AcceptMode: &agency2.ModeCmd_AcceptModeCmd{
+				Mode: agency2.ModeCmd_AcceptModeCmd_AUTO_ACCEPT,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	glog.Info("===  connect issuer to holder")
+	pairwise := &client.Pairwise{
+		Conn: holderConn,
+	}
+	invitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	require.NoError(t, err)
+	connID, ch := try.To2(pairwise.Connection(ctx, invitation.JSON))
+	for status := range ch {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	glog.Info("===  issue first cred")
+	issueCh, err := client.Pairwise{
+		ID:   connID,
+		Conn: issuerConn,
+	}.IssueWithAttrs(ctx, credDefID,
+		&agency2.Protocol_IssuingAttributes{
+			Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+				Name:  "email",
+				Value: "test",
+			}}})
+	require.NoError(t, err)
+	for status := range issueCh {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	glog.Info("===  onboard agents in between issuing")
+	for i := 0; i < 10; i++ {
+		_, err = agencyClient.Onboard(ctx, &pb.Onboarding{
+			Email: fmt.Sprintf("user%d%d", i, time.Now().Unix()),
+		})
+		require.NoError(t, err)
+	}
+
+	glog.Info("===  new connection holder and issuer")
+	newInvitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
+	require.NoError(t, err)
+	newConnID, ch := try.To2(pairwise.Connection(ctx, newInvitation.JSON))
+	for status := range ch {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+
+	glog.Info("===  issue second cred")
+
+	issueCh, err = client.Pairwise{
+		ID:   newConnID,
+		Conn: issuerConn,
+	}.IssueWithAttrs(ctx, credDefID,
+		&agency2.Protocol_IssuingAttributes{
+			Attributes: []*agency2.Protocol_IssuingAttributes_Attribute{{
+				Name:  "email",
+				Value: "test",
+			}}})
+	require.NoError(t, err)
+	for status := range issueCh {
+		require.Equal(t, agency2.ProtocolState_OK, status.State)
+	}
+	require.NoError(t, holderConn.Close())
+	require.NoError(t, issuerConn.Close())
+	require.NoError(t, adminConn.Close())
 }

@@ -1,7 +1,7 @@
 #!/bin/bash
 # e2e-test.sh
 
-CLI=$GOPATH/bin/findy-agent
+CLI=~/go/bin/findy-agent
 
 WALLET_KEY='9C5qFG3grXfU9LodHdMop7CNVb3HtKddjgRc7oK5KhWY'
 
@@ -16,11 +16,31 @@ NC='\033[0m'
 set -e
 
 e2e() { 
+  clean_auth
+
+  dockerhost="host.docker.internal"
+  if [[ $(uname) == "Linux" ]] ; then
+      dockerhost=$(docker run --rm --net=host eclipse/che-ip)
+  fi
+  cd scripts/dev/docker && make gen-cert && cd ../../..
+
+  docker run -itd \
+    -v $PWD/scripts/dev/docker/cert:/grpc \
+    -v $PWD/.data:/data \
+    --name e2e-auth \
+    -p 8888:8888 \
+    -e FAA_AGENCY_ADDR="$dockerhost" \
+    ghcr.io/findy-network/findy-agent-auth
+
   agency_conf
   agency_flag
   agency_env
+  onboard
+  onboard_no_steward
   other_cases
   rm_wallets
+
+  clean_auth
   echo -e "${BICYAN}*** E2E TEST FINISHED ***${NC}"
 }
 
@@ -31,6 +51,13 @@ test_cmds() {
   cmds_env
 }
 
+clean_auth() {
+  set +e
+  docker stop e2e-auth
+  docker rm e2e-auth
+  set -e
+}
+
 clean() {
   echo -e "${BLUE}*** dev - clean ***${NC}"
   echo -e "${RED}WARNING: erasing all local data stored by indy!${NC}"
@@ -38,6 +65,7 @@ clean() {
   set +e
   rm findy.bolt
   set -e
+  echo "{}" > findy.json
 }
 
 stop_agency() {
@@ -51,6 +79,7 @@ init_agency(){
   rm -rf ~/.indy_client/
   rm findy.bolt
   set -e
+  echo "{}" > findy.json
 }
 
 init_ledger() {
@@ -210,6 +239,104 @@ agency_flag() {
     --grpc-jwt-secret="my-secret" &
     sleep 2
   test_cmds
+  stop_agency
+}
+
+onboard() {
+  init_agency
+  unset_envs
+
+  # run agency
+  echo -e "${BLUE}*** onboard ***${NC}"
+  $CLI agency start \
+    --pool-name=FINDY_FILE_LEDGER \
+    --host-port=8090 \
+    --server-port=8090 \
+    --grpc-cert-path="./scripts/dev/docker/cert" &
+  sleep 2
+  curl -f localhost:8090
+
+  export FCLI_KEY=$(findy-agent-cli new-key)
+  export FCLI_URL="http://localhost:8888"
+  export FCLI_ORIGIN="http://localhost:8888"
+  export FCLI_TLS_PATH="./scripts/dev/docker/cert"
+
+  # onboard
+  timestamp=$(date +%s)
+  user="user-$timestamp"
+
+  findy-agent-cli authn register -u $user
+  jwt=$(findy-agent-cli authn login -u $user)
+  for i in {1..10}
+  do
+    invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+    findy-agent-cli authn register -u "$user$i"
+    new_jwt=$(findy-agent-cli authn login -u "$user$i")
+    findy-agent-cli agent connect --invitation="$invitation" --jwt="$new_jwt"
+  done
+
+
+  stop_agency
+}
+
+onboard_no_steward() {
+  init_agency
+  unset_envs
+
+  export FCLI_AGENCY_POOL_NAME="FINDY_FILE_LEDGER"
+  export FCLI_AGENCY_STEWARD_WALLET_NAME=""
+  export FCLI_AGENCY_STEWARD_WALLET_KEY=""
+  export FCLI_AGENCY_STEWARD_DID=""
+  export FCLI_AGENCY_HOST_PORT="8090"
+  export FCLI_AGENCY_SERVER_PORT="8090"
+  export FCLI_AGENCY_GRPC_CERT_PATH="./scripts/dev/docker/cert"
+
+
+  # run agency
+  echo -e "${BLUE}*** onboard - no steward ***${NC}"
+  $CLI agency start --logging="-logtostderr=true -v=7" &
+  sleep 2
+  curl -f localhost:8090
+
+  export FCLI_KEY=$(findy-agent-cli new-key)
+  export FCLI_URL="http://localhost:8888"
+  export FCLI_ORIGIN="http://localhost:8888"
+  export FCLI_TLS_PATH="$FCLI_AGENCY_GRPC_CERT_PATH"
+  export FCLI_SEED="3eAISpafea4pmIZOyRixC5x2eOFGFiSk"
+
+  # onboard
+  timestamp=$(date +%s)
+  user="user-$timestamp"
+  same_seed_user="same-seed-user-$timestamp"
+
+  # register two users with same seed
+  findy-agent-cli authn register -u $same_seed_user
+  jwt=$(findy-agent-cli authn login -u $same_seed_user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "First invitation: $invitation"
+
+  findy-agent-cli authn register -u $user
+  jwt=$(findy-agent-cli authn login -u $user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "Second invitation: $invitation"
+
+  # restart agency
+  stop_agency
+  sleep 2
+
+  $CLI agency start --logging="-logtostderr=true -v=7" &
+  sleep 2
+  curl -f localhost:8090
+
+  # check that we can create invitations after users are reloaded
+  jwt=$(findy-agent-cli authn login -u $same_seed_user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "First invitation: $invitation"
+
+  jwt=$(findy-agent-cli authn login -u $user)
+  invitation=$(findy-agent-cli agent invitation --jwt="$jwt")
+  echo "Second invitation: $invitation"
+
   stop_agency
 }
 

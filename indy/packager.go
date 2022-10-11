@@ -60,7 +60,7 @@ func (p *Packager) UnpackMessage(
 	e *transport.Envelope,
 	err error,
 ) {
-	defer err2.Annotate("indy unpack message", &err)
+	defer err2.Returnf(&err, "indy unpack message")
 
 	wallet := p.handle()
 
@@ -87,7 +87,7 @@ func (p *Packager) UnpackMessage(
 }
 
 func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err error) {
-	defer err2.Annotate("indy pack message", &err)
+	defer err2.Returnf(&err, "indy pack message")
 
 	wallet := p.handle()
 	toDID := envelope.ToKeys[0]
@@ -167,9 +167,10 @@ type Crypto struct {
 
 // Encrypt will encrypt msg and aad using a matching AEAD primitive in kh key handle of a public key
 // returns:
-// 		cipherText in []byte
-//		nonce in []byte
-//		error in case of errors during encryption
+//
+//	cipherText in []byte
+//	nonce in []byte
+//	error in case of errors during encryption
 func (c *Crypto) Encrypt(msg []byte, aad []byte, kh interface{}) ([]byte, []byte, error) {
 	panic("not implemented") // TODO: Implement
 }
@@ -177,18 +178,20 @@ func (c *Crypto) Encrypt(msg []byte, aad []byte, kh interface{}) ([]byte, []byte
 // Decrypt will decrypt cipher with aad and given nonce using a matching AEAD primitive in kh key handle of a
 // private key
 // returns:
-//		plainText in []byte
-//		error in case of errors
+//
+//	plainText in []byte
+//	error in case of errors
 func (c *Crypto) Decrypt(cipher []byte, aad []byte, nonce []byte, kh interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // Sign will sign msg using a matching signature primitive in kh key handle of a private key
 // returns:
-// 		signature in []byte
-//		error in case of errors
+//
+//	signature in []byte
+//	error in case of errors
 func (c *Crypto) Sign(msg []byte, kh interface{}) (s []byte, err error) {
-	defer err2.Annotate("indy packager sign", &err)
+	defer err2.Returnf(&err, "indy packager sign")
 
 	handle := kh.(*Handle)
 	r := <-indycrypto.SignMsg(handle.Wallet, handle.VerKey, msg)
@@ -199,9 +202,10 @@ func (c *Crypto) Sign(msg []byte, kh interface{}) (s []byte, err error) {
 // Verify will verify a signature for the given msg using a matching signature primitive in kh key handle of
 // a public key
 // returns:
-// 		error in case of errors or nil if signature verification was successful
+//
+//	error in case of errors or nil if signature verification was successful
 func (c *Crypto) Verify(signature []byte, msg []byte, kh interface{}) (err error) {
-	defer err2.Annotate("indy packager verify", &err)
+	defer err2.Returnf(&err, "indy packager verify")
 
 	handle := kh.(*Handle)
 	r := <-indycrypto.VerifySignature(handle.VerKey, msg, signature)
@@ -231,8 +235,9 @@ func (c *Crypto) VerifyMAC(mac []byte, data []byte, kh interface{}) error {
 // The absence of these options uses ECDH-ES key wrapping (aka Anoncrypt). Another option that can
 // be used is WithXC20PKW() to instruct the WrapKey to use XC20P key wrapping instead of the default A256GCM.
 // returns:
-// 		RecipientWrappedKey containing the wrapped cek value
-// 		error in case of errors
+//
+//	RecipientWrappedKey containing the wrapped cek value
+//	error in case of errors
 func (c *Crypto) WrapKey(cek []byte, apu []byte, apv []byte, recPubKey *crypto.PublicKey, opts ...crypto.WrapKeyOpts) (*crypto.RecipientWrappedKey, error) {
 	panic("not implemented") // TODO: Implement
 }
@@ -243,8 +248,9 @@ func (c *Crypto) WrapKey(cek []byte, apu []byte, apv []byte, recPubKey *crypto.P
 // The absence of these options uses ECDH-ES key unwrapping (aka Anoncrypt). There is no need to
 // use WithXC20PKW() for UnwrapKey since the function will use the wrapping algorithm based on recWK.Alg.
 // returns:
-// 		unwrapped key in raw bytes
-// 		error in case of errors
+//
+//	unwrapped key in raw bytes
+//	error in case of errors
 func (c *Crypto) UnwrapKey(recWK *crypto.RecipientWrappedKey, kh interface{}, opts ...crypto.WrapKeyOpts) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
@@ -252,8 +258,9 @@ func (c *Crypto) UnwrapKey(recWK *crypto.RecipientWrappedKey, kh interface{}, op
 // SignMulti will create a signature of messages using a matching signing primitive found in kh key handle of a
 // private key.
 // returns:
-// 		signature in []byte
-//		error in case of errors
+//
+//	signature in []byte
+//	error in case of errors
 func (c *Crypto) SignMulti(messages [][]byte, kh interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
@@ -261,7 +268,8 @@ func (c *Crypto) SignMulti(messages [][]byte, kh interface{}) ([]byte, error) {
 // VerifyMulti will verify a signature of messages using a matching signing primitive found in kh key handle of a
 // public key.
 // returns:
-// 		error in case of errors or nil if signature verification was successful
+//
+//	error in case of errors or nil if signature verification was successful
 func (c *Crypto) VerifyMulti(messages [][]byte, signature []byte, kh interface{}) error {
 	panic("not implemented") // TODO: Implement
 }
@@ -269,7 +277,8 @@ func (c *Crypto) VerifyMulti(messages [][]byte, signature []byte, kh interface{}
 // VerifyProof will verify a signature proof (generated e.g. by Verifier's DeriveProof() call) for revealedMessages
 // using a matching signing primitive found in kh key handle of a public key.
 // returns:
-// 		error in case of errors or nil if signature proof verification was successful
+//
+//	error in case of errors or nil if signature proof verification was successful
 func (c *Crypto) VerifyProof(revealedMessages [][]byte, proof []byte, nonce []byte, kh interface{}) error {
 	panic("not implemented") // TODO: Implement
 }
@@ -277,8 +286,9 @@ func (c *Crypto) VerifyProof(revealedMessages [][]byte, proof []byte, nonce []by
 // DeriveProof will create a signature proof for a list of revealed messages using BBS signature (can be built using
 // a Signer's SignMulti() call) and a matching signing primitive found in kh key handle of a public key.
 // returns:
-// 		signature proof in []byte
-//		error in case of errors
+//
+//	signature proof in []byte
+//	error in case of errors
 func (c *Crypto) DeriveProof(messages [][]byte, bbsSignature []byte, nonce []byte, revealedIndexes []int, kh interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }

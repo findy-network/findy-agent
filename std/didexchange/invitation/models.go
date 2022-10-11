@@ -13,7 +13,6 @@ import (
 //
 // Invitation defines DID exchange invitation message
 // https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange#0-invitation-to-exchange
-//
 type Invitation struct {
 	// the Image URL of the connection invitation
 	ImageURL string `json:"imageUrl,omitempty"`

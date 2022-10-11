@@ -47,7 +47,8 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred offer ask user", &err)
+			defer err2.Returnf(&err, "cred offer ask user (%v)",
+				packet.Receiver.RootDid().Did())
 
 			offer := im.FieldObj().(*issuecredential.Offer)
 			values := issuecredential.PreviewCredentialToValues(
@@ -66,6 +67,8 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			if credDefID, ok := subMsg["cred_def_id"]; ok {
 				rep.CredDefID = credDefID.(string)
 			}
+			defer err2.Returnf(&err, "cred def (%v)", rep.CredDefID)
+
 			rep.Values = values
 			preview.StoreCredPreview(&offer.CredentialPreview, rep)
 
@@ -101,7 +104,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.IssueCredentialACK,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("issuing user action handler", &err)
+			defer err2.Returnf(&err, "issuing user action handler")
 
 			iMsg := im.(didcomm.Msg)
 			ack = iMsg.Ready()
@@ -146,7 +149,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		WaitingNext: pltype.Terminate, // no next state, we are fine
 
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred issue", &err)
+			defer err2.Returnf(&err, "cred issue")
 
 			issue := im.FieldObj().(*issuecredential.Issue)
 			agent := packet.Receiver

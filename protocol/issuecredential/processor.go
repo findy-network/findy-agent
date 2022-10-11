@@ -57,7 +57,7 @@ func init() {
 }
 
 func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Annotate("createIssueCredentialTask", &err)
+	defer err2.Returnf(&err, "createIssueCredentialTask")
 
 	var credAttrs []didcomm.CredentialAttribute
 	var credDefID string
@@ -125,10 +125,10 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 			Ca:          ca,
 			T:           t,
 			Setup: func(key psm.StateKey, msg didcomm.MessageHdr) (err error) {
-				defer err2.Annotate("start issuing prot", &err)
+				defer err2.Returnf(&err, "start issuing prot")
 
 				r := <-anoncreds.IssuerCreateCredentialOffer(
-					ca.Wallet(), credTask.CredDefID)
+					ca.WorkerEA().Wallet(), credTask.CredDefID)
 				try.To(r.Err())
 				credOffer := r.Str1()
 
@@ -161,7 +161,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 			Ca:          ca,
 			T:           t,
 			Setup: func(key psm.StateKey, msg didcomm.MessageHdr) (err error) {
-				defer err2.Annotate("start issue prot", &err)
+				defer err2.Returnf(&err, "start issue prot")
 
 				attrsStr := try.To1(json.Marshal(credTask.CredentialAttrs))
 				pc := issuecredential.NewPreviewCredential(string(attrsStr))
@@ -191,7 +191,7 @@ func handleCredentialNACK(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("cred NACK", &err)
+			defer err2.Returnf(&err, "cred NACK")
 			// return false to mark this PSM to NACK!
 			return false, nil
 		},

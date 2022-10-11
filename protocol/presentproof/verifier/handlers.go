@@ -76,7 +76,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 		SendOnNACK:  pltype.PresentProofNACK,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptPropose},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof propose handler", &err)
+			defer err2.Returnf(&err, "proof propose handler")
 
 			agent := packet.Receiver
 			meDID := agent.MyDID().Did()
@@ -124,7 +124,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.PresentProofPresentation,
 		SendOnNACK:  pltype.PresentProofNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof propose user action handler", &err)
+			defer err2.Returnf(&err, "proof propose user action handler")
 
 			// Does user allow continue?
 			iMsg := im.(didcomm.Msg)
@@ -166,7 +166,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 		SendOnNACK:  pltype.PresentProofNACK,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptValues},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof presentation handler", &err)
+			defer err2.Returnf(&err, "proof presentation handler")
 
 			agent := packet.Receiver
 			repK := psm.NewStateKey(agent, im.Thread().ID)
@@ -215,7 +215,7 @@ func ContinueHandlePresentation(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.Terminate,
 		SendOnNACK:  pltype.PresentProofNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Annotate("proof values user action handler", &err)
+			defer err2.Returnf(&err, "proof values user action handler")
 
 			// Does user allow continue?
 			iMsg := im.(didcomm.Msg)

@@ -3,22 +3,22 @@ module github.com/findy-network/findy-agent
 go 1.18
 
 require (
-	github.com/findy-network/findy-common-go v0.1.39
-	github.com/findy-network/findy-wrapper-go v0.30.15
-	github.com/go-co-op/gocron v1.16.1
+	github.com/findy-network/findy-common-go v0.1.45
+	github.com/findy-network/findy-wrapper-go v0.30.19
+	github.com/go-co-op/gocron v1.17.0
 	github.com/go-test/deep v1.0.8
 	github.com/golang/glog v1.0.0
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
 	github.com/hyperledger/aries-framework-go v0.1.8
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20220322085443-50e8f9bd208b
-	github.com/lainio/err2 v0.8.7
+	github.com/lainio/err2 v0.8.8
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
-	github.com/spf13/viper v1.12.0
+	github.com/spf13/viper v1.13.0
 	github.com/stretchr/testify v1.8.0
-	google.golang.org/grpc v1.48.0
+	google.golang.org/grpc v1.49.0
 )
 
 require (
@@ -54,7 +54,7 @@ require (
 	github.com/multiformats/go-varint v0.0.5 // indirect
 	github.com/o1egl/paseto v1.0.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
+	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
 	github.com/piprate/json-gold v0.4.1-0.20210813112359-33b90c4ca86c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -72,7 +72,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693 // indirect
-	github.com/subosito/gotenv v1.3.0 // indirect
+	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/teserakt-io/golang-ed25519 v0.0.0-20210104091850-3888c087a4c8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -87,8 +87,8 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/ini.v1 v1.66.4 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

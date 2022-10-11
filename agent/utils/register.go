@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sync"
 
@@ -91,19 +90,19 @@ func (r *Reg) EnumValues(handler func(k keyDID, v []string) bool) {
 }
 
 func (r *Reg) Reset(filename string) (err error) {
-	defer err2.Annotate("resetting", &err)
+	defer err2.Returnf(&err, "resetting")
 	try.To(r.Load(""))       // reset data
 	try.To(r.Save(filename)) // save reset data to file
 	return err
 }
 
 func writeJSONFile(name string, json []byte) error {
-	err := ioutil.WriteFile(name, json, 0644)
+	err := os.WriteFile(name, json, 0644)
 	return err
 }
 
 func readJSONFile(name string) ([]byte, error) {
-	result, err := ioutil.ReadFile(name)
+	result, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}

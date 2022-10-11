@@ -54,7 +54,8 @@ type ProposeImpl struct {
 }
 
 // todo: do we really need ID here already? currently only used in tests, so the
-//  ID isn't relevant at the moment
+//
+//	ID isn't relevant at the moment
 func newPropose(ID, credDefID string, values []string) *ProposeImpl {
 	prev := NewPreview(values, credDefID)
 

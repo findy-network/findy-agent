@@ -2,31 +2,34 @@ name: test
 on:
   push:
 jobs:
+
   lint:
     runs-on: ubuntu-latest
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
-      - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates
-      - uses: actions/checkout@v2
-      - name: setup
-        uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
+      - uses: actions/checkout@v3
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.45.2
-          args: --timeout=5m
+          args: "--out-${NO_FUTURE}format colored-line-number --timeout=3m"
+          version: v1.48.0
+          skip-cache: true
+          # Optional: if set to true then the action don't cache or restore ~/go/pkg.
+          skip-pkg-cache: true
+          # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
+          skip-build-cache: true
 
   test-default:
     runs-on: ubuntu-latest
+    needs: [lint]
     env:
       TEST_WORKDIR: /github/home/.test/
       CI: true
     steps:
       # setup von-network ledger
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "bcgov/von-network"
           ref: "22973513c99cc9a286a6f181ca5c5f354a4eb2ee"
@@ -41,7 +44,7 @@ jobs:
           ./manage start
 
       # install indy
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
@@ -49,18 +52,20 @@ jobs:
 
       # setup go-env
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # test round for sov-did (default) and indy ledger
       - name: test and measure coverage
         run: |
           curl http://localhost:9000/genesis > gen_txn_file
-          make test_cov_out COV_FILE=coverage1.txt
+          make test_grpcv_cov_out COV_FILE=coverage1.txt
         env:
+          TEST_TIMEOUT: 6000s
+          TEST_ARGS: "-vmodule=grpc_test*=5 -v=0 -logtostderr"
           FCLI_POOL_NAME: "von"
           FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
@@ -73,6 +78,7 @@ jobs:
 
   test-peer:
     runs-on: ubuntu-latest
+    needs: [lint]
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     env:
       TEST_WORKDIR: /github/home/.test/
@@ -81,11 +87,11 @@ jobs:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # test round for peer-did and mem-ledger
       - name: test and measure coverage (peer did)
@@ -102,16 +108,17 @@ jobs:
 
   license-scan:
     runs-on: ubuntu-latest
+    needs: [lint]
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make & certs
         run: apt-get update && apt-get install -y build-essential ca-certificates
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # licence scan
       - name: scan
@@ -119,9 +126,10 @@ jobs:
 
   test-docker-image:
     runs-on: ubuntu-latest
+    needs: [lint]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: docker image
         run: make image
 
@@ -130,7 +138,7 @@ jobs:
     needs: [test-default, test-peer]
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: download coverage file
         uses: actions/download-artifact@v2
         with:
@@ -146,17 +154,35 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    needs: [lint]
     steps:
-      - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates curl
+      # install indy
+      - uses: actions/checkout@v3
+        with:
+          repository: "findy-network/findy-wrapper-go"
+      - name: install indy
+        run: make indy_to_debian
       - name: setup
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.18.x
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - name: install cli
+        run: |
+          curl https://raw.githubusercontent.com/findy-network/findy-agent-cli/HEAD/install.sh > install.sh
+          chmod a+x install.sh
+          sudo ./install.sh -b /bin
       - name: test
         run: make e2e_ci
-        env:
-          GOPATH: /go
+      - name: Collect docker logs
+        if: ${{ failure() }}
+        uses: jwalton/gh-docker-logs@v2.0.2
+        with:
+          dest: "./tests_output/docker-logs"
+      - name: archive logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-logs
+          path: tests_output
