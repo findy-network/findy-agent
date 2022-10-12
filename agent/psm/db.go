@@ -65,6 +65,10 @@ func Open(filename string) (err error) {
 	return nil
 }
 
+func Close() {
+	mgdDB.Close()
+}
+
 func addData(key []byte, value []byte, bucketID byte) (err error) {
 	return mgdDB.AddKeyValueToBucket(buckets[bucketID],
 		&db.Data{
