@@ -287,7 +287,7 @@ func setUp() {
 	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
-	try.To(psm.Open(strLiteral("Findy", ".bolt", -1))) // this panics if err..
+	try.To(psm.Open(strLiteral("MEMORY_Findy", ".bolt", -1))) // this panics if err..
 
 	go grpcserver.Serve(&rpc.ServerCfg{
 		PKI:     rpc.LoadPKI("./cert"),
