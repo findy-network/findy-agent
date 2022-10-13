@@ -30,7 +30,7 @@ type StorageProvider struct {
 	l sync.RWMutex
 
 	conf    Config
-	db      *db.Mgd
+	db      db.Handle
 	buckets map[string]bucket
 	cipher  *crypto.Cipher
 }
