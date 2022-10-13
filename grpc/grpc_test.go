@@ -50,9 +50,8 @@ import (
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -121,7 +120,7 @@ func waitForSchema(t *testing.T, c agency2.AgentServiceClient, schemaID string) 
 		return err == nil
 	}
 	wait(t, "schema: "+schemaID, test)
-	assert.True(t, test())
+	assert.That(test())
 	t.Log("Schema created successfully:", schemaID)
 }
 
@@ -132,7 +131,7 @@ func waitForCredDef(t *testing.T, c agency2.AgentServiceClient, credDefID string
 		return err == nil
 	}
 	wait(t, "cred def: "+credDefID, test)
-	assert.True(t, test())
+	assert.That(test())
 	t.Log("Cred def created successfully:", credDefID)
 }
 
@@ -146,7 +145,7 @@ func waitForTxnCount(t *testing.T, count int) {
 		return getIndyLedgerTxnCount(t) >= count
 	}
 	wait(t, fmt.Sprintf("txn count %d", count), test)
-	assert.True(t, test())
+	assert.That(test())
 	t.Log("Txn count ok")
 }
 
@@ -364,17 +363,21 @@ func removeFiles(home, nameFilter string) {
 }
 
 func Test_handleAgencyAPI(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for i := 0; i < 2; i++ {
 		t.Run(fmt.Sprintf("ping %d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
 			opsClient := pb.NewDevOpsServiceClient(conn)
 			result, err := opsClient.Enter(ctx, &pb.Cmd{
 				Type: pb.Cmd_PING,
 			})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			glog.V(1).Infoln(i, "result:", result.GetPing())
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
@@ -391,7 +394,7 @@ func srand(size int) string {
 
 func createTrustAnchor(t *testing.T) (seed string) {
 	defer err2.Catch(func(err error) {
-		assert.NoError(t, err)
+		assert.NoError(err)
 	})
 
 	t.Helper()
@@ -404,7 +407,7 @@ func createTrustAnchor(t *testing.T) (seed string) {
 	const seedSize = 32
 
 	seed = srand(seedSize)
-	assert.Len(t, seed, seedSize)
+	assert.That(len(seed) == seedSize)
 
 	glog.V(3).Infoln("--- trust anchor seed:", seed)
 
@@ -418,6 +421,8 @@ func createTrustAnchor(t *testing.T) (seed string) {
 }
 
 func Test_NewOnboarding(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	ut := time.Now().Unix() - 1545924840
 	walletName := fmt.Sprintf("email%v", ut)
 	tests := []struct {
@@ -440,6 +445,8 @@ func Test_NewOnboarding(t *testing.T) {
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen("findy-root", baseCfg)
 			ctx := context.Background()
 			agencyClient := pb.NewAgencyServiceClient(conn)
@@ -448,8 +455,8 @@ func Test_NewOnboarding(t *testing.T) {
 				PublicDIDSeed: createTrustAnchor(t),
 			})
 			testOK := (err != nil) == tt.wantErr
-			assert.True(t, testOK, "failing test", tt.email)
-			assert.NoError(t, conn.Close())
+			assert.That(testOK, "failing test", tt.email)
+			assert.NoError(conn.Close())
 		})
 	}
 }
@@ -458,6 +465,8 @@ func Test_NewOnboarding(t *testing.T) {
 // environment for the actual tests. However, it's now used to test that we can
 // use only one wallet for all the EAs. That's handy for web wallets.
 func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -535,6 +544,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			txnCount := getIndyLedgerTxnCount(t)
 
 			conn := client.TryOpen("findy-root", baseCfg)
@@ -563,8 +574,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 					Version:    sch.Version,
 					Attributes: sch.Attrs,
 				})
-				assert.NoError(t, err)
-				assert.NotEmpty(t, r.ID)
+				assert.NoError(err)
+				assert.NotEmpty(r.ID)
 				glog.V(1).Infoln(r.ID)
 				schemaID := r.ID
 
@@ -574,13 +585,13 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 					SchemaID: schemaID,
 					Tag:      "TAG_1",
 				})
-				assert.NoError(t, err)
-				assert.NotEmpty(t, cdResult.ID)
+				assert.NoError(err)
+				assert.NotEmpty(cdResult.ID)
 				agents[0].CredDefID = cdResult.ID
 
 				waitForCredDef(t, c, agents[0].CredDefID)
 
-				assert.NoError(t, conn.Close())
+				assert.NoError(conn.Close())
 			}
 		})
 	}
@@ -590,6 +601,8 @@ func Test_handshakeAgencyAPI_NoOneRun(t *testing.T) {
 // new gRPC API. It's currently run only in one test mode because it takes so
 // long to exec.
 func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode != TestModeRunOne {
 		return
 	}
@@ -597,6 +610,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			schemaName := fmt.Sprintf("%d_NEW_SCHEMA_%v", i, ut)
@@ -607,8 +622,8 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 				Version:    "1.0",
 				Attributes: []string{"attr1", "attr2", "attr3"},
 			})
-			assert.NoError(t, err)
-			assert.NotEmpty(t, r.ID)
+			assert.NoError(err)
+			assert.NotEmpty(r.ID)
 			glog.V(1).Infoln(r.ID)
 			schemaID := r.ID
 
@@ -618,12 +633,12 @@ func TestCreateSchemaAndCredDef_NoOneRun(t *testing.T) {
 				SchemaID: schemaID,
 				Tag:      "TAG_4_TEST",
 			})
-			assert.NoError(t, err)
-			assert.NotEmpty(t, cdResult.ID)
+			assert.NoError(err)
+			assert.NotEmpty(cdResult.ID)
 
 			waitForCredDef(t, c, cdResult.ID)
 
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
@@ -650,6 +665,8 @@ func connect(invitation string, ready chan struct{}) {
 }
 
 func TestWaitConnection_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -662,11 +679,8 @@ func TestWaitConnection_NoOneRun(t *testing.T) {
 	ctx := context.Background()
 	c := agency2.NewAgentServiceClient(conn)
 	r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-	if !assert.NoError(t, err) {
-		t.Fatal("ERROR: ", err)
-	}
-
-	assert.NotEmpty(t, r.JSON)
+	assert.NoError(err)
+	assert.NotEmpty(r.JSON)
 	glog.V(1).Infoln(r.JSON)
 	invitation := r.JSON
 
@@ -677,8 +691,8 @@ func TestWaitConnection_NoOneRun(t *testing.T) {
 	}
 
 	connID, ch, err := pairwise.WaitConnection(ctx, invitation)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, connID)
+	assert.NoError(err)
+	assert.NotEmpty(connID)
 
 	ready := make(chan struct{})
 	go connect(invitation, ready)
@@ -686,7 +700,7 @@ func TestWaitConnection_NoOneRun(t *testing.T) {
 	glog.V(1).Infoln("starting WaitInvitation loop, connID:", connID)
 	for status := range ch {
 		glog.V(1).Infof(">>>> WaitInvitation status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-		assert.Equal(t, agency2.ProtocolState_OK, status.State)
+		assert.Equal(agency2.ProtocolState_OK, status.State)
 	}
 	glog.V(1).Infoln("connID:", connID)
 
@@ -694,35 +708,38 @@ func TestWaitConnection_NoOneRun(t *testing.T) {
 	<-ready
 	glog.V(3).Infoln("Connection part is ready as well")
 
-	assert.NoError(t, conn.Close())
+	assert.NoError(conn.Close())
 }
 
 func TestInvitation_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
 
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
 			c := agency2.NewAgentServiceClient(conn)
 			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-			if !assert.NoError(t, err) {
-				t.Fatal("ERROR: ", err)
-			}
-
-			assert.NotEmpty(t, r.JSON)
+			assert.NoError(err)
+			assert.NotEmpty(r.JSON)
 			glog.V(1).Infoln(r.JSON)
 			agents[i].Invitation = r.JSON
 
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
 
 func TestConnection_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -732,6 +749,8 @@ func TestConnection_NoOneRun(t *testing.T) {
 			continue
 		}
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
@@ -741,13 +760,13 @@ func TestConnection_NoOneRun(t *testing.T) {
 				Label: "TestLabel",
 			}
 			connID, ch, err := pairwise.Connection(ctx, ca.Invitation)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, connID)
-			assert.True(t, endp.IsUUID(connID))
+			assert.NoError(err)
+			assert.NotEmpty(connID)
+			assert.That(endp.IsUUID(connID))
 
 			for status := range ch {
 				glog.V(1).Infof("Connection status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 
 				ctx := context.Background()
 				didComm := agency2.NewProtocolServiceClient(conn)
@@ -757,16 +776,16 @@ func TestConnection_NoOneRun(t *testing.T) {
 				}))
 				res := statusResult.GetDIDExchange()
 
-				assert.NotEmpty(t, res.TheirDID)
-				assert.NotEmpty(t, res.MyDID)
-				assert.NotEmpty(t, res.TheirLabel)
-				assert.NotEmpty(t, res.TheirEndpoint)
-				assert.Equal(t, connID, res.ID)
+				assert.NotEmpty(res.TheirDID)
+				assert.NotEmpty(res.MyDID)
+				assert.NotEmpty(res.TheirLabel)
+				assert.NotEmpty(res.TheirEndpoint)
+				assert.Equal(connID, res.ID)
 			}
 			agents[0].ConnID[i-1] = connID
 			agents[i].ConnID[0] = connID // must write directly to source not to var 'ca'
 
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 
@@ -780,6 +799,8 @@ func TestConnection_NoOneRun(t *testing.T) {
 }
 
 func TestTrustPing(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	intCh := make(chan struct{})
 	if testMode == TestModeRunOne {
 		go runPSMHook(intCh)
@@ -787,6 +808,8 @@ func TestTrustPing(t *testing.T) {
 
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
@@ -795,17 +818,17 @@ func TestTrustPing(t *testing.T) {
 				ID:   ca.ConnID[0],
 				Conn: conn,
 			}.Ping(ctx)
-			assert.NoError(t, err)
+			assert.NoError(err)
 			var protocolID *agency2.ProtocolID
 			for status := range r {
 				glog.V(1).Infof("trust ping status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 				protocolID = status.ProtocolID
 			}
 			pid, err := commClient.Release(ctx, protocolID)
-			assert.NoError(t, err)
+			assert.NoError(err)
 			glog.V(1).Infoln("release:", pid.ID)
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 	if testMode == TestModeRunOne {
@@ -844,8 +867,12 @@ loop:
 }
 
 func TestBasicMessage(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for i, ca := range agents {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
@@ -854,12 +881,12 @@ func TestBasicMessage(t *testing.T) {
 				ID:   ca.ConnID[0],
 				Conn: conn,
 			}.BasicMessage(ctx, "basic message test string")
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
@@ -867,6 +894,8 @@ func TestBasicMessage(t *testing.T) {
 var allPermissive = true
 
 func TestSetPermissive(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for i, ca := range agents {
 		conn := client.TryOpen(ca.DID, baseCfg)
 
@@ -889,12 +918,12 @@ func TestSetPermissive(t *testing.T) {
 			},
 		})
 		if t != nil {
-			assert.NoError(t, err)
-			assert.Equal(t, implID, r.GetAcceptMode().Mode)
+			assert.NoError(err)
+			assert.Equal(implID, r.GetAcceptMode().Mode)
 		}
 		err = conn.Close()
 		if err != nil && t != nil {
-			assert.NoError(t, err)
+			assert.NoError(err)
 		}
 	}
 	glog.V(1).Infoln("permissive impl set is done!")
@@ -905,6 +934,8 @@ func TestSetPermissive(t *testing.T) {
 // as well.
 
 func TestIssue(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
@@ -912,6 +943,8 @@ func TestIssue(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
@@ -926,18 +959,20 @@ func TestIssue(t *testing.T) {
 						Name:  "email",
 						Value: strLiteral("email", "", i+1),
 					}}})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 
 	}
 }
 
 func TestIssueJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
@@ -945,6 +980,8 @@ func TestIssueJSON(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("ISSUE-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
@@ -961,18 +998,20 @@ func TestIssueJSON(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.Issue(ctx, agents[0].CredDefID, attrJSON)
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 
 	}
 }
 
 func TestProposeIssue(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
@@ -981,6 +1020,8 @@ func TestProposeIssue(t *testing.T) {
 	// agent with 0 index is issuer -> rest are holders
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE ISSUE-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[i].DID, baseCfg)
 
 			ctx := context.Background()
@@ -995,18 +1036,20 @@ func TestProposeIssue(t *testing.T) {
 						Name:  "email",
 						Value: strLiteral("email", "", i+1),
 					}}})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("propose issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 
 	}
 }
 
 func TestProposeIssueJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestSetPermissive(t)
@@ -1015,6 +1058,8 @@ func TestProposeIssueJSON(t *testing.T) {
 	// agent with 0 index is issuer -> rest are holders
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE ISSUE-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[i].DID, baseCfg)
 
 			ctx := context.Background()
@@ -1031,17 +1076,19 @@ func TestProposeIssueJSON(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ProposeIssue(ctx, agents[0].CredDefID, attrJSON)
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("propose issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 
 	}
 }
 func TestReqProof(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
@@ -1049,6 +1096,8 @@ func TestReqProof(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
@@ -1062,17 +1111,19 @@ func TestReqProof(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
 
 func TestReqProofJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
@@ -1080,6 +1131,8 @@ func TestReqProofJSON(t *testing.T) {
 
 	for i := 0; i < 3; i++ {
 		t.Run(fmt.Sprintf("PROOF-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[0].DID, baseCfg)
 
 			ctx := context.Background()
@@ -1093,17 +1146,19 @@ func TestReqProofJSON(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ReqProof(ctx, dto.ToJSON(attrs))
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
 
 func TestProposeProof(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
@@ -1112,6 +1167,8 @@ func TestProposeProof(t *testing.T) {
 	// agent with 0 index is verifier -> rest are provers
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE PROOF-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[i].DID, baseCfg)
 
 			ctx := context.Background()
@@ -1125,17 +1182,19 @@ func TestProposeProof(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ProposeProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("propose proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
 
 func TestProposeProofJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = true
 	if testMode == TestModeRunOne {
 		TestIssue(t)
@@ -1144,6 +1203,8 @@ func TestProposeProofJSON(t *testing.T) {
 	// agent with 0 index is verifier -> rest are provers
 	for i := 1; i < len(agents); i++ {
 		t.Run(fmt.Sprintf("PROPOSE PROOF-%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(agents[i].DID, baseCfg)
 
 			ctx := context.Background()
@@ -1157,17 +1218,19 @@ func TestProposeProofJSON(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ProposeProof(ctx, dto.ToJSON(attrs))
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 }
 
 func TestListen(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
@@ -1194,10 +1257,10 @@ func TestListen(t *testing.T) {
 			ID:   ca.ConnID[0],
 			Conn: conn,
 		}.BasicMessage(ctx, fmt.Sprintf("# %d. basic message test string", i))
-		assert.NoError(t, err)
+		assert.NoError(err)
 		for status := range r {
 			glog.V(1).Infof("basic message status: %s|%s: %s\n", ca.ConnID[0], status.ProtocolID, status.State)
-			assert.Equal(t, agency2.ProtocolState_OK, status.State)
+			assert.Equal(agency2.ProtocolState_OK, status.State)
 		}
 	}
 	glog.V(1).Infoln("*** breaking out..")
@@ -1210,12 +1273,16 @@ func TestListen(t *testing.T) {
 }
 
 func TestListen100(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for i := 0; i < 10; i++ {
 		TestListen(t)
 	}
 }
 
 func TestListenPWStatus(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	defer cancelCtx()
 
@@ -1261,7 +1328,7 @@ func TestListenPWStatus(t *testing.T) {
 	try.To1(pw.Connection(ctx, r.JSON))
 	wg.Wait()
 
-	assert.True(t, endp.IsUUID(notification.Status.Notification.ConnectionID))
+	assert.That(endp.IsUUID(notification.Status.Notification.ConnectionID))
 
 	didComm := agency2.NewProtocolServiceClient(conn1)
 	statusResult := try.To1(didComm.Status(ctx, &agency2.ProtocolID{
@@ -1270,11 +1337,11 @@ func TestListenPWStatus(t *testing.T) {
 	}))
 	res := statusResult.GetDIDExchange()
 
-	assert.Equal(t, notification.Status.Notification.ConnectionID, res.ID)
-	assert.NotEmpty(t, res.TheirDID)
-	assert.NotEmpty(t, res.MyDID)
-	assert.Equal(t, "agent2", res.TheirLabel)
-	assert.NotEmpty(t, strings.Contains(res.TheirEndpoint, res.ID))
+	assert.Equal(notification.Status.Notification.ConnectionID, res.ID)
+	assert.NotEmpty(res.TheirDID)
+	assert.NotEmpty(res.MyDID)
+	assert.Equal("agent2", res.TheirLabel)
+	assert.That(strings.Contains(res.TheirEndpoint, res.ID))
 }
 
 func BenchmarkIssue(b *testing.B) {
@@ -1356,6 +1423,8 @@ func BenchmarkReqProof(b *testing.B) {
 }
 
 func TestListenSAGrpcProofReq(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	allPermissive = false
 	TestSetPermissive(t)
 
@@ -1372,6 +1441,8 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 	ca := agents[i]
 	/*for i, ca := range agents*/ {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
@@ -1387,16 +1458,16 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 				ID:   connID,
 				Conn: conn,
 			}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("proof status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
 				if status.State == agency2.ProtocolState_WAIT_ACTION {
 					glog.V(1).Infoln("our listener should take care of this")
 					continue
 				}
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 	glog.V(1).Infoln("*** breaking, wait listener is ready by listen readyCh")
@@ -1409,6 +1480,8 @@ func TestListenSAGrpcProofReq(t *testing.T) {
 }
 
 func TestListenGrpcIssuingResume(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode != TestModeRunOne { // TODO: until all tests are ready
 		glog.V(1).Infoln("========================\n========================\ntest skipped")
 		return
@@ -1431,6 +1504,8 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 	ca := agents[i]
 	/*for i, ca := range agents*/ {
 		t.Run(fmt.Sprintf("agent_%d", i), func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			conn := client.TryOpen(ca.DID, baseCfg)
 
 			ctx := context.Background()
@@ -1447,12 +1522,12 @@ func TestListenGrpcIssuingResume(t *testing.T) {
 						Name:  "email",
 						Value: strLiteral("email", "", i+1),
 					}}})
-			assert.NoError(t, err)
+			assert.NoError(err)
 			for status := range r {
 				glog.V(1).Infof("issuing status: %s|%s: %s\n", connID, status.ProtocolID, status.State)
-				assert.Equal(t, agency2.ProtocolState_OK, status.State)
+				assert.Equal(agency2.ProtocolState_OK, status.State)
 			}
-			assert.NoError(t, conn.Close())
+			assert.NoError(conn.Close())
 		})
 	}
 	glog.V(1).Infoln("*** waiting readyCh..")
@@ -1656,7 +1731,7 @@ func handleStatusBMEcho(
 	status *agency2.AgentStatus,
 	_ bool,
 ) handleAction {
-	assert.True(t, endp.IsUUID(status.Notification.ConnectionID))
+	assert.That(endp.IsUUID(status.Notification.ConnectionID))
 
 	switch status.Notification.ProtocolType {
 	case agency2.Protocol_BASIC_MESSAGE:
@@ -1674,7 +1749,7 @@ func handleStatusBMEcho(
 			return handleOK
 		}
 
-		assert.NotEmpty(t, statusResult.GetBasicMessage().GetContent())
+		assert.NotEmpty(statusResult.GetBasicMessage().GetContent())
 
 		glog.V(1).Infoln("sending BM back")
 		ch := try.To1(client.Pairwise{
@@ -1742,6 +1817,8 @@ func strLiteral(prefix string, suffix string, i int) string {
 }
 
 func TestInvitation_Multiple(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -1768,11 +1845,8 @@ func TestInvitation_Multiple(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 
 			r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-			if !assert.NoError(t, err) {
-				panic(err)
-			}
-
-			assert.NotEmpty(t, r.JSON)
+			assert.NoError(err)
+			assert.NotEmpty(r.JSON)
 			glog.V(1).Infoln(r.JSON)
 			cancel()
 			wg.Done()
@@ -1780,10 +1854,12 @@ func TestInvitation_Multiple(t *testing.T) {
 	}
 
 	wg.Wait()
-	assert.NoError(t, conn.Close())
+	assert.NoError(conn.Close())
 }
 
 func TestInvitationForSamePublicDID(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -1821,20 +1897,22 @@ func TestInvitationForSamePublicDID(t *testing.T) {
 	c := agency2.NewAgentServiceClient(conn)
 
 	r, err := c.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, r.JSON)
+	assert.NoError(err)
+	assert.NotEmpty(r.JSON)
 
 	conn2 := client.TryOpen(caDID2, baseCfg)
 	c2 := agency2.NewAgentServiceClient(conn2)
 
 	r2, err := c2.CreateInvitation(ctx, &agency2.InvitationBase{ID: utils.UUID()})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, r2.JSON)
+	assert.NoError(err)
+	assert.NotEmpty(r2.JSON)
 
 }
 
 // go test -v -p 1 -failfast -run TestOnboardInBetweenIssue ./grpc/...
 func TestOnboardInBetweenIssue(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	if testMode == TestModeRunOne {
 		return
 	}
@@ -1860,7 +1938,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	oReply, err := agencyClient.Onboard(ctx, &pb.Onboarding{
 		Email: fmt.Sprintf("issuer%d", time.Now().Unix()),
 	})
-	require.NoError(t, err)
+	assert.NoError(err)
 	issuerDID := oReply.Result.CADID
 	waitForTxnCount(t, txnCount+1)
 
@@ -1868,7 +1946,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	oReply, err = agencyClient.Onboard(ctx, &pb.Onboarding{
 		Email: fmt.Sprintf("holder%d", time.Now().Unix()),
 	})
-	require.NoError(t, err)
+	assert.NoError(err)
 	holderDID := oReply.Result.CADID
 
 	glog.Info("===  create schema + cred def for issuer")
@@ -1880,7 +1958,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		Version:    sch.Version,
 		Attributes: sch.Attrs,
 	})
-	require.NoError(t, err)
+	assert.NoError(err)
 	schemaID := r.ID
 	waitForSchema(t, issuerSC, schemaID)
 
@@ -1888,7 +1966,7 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		SchemaID: schemaID,
 		Tag:      "TAG_1",
 	})
-	require.NoError(t, err)
+	assert.NoError(err)
 	credDefID := cdResult.ID
 
 	glog.Infoln("credDefID =", credDefID, "wait for credDefID ready")
@@ -1906,17 +1984,17 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 			},
 		},
 	})
-	require.NoError(t, err)
+	assert.NoError(err)
 
 	glog.Info("===  connect issuer to holder")
 	pairwise := &client.Pairwise{
 		Conn: holderConn,
 	}
 	invitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
-	require.NoError(t, err)
+	assert.NoError(err)
 	connID, ch := try.To2(pairwise.Connection(ctx, invitation.JSON))
 	for status := range ch {
-		require.Equal(t, agency2.ProtocolState_OK, status.State)
+		assert.Equal(agency2.ProtocolState_OK, status.State)
 	}
 
 	glog.Info("===  issue first cred")
@@ -1929,9 +2007,9 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 				Name:  "email",
 				Value: "test",
 			}}})
-	require.NoError(t, err)
+	assert.NoError(err)
 	for status := range issueCh {
-		require.Equal(t, agency2.ProtocolState_OK, status.State)
+		assert.Equal(agency2.ProtocolState_OK, status.State)
 	}
 
 	glog.Info("===  onboard agents in between issuing")
@@ -1939,15 +2017,15 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 		_, err = agencyClient.Onboard(ctx, &pb.Onboarding{
 			Email: fmt.Sprintf("user%d%d", i, time.Now().Unix()),
 		})
-		require.NoError(t, err)
+		assert.NoError(err)
 	}
 
 	glog.Info("===  new connection holder and issuer")
 	newInvitation, err := issuerSC.CreateInvitation(ctx, &agency2.InvitationBase{})
-	require.NoError(t, err)
+	assert.NoError(err)
 	newConnID, ch := try.To2(pairwise.Connection(ctx, newInvitation.JSON))
 	for status := range ch {
-		require.Equal(t, agency2.ProtocolState_OK, status.State)
+		assert.Equal(agency2.ProtocolState_OK, status.State)
 	}
 
 	glog.Info("===  issue second cred")
@@ -1961,11 +2039,11 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 				Name:  "email",
 				Value: "test",
 			}}})
-	require.NoError(t, err)
+	assert.NoError(err)
 	for status := range issueCh {
-		require.Equal(t, agency2.ProtocolState_OK, status.State)
+		assert.Equal(agency2.ProtocolState_OK, status.State)
 	}
-	require.NoError(t, holderConn.Close())
-	require.NoError(t, issuerConn.Close())
-	require.NoError(t, adminConn.Close())
+	assert.NoError(holderConn.Close())
+	assert.NoError(issuerConn.Close())
+	assert.NoError(adminConn.Close())
 }

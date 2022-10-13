@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 const dbFilename = "enclave.bolt"
@@ -33,67 +33,82 @@ func tearDown() {
 }
 
 func TestNewWalletKey(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	k, err := NewWalletKey(emailAddress)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, k)
+	assert.NoError(err)
+	assert.NotEmpty(k)
 
 	k2, err := WalletKeyByEmail(emailAddress)
-	assert.NoError(t, err)
-	assert.Equal(t, k, k2)
+	assert.NoError(err)
+	assert.Equal(k, k2)
 
 	_, err = NewWalletKey(emailAddress)
-	assert.Error(t, err)
+	assert.Error(err)
 }
 
 func TestSetKeysDID(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	const emailAddress = "test2@email.com"
 
 	k, err := NewWalletKey(emailAddress)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, k)
+	assert.NoError(err)
+	assert.NotEmpty(k)
 	key := k
 
 	err = SetKeysDID(k, "TESTDID")
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	k, err = WalletKeyByDID("TESTDID")
-	assert.NoError(t, err)
-	assert.Equal(t, key, k)
+	assert.NoError(err)
+	assert.Equal(key, k)
 }
 
 func TestWalletKeyByEmail(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	key, err := WalletKeyByEmail(emailAddress)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, key)
+	assert.NoError(err)
+	assert.NotEmpty(key)
 
 	key, err = WalletKeyByEmail(emailNotCreated)
-	assert.Equal(t, ErrNotExists, err)
-	assert.Empty(t, key)
+	assert.That(ErrNotExists == err)
+	assert.Empty(key)
 	if ErrNotExists != err {
 		t.Errorf("Not right (%s) error (%s)", ErrNotExists, err)
 	}
 }
 
 func TestWalletKeyExists(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	notExists := WalletKeyNotExists(emailNotCreated)
-	assert.True(t, notExists, "wallet not created")
+	assert.That(notExists, "wallet not created")
 
 	notExists = WalletKeyNotExists(emailAddress)
-	assert.False(t, notExists, "wallet already created")
+	assert.ThatNot(notExists, "wallet already created")
 }
 
 func TestNewWalletMasterSecret(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	sec, err := NewWalletMasterSecret("test_did")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, sec)
+	assert.NoError(err)
+	assert.NotEmpty(sec)
 
 	sec2, err := WalletMasterSecretByDID("test_did")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, sec2)
-	assert.Equal(t, sec, sec2)
+	assert.NoError(err)
+	assert.NotEmpty(sec2)
+	assert.Equal(sec, sec2)
 
 	sec3, err := WalletMasterSecretByDID("wrong_test_did")
-	assert.Error(t, err)
-	assert.Empty(t, sec3)
+	assert.Error(err)
+	assert.Empty(sec3)
 
 }

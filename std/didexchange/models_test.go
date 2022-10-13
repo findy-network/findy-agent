@@ -22,7 +22,6 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // Connection request taken from Python Agent output for example json.
@@ -111,6 +110,8 @@ var serviceJSON = `{
 }`
 
 func TestConnection_ReadServiceJSON(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	var s did.Service
 	dto.FromJSONStr(serviceJSON, &s)
 
@@ -124,7 +125,9 @@ func TestConnection_ReadServiceJSON(t *testing.T) {
 }
 
 func TestConnection_ReadDoc(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
+	assert.PushTester(t)
+	defer assert.PopTester()
+	err2.SetTracers(os.Stderr)
 	defer err2.CatchTrace(func(err error) {
 		t.Error(err)
 	})
@@ -149,21 +152,25 @@ func TestConnection_ReadDoc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			var doc did.Doc
 			d, err := os.ReadFile(tt.filename)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			if tt.ok {
-				require.NoError(t, json.Unmarshal(d, &doc))
+				assert.NoError(json.Unmarshal(d, &doc))
 			} else {
-				require.Error(t, json.Unmarshal(d, &doc))
+				assert.Error(json.Unmarshal(d, &doc))
 			}
 		})
 	}
 }
 
 func TestConnection_ReadJSON(t *testing.T) {
-	err2.StackTraceWriter = os.Stderr
+	assert.PushTester(t)
+	defer assert.PopTester()
+	err2.SetTracers(os.Stderr)
 	tests := []struct {
 		name string
 		req  string
@@ -173,29 +180,33 @@ func TestConnection_ReadJSON(t *testing.T) {
 	}
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			var req Request
 
 			err := json.Unmarshal([]byte(tt.req), &req)
-			require.NoError(t, err)
-			require.Equal(t, "670bc804-2c06-453c-aee6-48d3c929b488", req.ID)
+			assert.NoError(err)
+			assert.Equal("670bc804-2c06-453c-aee6-48d3c929b488", req.ID)
 
 			doc := req.Connection.DIDDoc
 			auths := common.Authentications(doc)
 
-			require.NotNil(t, auths)
+			assert.INotNil(auths)
 			if i == 0 {
-				require.Equal(t, "Ed25519SignatureAuthentication2018", auths[0].VerificationMethod.Type)
+				assert.Equal("Ed25519SignatureAuthentication2018", auths[0].VerificationMethod.Type)
 			} else {
-				require.Equal(t, "Ed25519VerificationKey2018", auths[0].VerificationMethod.Type)
+				assert.Equal("Ed25519VerificationKey2018", auths[0].VerificationMethod.Type)
 			}
 
 			recipKey := common.Service(doc, 0).RecipientKeys[0]
-			require.Equal(t, "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
+			assert.Equal("8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
 		})
 	}
 }
 
 func TestNewRequest(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	tests := []struct {
 		name   string
 		method method.Type
@@ -205,6 +216,8 @@ func TestNewRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			ae := service.Addr{
 				Endp: "http://www.address.com",
 				Key:  "SERVICE_KEY",
@@ -214,7 +227,7 @@ func TestNewRequest(t *testing.T) {
 				arg = ae.Endp
 			}
 			didIn, _ := agent.NewDID(tt.method, arg)
-			require.NotNil(t, didIn)
+			assert.INotNil(didIn)
 
 			nonce := "NONCE"
 			didDoc := didIn.NewDoc(ae)
@@ -235,12 +248,12 @@ func TestNewRequest(t *testing.T) {
 			ipl := aries.PayloadCreator.NewFromData(oplJSON)
 			iplJSON := ipl.JSON()
 
-			require.Equal(t, oplJSON, iplJSON)
+			assert.DeepEqual(oplJSON, iplJSON)
 
-			require.Equal(t, ipl.Type(), pltype.AriesConnectionRequest)
+			assert.Equal(ipl.Type(), pltype.AriesConnectionRequest)
 
 			req := ipl.MsgHdr().FieldObj().(*Request)
-			require.NotNil(t, req)
+			assert.INotNil(req)
 		})
 	}
 }
@@ -272,7 +285,7 @@ var (
 )
 
 func setUp() {
-	err2.StackTraceWriter = os.Stderr
+	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
 	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
 

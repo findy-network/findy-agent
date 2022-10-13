@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-agent/cmds"
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 func TestCreateCmd_ValidateSeed(t *testing.T) {
@@ -32,6 +32,9 @@ func TestCreateCmd_ValidateSeed(t *testing.T) {
 }
 
 func TestCmd_Build(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	invalid := CreateCmd{
 		Cmd: cmds.Cmd{
 			WalletName: "test_name_ttttt",
@@ -41,7 +44,7 @@ func TestCmd_Build(t *testing.T) {
 		StewardSeed: "seed",
 	}
 	err := invalid.Validate()
-	assert.Error(t, err)
+	assert.Error(err)
 
 	c := CreateCmd{
 		Cmd: cmds.Cmd{
@@ -52,5 +55,5 @@ func TestCmd_Build(t *testing.T) {
 		StewardSeed: "000000000000000000000000Steward2",
 	}
 	err = c.Validate()
-	assert.NoError(t, err)
+	assert.NoError(err)
 }

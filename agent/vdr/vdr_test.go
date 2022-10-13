@@ -15,7 +15,6 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 type testCase struct {
@@ -81,15 +80,21 @@ func tearDown() {
 }
 
 func TestVDRAccept(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.True(t, tt.registry.Accept(tt.name))
-			require.False(t, tt.registry.Accept("invalid"))
+			assert.PushTester(t)
+			defer assert.PopTester()
+			assert.That(tt.registry.Accept(tt.name))
+			assert.ThatNot(tt.registry.Accept("invalid"))
 		})
 	}
 }
 
 func TestVDRCreateAndRead(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	doc := &did.Doc{
 		VerificationMethod: []did.VerificationMethod{{
 			Type:  "Ed25519VerificationKey2018",
@@ -103,37 +108,51 @@ func TestVDRCreateAndRead(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			docResolution, err := tt.registry.Create(doc)
-			require.NoError(t, err)
-			require.NotNil(t, docResolution)
+			assert.NoError(err)
+			assert.INotNil(docResolution)
 
 			docResolution, err = tt.registry.Read(docResolution.DIDDocument.ID)
-			require.NoError(t, err)
-			require.NotNil(t, docResolution)
+			assert.NoError(err)
+			assert.INotNil(docResolution)
 		})
 	}
 }
 
 func TestVDRUpdate(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.registry.Update(nil).Error(), "not supported")
+			assert.PushTester(t)
+			defer assert.PopTester()
+			assert.Equal(tt.registry.Update(nil).Error(), "not supported")
 		})
 	}
 }
 
 func TestVDRDeactivate(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.registry.Deactivate("").Error(), "not supported")
+			assert.PushTester(t)
+			defer assert.PopTester()
+			assert.Equal(tt.registry.Deactivate("").Error(), "not supported")
 		})
 	}
 }
 
 func TestVDRClose(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Nil(t, tt.registry.Close())
+			assert.PushTester(t)
+			defer assert.PopTester()
+			assert.NoError(tt.registry.Close())
 		})
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/findy-network/findy-common-go/dto"
-	"github.com/stretchr/testify/assert"
+	"github.com/lainio/err2/assert"
 )
 
 func cloneMap(tgt, src regMapType) {
@@ -16,6 +16,9 @@ func cloneMap(tgt, src regMapType) {
 }
 
 func Test_newReg_and_toJsonBytes(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	testReg1 := Reg{}
 	testReg2 := Reg{}
 	testReg3 := Reg{}
@@ -52,6 +55,9 @@ func Test_newReg_and_toJsonBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			if gotR := newReg(tt.args.data); !reflect.DeepEqual(gotR, tt.wantR) {
 				t.Errorf("newReg() = %v, want %v", gotR, tt.wantR)
 			}
@@ -60,6 +66,9 @@ func Test_newReg_and_toJsonBytes(t *testing.T) {
 }
 
 func Test_reg_save_and_load(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	r3 := buildRegistryData()
 
 	filename := "42342342tmp4234.json"
@@ -81,6 +90,9 @@ func Test_reg_save_and_load(t *testing.T) {
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			r := &Reg{
 				r: tt.fields.r,
 			}
@@ -107,11 +119,17 @@ func buildRegistryData() regMapType {
 }
 
 func TestReg_Exist(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	reg := Reg{r: buildRegistryData()}
-	assert.True(t, reg.Exist("3"))
+	assert.That(reg.Exist("3"))
 }
 
 func Test_reg_enumValues(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	r3 := buildRegistryData()
 
 	var currentK string
@@ -142,18 +160,23 @@ func Test_reg_enumValues(t *testing.T) {
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			r := &Reg{
 				r: tt.fields.r,
 			}
 			r.EnumValues(tt.args.handler)
-			if r3[currentK][0] != currentV && count == 3 {
-				t.Errorf("Reg.EnumValues() k: %s, v: %s, value: %s", currentK, currentV, r3[currentK])
-			}
+			assert.Equal(count, 3)
+			assert.Equal(r3[currentK][0], currentV)
 		})
 	}
 }
 
 func Test_reg_Reset(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	r3 := buildRegistryData()
 
 	filename := "42342342tmp4234.json"
@@ -175,6 +198,9 @@ func Test_reg_Reset(t *testing.T) {
 	for index := range tests {
 		tt := &tests[index]
 		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
 			r := &Reg{
 				r: tt.fields.r,
 			}

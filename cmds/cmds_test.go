@@ -17,8 +17,8 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/server"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -123,6 +123,9 @@ func setupPaths() (string, string) {
 }
 
 func Test_CreateSteward(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	createStewardCmd := stewardCmd.CreateCmd{
 		Cmd: cmds.Cmd{
 			WalletName: stewardTmpWalletName1,
@@ -132,27 +135,30 @@ func Test_CreateSteward(t *testing.T) {
 		StewardSeed: "000000000000000000000000Steward2",
 	}
 	err := createStewardCmd.Validate()
-	assert.NoError(t, err)
+	assert.NoError(err)
 	_, err = createStewardCmd.Exec(os.Stdout)
-	assert.NoError(t, err)
+	assert.NoError(err)
 }
 
 func Test_ValidateWalletExistence(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
 	cmd := cmds.Cmd{
 		WalletName: stewardTmpWalletName1,
 		WalletKey:  "",
 	}
 	err := cmd.ValidateWalletExistence(false)
-	assert.Error(t, err)
+	assert.Error(err)
 	err = cmd.ValidateWalletExistence(true)
-	assert.NoError(t, err)
+	assert.NoError(err)
 
 	cmd = cmds.Cmd{
 		WalletName: stewardTmpWalletName1 + "NOT_EXIST",
 		WalletKey:  "",
 	}
 	err = cmd.ValidateWalletExistence(false)
-	assert.NoError(t, err)
+	assert.NoError(err)
 	err = cmd.ValidateWalletExistence(true)
-	assert.Error(t, err)
+	assert.Error(err)
 }

@@ -10,8 +10,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
-	"github.com/stretchr/testify/require"
 )
 
 type storageTest struct {
@@ -70,11 +70,15 @@ func tearDown() {
 }
 
 func TestConcurrentOpen(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for index := range kmsTestStorages {
 		testCase := kmsTestStorages[index]
 		t.Run(testCase.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			err := testCase.storage.Close()
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			wg := &sync.WaitGroup{}
 			for i := 0; i < 5; i++ {
@@ -83,13 +87,13 @@ func TestConcurrentOpen(t *testing.T) {
 					defer wg.Done()
 
 					err := testCase.storage.Open()
-					require.NoError(t, err)
+					assert.NoError(err)
 
 					store := testCase.storage.KMS()
 					keyID, keyBytes, err := store.CreateAndExportPubKeyBytes(kms.ED25519Type)
-					require.NoError(t, err)
-					require.NotEmpty(t, keyID)
-					require.NotEmpty(t, keyBytes)
+					assert.NoError(err)
+					assert.NotEmpty(keyID)
+					assert.SNotEmpty(keyBytes)
 				}()
 			}
 			wg.Wait()
@@ -98,28 +102,36 @@ func TestConcurrentOpen(t *testing.T) {
 }
 
 func TestDIDStore(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for index := range kmsTestStorages {
 		testCase := kmsTestStorages[index]
 		t.Run(testCase.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			store := testCase.storage.DIDStorage()
 			testDID := api.DID{
 				ID:  "did:test:123",
 				DID: "did:test:123",
 			}
 			err := store.SaveDID(testDID)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			gotDID, err := store.GetDID(testDID.ID)
-			require.NoError(t, err)
-			require.Equal(t, testDID, *gotDID)
+			assert.NoError(err)
+			assert.DeepEqual(testDID, *gotDID)
 		})
 	}
 }
 
 func TestConnectionStore(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 	for index := range kmsTestStorages {
 		testCase := kmsTestStorages[index]
 		t.Run(testCase.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 			store := testCase.storage.ConnectionStorage()
 			testConn := api.Connection{
 				ID:            "123-uid",
@@ -129,22 +141,22 @@ func TestConnectionStore(t *testing.T) {
 				TheirRoute:    []string{"routeKey"},
 			}
 			err := store.SaveConnection(testConn)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			gotConn, err := store.GetConnection(testConn.ID)
-			require.NoError(t, err)
-			require.Equal(t, testConn, *gotConn)
+			assert.NoError(err)
+			assert.DeepEqual(testConn, *gotConn)
 
 			testConn2 := testConn
 			testConn2.ID = "456-uid"
 			err = store.SaveConnection(testConn2)
-			require.NoError(t, err)
+			assert.NoError(err)
 
 			conns, err := store.ListConnections()
-			require.NoError(t, err)
-			require.Len(t, conns, 2)
-			require.Equal(t, testConn, conns[0])
-			require.Equal(t, testConn2, conns[1])
+			assert.NoError(err)
+			assert.SLen(conns, 2)
+			assert.DeepEqual(testConn, conns[0])
+			assert.DeepEqual(testConn2, conns[1])
 		})
 	}
 }
