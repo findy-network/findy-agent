@@ -33,6 +33,8 @@ type ReceiverMock interface {
 	comm.Receiver
 }
 
+// TODO: integrate to build pipeline
+// how to install and use mockgen:
 // go get github.com/golang/mock/mockgen
 // go install github.com/golang/mock/mockgen
 // /go/bin/mockgen -package connection -source ./protocol/connection/connection_protocol_test.go ReceiverMock > ./protocol/connection/mock_test.go
@@ -125,8 +127,8 @@ func TestConnectionRequestor(t *testing.T) {
 	}{
 		{
 			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/findy-agent-request.json"),
-			responsePayload: readJSONFromFile("./test_data/findy-agent-response.json"),
+			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
+			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
 			ourSeed:         "000000000000000000000000Steward1",
 			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
 			theirSeed:       "000000000000000000000000Steward2",
@@ -185,7 +187,7 @@ func TestConnectionRequestor(t *testing.T) {
 			var request model.RequestImpl
 			err = json.Unmarshal(unpacked, &request)
 			assert.INil(err)
-			assert.Equal(pltype.AriesConnectionResponse, request.Type())
+			assert.Equal(pltype.AriesConnectionRequest, request.Type())
 			httpPayload = []byte{}
 
 			// 3. Handle response -> expect that no message is sent to other end
@@ -222,8 +224,8 @@ func TestConnectionInvitor(t *testing.T) {
 	}{
 		{
 			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/findy-agent-request.json"),
-			responsePayload: readJSONFromFile("./test_data/findy-agent-response.json"),
+			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
+			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
 			ourSeed:         "000000000000000000000000Steward1",
 			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
 			theirSeed:       "000000000000000000000000Steward2",
