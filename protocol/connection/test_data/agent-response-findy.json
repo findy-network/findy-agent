@@ -1,0 +1,13 @@
+{
+    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response",
+    "@id": "659028fa-e988-4941-8361-3aec70b63818",
+    "connection~sig": {
+        "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
+        "signature": "00P0ohRo3XirmZLCGBdKTHIrYxEGuEwfk5VZ_DolaJqDiW9Qo2LzfThwgLyS_9XKC5-XbyQYmEAyxn-hLS3vDw==",
+        "sig_data": "AAAAAGNHs3F7IkRJRCI6IkViUDRhWU5lVEhMNnEzODVHdVZwUlYiLCJESUREb2MiOnsiQGNvbnRleHQiOiJodHRwczovL3czaWQub3JnL2RpZC92MSIsImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwicHVibGljS2V5IjpbeyJpZCI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViMxIiwidHlwZSI6IkVkMjU1MTlWZXJpZmljYXRpb25LZXkyMDE4IiwiY29udHJvbGxlciI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViIsInB1YmxpY0tleUJhc2U1OCI6IjhRaEZ4S3h5YUZzSnk0Q3l4ZVlYMzRkRkg4b1dxeUJ2MVA0SExRQ3NvZUx5In1dLCJzZXJ2aWNlIjpbeyJpZCI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViIsInR5cGUiOiJJbmR5QWdlbnQiLCJyZWNpcGllbnRLZXlzIjpbIjhRaEZ4S3h5YUZzSnk0Q3l4ZVlYMzRkRkg4b1dxeUJ2MVA0SExRQ3NvZUx5Il0sInNlcnZpY2VFbmRwb2ludCI6Imhvc3RuYW1lL3NlcnZpY2VOYW1lL2NhRElEL2NhRElEL2Nvbm5JRCJ9XSwiYXV0aGVudGljYXRpb24iOlt7InR5cGUiOiJFZDI1NTE5U2lnbmF0dXJlQXV0aGVudGljYXRpb24yMDE4IiwicHVibGljS2V5IjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIzEifV19fQ==",
+        "signer": "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy"
+    },
+    "~thread": {
+        "thid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
+    }
+}

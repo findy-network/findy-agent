@@ -119,3 +119,14 @@ func Test_addBaseRep(t *testing.T) {
 		})
 	}
 }
+
+func Test_Close(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
+	path := "close-" + dbPath
+	err := Open(path)
+	assert.NoError(err)
+
+	Close()
+}
