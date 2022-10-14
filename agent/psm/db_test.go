@@ -126,7 +126,7 @@ func Test_Close(t *testing.T) {
 
 	path := "close-" + dbPath
 	err := Open(path)
-	assert.INil(err)
+	assert.NoError(err)
 
 	Close()
 }
