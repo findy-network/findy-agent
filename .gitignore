@@ -41,6 +41,7 @@ scripts/dev/docker/get-docker-host.sh
 
 codecov
 coverage.txt
+report.html
 gen_txn_file
 
 .working

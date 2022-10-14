@@ -36,70 +36,29 @@ type ReceiverMock interface {
 // go get github.com/golang/mock/mockgen
 // go install github.com/golang/mock/mockgen
 // /go/bin/mockgen -package connection -source ./protocol/connection/connection_protocol_test.go ReceiverMock > ./protocol/connection/mock_test.go
-var res []byte
 
 func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration) (data []byte, err error) {
-	res, _ = io.ReadAll(msg)
+	httpPayload, _ = io.ReadAll(msg)
 	return []byte{}, nil
 }
 
 var (
-	ourAgent   = new(ssi.DIDAgent)
-	theirAgent = new(ssi.DIDAgent)
-	ourDID     core.DID
-	theirDID   core.DID
+	httpPayload []byte
+
+	agents = make([]*ssi.DIDAgent, 0)
 
 	endpoint = &endp.Addr{
 		BasePath: "hostname",
 		Service:  "serviceName",
 		PlRcvr:   "caDID",
 		MsgRcvr:  "caDID",
-		ConnID:   "connID",
+		ConnID:   endpointConnID,
 		VerKey:   "vk",
 	}
+	endpointStr    = "hostname/serviceName/caDID/caDID/connID"
+	endpointConnID = "connID"
 
-	re             = regexp.MustCompile(`[\s\p{Zs}]{2,}`)
-	requestPayload = re.ReplaceAllString(`{
-		"@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
-		"@id":"d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
-		"connection":{
-			"DID":"Th7MpTaRZVRYnPiabds81Y",
-			"DIDDoc":{
-				"@context":"https://w3id.org/did/v1",
-				"id":"did:sov:Th7MpTaRZVRYnPiabds81Y",
-				"publicKey":[{
-					"id":"did:sov:Th7MpTaRZVRYnPiabds81Y#1",
-					"type":"Ed25519VerificationKey2018",
-					"controller":"did:sov:Th7MpTaRZVRYnPiabds81Y",
-					"publicKeyBase58":"FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"
-				}],
-				"service":[{
-					"id":"did:sov:Th7MpTaRZVRYnPiabds81Y",
-					"type":"IndyAgent",
-					"recipientKeys":["FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"],
-					"serviceEndpoint":"http://example.com"}],
-					"authentication":[{
-						"type":"Ed25519SignatureAuthentication2018",
-						"publicKey":"did:sov:Th7MpTaRZVRYnPiabds81Y#1"
-					}]
-				}
-			},
-		"~thread":{
-			"thid":"d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
-		}
-	}`, "")
-	responsePayload = re.ReplaceAllString(`{
-		"@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response",
-		"@id":"659028fa-e988-4941-8361-3aec70b63818",
-		"connection~sig":{
-			"@type":"did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
-			"signature":"00P0ohRo3XirmZLCGBdKTHIrYxEGuEwfk5VZ_DolaJqDiW9Qo2LzfThwgLyS_9XKC5-XbyQYmEAyxn-hLS3vDw==",
-			"sig_data":"AAAAAGNHs3F7IkRJRCI6IkViUDRhWU5lVEhMNnEzODVHdVZwUlYiLCJESUREb2MiOnsiQGNvbnRleHQiOiJodHRwczovL3czaWQub3JnL2RpZC92MSIsImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwicHVibGljS2V5IjpbeyJpZCI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViMxIiwidHlwZSI6IkVkMjU1MTlWZXJpZmljYXRpb25LZXkyMDE4IiwiY29udHJvbGxlciI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViIsInB1YmxpY0tleUJhc2U1OCI6IjhRaEZ4S3h5YUZzSnk0Q3l4ZVlYMzRkRkg4b1dxeUJ2MVA0SExRQ3NvZUx5In1dLCJzZXJ2aWNlIjpbeyJpZCI6ImRpZDpzb3Y6RWJQNGFZTmVUSEw2cTM4NUd1VnBSViIsInR5cGUiOiJJbmR5QWdlbnQiLCJyZWNpcGllbnRLZXlzIjpbIjhRaEZ4S3h5YUZzSnk0Q3l4ZVlYMzRkRkg4b1dxeUJ2MVA0SExRQ3NvZUx5Il0sInNlcnZpY2VFbmRwb2ludCI6Imhvc3RuYW1lL3NlcnZpY2VOYW1lL2NhRElEL2NhRElEL2Nvbm5JRCJ9XSwiYXV0aGVudGljYXRpb24iOlt7InR5cGUiOiJFZDI1NTE5U2lnbmF0dXJlQXV0aGVudGljYXRpb24yMDE4IiwicHVibGljS2V5IjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIzEifV19fQ==",
-			"signer":"8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy"},
-			"~thread":{
-				"thid":"d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
-			}
-		}`, "")
+	re = regexp.MustCompile(`[\s\p{Zs}]{1,}`)
 )
 
 func TestMain(m *testing.M) {
@@ -112,29 +71,14 @@ func TestMain(m *testing.M) {
 func setUp() {
 	try.To(psm.Open("data.bolt"))
 	comm.SendAndWaitReq = sendAndWaitHTTPRequest
-
-	const walletKey = "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
-
-	walletID := fmt.Sprintf("connection-test-agent-1%d", time.Now().Unix())
-	aw := ssi.NewRawWalletCfg(walletID, walletKey)
-	aw.Create()
-
-	ourAgent.OpenWallet(*aw)
-	ourDID = try.To1(ourAgent.NewDID(method.TypeSov, "000000000000000000000000Steward1"))
-	ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
-
-	walletID = fmt.Sprintf("connection-test-agent-2%d", time.Now().Unix())
-	aw = ssi.NewRawWalletCfg(walletID, walletKey)
-	aw.Create()
-
-	theirAgent.OpenWallet(*aw)
-	theirDID = try.To1(theirAgent.NewDID(method.TypeSov, "000000000000000000000000Steward2"))
 }
 
 func tearDown() {
 	psm.Close()
-	ourAgent.WalletH.Close()
-	ourAgent.StorageH.Close()
+	for _, a := range agents {
+		a.WalletH.Close()
+		a.StorageH.Close()
+	}
 }
 
 func createInvitation(did core.DID) string {
@@ -147,119 +91,203 @@ func createInvitation(did core.DID) string {
 	}))
 }
 
-func TestConnectionRequestor(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
+func createAgent(id string) *ssi.DIDAgent {
+	a := new(ssi.DIDAgent)
+	const walletKey = "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	walletID := fmt.Sprintf("connection-test-agent-%s-%d", id, time.Now().Unix())
+	aw := ssi.NewRawWalletCfg(walletID, walletKey)
+	aw.Create()
 
-	invitation := createInvitation(theirDID)
-	task, err := createConnectionTask(
-		&comm.TaskHeader{TypeID: pltype.CAPairwiseCreate, Method: method.TypeSov},
-		&v1.Protocol{
-			StartMsg: &v1.Protocol_DIDExchange{
-				DIDExchange: &v1.Protocol_DIDExchangeMsg{
-					InvitationJSON: invitation,
-				},
-			},
-		},
-	)
-	assert.INotNil(task)
-	assert.INil(err)
+	a.OpenWallet(*aw)
 
-	mockReceiver := NewMockReceiverMock(ctrl)
-	mockReceiver.EXPECT().CAEndp(task.ID()).Return(endpoint)
-	mockReceiver.EXPECT().WDID().Return("Th7MpTaRZVRYnPiabds81Y")
-	mockReceiver.EXPECT().WorkerEA().Return(mockReceiver)
-	mockReceiver.EXPECT().NewDID(method.TypeSov, "hostname/serviceName/caDID/caDID/connID").Return(ourDID, nil)
-	mockReceiver.EXPECT().AddDIDCache(ourDID).Return()
-	mockReceiver.EXPECT().NewOutDID(
-		"did:sov:", "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy").Return(
-		ourAgent.NewOutDID("did:sov:", "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy"))
-	mockReceiver.EXPECT().AddPipeToPWMap(gomock.Any(), gomock.Any()).Return()
-
-	startConnectionProtocol(mockReceiver, task)
-
-	fmt.Println(string(res), len([]byte(string(res))))
-	pipe := sec.Pipe{In: theirDID, Out: ourDID}
-	unpacked, _, _ := pipe.Unpack(res)
-	fmt.Println(string(unpacked))
-
-	assert.Equal(string(unpacked), requestPayload)
-	var request model.RequestImpl
-	err = json.Unmarshal(unpacked, &request)
-	assert.INil(err)
-	assert.Equal("did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request", request.Type())
-	res = []byte{}
-
-	// handle response
-	payload := aries.PayloadCreator.NewFromData([]byte(responsePayload))
-	mockReceiver.EXPECT().MyDID().Return(ourDID)
-	mockReceiver.EXPECT().LoadDID("Th7MpTaRZVRYnPiabds81Y").Return(ourDID)
-	mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(ourAgent.WalletH, ourAgent.StorageH)
-	mockReceiver.EXPECT().AddToPWMap(ourDID, gomock.Any(), "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0").Return(pipe)
-
-	err = handleConnectionResponse(comm.Packet{
-		Payload:  payload,
-		Receiver: mockReceiver,
-		Address:  endpoint,
-	})
-
-	assert.Equal(len(res), 0)
-	assert.INil(err)
+	agents = append(agents, a)
+	return a
 }
 
+func readJSONFromFile(filename string) []byte {
+	strJSON := string(try.To1(os.ReadFile(filename)))
+	return []byte(re.ReplaceAllString(strJSON, ""))
+}
+
+// Simulates requestor role
+func TestConnectionRequestor(t *testing.T) {
+	tests := []struct {
+		name            string
+		requestPayload  []byte
+		responsePayload []byte
+		ourSeed         string
+		ourDIDStr       string
+		theirSeed       string
+		theirVerKey     string
+		didMethod       method.Type
+		invitationID    string
+	}{
+		{
+			name:            "findy-agent",
+			requestPayload:  readJSONFromFile("./test_data/findy-agent-request.json"),
+			responsePayload: readJSONFromFile("./test_data/findy-agent-response.json"),
+			ourSeed:         "000000000000000000000000Steward1",
+			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:       "000000000000000000000000Steward2",
+			theirVerKey:     "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:       method.TypeSov,
+			invitationID:    "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			ourAgent := createAgent("our-req")
+			theirAgent := createAgent("their-req")
+
+			ourDID := try.To1(ourAgent.NewDID(tt.didMethod, tt.ourSeed))
+			ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
+			theirDID := try.To1(theirAgent.NewDID(tt.didMethod, tt.theirSeed))
+
+			// 1. create invitation for "them" and create task
+			invitation := createInvitation(theirDID)
+			task, err := createConnectionTask(
+				&comm.TaskHeader{TypeID: pltype.CAPairwiseCreate, Method: tt.didMethod},
+				&v1.Protocol{
+					StartMsg: &v1.Protocol_DIDExchange{
+						DIDExchange: &v1.Protocol_DIDExchangeMsg{
+							InvitationJSON: invitation,
+						},
+					},
+				},
+			)
+			assert.INotNil(task)
+			assert.INil(err)
+
+			// 2. Start protocol -> expect that request message is sent to other end
+			mockReceiver := NewMockReceiverMock(ctrl)
+			mockReceiver.EXPECT().CAEndp(task.ID()).Return(endpoint)
+			mockReceiver.EXPECT().WDID().Return(tt.ourDIDStr)
+			mockReceiver.EXPECT().WorkerEA().Return(mockReceiver)
+			mockReceiver.EXPECT().NewDID(tt.didMethod, endpointStr).Return(ourDID, nil)
+			mockReceiver.EXPECT().AddDIDCache(ourDID).Return()
+			mockReceiver.EXPECT().NewOutDID(tt.didMethod.DIDString(), tt.theirVerKey).Return(
+				ourAgent.NewOutDID(tt.didMethod.DIDString(), tt.theirVerKey))
+			mockReceiver.EXPECT().AddPipeToPWMap(gomock.Any(), gomock.Any()).Return()
+
+			startConnectionProtocol(mockReceiver, task)
+
+			pipe := sec.Pipe{In: theirDID, Out: ourDID}
+			unpacked, _, _ := pipe.Unpack(httpPayload)
+			assert.Equal(string(unpacked), string(tt.requestPayload))
+
+			var request model.RequestImpl
+			err = json.Unmarshal(unpacked, &request)
+			assert.INil(err)
+			assert.Equal(pltype.AriesConnectionResponse, request.Type())
+			httpPayload = []byte{}
+
+			// 3. Handle response -> expect that no message is sent to other end
+			payload := aries.PayloadCreator.NewFromData([]byte(tt.responsePayload))
+			mockReceiver.EXPECT().MyDID().Return(ourDID)
+			mockReceiver.EXPECT().LoadDID(tt.ourDIDStr).Return(ourDID)
+			mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(ourAgent.WalletH, ourAgent.StorageH)
+			mockReceiver.EXPECT().AddToPWMap(ourDID, gomock.Any(), tt.invitationID).Return(pipe)
+
+			err = handleConnectionResponse(comm.Packet{
+				Payload:  payload,
+				Receiver: mockReceiver,
+				Address:  endpoint,
+			})
+
+			assert.Equal(len(httpPayload), 0)
+			assert.INil(err)
+		})
+	}
+}
+
+// Simulates invitor role
 func TestConnectionInvitor(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockReceiver := NewMockReceiverMock(ctrl)
-
-	payload := aries.PayloadCreator.NewFromData([]byte(requestPayload))
-
-	packet := comm.Packet{
-		Payload:  payload,
-		Receiver: mockReceiver,
-		Address:  endpoint,
+	tests := []struct {
+		name            string
+		requestPayload  []byte
+		responsePayload []byte
+		ourSeed         string
+		ourDIDStr       string
+		theirSeed       string
+		theirVerKey     string
+		didMethod       method.Type
+		invitationID    string
+	}{
+		{
+			name:            "findy-agent",
+			requestPayload:  readJSONFromFile("./test_data/findy-agent-request.json"),
+			responsePayload: readJSONFromFile("./test_data/findy-agent-response.json"),
+			ourSeed:         "000000000000000000000000Steward1",
+			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:       "000000000000000000000000Steward2",
+			theirVerKey:     "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:       method.TypeSov,
+			invitationID:    "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		},
 	}
-	outDID := try.To1(theirAgent.NewOutDID("did:sov:Th7MpTaRZVRYnPiabds81Y", "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"))
-	pipe := sec.Pipe{In: outDID, Out: theirDID}
-	mockReceiver.EXPECT().MyDID().Return(theirDID)
-	mockReceiver.EXPECT().FindPWByID("connID").Return(&storage.Connection{}, nil)
-	mockReceiver.EXPECT().LoadDID("").Return(theirDID)
-	mockReceiver.EXPECT().NewOutDID("did:sov:Th7MpTaRZVRYnPiabds81Y", "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4").Return(outDID, nil)
-	mockReceiver.EXPECT().AddDIDCache(outDID).Return()
-	mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(ourAgent.WalletH, ourAgent.StorageH)
-	mockReceiver.EXPECT().AddToPWMap(theirDID, outDID, "connID").Return(pipe)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 
-	// handler request
-	err := handleConnectionRequest(packet)
-	assert.INil(err)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			ourAgent := createAgent("our-inv")
+			theirAgent := createAgent("their-inv")
 
-	pipe = sec.Pipe{In: ourDID, Out: theirDID}
-	fmt.Println(string(res), len([]byte(string(res))))
-	unpacked, _, _ := pipe.Unpack(res)
-	fmt.Println("\n", string(unpacked))
+			ourDID := try.To1(ourAgent.NewDID(tt.didMethod, tt.ourSeed))
+			ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
+			theirDID := try.To1(theirAgent.NewDID(tt.didMethod, tt.theirSeed))
+			mockReceiver := NewMockReceiverMock(ctrl)
 
-	//require.Equal(t, string(unpacked), responsePayload)
+			// Handle request -> expect that response is sent to other end
+			payload := aries.PayloadCreator.NewFromData([]byte(tt.requestPayload))
 
-	signature := &model.ConnectionSignature{
-		Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
-		SignVerKey: "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			packet := comm.Packet{
+				Payload:  payload,
+				Receiver: mockReceiver,
+				Address:  endpoint,
+			}
+			outDID := try.To1(theirAgent.NewOutDID(ourDID.String(), ourDID.VerKey()))
+			mockReceiver.EXPECT().MyDID().Return(theirDID)
+			mockReceiver.EXPECT().FindPWByID(endpointConnID).Return(&storage.Connection{
+				MyDID: theirDID.String(),
+			}, nil)
+			mockReceiver.EXPECT().LoadDID(theirDID.String()).Return(theirDID)
+			mockReceiver.EXPECT().NewOutDID(ourDID.String(), ourDID.VerKey()).Return(outDID, nil)
+			mockReceiver.EXPECT().AddDIDCache(outDID).Return()
+			mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(theirAgent.WalletH, theirAgent.StorageH)
+			mockReceiver.EXPECT().AddToPWMap(theirDID, outDID, endpointConnID).Return(sec.Pipe{In: outDID, Out: theirDID})
+
+			err := handleConnectionRequest(packet)
+			assert.INil(err)
+
+			pipe := sec.Pipe{In: ourDID, Out: theirDID}
+			unpacked, _, _ := pipe.Unpack(httpPayload)
+			httpPayload = []byte{}
+
+			signature := &model.ConnectionSignature{
+				Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
+				SignVerKey: tt.theirVerKey,
+			}
+			var response model.ResponseImpl
+			try.To(json.Unmarshal(unpacked, &response))
+
+			assert.Equal(pltype.AriesConnectionResponse, response.Type())
+			assert.Equal(tt.invitationID, response.Thread().ID)
+			assert.Equal(signature.Type, response.ConnectionSignature.Type)
+			assert.Equal(signature.SignVerKey, response.ConnectionSignature.SignVerKey)
+			assert.NotEmpty(response.ConnectionSignature.Signature)
+			assert.NotEmpty(response.ConnectionSignature.SignedData)
+			assert.NotEmpty(response.ID())
+		})
 	}
-	var response model.ResponseImpl
-	try.To(json.Unmarshal(unpacked, &response))
-	fmt.Println(response)
-	assert.Equal("did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response", response.Type())
-	assert.Equal("d3dbb3af-63d4-4c88-85a4-36f0a0b889e0", response.Thread().ID)
-	assert.Equal(signature.Type, response.ConnectionSignature.Type)
-	assert.Equal(signature.SignVerKey, response.ConnectionSignature.SignVerKey)
-	assert.NotEmpty(response.ConnectionSignature.Signature)
-	assert.NotEmpty(response.ConnectionSignature.SignedData)
-	assert.NotEmpty(response.ID())
 
 }
