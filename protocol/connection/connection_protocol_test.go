@@ -165,7 +165,7 @@ func TestConnectionRequestor(t *testing.T) {
 				},
 			)
 			assert.INotNil(task)
-			assert.INil(err)
+			assert.NoError(err)
 
 			// 2. Start protocol -> expect that request message is sent to other end
 			mockReceiver := NewMockReceiverMock(ctrl)
@@ -186,7 +186,7 @@ func TestConnectionRequestor(t *testing.T) {
 
 			var request model.RequestImpl
 			err = json.Unmarshal(unpacked, &request)
-			assert.INil(err)
+			assert.NoError(err)
 			assert.Equal(pltype.AriesConnectionRequest, request.Type())
 			httpPayload = []byte{}
 
@@ -204,7 +204,7 @@ func TestConnectionRequestor(t *testing.T) {
 			})
 
 			assert.Equal(len(httpPayload), 0)
-			assert.INil(err)
+			assert.NoError(err)
 		})
 	}
 }
@@ -269,7 +269,7 @@ func TestConnectionInvitor(t *testing.T) {
 			mockReceiver.EXPECT().AddToPWMap(theirDID, outDID, endpointConnID).Return(sec.Pipe{In: outDID, Out: theirDID})
 
 			err := handleConnectionRequest(packet)
-			assert.INil(err)
+			assert.NoError(err)
 
 			pipe := sec.Pipe{In: ourDID, Out: theirDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
