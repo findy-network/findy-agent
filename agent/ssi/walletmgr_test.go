@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 
 	"github.com/golang/glog"
+	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 )
 
@@ -20,9 +21,14 @@ const (
 )
 
 func TestMain(m *testing.M) {
+	pt := err2.PanicTracer()
+	err2.SetPanicTracer(os.Stderr)
+
 	setUp()
 	code := m.Run()
 	tearDown()
+
+	err2.SetErrorTracer(pt)
 	os.Exit(code)
 }
 
