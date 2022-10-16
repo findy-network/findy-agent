@@ -1,5 +1,6 @@
 TEST_TIMEOUT:="70s"
 TEST_ARGS ?= -args -logtostderr -v=3
+TEST_PKG?=./grpc/...
 
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
@@ -94,6 +95,9 @@ test:
 
 testr:
 	$(GO) test -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... | tee ../testr.log
+
+test_pkgv:
+	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast $(TEST_PKG) $(TEST_ARGS) | tee ../testr.log
 
 test_grpcv:
 	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast ./grpc/... $(TEST_ARGS) | tee ../testr.log
