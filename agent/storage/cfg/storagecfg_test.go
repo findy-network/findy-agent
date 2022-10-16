@@ -22,14 +22,14 @@ var (
 		{
 			api.AgentStorageConfig{
 				AgentKey: mgddb.GenerateKey(),
-				AgentID:  "agentID_1",
+				AgentID:  "MEMORY_agentID_1",
 				FilePath: ".",
 			},
 		},
 		{
 			api.AgentStorageConfig{
 				AgentKey: mgddb.GenerateKey(),
-				AgentID:  "agentID_2",
+				AgentID:  "MEMORY_agentID_2",
 				FilePath: ".",
 			},
 		},
@@ -39,7 +39,6 @@ var (
 func TestMain(m *testing.M) {
 	setUp()
 	code := m.Run()
-	tearDown()
 	os.Exit(code)
 }
 
@@ -48,12 +47,6 @@ func setUp() {
 	try.To(flag.Set("stderrthreshold", "WARNING"))
 	try.To(flag.Set("v", "10"))
 	flag.Parse()
-}
-
-func tearDown() {
-	for _, cfg := range testConfig {
-		_ = os.RemoveAll(cfg.AgentID + ".bolt")
-	}
 }
 
 func TestAgentStorageConfig_OpenWallet(t *testing.T) {

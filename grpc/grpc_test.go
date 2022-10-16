@@ -244,7 +244,7 @@ func setUp() {
 	sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 
 	exportPath := os.Getenv("TEST_WORKDIR")
-	enclaveFile := strLiteral("enclave", ".bolt", -1)
+	enclaveFile := strLiteral("MEMORY_enclave", ".bolt", -1)
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
 		exportPath = utils.IndyBaseDir()
