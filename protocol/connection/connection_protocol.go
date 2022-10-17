@@ -35,9 +35,14 @@ import (
 
 type taskDIDExchange struct {
 	comm.TaskBase
-	Invitation   invitation.Invitation
+	Invitation   taskInvitation
 	InvitationID string
 	Label        string
+}
+
+type taskInvitation struct {
+	Services []invitation.ServiceEndpoint
+	Label    string
 }
 
 var connectionProcessor = comm.ProtProc{
@@ -73,7 +78,7 @@ func createConnectionTask(
 	var inv invitation.Invitation
 	var label string
 	if protocol != nil {
-		assert.P.True(
+		assert.That(
 			protocol.GetDIDExchange() != nil,
 			"didExchange protocol data missing")
 
@@ -89,8 +94,16 @@ func createConnectionTask(
 	}
 
 	return &taskDIDExchange{
+<<<<<<< HEAD
 		TaskBase:     comm.TaskBase{TaskHeader: *header},
 		Invitation:   inv,
+=======
+		TaskBase: comm.TaskBase{TaskHeader: *header},
+		Invitation: taskInvitation{
+			Services: inv.ServiceEndpoint(),
+			Label:    inv.Label(),
+		},
+>>>>>>> b1958ea (Use invitation interface.)
 		InvitationID: inv.ID(),
 		Label:        label,
 	}, nil
@@ -124,8 +137,13 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	}
 
 	deTask.SetReceiverEndp(service.Addr{
+<<<<<<< HEAD
 		Endp: deTask.Invitation.Services()[0].ServiceEndpoint,
 		Key:  deTask.Invitation.Services()[0].RecipientKeysAsB58()[0],
+=======
+		Endp: deTask.Invitation.Services[0].ServiceEndpoint,
+		Key:  deTask.Invitation.Services[0].RecipientKeys[0],
+>>>>>>> b1958ea (Use invitation interface.)
 	})
 
 	didMethod := task.DIDMethod()
@@ -161,7 +179,11 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(task.ReceiverEndp().Endp, receiverKey,
+<<<<<<< HEAD
 		deTask.Invitation.Services()[0].RoutingKeysAsB58(), didMethod)
+=======
+		deTask.Invitation.Services[0].RoutingKeys, didMethod)
+>>>>>>> b1958ea (Use invitation interface.)
 	callee := try.To1(wa.NewOutDID(receiverKeys...))
 	secPipe := sec.Pipe{In: caller, Out: callee}
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
