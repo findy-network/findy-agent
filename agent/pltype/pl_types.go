@@ -5,11 +5,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// name constants
-const (
-	HandshakePairwiseName = "HANDSHAKE"
-)
-
 // Protocol constants
 const (
 	Terminate   = ""
@@ -25,8 +20,6 @@ const (
 
 	UserAction = "user-action"
 
-	ConnectionTrustAgent = "CONNECTION_TRUST_AGENT" // internal use only
-
 	ProtocolConnection = "connection"
 	Connection         = Agent + "/" + ProtocolConnection
 
@@ -35,7 +28,6 @@ const (
 	ConnectionResponse  = Connection + "/1.0/response"
 	ConnectionRequest   = Connection + "/1.0/request"
 	ConnectionOffer     = Connection + "/1.0/offer"
-	ConnectionHandshake = Connection + "/1.0/invite"
 	ConnectionOk        = Connection + "/1.0/ok"    // terminates Acknowledgement cycle, internal use
 	ConnectionError     = Connection + "/1.0/error" // if error occurs we send error payload, especially handy with ws
 	ConnectionPing      = Connection + "/1.0/ping"
@@ -104,14 +96,23 @@ const (
 	AriesConnection           = Aries + "/" + AriesProtocolConnection
 	AriesConnectionInvitation = AriesConnection + "/1.0/" + Invitation
 	AriesConnectionRequest    = AriesConnection + "/1.0/" + HandlerRequest
-	AriesConnectionOffer      = AriesConnection + "/1.0/" + HandlerOffer // todo: not used anymore
 	AriesConnectionResponse   = AriesConnection + "/1.0/" + HandlerResponse
 
 	DIDOrgAriesConnection           = DIDOrgAries + "/" + AriesProtocolConnection
 	DIDOrgAriesConnectionInvitation = DIDOrgAriesConnection + "/1.0/" + Invitation
 	DIDOrgAriesConnectionRequest    = DIDOrgAriesConnection + "/1.0/" + HandlerRequest
-	DIDOrgAriesConnectionOffer      = DIDOrgAriesConnection + "/1.0/" + HandlerOffer
 	DIDOrgAriesConnectionResponse   = DIDOrgAriesConnection + "/1.0/" + HandlerResponse
+)
+
+const (
+	AriesProtocolDIDExchange = "didexchange"
+	AriesDIDExchange         = Aries + "/" + AriesProtocolDIDExchange
+	AriesDIDExchangeRequest  = AriesDIDExchange + "/1.0/" + HandlerRequest
+	AriesDIDExchangeResponse = AriesDIDExchange + "/1.0/" + HandlerResponse
+
+	DIDOrgAriesDIDExchange         = DIDOrgAries + "/" + AriesProtocolDIDExchange
+	DIDOrgAriesDIDExchangeRequest  = DIDOrgAriesDIDExchange + "/1.0/" + HandlerRequest
+	DIDOrgAriesDIDExchangeResponse = DIDOrgAriesDIDExchange + "/1.0/" + HandlerResponse
 )
 
 // Present Proof protocol constants

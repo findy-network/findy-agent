@@ -146,7 +146,7 @@ func (p Peer) Route() []string {
 	assert.That(p.doc != nil)
 	doc := p.doc
 
-	routingKeys := common.RountingKeys(doc, 0)
+	routingKeys := common.RoutingKeys(doc, 0)
 	route := make([]string, len(routingKeys))
 	for i, rk := range routingKeys {
 		route[i] = p.buildDIDKeyStr(rk)

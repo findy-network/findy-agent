@@ -179,6 +179,8 @@ func getVonWebServerURL() string {
 
 func TestMain(m *testing.M) {
 	try.To(flag.Set("logtostderr", "true"))
+	try.To(flag.Set("v", "10"))
+	flag.Parse()
 
 	prepareBuildOneTest()
 	setUp()

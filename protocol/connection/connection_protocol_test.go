@@ -57,8 +57,8 @@ var (
 		ConnID:   endpointConnID,
 		VerKey:   "vk",
 	}
-	endpointStr    = "hostname/serviceName/caDID/caDID/connID"
-	endpointConnID = "connID"
+	endpointStr    = "hostname/serviceName/caDID/caDID/" + endpointConnID
+	endpointConnID = "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
 
 	re = regexp.MustCompile(`[\s\p{Zs}]{1,}`)
 )
@@ -284,7 +284,7 @@ func TestConnectionInvitor(t *testing.T) {
 			try.To(json.Unmarshal(unpacked, &response))
 
 			assert.Equal(pltype.AriesConnectionResponse, response.Type())
-			assert.Equal(tt.invitationID, response.Thread().ID)
+			assert.Equal(response.Thread().ID, tt.invitationID)
 			assert.Equal(signature.Type, response.ConnectionSignature.Type)
 			assert.Equal(signature.SignVerKey, response.ConnectionSignature.SignVerKey)
 			assert.NotEmpty(response.ConnectionSignature.Signature)
