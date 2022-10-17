@@ -3,7 +3,6 @@ package connection
 import (
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/comm"
@@ -206,6 +205,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Endp: req.Services[0].ServiceEndpoint,
 		Key:  req.Services[0].RecipientKeys[0],
 	}
+
 	receiverEP := cnxAddr.AE()
 	task := &comm.TaskBase{
 		TaskHeader: comm.TaskHeader{
@@ -238,7 +238,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}
 
 	calleePw := pairwise.NewCalleePairwise(
-		wca, req.Services[0].RoutingKeys, callerDID, connectionID, callerEP)
+		wca, req.Services[0].RoutingKeys, callerDID, connectionID, receiverEP)
 
 	calleePw.CheckPreallocation(cnxAddr)
 
@@ -256,14 +256,10 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		// })
 	}))
 
-	pubEndp := *cnxAddr
-	pubEndp.ConnID = connectionID
-	pubEndp.VerKey = req.Services[0].RecipientKeys[0]
-
 	caller := calleePw.Caller // the other end, we're here the callee
 	callerEndp := endp.NewAddrFromPublic(service.Addr{
-		Endp: pubEndp.Address(),
-		Key:  pubEndp.VerKey,
+		Endp: req.Services[0].ServiceEndpoint,
+		Key:  req.Services[0].RecipientKeys[0],
 	})
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
@@ -283,10 +279,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Out: caller,          // This is the other end, who sent the Request
 	}
 
-	caller.SetAEndp(service.Addr{
-		Endp: pubEndp.Address(),
-		Key:  pubEndp.VerKey,
-	})
+	caller.SetAEndp(callerEP)
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
@@ -330,7 +323,6 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	pwr := try.To1(getPairwiseRep(psm.StateKey{DID: meDID, Nonce: nonce}))
 	msgMeDID := pwr.Caller.DID
-	fmt.Println(msgMeDID, response.DID)
 	caller := receiver.LoadDID(msgMeDID)
 
 	// Set pairwise info about other end to wallet
