@@ -40,9 +40,9 @@ type Incoming struct {
 type PayloadCreator interface {
 	ParseInvitation(pl invitation.Invitation) (r *Incoming, err error)
 	ParseIncoming(pl didcomm.Payload) (r *Incoming, err error)
-	ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload)
-	ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload)
-	ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload)
+	ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
+	ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
+	ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
 }
 
 func PayloadCreatorForMessageType(msgType string) (c PayloadCreator, err error) {
@@ -119,10 +119,10 @@ func (p *plCreatorDIDExchangeV0) ParseIncoming(pl didcomm.Payload) (r *Incoming,
 	return nil, fmt.Errorf("no match for msg type %s", pl.Type())
 }
 
-func (p *plCreatorDIDExchangeV0) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload) {
+func (p *plCreatorDIDExchangeV0) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	if task.Role() == pb.Protocol_ADDRESSEE {
 		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID)
-		return nil, createPayload(task.ID(), pltype.AriesConnectionRequest)
+		return nil, createPayload(task.ID(), pltype.AriesConnectionRequest), nil
 	}
 
 	// build a connection request message to send to another agent
@@ -140,13 +140,13 @@ func (p *plCreatorDIDExchangeV0) ForInvitation(task *taskDIDExchange, caller cor
 	// Create payload to send
 	plToSend = aries.PayloadCreator.NewMsg(task.ID(), pltype.AriesConnectionRequest, msg)
 
-	return plToSend, createPayload(task.ID(), pltype.AriesConnectionResponse)
+	return plToSend, createPayload(task.ID(), pltype.AriesConnectionResponse), nil
 }
 
-func (p *plCreatorDIDExchangeV0) ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload) {
+func (p *plCreatorDIDExchangeV0) ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	responseMsg := didexchange0.ResponseCreator.Create(didcomm.MsgInit{
 		DIDObj:   pw.Callee,
-		Nonce:    pw.Name,
+		Nonce:    taskID,
 		Name:     pw.Name,
 		Endpoint: pw.Endp,
 	}).(didcomm.PwMsg)
@@ -160,14 +160,14 @@ func (p *plCreatorDIDExchangeV0) ForRequest(taskID string, pw *pairwise.Callee, 
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	plToWait = aries.PayloadCreator.NewMsg(taskID, pltype.AriesConnectionResponse, emptyMsg)
 
-	return plToSend, plToWait
+	return plToSend, plToWait, nil
 }
 
-func (p *plCreatorDIDExchangeV0) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload) {
+func (p *plCreatorDIDExchangeV0) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	plToWait = aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, emptyMsg)
 
-	return nil, plToWait
+	return nil, plToWait, nil
 }
 
 type plCreatorDIDExchangeV1 struct{}
@@ -222,32 +222,32 @@ func (p *plCreatorDIDExchangeV1) ParseIncoming(pl didcomm.Payload) (r *Incoming,
        "label": "alice.agent"
    },
 */
-func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload) {
+func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
+	defer err2.Returnf(&err, "V1 pl for invitation")
 	if task.Role() == pb.Protocol_ADDRESSEE {
 		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID)
-		return nil, createPayload(task.ID(), pltype.DIDOrgAriesDIDExchangeRequest)
+		return nil, createPayload(task.ID(), pltype.DIDOrgAriesDIDExchangeRequest), nil
 	}
 
 	// build a connection request message to send to another agent
-	msg := didexchange1.NewRequest(&didexchange1.Request{
+	msg := didexchange1.NewRequest(caller.DOC(), &didexchange1.Request{
 		Label:  task.Label,
 		DID:    caller.Did(),
-		DIDDoc: caller.DOC(),
 		Thread: &decorator.Thread{ID: task.Invitation.ID, PID: task.Invitation.ID},
 	})
 
 	// Create payload to send
 	plToSend = aries.PayloadCreator.NewMsg(task.ID(), pltype.DIDOrgAriesDIDExchangeRequest, msg)
 
-	return plToSend, createPayload(task.ID(), pltype.DIDOrgAriesDIDExchangeResponse)
+	return plToSend, createPayload(task.ID(), pltype.DIDOrgAriesDIDExchangeResponse), nil
 }
 
-func (p *plCreatorDIDExchangeV1) ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload) {
-	return nil, nil
+func (p *plCreatorDIDExchangeV1) ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
+	return nil, nil, nil
 }
 
-func (p *plCreatorDIDExchangeV1) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload) {
-	return nil, nil
+func (p *plCreatorDIDExchangeV1) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
+	return nil, nil, nil
 }
 
 func createPayload(id, typeStr string) didcomm.Payload {

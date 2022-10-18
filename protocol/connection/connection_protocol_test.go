@@ -104,40 +104,43 @@ func readJSONFromFile(filename string) []byte {
 // Simulates requestor role
 func TestConnectionRequestor(t *testing.T) {
 	tests := []struct {
-		name              string
-		invitationPayload []byte
-		requestPayload    []byte
-		responsePayload   []byte
-		ourSeed           string
-		ourDIDStr         string
-		theirSeed         string
-		theirVerKey       string
-		didMethod         method.Type
-		invitationID      string
+		name               string
+		invitationPayload  []byte
+		requestPayload     []byte
+		requestPayloadType string
+		responsePayload    []byte
+		ourSeed            string
+		ourDIDStr          string
+		theirSeed          string
+		theirVerKey        string
+		didMethod          method.Type
+		invitationID       string
 	}{
 		{
-			name:              "findy-agent v0",
-			invitationPayload: readJSONFromFile("./test_data/v0/invitation-findy.json"),
-			requestPayload:    readJSONFromFile("./test_data/v0/request-findy.json"),
-			responsePayload:   readJSONFromFile("./test_data/v0/response-findy.json"),
-			ourSeed:           "000000000000000000000000Steward1",
-			ourDIDStr:         "Th7MpTaRZVRYnPiabds81Y",
-			theirSeed:         "000000000000000000000000Steward2",
-			theirVerKey:       "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
-			didMethod:         method.TypeSov,
-			invitationID:      "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			name:               "findy-agent v0",
+			invitationPayload:  readJSONFromFile("./test_data/v0/invitation-findy.json"),
+			requestPayload:     readJSONFromFile("./test_data/v0/request-findy.json"),
+			requestPayloadType: pltype.AriesConnectionRequest,
+			responsePayload:    readJSONFromFile("./test_data/v0/response-findy.json"),
+			ourSeed:            "000000000000000000000000Steward1",
+			ourDIDStr:          "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:          "000000000000000000000000Steward2",
+			theirVerKey:        "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:          method.TypeSov,
+			invitationID:       "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
 		},
 		{
-			name:              "findy-agent v1",
-			invitationPayload: readJSONFromFile("./test_data/v1/invitation-findy.json"),
-			requestPayload:    readJSONFromFile("./test_data/v0/request-findy.json"),
-			responsePayload:   readJSONFromFile("./test_data/v0/response-findy.json"),
-			ourSeed:           "000000000000000000000000Steward1",
-			ourDIDStr:         "Th7MpTaRZVRYnPiabds81Y",
-			theirSeed:         "000000000000000000000000Steward2",
-			theirVerKey:       "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
-			didMethod:         method.TypeSov,
-			invitationID:      "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			name:               "findy-agent v1",
+			invitationPayload:  readJSONFromFile("./test_data/v1/invitation-findy.json"),
+			requestPayload:     readJSONFromFile("./test_data/v1/request-findy.json"),
+			requestPayloadType: pltype.DIDOrgAriesDIDExchangeRequest,
+			responsePayload:    readJSONFromFile("./test_data/v0/response-findy.json"),
+			ourSeed:            "000000000000000000000000Steward1",
+			ourDIDStr:          "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:          "000000000000000000000000Steward2",
+			theirVerKey:        "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:          method.TypeSov,
+			invitationID:       "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
 		},
 	}
 	for _, tt := range tests {
@@ -187,10 +190,9 @@ func TestConnectionRequestor(t *testing.T) {
 			unpacked, _, _ := pipe.Unpack(httpPayload)
 			assert.Equal(string(unpacked), string(tt.requestPayload))
 
-			var request model.RequestImpl
-			err = json.Unmarshal(unpacked, &request)
+			request := aries.PayloadCreator.NewFromData(unpacked)
 			assert.NoError(err)
-			assert.Equal(pltype.AriesConnectionRequest, request.Type())
+			assert.Equal(request.Type(), tt.requestPayloadType)
 			httpPayload = []byte{}
 
 			// 3. Handle response -> expect that no message is sent to other end

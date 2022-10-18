@@ -113,7 +113,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	ssiWA := wa.(ssi.Agent)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		_, plToWait := plCreator.ForInvitation(deTask, nil)
+		_, plToWait := try.To2(plCreator.ForInvitation(deTask, nil))
 		try.To(prot.UpdatePSM(me, connectionID, task, plToWait, psm.Waiting))
 		return
 	}
@@ -139,7 +139,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	try.To(psm.AddRep(pwr))
 
 	// Create payload to send
-	opl, wpl := plCreator.ForInvitation(deTask, caller)
+	opl, wpl := try.To2(plCreator.ForInvitation(deTask, caller))
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
@@ -291,7 +291,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
-	opl, wpl := plCreator.ForRequest(task.ID(), calleePw, pipe)
+	opl, wpl := try.To2(plCreator.ForRequest(task.ID(), calleePw, pipe))
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, task, opl))
 
@@ -369,7 +369,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	// Update that PSM is successfully Ready
-	_, opl := plCreator.ForResponse()
+	_, opl := try.To2(plCreator.ForResponse())
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.ReadyACK))
 
 	return nil

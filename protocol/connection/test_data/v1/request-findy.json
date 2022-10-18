@@ -2,34 +2,15 @@
     "@type": "https://didcomm.org/didexchange/1.0/request",
     "@id": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
     "did": "Th7MpTaRZVRYnPiabds81Y",
-    "did_doc~attach": {
-        "@context": "https://w3id.org/did/v1",
-        "id": "did:sov:Th7MpTaRZVRYnPiabds81Y",
-        "publicKey": [
-            {
-                "id": "did:sov:Th7MpTaRZVRYnPiabds81Y#1",
-                "type": "Ed25519VerificationKey2018",
-                "controller": "did:sov:Th7MpTaRZVRYnPiabds81Y",
-                "publicKeyBase58": "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"
+    "did_doc~attach": [
+        {
+            "mime-type": "application/json",
+            "lastmod_time": "0001-01-01T00:00:00Z",
+            "data": {
+                "base64": "eyJAY29udGV4dCI6Imh0dHBzOi8vdzNpZC5vcmcvZGlkL3YxIiwiaWQiOiJkaWQ6c292OlRoN01wVGFSWlZSWW5QaWFiZHM4MVkiLCJwdWJsaWNLZXkiOlt7ImlkIjoiZGlkOnNvdjpUaDdNcFRhUlpWUlluUGlhYmRzODFZIzEiLCJ0eXBlIjoiRWQyNTUxOVZlcmlmaWNhdGlvbktleTIwMTgiLCJjb250cm9sbGVyIjoiZGlkOnNvdjpUaDdNcFRhUlpWUlluUGlhYmRzODFZIiwicHVibGljS2V5QmFzZTU4IjoiRlltb0Z3NTVHZVFIN1NSRmEzN2RreDFkMmRaM3pVRjhja2c3d21MN29mTjQifV0sInNlcnZpY2UiOlt7ImlkIjoiZGlkOnNvdjpUaDdNcFRhUlpWUlluUGlhYmRzODFZIiwidHlwZSI6IkluZHlBZ2VudCIsInJlY2lwaWVudEtleXMiOlsiRlltb0Z3NTVHZVFIN1NSRmEzN2RreDFkMmRaM3pVRjhja2c3d21MN29mTjQiXSwic2VydmljZUVuZHBvaW50IjoiaHR0cDovL2V4YW1wbGUuY29tIn1dLCJhdXRoZW50aWNhdGlvbiI6W3sidHlwZSI6IkVkMjU1MTlTaWduYXR1cmVBdXRoZW50aWNhdGlvbjIwMTgiLCJwdWJsaWNLZXkiOiJkaWQ6c292OlRoN01wVGFSWlZSWW5QaWFiZHM4MVkjMSJ9XX0="
             }
-        ],
-        "service": [
-            {
-                "id": "did:sov:Th7MpTaRZVRYnPiabds81Y",
-                "type": "IndyAgent",
-                "recipientKeys": [
-                    "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"
-                ],
-                "serviceEndpoint": "http://example.com"
-            }
-        ],
-        "authentication": [
-            {
-                "type": "Ed25519SignatureAuthentication2018",
-                "publicKey": "did:sov:Th7MpTaRZVRYnPiabds81Y#1"
-            }
-        ]
-    },
+        }
+    ],
     "~thread": {
         "thid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
         "pthid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
