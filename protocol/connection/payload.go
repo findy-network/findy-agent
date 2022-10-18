@@ -196,32 +196,6 @@ func (p *plCreatorDIDExchangeV1) ParseIncoming(pl didcomm.Payload) (r *Incoming,
 	return nil, nil
 }
 
-/*
-   {
-       "@type": "https://didcomm.org/didexchange/1.0/request",
-       "@id": "b0a169c2-a94a-448b-82e5-aa40518ad656",
-       "~thread": {
-           "thid": "b0a169c2-a94a-448b-82e5-aa40518ad656",
-           "pthid": "c263816b-ddb7-43ac-a2cc-6dcb7cd26e7a"
-       },
-       "did": "MT2LEeCuvuB3edrAbAY8tR",
-       "did_doc~attach": {
-           "@id": "63e68517-3409-45d7-9a3e-347482f8f443",
-           "mime-type": "application/json",
-           "data": {
-               "base64": "eyJAY29udGV4dCI6ICJodHRwczovL3czaWQub3JnL2RpZC92MSIsICJpZCI6ICJkaWQ6c292Ok1UMkxFZUN1dnVCM2VkckFiQVk4dFIiLCAicHVibGljS2V5IjogW3siaWQiOiAiZGlkOnNvdjpNVDJMRWVDdXZ1QjNlZHJBYkFZOHRSIzEiLCAidHlwZSI6ICJFZDI1NTE5VmVyaWZpY2F0aW9uS2V5MjAxOCIsICJjb250cm9sbGVyIjogImRpZDpzb3Y6TVQyTEVlQ3V2dUIzZWRyQWJBWTh0UiIsICJwdWJsaWNLZXlCYXNlNTgiOiAiQzlSWFBGRnN3aXhmeGtzYUhnUWJMNVFYd0tXTG9rekRHWVJVaWpDZlNQdkEifV0sICJhdXRoZW50aWNhdGlvbiI6IFt7InR5cGUiOiAiRWQyNTUxOVNpZ25hdHVyZUF1dGhlbnRpY2F0aW9uMjAxOCIsICJwdWJsaWNLZXkiOiAiZGlkOnNvdjpNVDJMRWVDdXZ1QjNlZHJBYkFZOHRSIzEifV0sICJzZXJ2aWNlIjogW3siaWQiOiAiZGlkOnNvdjpNVDJMRWVDdXZ1QjNlZHJBYkFZOHRSO2luZHkiLCAidHlwZSI6ICJJbmR5QWdlbnQiLCAicHJpb3JpdHkiOiAwLCAicmVjaXBpZW50S2V5cyI6IFsiQzlSWFBGRnN3aXhmeGtzYUhnUWJMNVFYd0tXTG9rekRHWVJVaWpDZlNQdkEiXSwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vaG9zdC5kb2NrZXIuaW50ZXJuYWw6ODAzMCJ9XX0=",
-               "jws": {
-                   "header": {
-                       "kid": "did:key:z6MkqbgZyVWKHGT95FiGyFNSBAxXktnCDeEZxZLQZ1AgMchY"
-                   },
-                   "protected": "eyJhbGciOiAiRWREU0EiLCAia2lkIjogImRpZDprZXk6ejZNa3FiZ1p5VldLSEdUOTVGaUd5Rk5TQkF4WGt0bkNEZUVaeFpMUVoxQWdNY2hZIiwgImp3ayI6IHsia3R5IjogIk9LUCIsICJjcnYiOiAiRWQyNTUxOSIsICJ4IjogInBaanVqemtyalN4QVNvRFFkS3ZnQ3JJVlZyVmlwRnRHUGVuOWFYUVM3VXMiLCAia2lkIjogImRpZDprZXk6ejZNa3FiZ1p5VldLSEdUOTVGaUd5Rk5TQkF4WGt0bkNEZUVaeFpMUVoxQWdNY2hZIn19",
-                   "signature": "kZm_fAk-DsNvm5K0pXsUSJ2l0Tk0UFrvmvV_Imy0AJsnr3xtaG-13g8dde-av29kMi1GxYTOooK5Uigjd6vkBg"
-               }
-           }
-       },
-       "label": "alice.agent"
-   },
-*/
 func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	defer err2.Returnf(&err, "V1 pl for invitation")
 	if task.Role() == pb.Protocol_ADDRESSEE {

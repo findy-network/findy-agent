@@ -56,7 +56,7 @@ func NewRequest(doc core.DIDDoc, r *Request) (req *RequestImpl) {
 	return &RequestImpl{Request: r}
 }
 
-func newDIDDocAttach(id string, didDoc []byte) []decorator.Attachment {
+func newDIDDocAttach(_ string, didDoc []byte) []decorator.Attachment {
 	data := decorator.AttachmentData{
 		Base64: base64.StdEncoding.EncodeToString(didDoc)}
 	attachment := []decorator.Attachment{{
