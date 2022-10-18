@@ -1,0 +1,37 @@
+{
+    "@type": "https://didcomm.org/didexchange/1.0/request",
+    "@id": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+    "did": "Th7MpTaRZVRYnPiabds81Y",
+    "did_doc~attach": {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:sov:Th7MpTaRZVRYnPiabds81Y",
+        "publicKey": [
+            {
+                "id": "did:sov:Th7MpTaRZVRYnPiabds81Y#1",
+                "type": "Ed25519VerificationKey2018",
+                "controller": "did:sov:Th7MpTaRZVRYnPiabds81Y",
+                "publicKeyBase58": "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"
+            }
+        ],
+        "service": [
+            {
+                "id": "did:sov:Th7MpTaRZVRYnPiabds81Y",
+                "type": "IndyAgent",
+                "recipientKeys": [
+                    "FYmoFw55GeQH7SRFa37dkx1d2dZ3zUF8ckg7wmL7ofN4"
+                ],
+                "serviceEndpoint": "http://example.com"
+            }
+        ],
+        "authentication": [
+            {
+                "type": "Ed25519SignatureAuthentication2018",
+                "publicKey": "did:sov:Th7MpTaRZVRYnPiabds81Y#1"
+            }
+        ]
+    },
+    "~thread": {
+        "thid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+        "pthid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
+    }
+}

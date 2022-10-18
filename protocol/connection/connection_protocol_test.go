@@ -18,7 +18,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
 	model "github.com/findy-network/findy-agent/std/didexchange"
 	v1 "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -83,17 +82,6 @@ func tearDown() {
 	}
 }
 
-func createInvitation(did core.DID) string {
-	inv := try.To1(invitation.Create(invitation.DIDExchangeVersionV0, invitation.AgentInfo{
-		InvitationType: pltype.AriesConnectionInvitation,
-		InvitationID:   "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
-		EndpointURL:    "http://example.com",
-		RecipientKey:   did.VerKey(),
-		AgentLabel:     "test",
-	}))
-	return try.To1(invitation.Build(inv))
-}
-
 func createAgent(id string) *ssi.DIDAgent {
 	a := new(ssi.DIDAgent)
 	const walletKey = "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
@@ -116,26 +104,40 @@ func readJSONFromFile(filename string) []byte {
 // Simulates requestor role
 func TestConnectionRequestor(t *testing.T) {
 	tests := []struct {
-		name            string
-		requestPayload  []byte
-		responsePayload []byte
-		ourSeed         string
-		ourDIDStr       string
-		theirSeed       string
-		theirVerKey     string
-		didMethod       method.Type
-		invitationID    string
+		name              string
+		invitationPayload []byte
+		requestPayload    []byte
+		responsePayload   []byte
+		ourSeed           string
+		ourDIDStr         string
+		theirSeed         string
+		theirVerKey       string
+		didMethod         method.Type
+		invitationID      string
 	}{
 		{
-			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
-			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
-			ourSeed:         "000000000000000000000000Steward1",
-			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
-			theirSeed:       "000000000000000000000000Steward2",
-			theirVerKey:     "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
-			didMethod:       method.TypeSov,
-			invitationID:    "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			name:              "findy-agent v0",
+			invitationPayload: readJSONFromFile("./test_data/v0/invitation-findy.json"),
+			requestPayload:    readJSONFromFile("./test_data/v0/request-findy.json"),
+			responsePayload:   readJSONFromFile("./test_data/v0/response-findy.json"),
+			ourSeed:           "000000000000000000000000Steward1",
+			ourDIDStr:         "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:         "000000000000000000000000Steward2",
+			theirVerKey:       "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:         method.TypeSov,
+			invitationID:      "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		},
+		{
+			name:              "findy-agent v1",
+			invitationPayload: readJSONFromFile("./test_data/v1/invitation-findy.json"),
+			requestPayload:    readJSONFromFile("./test_data/v0/request-findy.json"),
+			responsePayload:   readJSONFromFile("./test_data/v0/response-findy.json"),
+			ourSeed:           "000000000000000000000000Steward1",
+			ourDIDStr:         "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:         "000000000000000000000000Steward2",
+			theirVerKey:       "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:         method.TypeSov,
+			invitationID:      "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
 		},
 	}
 	for _, tt := range tests {
@@ -146,21 +148,21 @@ func TestConnectionRequestor(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			ourAgent := createAgent("our-req")
-			theirAgent := createAgent("their-req")
+			ourAgent := createAgent("our-req" + tt.name)
+			theirAgent := createAgent("their-req" + tt.name)
 
 			ourDID := try.To1(ourAgent.NewDID(tt.didMethod, tt.ourSeed))
 			ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
 			theirDID := try.To1(theirAgent.NewDID(tt.didMethod, tt.theirSeed))
 
 			// 1. create invitation for "them" and create task
-			invitation := createInvitation(theirDID)
+			inv := try.To1(invitation.Translate(string(tt.invitationPayload)))
 			task, err := createConnectionTask(
 				&comm.TaskHeader{TypeID: pltype.CAPairwiseCreate, Method: tt.didMethod},
 				&v1.Protocol{
 					StartMsg: &v1.Protocol_DIDExchange{
 						DIDExchange: &v1.Protocol_DIDExchangeMsg{
-							InvitationJSON: invitation,
+							InvitationJSON: try.To1(invitation.Build(inv)),
 						},
 					},
 				},
@@ -225,8 +227,8 @@ func TestConnectionInvitor(t *testing.T) {
 	}{
 		{
 			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
-			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
+			requestPayload:  readJSONFromFile("./test_data/v0/request-findy.json"),
+			responsePayload: readJSONFromFile("./test_data/v0/response-findy.json"),
 			ourSeed:         "000000000000000000000000Steward1",
 			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
 			theirSeed:       "000000000000000000000000Steward2",

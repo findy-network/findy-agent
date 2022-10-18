@@ -43,7 +43,7 @@ build-test: build test
 
 # test always with latest findy-AATH-bundle from master
 clone:
-	-rm -rf .docker/findy-agent-backchannel
+#	-rm -rf .docker/findy-agent-backchannel
 	mkdir -p .docker
 	-git clone https://github.com/findy-network/findy-agent-backchannel.git .docker/findy-agent-backchannel
 

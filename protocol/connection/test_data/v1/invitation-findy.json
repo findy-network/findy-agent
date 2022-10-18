@@ -1,0 +1,18 @@
+{
+    "@type": "https://didcomm.org/out-of-band/1.0/invitation",
+    "@id": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+    "services": [
+        {
+            "id": "#inline",
+            "type": "did-communication",
+            "recipientKeys": [
+                "did:key:z6MkmrxJYaDQuoMn5Z3geDWMtABF6i5NFrSGhPyDAgAtis8M"
+            ],
+            "serviceEndpoint": "http://example.com"
+        }
+    ],
+    "handshake_protocols": [
+        "https://didcomm.org/didexchange/1.0"
+    ],
+    "label": "test"
+}

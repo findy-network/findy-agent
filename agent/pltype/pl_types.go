@@ -105,6 +105,13 @@ const (
 )
 
 const (
+	AriesProtocolOutOfBand   = "out-of-band"
+	AriesOutOfBand           = Aries + "/" + AriesProtocolOutOfBand
+	AriesOutOfBandInvitation = AriesOutOfBand + "/1.0/" + Invitation
+
+	DIDOrgAriesOutOfBand        = DIDOrgAries + "/" + AriesProtocolOutOfBand
+	DIDOrgAriesOfBandInvitation = DIDOrgAriesOutOfBand + "/1.0/" + Invitation
+
 	AriesProtocolDIDExchange = "didexchange"
 	AriesDIDExchange         = Aries + "/" + AriesProtocolDIDExchange
 	AriesDIDExchangeRequest  = AriesDIDExchange + "/1.0/" + HandlerRequest

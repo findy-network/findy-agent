@@ -69,6 +69,7 @@ func createConnectionTask(
 
 	var inv invitation.Invitation
 	var label string
+	var incoming Incoming
 	if protocol != nil {
 		assert.That(
 			protocol.GetDIDExchange() != nil,
@@ -78,6 +79,9 @@ func createConnectionTask(
 		// handle two different type formats even the field name ends with
 		// JSON.
 		inv = try.To1(invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON()))
+
+		plCreator := try.To1(PayloadCreatorForMessageType(inv.Type()))
+		incoming = *try.To1(plCreator.ParseInvitation(inv))
 
 		header.TaskID = inv.ID()
 		label = protocol.GetDIDExchange().GetLabel()
@@ -98,7 +102,9 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	})
 
 	deTask, ok := task.(*taskDIDExchange)
-	assert.P.True(ok)
+	assert.That(ok)
+
+	plCreator := try.To1(PayloadCreatorForMessageType(deTask.Invitation.Type))
 
 	connectionID := deTask.Invitation.ID()
 	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint
@@ -107,7 +113,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	ssiWA := wa.(ssi.Agent)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		_, plToWait := payloadForInvitation(deTask, nil)
+		_, plToWait := plCreator.ForInvitation(deTask, nil)
 		try.To(prot.UpdatePSM(me, connectionID, task, plToWait, psm.Waiting))
 		return
 	}
@@ -133,7 +139,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	try.To(psm.AddRep(pwr))
 
 	// Create payload to send
-	opl, wpl := payloadForInvitation(deTask, caller)
+	opl, wpl := plCreator.ForInvitation(deTask, caller)
 
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
@@ -197,13 +203,15 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	cnxAddr := packet.Address
 	receiver := packet.Receiver
 
+	plCreator := try.To1(PayloadCreatorForMessageType(ipl.Type()))
+
 	safeThreadID := ipl.ThreadID()
 	connectionID := cnxAddr.ConnID
 
-	req := try.To1(requestFromIncoming(ipl))
+	req := try.To1(plCreator.ParseIncoming(ipl))
 	callerEP := service.Addr{
-		Endp: req.Services[0].ServiceEndpoint,
-		Key:  req.Services[0].RecipientKeys[0],
+		Endp: req.Endpoint,
+		Key:  req.RecipientKeys[0],
 	}
 
 	receiverEP := cnxAddr.AE()
@@ -232,13 +240,13 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 			glog.V(3).Infoln("+++ normalizing Did()", rawDID, " ==>", req.DID)
 		}
 
-		connReqVK := req.Services[0].RecipientKeys[0]
+		connReqVK := req.RecipientKeys[0]
 		callerDID = try.To1(wca.NewOutDID(req.DID, connReqVK))
 		wca.AddDIDCache(callerDID.(*ssi.DID))
 	}
 
 	calleePw := pairwise.NewCalleePairwise(
-		wca, req.Services[0].RoutingKeys, callerDID, connectionID, receiverEP)
+		wca, req.RoutingKeys, callerDID, connectionID, receiverEP)
 
 	calleePw.CheckPreallocation(cnxAddr)
 
@@ -258,8 +266,8 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	caller := calleePw.Caller // the other end, we're here the callee
 	callerEndp := endp.NewAddrFromPublic(service.Addr{
-		Endp: req.Services[0].ServiceEndpoint,
-		Key:  req.Services[0].RecipientKeys[0],
+		Endp: req.Endpoint,
+		Key:  req.RecipientKeys[0],
 	})
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
@@ -283,7 +291,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
-	opl, wpl := payloadForRequest(task.ID(), calleePw, pipe)
+	opl, wpl := plCreator.ForRequest(task.ID(), calleePw, pipe)
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
 	try.To(comm.SendPL(pipe, task, opl))
 
@@ -300,14 +308,15 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
 	receiver := packet.Receiver
+	plCreator := try.To1(PayloadCreatorForMessageType(ipl.Type()))
 
 	nonce := ipl.ThreadID()
 	// todo: send NACK here if fails
-	response := try.To1(verifyResponseFromIncoming(ipl))
+	response := try.To1(plCreator.ParseIncoming(ipl))
 
 	respEndp := service.Addr{
-		Endp: response.Services[0].ServiceEndpoint,
-		Key:  response.Services[0].RecipientKeys[0],
+		Endp: response.Endpoint,
+		Key:  response.RecipientKeys[0],
 	}
 
 	task := &comm.TaskBase{
@@ -330,13 +339,13 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	if method.TypePeer == utils.Settings.DIDMethod() {
 		callee = receiver.LoadDID(response.DID)
 	} else { // default method is did:sov:
-		callee = ssi.NewDid(response.DID, response.Services[0].RecipientKeys[0])
+		callee = ssi.NewDid(response.DID, response.RecipientKeys[0])
 	}
 
 	callee.Store(receiver.ManagedWallet())
 
 	pwName := pwr.Name
-	route := response.Services[0].RoutingKeys
+	route := response.RoutingKeys
 	caller.SavePairwiseForDID(managedStorage(receiver), callee, core.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
@@ -360,7 +369,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	// Update that PSM is successfully Ready
-	opl := payloadForResponse()
+	_, opl := plCreator.ForResponse()
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.ReadyACK))
 
 	return nil
