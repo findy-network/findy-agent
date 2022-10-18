@@ -148,11 +148,10 @@ func verifyResponseFromIncoming(ipl didcomm.Payload) (r *response, err error) {
 }
 
 func payloadForResponse() (
-	plToSend didcomm.Payload,
 	plToWait didcomm.Payload,
 ) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	plToWait = aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, emptyMsg)
 
-	return nil, plToWait
+	return plToWait
 }

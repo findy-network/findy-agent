@@ -25,14 +25,14 @@ const (
 
 	// these were for the Indy agent protocol, new Aries constants are in the
 	// protocol files.
-	ConnectionResponse  = Connection + "/1.0/response"
-	ConnectionRequest   = Connection + "/1.0/request"
-	ConnectionOffer     = Connection + "/1.0/offer"
-	ConnectionOk        = Connection + "/1.0/ok"    // terminates Acknowledgement cycle, internal use
-	ConnectionError     = Connection + "/1.0/error" // if error occurs we send error payload, especially handy with ws
-	ConnectionPing      = Connection + "/1.0/ping"
-	ConnectionMsg       = Connection + "/1.0/msg"
-	ConnectionAck       = Connection + "/1.0/acknowledgement"
+	ConnectionResponse = Connection + "/1.0/response"
+	ConnectionRequest  = Connection + "/1.0/request"
+	ConnectionOffer    = Connection + "/1.0/offer"
+	ConnectionOk       = Connection + "/1.0/ok"    // terminates Acknowledgement cycle, internal use
+	ConnectionError    = Connection + "/1.0/error" // if error occurs we send error payload, especially handy with ws
+	ConnectionPing     = Connection + "/1.0/ping"
+	ConnectionMsg      = Connection + "/1.0/msg"
+	ConnectionAck      = Connection + "/1.0/acknowledgement"
 )
 
 const (

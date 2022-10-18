@@ -360,7 +360,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	// Update that PSM is successfully Ready
-	_, opl := payloadForResponse()
+	opl := payloadForResponse()
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.ReadyACK))
 
 	return nil
