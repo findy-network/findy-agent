@@ -40,6 +40,7 @@ var connectionProcessor = comm.ProtProc{
 	Handlers: map[string]comm.HandlerFunc{
 		pltype.HandlerResponse: handleConnectionResponse, // to Caller (sends the request)
 		pltype.HandlerRequest:  handleConnectionRequest,  // to Callee
+		// TODO: add complete handler
 	},
 	FillStatus: fillPairwiseStatus,
 }

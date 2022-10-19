@@ -7,6 +7,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/vc"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/decorator"
 	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/findy-network/findy-common-go/dto"
@@ -190,8 +191,8 @@ func (m *msgImpl) Did() string {
 	return m.Msg.Did
 }
 
-func (m *msgImpl) VerKey() string {
-	return m.Msg.VerKey
+func (m *msgImpl) VerKey() (string, error) {
+	return m.Msg.VerKey, nil
 }
 
 func (m *msgImpl) Nonce() string {
@@ -202,11 +203,15 @@ func (m *msgImpl) Nonce() string {
 	return m.ID()
 }
 
-func (m *msgImpl) Endpoint() service.Addr {
+func (m *msgImpl) Endpoint() (service.Addr, error) {
 	return service.Addr{
 		Endp: m.Msg.Endpoint,
 		Key:  m.Msg.EndpVerKey,
-	}
+	}, nil
+}
+
+func (m *msgImpl) DIDDocument() (core.DIDDoc, error) {
+	panic("unsupported")
 }
 
 func (m *msgImpl) FieldObj() interface{} {
