@@ -121,14 +121,18 @@ func (m *ResponseImpl) Did() string {
 	return m.Connection.DID
 }
 
-func (m *ResponseImpl) VerKey() string {
+func (m *ResponseImpl) VerKey() (string, error) {
 	vms := common.VMs(m.Connection.DIDDoc)
 	if len(vms) == 0 {
-		return ""
+		return "", nil
 	}
-	return base58.Encode(vms[0].Value)
+	return base58.Encode(vms[0].Value), nil
 }
 
 func (m *ResponseImpl) Name() string { // Todo: names should be Label
 	return ""
+}
+
+func (m *ResponseImpl) DIDDocument() (core.DIDDoc, error) {
+	return m.Connection.DIDDoc, nil
 }

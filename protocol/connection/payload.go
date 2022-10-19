@@ -42,7 +42,7 @@ type PayloadCreator interface {
 	ParseIncoming(pl didcomm.Payload) (r *Incoming, err error)
 	ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
 	ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
-	ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
+	ForResponse(taskID string) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
 }
 
 func PayloadCreatorForMessageType(msgType string) (c PayloadCreator, err error) {
@@ -163,7 +163,7 @@ func (p *plCreatorDIDExchangeV0) ForRequest(taskID string, pw *pairwise.Callee, 
 	return plToSend, plToWait, nil
 }
 
-func (p *plCreatorDIDExchangeV0) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
+func (p *plCreatorDIDExchangeV0) ForResponse(taskID string) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	plToWait = aries.PayloadCreator.NewMsg(utils.UUID(), pltype.AriesConnectionResponse, emptyMsg)
 
@@ -193,7 +193,51 @@ func (p *plCreatorDIDExchangeV1) ParseInvitation(pl invitation.Invitation) (r *I
 }
 
 func (p *plCreatorDIDExchangeV1) ParseIncoming(pl didcomm.Payload) (r *Incoming, err error) {
-	return nil, nil
+	defer err2.Returnf(&err, "DIDExchangeV0 ParseIncoming")
+	switch pl.Type() {
+	case pltype.AriesDIDExchangeRequest, pltype.DIDOrgAriesDIDExchangeRequest:
+		{
+			pwMsg := pl.MsgHdr().(didcomm.PwMsg)
+			doc := try.To1(pwMsg.DIDDocument())
+			assert.That(len(common.Services(doc)) > 0)
+			docBytes := try.To1(json.Marshal(doc))
+
+			req := pl.MsgHdr().FieldObj().(*didexchange1.Request)
+			return &Incoming{
+				DID:           req.DID,
+				DIDDoc:        docBytes,
+				Label:         req.Label,
+				Endpoint:      common.Service(doc, 0).ServiceEndpoint,
+				RecipientKeys: common.RecipientKeys(doc, 0),
+				RoutingKeys:   common.RoutingKeys(doc, 0),
+			}, nil
+		}
+	case pltype.AriesDIDExchangeResponse, pltype.DIDOrgAriesDIDExchangeResponse:
+		{
+			pwMsg := pl.MsgHdr().(didcomm.PwMsg)
+			doc := try.To1(pwMsg.DIDDocument())
+			assert.That(len(common.Services(doc)) > 0)
+			docBytes := try.To1(json.Marshal(doc))
+
+			resp := pl.MsgHdr().FieldObj().(*didexchange1.Response)
+			// TODO
+			// if !try.To1(signature.Verify(resp)) {
+			// 	glog.Error("cannot verify Connection Response signature --> send NACK")
+			// 	return nil, errors.New("cannot verify connection response signature")
+			// }
+			assert.That(len(common.Services(doc)) > 0)
+
+			return &Incoming{
+				DID:           resp.DID,
+				DIDDoc:        docBytes,
+				Endpoint:      common.Service(doc, 0).ServiceEndpoint,
+				RecipientKeys: common.RecipientKeys(doc, 0),
+				RoutingKeys:   common.RoutingKeys(doc, 0),
+			}, nil
+		}
+
+	}
+	return nil, fmt.Errorf("no match for msg type %s", pl.Type())
 }
 
 func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
@@ -217,11 +261,32 @@ func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller cor
 }
 
 func (p *plCreatorDIDExchangeV1) ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
-	return nil, nil, nil
+	assert.That(pw.Callee.DOC() != nil)
+	assert.NotEmpty(pw.Callee.Did())
+
+	msg := didexchange1.NewResponse(pw.Callee.DOC(), &didexchange1.Response{
+		DID:    pw.Callee.Did(),
+		Thread: &decorator.Thread{ID: taskID, PID: taskID},
+	})
+
+	plToSend = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeResponse, msg)
+
+	// TODO
+	// res := responseMsg.FieldObj().(*didexchange1.Response)
+	// try.To(signature.Sign(res, pipe)) // we must sign the Response before send it
+
+	return plToSend, createPayload(taskID, pltype.DIDOrgAriesDIDExchangeComplete), nil
 }
 
-func (p *plCreatorDIDExchangeV1) ForResponse() (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
-	return nil, nil, nil
+func (p *plCreatorDIDExchangeV1) ForResponse(taskID string) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
+	msg := didexchange1.NewComplete(&didexchange1.Complete{
+		Thread: &decorator.Thread{ID: taskID, PID: taskID},
+	})
+	plToSend = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeComplete, msg)
+	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
+	plToWait = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeComplete, emptyMsg)
+
+	return plToSend, plToWait, nil
 }
 
 func createPayload(id, typeStr string) didcomm.Payload {

@@ -145,11 +145,11 @@ type PwMsg interface {
 	MessageHdr
 	Reply
 
-	Endpoint() service.Addr
-	SetEndpoint(ae service.Addr)
+	Endpoint() (service.Addr, error)
 	Did() string
-	VerKey() string
+	VerKey() (string, error)
 	Name() string // Todo: should be named as a Label? That's in the standard
+	DIDDocument() (core.DIDDoc, error)
 }
 
 // CredentialAttribute for credential value

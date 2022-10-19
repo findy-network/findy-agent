@@ -196,7 +196,7 @@ func buildRouting(addr, rKey string, rKeys []string, didMethod method.Type) []st
 func handleConnectionRequest(packet comm.Packet) (err error) {
 	defer err2.Returnf(&err, "connection req")
 
-	// The agent DID, the PW DID is msgMeDID below
+	// The agent DID
 	meDID := packet.Receiver.MyDID().Did()
 
 	ipl := packet.Payload
@@ -247,8 +247,15 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	calleePw := pairwise.NewCalleePairwise(
 		wca, req.RoutingKeys, callerDID, connectionID, receiverEP)
+	calleePw.CheckPreallocation(cnxAddr) // load our DID
 
-	calleePw.CheckPreallocation(cnxAddr)
+	myEndp := *cnxAddr                       // set our agent's URL as a base addr
+	myEndp.ConnID = connectionID             // set our pw DID to actual agent DID in addr
+	myEndp.VerKey = calleePw.Callee.VerKey() // set our pw VerKey as well
+	calleePw.Callee.SetAEndp(service.Addr{
+		Endp: myEndp.Address(),
+		Key:  myEndp.VerKey,
+	})
 
 	try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
 		// Legacy: calculate our endpoint for the pairwise
@@ -368,9 +375,22 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	callee.SetAEndp(respEndp)
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
+	opl, wpl := try.To2(plCreator.ForResponse(nonce))
 	// Update that PSM is successfully Ready
-	_, opl := try.To2(plCreator.ForResponse())
-	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.ReadyACK))
+	if opl == nil {
+		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
+	} else {
+		pipe := sec.Pipe{
+			In:  caller,
+			Out: callee,
+		}
+
+		try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
+		try.To(comm.SendPL(pipe, task, opl))
+
+		// Sending went OK, update PSM once again
+		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
+	}
 
 	return nil
 }

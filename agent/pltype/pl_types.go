@@ -105,6 +105,7 @@ const (
 )
 
 const (
+	HandlerComplete          = "complete"
 	AriesProtocolOutOfBand   = "out-of-band"
 	AriesOutOfBand           = Aries + "/" + AriesProtocolOutOfBand
 	AriesOutOfBandInvitation = AriesOutOfBand + "/1.0/" + Invitation
@@ -116,10 +117,12 @@ const (
 	AriesDIDExchange         = Aries + "/" + AriesProtocolDIDExchange
 	AriesDIDExchangeRequest  = AriesDIDExchange + "/1.0/" + HandlerRequest
 	AriesDIDExchangeResponse = AriesDIDExchange + "/1.0/" + HandlerResponse
+	AriesDIDExchangeComplete = AriesDIDExchange + "/1.0/" + HandlerComplete
 
 	DIDOrgAriesDIDExchange         = DIDOrgAries + "/" + AriesProtocolDIDExchange
 	DIDOrgAriesDIDExchangeRequest  = DIDOrgAriesDIDExchange + "/1.0/" + HandlerRequest
 	DIDOrgAriesDIDExchangeResponse = DIDOrgAriesDIDExchange + "/1.0/" + HandlerResponse
+	DIDOrgAriesDIDExchangeComplete = DIDOrgAriesDIDExchange + "/1.0/" + HandlerComplete
 )
 
 // Present Proof protocol constants

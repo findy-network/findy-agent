@@ -8,6 +8,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
@@ -107,27 +108,27 @@ func (m *RequestImpl) Did() string {
 	return rawDID
 }
 
-func (m *RequestImpl) VerKey() string {
+func (m *RequestImpl) VerKey() (string, error) {
 	vm := common.VM(m.Connection.DIDDoc, 0)
-	return base58.Encode(vm.Value)
+	return base58.Encode(vm.Value), nil
 }
 
-func (m *RequestImpl) Endpoint() service.Addr {
+func (m *RequestImpl) Endpoint() (service.Addr, error) {
 	assert.NotNil(m)
 	assert.NotNil(m.Connection)
 	assert.That(m.Connection.DIDDoc != nil)
 
 	if len(common.Services(m.Connection.DIDDoc)) == 0 {
-		return service.Addr{}
+		return service.Addr{}, nil
 	}
 
 	serv := common.Service(m.Connection.DIDDoc, 0)
 	addr := serv.ServiceEndpoint
 	key := serv.RecipientKeys[0]
 
-	return service.Addr{Endp: addr, Key: key}
+	return service.Addr{Endp: addr, Key: key}, nil
 }
 
-func (m *RequestImpl) SetEndpoint(ae service.Addr) {
-	panic("todo: we should not be here.. at least with the current impl")
+func (m *RequestImpl) DIDDocument() (core.DIDDoc, error) {
+	return m.Connection.DIDDoc, nil
 }
