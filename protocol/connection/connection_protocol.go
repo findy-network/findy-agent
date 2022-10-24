@@ -70,7 +70,7 @@ func createConnectionTask(
 
 	var inv invitation.Invitation
 	var label string
-	var incoming Incoming
+	//var incoming Incoming
 	if protocol != nil {
 		assert.That(
 			protocol.GetDIDExchange() != nil,
@@ -81,8 +81,8 @@ func createConnectionTask(
 		// JSON.
 		inv = try.To1(invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON()))
 
-		plCreator := try.To1(PayloadCreatorForMessageType(inv.Type()))
-		incoming = *try.To1(plCreator.ParseInvitation(inv))
+		//plCreator := try.To1(PayloadCreatorForMessageType(inv.Type()))
+		//incoming = *try.To1(plCreator.ParseInvitation(inv))
 
 		header.TaskID = inv.ID()
 		label = protocol.GetDIDExchange().GetLabel()
@@ -105,7 +105,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	deTask, ok := task.(*taskDIDExchange)
 	assert.That(ok)
 
-	plCreator := try.To1(PayloadCreatorForMessageType(deTask.Invitation.Type))
+	plCreator := try.To1(PayloadCreatorForMessageType(deTask.Invitation.Type()))
 
 	connectionID := deTask.Invitation.ID()
 	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint

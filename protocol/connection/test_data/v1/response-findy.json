@@ -2,15 +2,13 @@
     "@type": "https://didcomm.org/didexchange/1.0/response",
     "@id": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
     "did": "EbP4aYNeTHL6q385GuVpRV",
-    "did_doc~attach": [
-        {
-            "mime-type": "application/json",
-            "lastmod_time": "0001-01-01T00:00:00Z",
-            "data": {
-                "base64": "eyJAY29udGV4dCI6Imh0dHBzOi8vdzNpZC5vcmcvZGlkL3YxIiwiaWQiOiJkaWQ6c292OkViUDRhWU5lVEhMNnEzODVHdVZwUlYiLCJwdWJsaWNLZXkiOlt7ImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIzEiLCJ0eXBlIjoiRWQyNTUxOVZlcmlmaWNhdGlvbktleTIwMTgiLCJjb250cm9sbGVyIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwicHVibGljS2V5QmFzZTU4IjoiOFFoRnhLeHlhRnNKeTRDeXhlWVgzNGRGSDhvV3F5QnYxUDRITFFDc29lTHkifV0sInNlcnZpY2UiOlt7ImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwidHlwZSI6IkluZHlBZ2VudCIsInJlY2lwaWVudEtleXMiOlsiOFFoRnhLeHlhRnNKeTRDeXhlWVgzNGRGSDhvV3F5QnYxUDRITFFDc29lTHkiXSwic2VydmljZUVuZHBvaW50IjoiaG9zdG5hbWUvc2VydmljZU5hbWUvY2FESUQvY2FESUQvZDNkYmIzYWYtNjNkNC00Yzg4LTg1YTQtMzZmMGEwYjg4OWUwIn1dLCJhdXRoZW50aWNhdGlvbiI6W3sidHlwZSI6IkVkMjU1MTlTaWduYXR1cmVBdXRoZW50aWNhdGlvbjIwMTgiLCJwdWJsaWNLZXkiOiJkaWQ6c292OkViUDRhWU5lVEhMNnEzODVHdVZwUlYjMSJ9XX0="
-            }
+    "did_doc~attach": {
+        "mime-type": "application/json",
+        "lastmod_time": "0001-01-01T00:00:00Z",
+        "data": {
+            "base64": "eyJAY29udGV4dCI6Imh0dHBzOi8vdzNpZC5vcmcvZGlkL3YxIiwiaWQiOiJkaWQ6c292OkViUDRhWU5lVEhMNnEzODVHdVZwUlYiLCJwdWJsaWNLZXkiOlt7ImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIzEiLCJ0eXBlIjoiRWQyNTUxOVZlcmlmaWNhdGlvbktleTIwMTgiLCJjb250cm9sbGVyIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwicHVibGljS2V5QmFzZTU4IjoiOFFoRnhLeHlhRnNKeTRDeXhlWVgzNGRGSDhvV3F5QnYxUDRITFFDc29lTHkifV0sInNlcnZpY2UiOlt7ImlkIjoiZGlkOnNvdjpFYlA0YVlOZVRITDZxMzg1R3VWcFJWIiwidHlwZSI6IkluZHlBZ2VudCIsInJlY2lwaWVudEtleXMiOlsiOFFoRnhLeHlhRnNKeTRDeXhlWVgzNGRGSDhvV3F5QnYxUDRITFFDc29lTHkiXSwic2VydmljZUVuZHBvaW50IjoiaG9zdG5hbWUvc2VydmljZU5hbWUvY2FESUQvY2FESUQvZDNkYmIzYWYtNjNkNC00Yzg4LTg1YTQtMzZmMGEwYjg4OWUwIn1dLCJhdXRoZW50aWNhdGlvbiI6W3sidHlwZSI6IkVkMjU1MTlTaWduYXR1cmVBdXRoZW50aWNhdGlvbjIwMTgiLCJwdWJsaWNLZXkiOiJkaWQ6c292OkViUDRhWU5lVEhMNnEzODVHdVZwUlYjMSJ9XX0="
         }
-    ],
+    },
     "~thread": {
         "thid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
         "pthid": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"

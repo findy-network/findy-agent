@@ -19,7 +19,6 @@ import (
 	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	"github.com/findy-network/findy-agent/std/didexchange1"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
-	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
 	decorator1 "github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
@@ -39,7 +38,6 @@ type Incoming struct {
 }
 
 type PayloadCreator interface {
-	ParseInvitation(pl invitation.Invitation) (r *Incoming, err error)
 	ParseIncoming(pl didcomm.Payload) (r *Incoming, err error)
 	ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
 	ForRequest(taskID string, pw *pairwise.Callee, pipe sec.Pipe) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error)
@@ -65,16 +63,6 @@ func PayloadCreatorForMessageType(msgType string) (c PayloadCreator, err error) 
 }
 
 type plCreatorDIDExchangeV0 struct{}
-
-func (p *plCreatorDIDExchangeV0) ParseInvitation(pl invitation.Invitation) (r *Incoming, err error) {
-	assert.SNotEmpty(pl.ServiceEndpoint())
-	return &Incoming{
-		Label:         pl.Label(),
-		Endpoint:      pl.ServiceEndpoint()[0].ServiceEndpoint,
-		RecipientKeys: pl.ServiceEndpoint()[0].RecipientKeys,
-		RoutingKeys:   pl.ServiceEndpoint()[0].RoutingKeys,
-	}, nil
-}
 
 func (p *plCreatorDIDExchangeV0) ParseIncoming(pl didcomm.Payload) (r *Incoming, err error) {
 	defer err2.Returnf(&err, "DIDExchangeV0 ParseIncoming")
@@ -122,7 +110,7 @@ func (p *plCreatorDIDExchangeV0) ParseIncoming(pl didcomm.Payload) (r *Incoming,
 
 func (p *plCreatorDIDExchangeV0) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID)
+		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID())
 		return nil, createPayload(task.ID(), pltype.AriesConnectionRequest), nil
 	}
 
@@ -135,7 +123,7 @@ func (p *plCreatorDIDExchangeV0) ForInvitation(task *taskDIDExchange, caller cor
 		},
 		// when out-of-bound and did-exchange protocols are supported we
 		// should start to save connection_id to Thread.PID
-		Thread: &decorator.Thread{ID: task.Invitation.ID},
+		Thread: &decorator.Thread{ID: task.Invitation.ID()},
 	})
 
 	// Create payload to send
@@ -181,16 +169,6 @@ func didKeysToB58(keys []string) []string {
 		keys[index] = base58.Encode(keyBytes)
 	}
 	return keys
-}
-
-func (p *plCreatorDIDExchangeV1) ParseInvitation(pl invitation.Invitation) (r *Incoming, err error) {
-	assert.SNotEmpty(pl.ServiceEndpoint())
-	return &Incoming{
-		Label:         pl.Label(),
-		Endpoint:      pl.ServiceEndpoint()[0].ServiceEndpoint,
-		RecipientKeys: didKeysToB58(pl.ServiceEndpoint()[0].RecipientKeys),
-		RoutingKeys:   didKeysToB58(pl.ServiceEndpoint()[0].RoutingKeys),
-	}, nil
 }
 
 func (p *plCreatorDIDExchangeV1) ParseIncoming(pl didcomm.Payload) (r *Incoming, err error) {
@@ -244,7 +222,7 @@ func (p *plCreatorDIDExchangeV1) ParseIncoming(pl didcomm.Payload) (r *Incoming,
 func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller core.DID) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	defer err2.Returnf(&err, "V1 pl for invitation")
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID)
+		glog.V(3).Infof("it's us who waits connection (%v) to invitation", task.Invitation.ID())
 		return nil, createPayload(task.ID(), pltype.DIDOrgAriesDIDExchangeRequest), nil
 	}
 
@@ -252,7 +230,7 @@ func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller cor
 	msg := didexchange1.NewRequest(caller.DOC(), &didexchange1.Request{
 		Label:  task.Label,
 		DID:    caller.Did(),
-		Thread: &decorator1.Thread{ID: task.Invitation.ID, PID: task.Invitation.ID},
+		Thread: &decorator1.Thread{ID: task.Invitation.ID(), PID: task.Invitation.ID()},
 	})
 	res := msg.FieldObj().(*didexchange1.Request)
 	try.To(signature.SignRequestV1(res, caller))
