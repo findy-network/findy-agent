@@ -244,7 +244,13 @@ func setUp() {
 	sw := ssi.NewRawWalletCfg("sovrin_steward_wallet", "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE")
 
 	exportPath := os.Getenv("TEST_WORKDIR")
-	enclaveFile := strLiteral("MEMORY_enclave", ".bolt", -1)
+	enclaveBaseName := "MEMORY_enclave"
+	psmFile4CI := strLiteral("MEMORY_Findy", ".bolt", -1)
+	if runningInCITestEnv() {
+		enclaveBaseName = "enclave"
+		psmFile4CI = strLiteral("Findy", ".bolt", -1)
+	}
+	enclaveFile := strLiteral(enclaveBaseName, ".bolt", -1)
 	var sealedBoxPath string
 	if len(exportPath) == 0 {
 		exportPath = utils.IndyBaseDir()
@@ -287,7 +293,7 @@ func setUp() {
 	// utils.Settings.SetCryptVerbose(true)
 	utils.Settings.SetLocalTestMode(true)
 
-	try.To(psm.Open(strLiteral("MEMORY_Findy", ".bolt", -1))) // this panics if err..
+	try.To(psm.Open(psmFile4CI))
 
 	go grpcserver.Serve(&rpc.ServerCfg{
 		PKI:     rpc.LoadPKI("./cert"),
@@ -311,6 +317,10 @@ func calcTestMode() {
 	}
 }
 
+func runningInCITestEnv() bool {
+	return os.Getenv("CI") != ""
+}
+
 func prepareBuildOneTest() {
 	if testMode != TestModeBuildEnv {
 		return
@@ -323,7 +333,7 @@ func prepareBuildOneTest() {
 	removeFiles(home, "/.indy_client/worker/ONEenclave.bolt")
 	removeFiles(home, "/.indy_client/wallet/ONEunit_test_wallet*")
 	removeFiles(home, "/.indy_client/wallet/ONEemail*")
-	if os.Getenv("TEST_WORKDIR") != "" {
+	if runningInCITestEnv() {
 		removeFiles(home, "/wallets/*")
 	}
 	// enclave.WipeSealedBox()
@@ -345,7 +355,7 @@ func tearDown() {
 	removeFiles(home, "/.indy_client/wallet/agent?")
 	removeFiles(home, "/storage/unit_test_wallet*")
 	removeFiles(home, "/storage/email*")
-	if os.Getenv("TEST_WORKDIR") != "" {
+	if runningInCITestEnv() {
 		removeFiles(home, "/wallets/*")
 	}
 	enclave.WipeSealedBox()
