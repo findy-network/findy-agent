@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
-	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/sov/did"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -19,21 +20,21 @@ import (
 
 type commonData struct {
 	DID    string
-	DIDDoc []decorator.Attachment
+	DIDDoc *decorator.Attachment
 }
 
 type commonImpl struct {
 	commonData
 }
 
-func newDIDDocAttach(_ string, didDoc []byte) []decorator.Attachment {
+func newDIDDocAttach(_ string, didDoc []byte) *decorator.Attachment {
 	data := decorator.AttachmentData{
 		Base64: base64.StdEncoding.EncodeToString(didDoc)}
-	attachment := []decorator.Attachment{{
-		//ID:       id,
+	attachment := &decorator.Attachment{
+		ID:       utils.UUID(),
 		MimeType: "application/json",
 		Data:     data,
-	}}
+	}
 	return attachment
 }
 
@@ -48,10 +49,10 @@ func (m *commonImpl) Did() string {
 
 func (m *commonImpl) DIDDocument() (coreDoc core.DIDDoc, err error) {
 	defer err2.Returnf(&err, "request DID doc")
-	assert.That(m.commonData.DIDDoc != nil)
+	assert.NotNil(m.commonData.DIDDoc)
 
 	var doc did.Doc
-	didDocBytes := try.To1(base64.StdEncoding.DecodeString(m.commonData.DIDDoc[0].Data.Base64))
+	didDocBytes := try.To1(base64.StdEncoding.DecodeString(m.commonData.DIDDoc.Data.Base64))
 	try.To(json.Unmarshal(didDocBytes, &doc))
 	return &doc, nil
 }

@@ -6,9 +6,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
-	"github.com/findy-network/findy-agent/std/decorator"
+	decorator0 "github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
 )
 
 var CompleteCreator = &CompleteFactor{}
@@ -58,11 +59,22 @@ func (m *CompleteImpl) JSON() []byte {
 }
 
 func (m *CompleteImpl) checkThread() {
-	m.Complete.Thread = decorator.CheckThread(m.Complete.Thread, m.Complete.ID)
+	legacyThread := decorator0.CheckThread(m.Thread(), m.Complete.ID)
+	m.Complete.Thread = &decorator.Thread{
+		ID:             legacyThread.ID,
+		PID:            legacyThread.PID,
+		SenderOrder:    legacyThread.SenderOrder,
+		ReceivedOrders: legacyThread.ReceivedOrders,
+	}
 }
 
-func (m *CompleteImpl) Thread() *decorator.Thread {
-	return m.Complete.Thread
+func (m *CompleteImpl) Thread() *decorator0.Thread {
+	return &decorator0.Thread{
+		ID:             m.Complete.Thread.ID,
+		PID:            m.Complete.Thread.PID,
+		SenderOrder:    m.Complete.Thread.SenderOrder,
+		ReceivedOrders: m.Complete.Thread.ReceivedOrders,
+	}
 }
 
 func (m *CompleteImpl) ID() string {

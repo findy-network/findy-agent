@@ -81,3 +81,4 @@ type AttachmentData struct {
 	// and when the content is natively conveyable as JSON. Optional.
 	JSON interface{} `json:"json,omitempty"`
 }
+

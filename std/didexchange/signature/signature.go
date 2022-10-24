@@ -1,6 +1,7 @@
 package signature
 
 import (
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -11,22 +12,26 @@ import (
 	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/didexchange"
+	didexchange0 "github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-agent/std/didexchange1"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
+	"github.com/mr-tron/base58"
 )
 
 const connectionSigExpTime = 10 * 60 * 60
 
-func Sign(r *didexchange.Response, pipe sec.Pipe) (err error) {
+func Sign(r *didexchange0.Response, pipe sec.Pipe) (err error) {
 	r.ConnectionSignature, err = newConnectionSignature(r.Connection, pipe)
 	return err
 }
 
-func Verify(r *didexchange.Response) (ok bool, err error) {
+func Verify(r *didexchange0.Response) (ok bool, err error) {
 	r.Connection, err = verifySignature(r.ConnectionSignature, nil)
 	ok = r.Connection != nil
 
@@ -38,14 +43,62 @@ func Verify(r *didexchange.Response) (ok bool, err error) {
 	return ok, err
 }
 
-func newConnectionSignature(connection *didexchange.Connection, pipe sec.Pipe) (cs *didexchange.ConnectionSignature, err error) {
+func SignRequestV1(r *didexchange1.Request, ourDID core.DID) (err error) {
+	c := ourDID.Packager().Crypto()
+	kms := ourDID.Packager().KMS()
+	kh := try.To1(kms.Get(ourDID.KID()))
+
+	b58Key := ourDID.VerKey()
+	pubKeyBytes := try.To1(base58.Decode(b58Key))
+	pubKey := ed25519.PublicKey(pubKeyBytes)
+	try.To(r.DIDDoc.Data.Sign(c, kh, pubKey, pubKeyBytes))
+	return err
+}
+
+func VerifyRequestV1(r *didexchange1.Request) (ok bool, err error) {
+	// r.Connection, err = verifySignature(r.ConnectionSignature, nil)
+	// ok = r.Connection != nil
+
+	// if ok {
+	// 	rawDID := common.ID(r.Connection.DIDDoc)
+	// 	r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
+	// }
+
+	return ok, err
+}
+
+func SignResponseV1(r *didexchange1.Response, ourDID core.DID) (err error) {
+	c := ourDID.Packager().Crypto()
+	kms := ourDID.Packager().KMS()
+	kh := try.To1(kms.Get(ourDID.KID()))
+
+	b58Key := ourDID.VerKey()
+	pubKeyBytes := try.To1(base58.Decode(b58Key))
+	pubKey := ed25519.PublicKey(pubKeyBytes)
+	try.To(r.DIDDoc.Data.Sign(c, kh, pubKey, pubKeyBytes))
+	return err
+}
+
+func VerifyResponseV1(r *didexchange1.Response) (ok bool, err error) {
+	// r.Connection, err = verifySignature(r.ConnectionSignature, nil)
+	// ok = r.Connection != nil
+
+	// if ok {
+	// 	rawDID := common.ID(r.Connection.DIDDoc)
+	// 	r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
+	// }
+
+	return ok, err
+}
+
+func newConnectionSignature(connection *didexchange0.Connection, pipe sec.Pipe) (cs *didexchange0.ConnectionSignature, err error) {
 	defer err2.Returnf(&err, "build connection sign")
 
 	connectionJSON := try.To1(json.Marshal(connection))
 
 	signedData, signature, verKey := try.To3(pipe.SignAndStamp(connectionJSON))
 
-	return &didexchange.ConnectionSignature{
+	return &didexchange0.ConnectionSignature{
 		Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
 		SignedData: base64.URLEncoding.EncodeToString(signedData),
 		SignVerKey: verKey,

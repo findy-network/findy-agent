@@ -21,6 +21,7 @@ import (
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
+	decorator1 "github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -251,8 +252,10 @@ func (p *plCreatorDIDExchangeV1) ForInvitation(task *taskDIDExchange, caller cor
 	msg := didexchange1.NewRequest(caller.DOC(), &didexchange1.Request{
 		Label:  task.Label,
 		DID:    caller.Did(),
-		Thread: &decorator.Thread{ID: task.Invitation.ID, PID: task.Invitation.ID},
+		Thread: &decorator1.Thread{ID: task.Invitation.ID, PID: task.Invitation.ID},
 	})
+	res := msg.FieldObj().(*didexchange1.Request)
+	try.To(signature.SignRequestV1(res, caller))
 
 	// Create payload to send
 	plToSend = aries.PayloadCreator.NewMsg(task.ID(), pltype.DIDOrgAriesDIDExchangeRequest, msg)
@@ -266,21 +269,20 @@ func (p *plCreatorDIDExchangeV1) ForRequest(taskID string, pw *pairwise.Callee, 
 
 	msg := didexchange1.NewResponse(pw.Callee.DOC(), &didexchange1.Response{
 		DID:    pw.Callee.Did(),
-		Thread: &decorator.Thread{ID: taskID, PID: taskID},
+		Thread: &decorator1.Thread{ID: taskID, PID: taskID},
 	})
 
-	plToSend = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeResponse, msg)
+	res := msg.FieldObj().(*didexchange1.Response)
+	try.To(signature.SignResponseV1(res, pw.Callee))
 
-	// TODO
-	// res := responseMsg.FieldObj().(*didexchange1.Response)
-	// try.To(signature.Sign(res, pipe)) // we must sign the Response before send it
+	plToSend = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeResponse, msg)
 
 	return plToSend, createPayload(taskID, pltype.DIDOrgAriesDIDExchangeComplete), nil
 }
 
 func (p *plCreatorDIDExchangeV1) ForResponse(taskID string) (plToSend didcomm.Payload, plToWait didcomm.Payload, err error) {
 	msg := didexchange1.NewComplete(&didexchange1.Complete{
-		Thread: &decorator.Thread{ID: taskID, PID: taskID},
+		Thread: &decorator1.Thread{ID: taskID, PID: taskID},
 	})
 	plToSend = aries.PayloadCreator.NewMsg(taskID, pltype.DIDOrgAriesDIDExchangeComplete, msg)
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})

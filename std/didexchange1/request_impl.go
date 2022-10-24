@@ -9,9 +9,10 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/std/decorator"
+	decorator0 "github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 )
@@ -83,13 +84,23 @@ func (m *RequestImpl) Name() string { // Todo: names should be Label
 }
 
 func (m *RequestImpl) checkThread() {
-	m.Request.Thread = decorator.CheckThread(m.Request.Thread, m.Request.ID)
+	legacyThread := decorator0.CheckThread(m.Thread(), m.Request.ID)
+	m.Request.Thread = &decorator.Thread{
+		ID:             legacyThread.ID,
+		PID:            legacyThread.PID,
+		SenderOrder:    legacyThread.SenderOrder,
+		ReceivedOrders: legacyThread.ReceivedOrders,
+	}
 }
 
-func (m *RequestImpl) Thread() *decorator.Thread {
-	return m.Request.Thread
+func (m *RequestImpl) Thread() *decorator0.Thread {
+	return &decorator0.Thread{
+		ID:             m.Request.Thread.ID,
+		PID:            m.Request.Thread.PID,
+		SenderOrder:    m.Request.Thread.SenderOrder,
+		ReceivedOrders: m.Request.Thread.ReceivedOrders,
+	}
 }
-
 func (m *RequestImpl) ID() string {
 	return m.Request.ID
 }
