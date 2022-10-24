@@ -2,6 +2,5 @@ go 1.19
 
 use (
 	.
-	../../lainio/err2
 	../findy-common-go/
 )
