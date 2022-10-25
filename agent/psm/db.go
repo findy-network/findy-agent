@@ -33,7 +33,7 @@ var (
 
 	theCipher *crypto.Cipher
 
-	mgdDB *db.Mgd
+	mgdDB db.Handle
 )
 
 type Rep interface {

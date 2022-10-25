@@ -3,8 +3,8 @@ module github.com/findy-network/findy-agent
 go 1.18
 
 require (
-	github.com/findy-network/findy-common-go v0.1.46
-	github.com/findy-network/findy-wrapper-go v0.30.19
+	github.com/findy-network/findy-common-go v0.1.47-0.20221024132918-f904295d1cde
+	github.com/findy-network/findy-wrapper-go v0.30.20
 	github.com/go-co-op/gocron v1.17.0
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/hyperledger/aries-framework-go v0.1.8
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20220322085443-50e8f9bd208b
-	github.com/lainio/err2 v0.8.10
+	github.com/lainio/err2 v0.8.11
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5

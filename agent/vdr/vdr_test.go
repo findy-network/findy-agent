@@ -25,7 +25,7 @@ type testCase struct {
 var (
 	storageTestConfig = cfg.AgentStorage{AgentStorageConfig: api.AgentStorageConfig{
 		AgentKey: mgddb.GenerateKey(),
-		AgentID:  "agentID",
+		AgentID:  "MEMORY_agentID",
 		FilePath: ".",
 	}}
 	afgoTestStorage *mgddb.Storage

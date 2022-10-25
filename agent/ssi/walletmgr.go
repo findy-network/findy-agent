@@ -202,7 +202,7 @@ func (m *Mgr) closeOldestAndOpen(cfg managed.WalletCfg) managed.Wallet {
 
 func (m *Mgr) findOldest() string {
 	var id string
-	var maxDelta int64
+	var maxDelta int64 = -1
 	now := time.Now().UnixNano()
 
 	for s, wallet := range m.opened {

@@ -46,7 +46,7 @@ func setUp() {
 	// AFGO
 	kmsTestConfig := cfg.AgentStorage{AgentStorageConfig: api.AgentStorageConfig{
 		AgentKey: mgddb.GenerateKey(),
-		AgentID:  "agentID",
+		AgentID:  "MEMORY_agentID",
 		FilePath: ".",
 	}}
 

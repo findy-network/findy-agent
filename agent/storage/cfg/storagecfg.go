@@ -95,8 +95,7 @@ func (c *AgentStorage) CloseWallet(handle int) (err error) {
 	storages.Lock()
 	defer storages.Unlock()
 
-	info, exist := storages.InfoMap[c.UniqueID()]
-	assert.That(exist, "config must exists in map")
+	info := assert.MKeyExists(storages.InfoMap, c.UniqueID(), "config must exists in map")
 	assert.That(info.handle == handle, "info.handle must be equal to argument handle")
 
 	if info.isOpen {
