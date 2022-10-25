@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
-	try.To(psm.Open("data.bolt"))
+	try.To(psm.Open("MEMORY_data.bolt"))
 	comm.SendAndWaitReq = sendAndWaitHTTPRequest
 }
 
@@ -191,7 +191,7 @@ func TestConnectionRequestor(t *testing.T) {
 			httpPayload = []byte{}
 
 			// 3. Handle response -> expect that no message is sent to other end
-			payload := aries.PayloadCreator.NewFromData([]byte(tt.responsePayload))
+			payload := aries.PayloadCreator.NewFromData(tt.responsePayload)
 			mockReceiver.EXPECT().MyDID().Return(ourDID)
 			mockReceiver.EXPECT().LoadDID(tt.ourDIDStr).Return(ourDID)
 			mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(ourAgent.WalletH, ourAgent.StorageH)
@@ -250,7 +250,7 @@ func TestConnectionInvitor(t *testing.T) {
 			mockReceiver := NewMockReceiverMock(ctrl)
 
 			// Handle request -> expect that response is sent to other end
-			payload := aries.PayloadCreator.NewFromData([]byte(tt.requestPayload))
+			payload := aries.PayloadCreator.NewFromData(tt.requestPayload)
 
 			packet := comm.Packet{
 				Payload:  payload,
