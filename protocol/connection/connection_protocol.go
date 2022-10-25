@@ -85,7 +85,7 @@ func createConnectionTask(
 		header.TaskID = inv.ID()
 		label = protocol.GetDIDExchange().GetLabel()
 
-		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", inv.ID)
+		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", inv.ID())
 	}
 
 	return &taskDIDExchange{

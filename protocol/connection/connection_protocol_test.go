@@ -22,7 +22,7 @@ import (
 	"github.com/findy-network/findy-agent/method"
 	model "github.com/findy-network/findy-agent/std/didexchange"
 	v1 "github.com/findy-network/findy-common-go/grpc/agency/v1"
-	didexchange "github.com/findy-network/findy-common-go/std/didexchange/invitation"
+	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	gomock "github.com/golang/mock/gomock"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -84,13 +84,14 @@ func tearDown() {
 }
 
 func createInvitation(did core.DID) string {
-	return try.To1(didexchange.Build(didexchange.Invitation{
-		ID:              "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
-		Type:            pltype.AriesConnectionInvitation,
-		ServiceEndpoint: "http://example.com",
-		RecipientKeys:   []string{did.VerKey()},
-		Label:           "test",
+	inv := try.To1(invitation.Create(invitation.DIDExchangeVersionV0, invitation.AgentInfo{
+		InvitationType: pltype.AriesConnectionInvitation,
+		InvitationID:   "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		EndpointURL:    "http://example.com",
+		RecipientKey:   did.VerKey(),
+		AgentLabel:     "test",
 	}))
+	return try.To1(invitation.Build(inv))
 }
 
 func createAgent(id string) *ssi.DIDAgent {
