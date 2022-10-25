@@ -17,7 +17,7 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/jwt"
-	didexchange "github.com/findy-network/findy-common-go/std/didexchange/invitation"
+	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/findy-network/findy-wrapper-go"
 	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/ledger"
@@ -252,20 +252,21 @@ func (a *agentServer) CreateInvitation(
 	if base.Label == "" {
 		label = "empty-label"
 	}
-	invitation := didexchange.Invitation{
-		ID:              id,
-		Type:            pltype.AriesConnectionInvitation,
-		ServiceEndpoint: addr.Address(),
-		RecipientKeys:   []string{addr.VerKey},
-		Label:           label,
-	}
 
-	glog.V(5).Infoln("final phase")
+	inv := try.To1(invitation.Create(invitation.DIDExchangeVersionV0, invitation.AgentInfo{
+		InvitationType: pltype.AriesConnectionInvitation,
+		InvitationID:   id,
+		EndpointURL:    addr.Address(),
+		RecipientKey:   addr.VerKey,
+		AgentLabel:     label,
+	}))
 
 	// just JSON for our own clients
-	jStr := dto.ToJSON(invitation)
+	jStr := dto.ToJSON(inv)
 	// .. and build a URL which contains the invitation
-	urlStr := try.To1(didexchange.Build(invitation))
+	urlStr := try.To1(invitation.Build(inv))
+
+	glog.V(5).Infof("Created invitation %s", jStr)
 
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from

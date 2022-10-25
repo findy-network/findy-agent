@@ -82,7 +82,7 @@ func createConnectionTask(
 		// JSON.
 		inv = try.To1(invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON()))
 
-		header.TaskID = inv.ID
+		header.TaskID = inv.ID()
 		label = protocol.GetDIDExchange().GetLabel()
 
 		glog.V(1).Infof("Create task for DIDExchange with invitation id %s", inv.ID)
@@ -91,7 +91,7 @@ func createConnectionTask(
 	return &taskDIDExchange{
 		TaskBase:     comm.TaskBase{TaskHeader: *header},
 		Invitation:   inv,
-		InvitationID: inv.ID,
+		InvitationID: inv.ID(),
 		Label:        label,
 	}, nil
 }
@@ -124,8 +124,8 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	}
 
 	deTask.SetReceiverEndp(service.Addr{
-		Endp: deTask.Invitation.ServiceEndpoint,
-		Key:  deTask.Invitation.RecipientKeys[0],
+		Endp: deTask.Invitation.Services()[0].ServiceEndpoint,
+		Key:  deTask.Invitation.Services()[0].RecipientKeysAsB58()[0],
 	})
 
 	didMethod := task.DIDMethod()
@@ -149,7 +149,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	pwr := &pairwiseRep{
 		StateKey:   psm.StateKey{DID: me, Nonce: deTask.ID()},
 		Name:       deTask.ID(),
-		TheirLabel: deTask.Invitation.Label,
+		TheirLabel: deTask.Invitation.Label(),
 		Caller:     didRep{DID: caller.Did(), VerKey: caller.VerKey(), My: true},
 		Callee:     didRep{},
 	}
@@ -161,7 +161,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(task.ReceiverEndp().Endp, receiverKey,
-		deTask.Invitation.RoutingKeys, didMethod)
+		deTask.Invitation.Services()[0].RoutingKeysAsB58(), didMethod)
 	callee := try.To1(wa.NewOutDID(receiverKeys...))
 	secPipe := sec.Pipe{In: caller, Out: callee}
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
