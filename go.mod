@@ -7,6 +7,7 @@ require (
 	github.com/findy-network/findy-wrapper-go v0.30.20
 	github.com/go-co-op/gocron v1.17.0
 	github.com/golang/glog v1.0.0
+	github.com/golang/mock v1.6.0
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
 	github.com/hyperledger/aries-framework-go v0.1.8

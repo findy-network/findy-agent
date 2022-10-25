@@ -140,7 +140,8 @@ test_cov_out:
 		./...
 
 test_cov: test_cov_out
-	$(GO) tool cover -html=$(COV_FILE)
+	$(GO) tool cover -html=$(COV_FILE) -o ./report.html
+	open ./report.html
 
 
 misspell:
