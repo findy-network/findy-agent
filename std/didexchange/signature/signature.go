@@ -55,7 +55,7 @@ func SignRequestV1(r *didexchange1.Request, ourDID core.DID) (err error) {
 	return err
 }
 
-func VerifyRequestV1(r *didexchange1.Request) (ok bool, err error) {
+func VerifyRequestV1(r *didexchange1.Request, theirDID core.DID) (ok bool, err error) {
 	// r.Connection, err = verifySignature(r.ConnectionSignature, nil)
 	// ok = r.Connection != nil
 
@@ -63,6 +63,8 @@ func VerifyRequestV1(r *didexchange1.Request) (ok bool, err error) {
 	// 	rawDID := common.ID(r.Connection.DIDDoc)
 	// 	r.Connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
 	// }
+	// TODO
+	try.To(r.DIDDoc.Data.Verify(theirDID.Packager().Crypto(), theirDID.Packager().KMS()))
 
 	return ok, err
 }
