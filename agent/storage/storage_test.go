@@ -3,6 +3,7 @@ package storage
 import (
 	"flag"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 
@@ -155,8 +156,13 @@ func TestConnectionStore(t *testing.T) {
 			conns, err := store.ListConnections()
 			assert.NoError(err)
 			assert.SLen(conns, 2)
-			assert.DeepEqual(testConn, conns[0])
-			assert.DeepEqual(testConn2, conns[1])
+			// key value storage doesn't guarantee order of the connections
+			if reflect.DeepEqual(testConn, conns[0]) {
+				assert.DeepEqual(testConn2, conns[1])
+			} else {
+				assert.DeepEqual(testConn, conns[1])
+				assert.DeepEqual(testConn2, conns[0])
+			}
 		})
 	}
 }
