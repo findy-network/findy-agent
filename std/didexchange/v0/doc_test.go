@@ -1,4 +1,4 @@
-package didexchange_test
+package v0_test
 
 import (
 	"encoding/json"

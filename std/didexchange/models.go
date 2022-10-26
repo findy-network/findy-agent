@@ -1,119 +1,76 @@
-// Taken from aries-framework-go, and heavily modified. The idea is to replace
-// these with the aries-framework-go when it's ready. Until now we use our own
-// minimalistic solution.
-
-// Package didexchange is currently used for connection protocol implementation
 package didexchange
 
 import (
-	"encoding/json"
-
+	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/psm"
+	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/std/common"
-	"github.com/findy-network/findy-agent/std/decorator"
-	sov "github.com/findy-network/findy-agent/std/sov/did"
-	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
-	"github.com/lainio/err2"
-	"github.com/lainio/err2/assert"
-	"github.com/lainio/err2/try"
+	"github.com/hyperledger/aries-framework-go/pkg/crypto"
+	"github.com/hyperledger/aries-framework-go/pkg/kms"
 )
 
-// Request defines a2a DID exchange request
-// https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange#1-exchange-request
-type Request struct {
-	Type       string            `json:"@type,omitempty"`
-	ID         string            `json:"@id,omitempty"`
-	Label      string            `json:"label,omitempty"`
-	Connection *Connection       `json:"connection,omitempty"`
-	Thread     *decorator.Thread `json:"~thread,omitempty"`
+// PwMsg is an interface for pairwise level messages. With this interface we
+// have managed to abstract and implement both old indy agent2agent handshake
+// and the Aries connection protocol. In the future there is chance that we are
+// able to do the same for Aries did exchange protocol.
+type PwMsg interface {
+	didcomm.MessageHdr
+
+	Endpoint() service.Addr
+	Did() string
+	VerKey() string
+	Label() string
+	DIDDocument() core.DIDDoc
+	RoutingKeys() []string
+
+	Verify(c crypto.Crypto, keyManager kms.KeyManager) error
+
+	Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error)
+	Wait() (didcomm.Payload, psm.SubState)
 }
 
-// Response defines a2a DID exchange response
-// https://github.com/hyperledger/aries-rfcs/tree/master/features/0023-did-exchange#2-exchange-response
-type Response struct {
-	Type                string               `json:"@type,omitempty"`
-	ID                  string               `json:"@id,omitempty"`
-	ConnectionSignature *ConnectionSignature `json:"connection~sig,omitempty"`
-	Thread              *decorator.Thread    `json:"~thread,omitempty"`
+type UnsupportedPwMsgBase struct{}
 
-	Connection *Connection `json:"-"` // Actual data, to be signed or verified
+func (m *UnsupportedPwMsgBase) Endpoint() service.Addr {
+	panic("unsupported")
 }
 
-// ConnectionSignature connection signature
-type ConnectionSignature struct {
-	Type       string `json:"@type,omitempty"`
-	Signature  string `json:"signature,omitempty"`
-	SignedData string `json:"sig_data,omitempty"`
-	SignVerKey string `json:"signer,omitempty"` // Todo: was signers
+func (m *UnsupportedPwMsgBase) Did() string {
+	panic("unsupported")
 }
 
-// Connection is a connection definition
-type Connection struct {
-	DID    string
-	DIDDoc core.DIDDoc // handles both types of DIDDoc: sov and AFGO
+func (m *UnsupportedPwMsgBase) VerKey() string {
+	panic("unsupported")
 }
 
-type AFGOConnection struct {
-	DID string   `json:"DID,omitempty"`
-	Doc *did.Doc `json:"DIDDoc,omitempty"`
+func (m *UnsupportedPwMsgBase) Label() string {
+	panic("unsupported")
 }
 
-type DataConnection struct {
-	DID string   `json:"DID,omitempty"`
-	Doc *sov.Doc `json:"DIDDoc,omitempty"`
+func (m *UnsupportedPwMsgBase) DIDDocument() core.DIDDoc {
+	panic("unsupported")
 }
 
-func (c *Connection) MarshalJSON() (_ []byte, err error) {
-	defer err2.Returnf(&err, "marshal connection")
-
-	switch doc := c.DIDDoc.(type) {
-	case *did.Doc:
-		out := AFGOConnection{
-			DID: c.DID,
-			Doc: doc,
-		}
-		return json.Marshal(out)
-	case *sov.Doc:
-		out := DataConnection{
-			DID: c.DID,
-			Doc: doc,
-		}
-		return json.Marshal(out)
-	default:
-		assert.NotImplemented()
-		return nil, nil
-	}
+func (m *UnsupportedPwMsgBase) RoutingKeys() []string {
+	panic("unsupported")
 }
 
-func (c *Connection) UnmarshalJSON(b []byte) (err error) {
-	defer err2.Returnf(&err, "unmarshal connection")
-
-	data := new(AFGOConnection)
-	if err := json.Unmarshal(b, data); err == nil {
-		c.DID = data.DID
-		c.DIDDoc = data.Doc
-		return nil
-	}
-
-	dataSov := new(DataConnection)
-	try.To(json.Unmarshal(b, dataSov))
-	c.DID = dataSov.DID
-	c.DIDDoc = dataSov.Doc
-
-	return nil
+func (m *UnsupportedPwMsgBase) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
+	panic("unsupported")
 }
 
-func RouteForConnection(conn *Connection) (route []string) {
-	// Find the routing keys from the request
-	if conn == nil {
-		glog.Warningln("RouteForConnection - no DIDExchange request found")
-		return
-	}
-	if conn.DIDDoc == nil {
-		glog.Warningln("RouteForConnection - request does not contain DIDDoc")
-		return
-	}
-	assert.D.True(len(common.Services(conn.DIDDoc)) > 0)
-	return common.Services(conn.DIDDoc)[0].RoutingKeys
+func (m *UnsupportedPwMsgBase) Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
+	panic("unsupported")
+}
+
+func (m *UnsupportedPwMsgBase) Wait() (didcomm.Payload, psm.SubState) {
+	panic("unsupported")
+}
+
+func (m *UnsupportedPwMsgBase) SetID(id string) {
+	panic("unsupported")
+}
+
+func (m *UnsupportedPwMsgBase) SetType(t string) {
+	panic("unsupported")
 }

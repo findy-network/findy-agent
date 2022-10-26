@@ -17,7 +17,7 @@ import (
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/didexchange"
+	v0 "github.com/findy-network/findy-agent/std/didexchange/v0"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
@@ -335,9 +335,9 @@ func TestPipe_pack(t *testing.T) {
 		Endp: "http://example.com",
 		Key:  didIn.VerKey(),
 	})
-	msg := didexchange.NewRequest(&didexchange.Request{
+	msg := v0.NewRequest(&v0.Request{
 		Label: "test",
-		Connection: &didexchange.Connection{
+		Connection: &v0.Connection{
 			DID:    didIn.Did(),
 			DIDDoc: doc,
 		},
@@ -393,7 +393,7 @@ func TestPipe_pack(t *testing.T) {
 	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
 	assert.That(dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
 	assert.That(dstMsg.MsgHdr().ID() == plID)
-	assert.That(dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	assert.That(dstMsg.MsgHdr().FieldObj().(*v0.Request).Label == "test")
 }
 
 func TestPipe_packPeer(t *testing.T) {
@@ -437,9 +437,9 @@ func TestPipe_packPeer(t *testing.T) {
 	doc, ok := didIn.DOC().(*did.Doc)
 	assert.That(ok)
 
-	msg := didexchange.NewRequest(&didexchange.Request{
+	msg := v0.NewRequest(&v0.Request{
 		Label: "test",
-		Connection: &didexchange.Connection{
+		Connection: &v0.Connection{
 			DID:    didIn.Did(),
 			DIDDoc: doc,
 		},
@@ -509,5 +509,5 @@ func TestPipe_packPeer(t *testing.T) {
 	//	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
 	//	assert.That( dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
 	//	assert.That( dstMsg.MsgHdr().ID() == plID)
-	//	assert.That( dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	//	assert.That( dstMsg.MsgHdr().FieldObj().(*v0.Request).Label == "test")
 }

@@ -1,4 +1,4 @@
-package didexchange
+package v0
 
 import (
 	"encoding/json"

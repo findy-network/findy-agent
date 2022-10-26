@@ -2,11 +2,11 @@ package pairwise
 
 import (
 	"github.com/findy-network/findy-agent/agent/comm"
-	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/core"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -80,9 +80,9 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 }
 
 func (p *Callee) ConnReqToRespWithSet(
-	f func(m didcomm.PwMsg),
+	f func(m didexchange.PwMsg),
 ) (
-	respMsg didcomm.PwMsg,
+	respMsg didexchange.PwMsg,
 	err error,
 ) {
 	defer err2.Return(&err)

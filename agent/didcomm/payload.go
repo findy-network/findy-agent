@@ -12,10 +12,8 @@ import (
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/vc"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/decorator"
-	didexchange "github.com/findy-network/findy-agent/std/didexchange/invitation"
 	"github.com/golang/glog"
 )
 
@@ -129,29 +127,6 @@ type MessageHdr interface {
 	FieldObj() interface{}
 }
 
-// Reply is an interface for having a common nonce with the protocol messages.
-// Our old system did use Nonce as common id during the whole protocol
-// conversation, not only as a message reply id. In Aries implementation this is
-// implemented with Thread decorator, where you can use both of them.
-type Reply interface {
-	Nonce() string
-}
-
-// PwMsg is an interface for pairwise level messages. With this interface we
-// have managed to abstract and implement both old indy agent2agent handshake
-// and the Aries connection protocol. In the future there is chance that we are
-// able to do the same for Aries did exchange protocol.
-type PwMsg interface {
-	MessageHdr
-	Reply
-
-	Endpoint() (service.Addr, error)
-	Did() string
-	VerKey() (string, error)
-	Name() string // Todo: should be named as a Label? That's in the standard
-	DIDDocument() (core.DIDDoc, error)
-}
-
 // CredentialAttribute for credential value
 type CredentialAttribute struct {
 	Name     string `json:"name,omitempty"`
@@ -187,34 +162,9 @@ type ProofValue struct {
 // Msg is a legacy interface for before Aries message protocols. For new Aries
 // protocols it isn't recommended to use it, but use MessageHdr instead.
 type Msg interface {
-	PwMsg
-
-	Error() string
-	SetError(s string)
-	Info() string
-	TimestampMs() *uint64
-	ConnectionInvitation() *didexchange.Invitation
-	CredentialAttributes() *[]CredentialAttribute
-	CredDefID() *string
-	ProofAttributes() *[]ProofAttribute
-	ProofValues() *[]ProofValue
+	MessageHdr
 
 	SubLevelID() string
-	SetSubLevelID(s string)
-
-	Schema() *vc.Schema
-	SetSchema(sch *vc.Schema)
-
-	ReceiverEP() service.Addr
-
-	SetRcvrEndp(ae service.Addr)
-	SetNonce(n string)
-	SetReady(yes bool)
-	SetBody(b interface{})
-	SetDid(s string)
-	SetVerKey(s string)
-	SetInfo(s string)
-	SetInvitation(i *didexchange.Invitation)
 
 	Ready() bool
 }

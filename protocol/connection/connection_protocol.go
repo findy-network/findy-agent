@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/endp"
@@ -20,12 +21,17 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
+
+	// import didexchange protocol structures to initialize message creators
+	_ "github.com/findy-network/findy-agent/std/didexchange/v0"
+	_ "github.com/findy-network/findy-agent/std/didexchange/v1"
 )
 
 type taskDIDExchange struct {
@@ -70,7 +76,6 @@ func createConnectionTask(
 
 	var inv invitation.Invitation
 	var label string
-	//var incoming Incoming
 	if protocol != nil {
 		assert.That(
 			protocol.GetDIDExchange() != nil,
@@ -80,9 +85,6 @@ func createConnectionTask(
 		// handle two different type formats even the field name ends with
 		// JSON.
 		inv = try.To1(invitation.Translate(protocol.GetDIDExchange().GetInvitationJSON()))
-
-		//plCreator := try.To1(PayloadCreatorForMessageType(inv.Type()))
-		//incoming = *try.To1(plCreator.ParseInvitation(inv))
 
 		header.TaskID = inv.ID()
 		label = protocol.GetDIDExchange().GetLabel()
@@ -105,7 +107,9 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	deTask, ok := task.(*taskDIDExchange)
 	assert.That(ok)
 
-	plCreator := try.To1(PayloadCreatorForMessageType(deTask.Invitation.Type()))
+	invMsg := aries.MsgCreator.Create(didcomm.MsgInit{
+		Type: deTask.Invitation.Type(),
+		AID:  deTask.Invitation.ID()}).(didexchange.PwMsg)
 
 	connectionID := deTask.Invitation.ID()
 	meAddr := ca.CAEndp(deTask.ID()) // CA can give us w-EA's endpoint
@@ -114,8 +118,9 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	ssiWA := wa.(ssi.Agent)
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
-		_, plToWait := try.To2(plCreator.ForInvitation(deTask, nil))
-		try.To(prot.UpdatePSM(me, connectionID, task, plToWait, psm.Waiting))
+		glog.V(3).Infof("it's us who waits connection (%v) to invitation", deTask.Invitation.ID())
+		pl, state := invMsg.Wait()
+		try.To(prot.UpdatePSM(me, connectionID, task, pl, state))
 		return
 	}
 
@@ -139,9 +144,6 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	}
 	try.To(psm.AddRep(pwr))
 
-	// Create payload to send
-	opl, wpl := try.To2(plCreator.ForInvitation(deTask, caller))
-
 	// Create secure pipe to send payload to other end of the new PW
 	receiverKey := task.ReceiverEndp().Key
 	receiverKeys := buildRouting(task.ReceiverEndp().Endp, receiverKey,
@@ -150,12 +152,17 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	secPipe := sec.Pipe{In: caller, Out: callee}
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
+	// Create payload to send
+	opl, state := try.To2(invMsg.Next(deTask.Label, caller))
+
 	// Update PSM state, and send the payload to other end
-	try.To(prot.UpdatePSM(me, connectionID, task, opl, psm.Sending))
+	try.To(prot.UpdatePSM(me, connectionID, task, opl, state))
 	try.To(comm.SendPL(secPipe, task, opl))
 
 	// Sending went OK, update PSM once again
-	try.To(prot.UpdatePSM(me, connectionID, task, wpl, psm.Waiting))
+	reqMsg := opl.FieldObj().(didexchange.PwMsg)
+	wpl, state := reqMsg.Wait()
+	try.To(prot.UpdatePSM(me, connectionID, task, wpl, state))
 }
 
 func addToSovCacheIf(ssiWA ssi.Agent, caller core.DID) {
@@ -204,18 +211,19 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	cnxAddr := packet.Address
 	receiver := packet.Receiver
 
-	plCreator := try.To1(PayloadCreatorForMessageType(ipl.Type()))
-
 	safeThreadID := ipl.ThreadID()
 	connectionID := cnxAddr.ConnID
 
-	req := try.To1(plCreator.ParseIncoming(ipl))
-	callerEP := service.Addr{
-		Endp: req.Endpoint,
-		Key:  req.RecipientKeys[0],
-	}
+	reqMsg := ipl.MsgHdr().(didexchange.PwMsg)
+	// todo: send NACK here if fails
+	// try.To(reqMsg.Verify(
+	// 	receiver.MyDID().Packager().Crypto(),
+	// 	receiver.RootDid().Packager().KMS(),
+	// ))
 
+	callerEP := reqMsg.Endpoint()
 	receiverEP := cnxAddr.AE()
+
 	task := &comm.TaskBase{
 		TaskHeader: comm.TaskHeader{
 			TaskID:   ipl.ThreadID(),
@@ -231,23 +239,23 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	wca := receiver.(ssi.Agent)
 	var callerDID core.DID
-	if method.DIDType(req.DID) == method.TypePeer {
-		callerDID = try.To1(wca.NewOutDID(req.DID, string(req.DIDDoc)))
+	if method.DIDType(reqMsg.Did()) == method.TypePeer {
+		callerDID = try.To1(wca.NewOutDID(reqMsg.Did(), string(try.To1(reqMsg.DIDDocument().MarshalJSON()))))
 	} else { // did:sov: is the default still
 		// old 160-connection protocol handles old DIDs as plain
-		rawDID := strings.TrimPrefix(req.DID, "did:sov:")
-		if rawDID == req.DID {
-			req.DID = "did:sov:" + rawDID
-			glog.V(3).Infoln("+++ normalizing Did()", rawDID, " ==>", req.DID)
+		rawDID := strings.TrimPrefix(reqMsg.Did(), "did:sov:")
+		if rawDID == reqMsg.Did() {
+			glog.V(3).Infoln("+++ normalizing Did()", rawDID, " ==>", reqMsg.Did())
+			rawDID = "did:sov:" + rawDID
 		}
 
-		connReqVK := req.RecipientKeys[0]
-		callerDID = try.To1(wca.NewOutDID(req.DID, connReqVK))
+		connReqVK := reqMsg.VerKey()
+		callerDID = try.To1(wca.NewOutDID(rawDID, connReqVK))
 		wca.AddDIDCache(callerDID.(*ssi.DID))
 	}
 
 	calleePw := pairwise.NewCalleePairwise(
-		wca, req.RoutingKeys, callerDID, connectionID, receiverEP)
+		wca, reqMsg.RoutingKeys(), callerDID, connectionID, receiverEP)
 	calleePw.CheckPreallocation(cnxAddr) // load our DID
 
 	myEndp := *cnxAddr                       // set our agent's URL as a base addr
@@ -258,7 +266,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Key:  myEndp.VerKey,
 	})
 
-	try.To1(calleePw.ConnReqToRespWithSet(func(m didcomm.PwMsg) {
+	try.To1(calleePw.ConnReqToRespWithSet(func(m didexchange.PwMsg) {
 		// Legacy: calculate our endpoint for the pairwise
 		// when DIDDoc is used for all the DIDs extra info.
 
@@ -273,15 +281,12 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	}))
 
 	caller := calleePw.Caller // the other end, we're here the callee
-	callerEndp := endp.NewAddrFromPublic(service.Addr{
-		Endp: req.Endpoint,
-		Key:  req.RecipientKeys[0],
-	})
+	callerEndp := endp.NewAddrFromPublic(reqMsg.Endpoint())
 	callerAddress := callerEndp.Address()
 	pwr := &pairwiseRep{
 		StateKey:   psm.StateKey{DID: meDID, Nonce: safeThreadID}, // check if this really must be connection id
 		Name:       connectionID,
-		TheirLabel: req.Label,
+		TheirLabel: reqMsg.Label(),
 		Callee:     didRep{DID: calleePw.Callee.Did(), VerKey: calleePw.Callee.VerKey(), My: true},
 		Caller:     didRep{DID: caller.Did(), VerKey: caller.VerKey(), Endp: callerAddress},
 	}
@@ -299,12 +304,14 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
-	opl, wpl := try.To2(plCreator.ForRequest(task.ID(), calleePw, pipe))
-	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
+	opl, state := try.To2(reqMsg.Next("", calleePw.Callee))
+	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, state))
 	try.To(comm.SendPL(pipe, task, opl))
 
-	// update the PSM, we are ready at this end for this protocol
-	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
+	// update the PSM
+	respMsg := opl.FieldObj().(didexchange.PwMsg)
+	wpl, state := respMsg.Wait()
+	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
 
 	return nil
 }
@@ -316,16 +323,17 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	meDID := packet.Receiver.MyDID().Did()
 	ipl := packet.Payload
 	receiver := packet.Receiver
-	plCreator := try.To1(PayloadCreatorForMessageType(ipl.Type()))
+	respMsg := ipl.MsgHdr().(didexchange.PwMsg)
 
 	nonce := ipl.ThreadID()
-	// todo: send NACK here if fails
-	response := try.To1(plCreator.ParseIncoming(ipl))
 
-	respEndp := service.Addr{
-		Endp: response.Endpoint,
-		Key:  response.RecipientKeys[0],
-	}
+	respEndp := respMsg.Endpoint()
+
+	// todo: send NACK here if fails
+	// try.To(respMsg.Verify(
+	// 	receiver.MyDID().Packager().Crypto(),
+	// 	receiver.RootDid().Packager().KMS(),
+	// ))
 
 	task := &comm.TaskBase{
 		TaskHeader: comm.TaskHeader{
@@ -345,15 +353,15 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	// Set pairwise info about other end to wallet
 	var callee core.DID
 	if method.TypePeer == utils.Settings.DIDMethod() {
-		callee = receiver.LoadDID(response.DID)
+		callee = receiver.LoadDID(respMsg.Did())
 	} else { // default method is did:sov:
-		callee = ssi.NewDid(response.DID, response.RecipientKeys[0])
+		callee = ssi.NewDid(respMsg.Did(), respMsg.VerKey())
 	}
 
 	callee.Store(receiver.ManagedWallet())
 
 	pwName := pwr.Name
-	route := response.RoutingKeys
+	route := respMsg.RoutingKeys()
 	caller.SavePairwiseForDID(managedStorage(receiver), callee, core.PairwiseMeta{
 		Name:  pwName,
 		Route: route,
@@ -376,21 +384,23 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	callee.SetAEndp(respEndp)
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
-	opl, wpl := try.To2(plCreator.ForResponse(nonce))
+	opl, state := try.To2(respMsg.Next("", nil))
 	// Update that PSM is successfully Ready
-	if opl == nil {
-		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
+	if state.IsReady() {
+		try.To(prot.UpdatePSM(meDID, connectionID, task, opl, state))
 	} else {
 		pipe := sec.Pipe{
 			In:  caller,
 			Out: callee,
 		}
 
-		try.To(prot.UpdatePSM(meDID, connectionID, task, opl, psm.Sending))
+		try.To(prot.UpdatePSM(meDID, connectionID, task, opl, state))
 		try.To(comm.SendPL(pipe, task, opl))
 
 		// Sending went OK, update PSM once again
-		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, psm.ReadyACK))
+		completeMsg := opl.FieldObj().(didexchange.PwMsg)
+		wpl, state := completeMsg.Wait()
+		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
 	}
 
 	return nil
