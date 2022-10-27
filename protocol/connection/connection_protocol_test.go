@@ -200,8 +200,7 @@ func TestConnectionRequestor(t *testing.T) {
 
 			// 3. Handle response -> expect that no message is sent to other end
 			payload := aries.PayloadCreator.NewFromData(tt.responsePayload)
-			mockReceiver.EXPECT().MyDID().AnyTimes().Return(ourDID)
-			mockReceiver.EXPECT().RootDid().AnyTimes().Return(ourDID)
+			mockReceiver.EXPECT().MyDID().Return(ourDID)
 			mockReceiver.EXPECT().LoadDID(tt.ourDIDStr).Return(ourDID)
 			mockReceiver.EXPECT().ManagedWallet().AnyTimes().Return(ourAgent.WalletH, ourAgent.StorageH)
 			mockReceiver.EXPECT().AddToPWMap(ourDID, gomock.Any(), tt.invitationID).Return(pipe)
@@ -288,8 +287,7 @@ func TestConnectionInvitor(t *testing.T) {
 				Address:  endpoint,
 			}
 			outDID := try.To1(theirAgent.NewOutDID(ourDID.String(), ourDID.VerKey()))
-			mockReceiver.EXPECT().MyDID().AnyTimes().Return(theirDID)
-			mockReceiver.EXPECT().RootDid().AnyTimes().Return(theirDID)
+			mockReceiver.EXPECT().MyDID().Return(theirDID)
 			mockReceiver.EXPECT().FindPWByID(endpointConnID).Return(&storage.Connection{
 				MyDID: theirDID.String(),
 			}, nil)
