@@ -215,11 +215,6 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	connectionID := cnxAddr.ConnID
 
 	reqMsg := ipl.MsgHdr().(didexchange.PwMsg)
-	// todo: send NACK here if fails
-	// try.To(reqMsg.Verify(
-	// 	receiver.MyDID().Packager().Crypto(),
-	// 	receiver.RootDid().Packager().KMS(),
-	// ))
 
 	callerEP := reqMsg.Endpoint()
 	receiverEP := cnxAddr.AE()
@@ -280,6 +275,13 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		// })
 	}))
 
+	// todo: send NACK here if fails
+	// NOTE: verify can be done only after their DID is stored to KMS
+	try.To(reqMsg.Verify(
+		receiver.MyDID().Packager().Crypto(),
+		receiver.RootDid().Packager().KMS(),
+	))
+
 	caller := calleePw.Caller // the other end, we're here the callee
 	callerEndp := endp.NewAddrFromPublic(reqMsg.Endpoint())
 	callerAddress := callerEndp.Address()
@@ -329,12 +331,6 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	respEndp := respMsg.Endpoint()
 
-	// todo: send NACK here if fails
-	// try.To(respMsg.Verify(
-	// 	receiver.MyDID().Packager().Crypto(),
-	// 	receiver.RootDid().Packager().KMS(),
-	// ))
-
 	task := &comm.TaskBase{
 		TaskHeader: comm.TaskHeader{
 			TaskID:   ipl.ThreadID(),
@@ -359,6 +355,13 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	}
 
 	callee.Store(receiver.ManagedWallet())
+
+	// todo: send NACK here if fails
+	// NOTE: verify can be done only after their DID is stored to KMS
+	try.To(respMsg.Verify(
+		receiver.MyDID().Packager().Crypto(),
+		receiver.RootDid().Packager().KMS(),
+	))
 
 	pwName := pwr.Name
 	route := respMsg.RoutingKeys()

@@ -5,24 +5,26 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
+	"github.com/mr-tron/base58"
 )
+
+type kmsStore struct {
+	sync.RWMutex
+	verKeyByKeyID map[string]string
+	keyIDByVerKey map[string]string
+}
 
 type KMS struct {
 	storage api.AgentStorage
 
-	kms struct {
-		sync.Mutex
-		verkeys map[string]string
-	}
+	kms kmsStore
 }
 
 func NewKMS(storage api.AgentStorage) *KMS {
 	return &KMS{storage: storage,
-		kms: struct {
-			sync.Mutex
-			verkeys map[string]string
-		}{
-			verkeys: make(map[string]string),
+		kms: kmsStore{
+			verKeyByKeyID: make(map[string]string),
+			keyIDByVerKey: make(map[string]string),
 		}}
 }
 
@@ -34,7 +36,8 @@ func (k *KMS) Add(KID, verKey string) {
 	k.kms.Lock()
 	defer k.kms.Unlock()
 
-	k.kms.verkeys[KID] = verKey
+	k.kms.verKeyByKeyID[KID] = verKey
+	k.kms.keyIDByVerKey[verKey] = KID
 }
 
 func (k *KMS) Create(kt kms.KeyType) (string, interface{}, error) {
@@ -43,10 +46,10 @@ func (k *KMS) Create(kt kms.KeyType) (string, interface{}, error) {
 }
 
 func (k *KMS) Get(KID string) (interface{}, error) {
-	k.kms.Lock()
-	defer k.kms.Unlock()
+	k.kms.RLock()
+	defer k.kms.RUnlock()
 
-	verKey := k.kms.verkeys[KID]
+	verKey := k.kms.verKeyByKeyID[KID]
 
 	return &Handle{
 		Wallet: k.handle(),
@@ -70,8 +73,11 @@ func (k *KMS) CreateAndExportPubKeyBytes(kt kms.KeyType) (string, []byte, error)
 }
 
 func (k *KMS) PubKeyBytesToHandle(pubKey []byte, kt kms.KeyType) (interface{}, error) {
-	//TODO implement me
-	panic("implement me")
+	k.kms.RLock()
+	defer k.kms.RUnlock()
+	verKey := base58.Encode(pubKey)
+	keyID := k.kms.keyIDByVerKey[verKey]
+	return k.Get(keyID)
 }
 
 func (k *KMS) ImportPrivateKey(privKey interface{}, kt kms.KeyType, opts ...kms.PrivateKeyOpts) (string, interface{}, error) {
