@@ -117,7 +117,7 @@ func (m *invitationImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) erro
 
 func (m *invitationImpl) Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
 	// build a connection request message to send to another agent
-	msg := NewRequest(&Request{
+	msg := newRequest(&Request{
 		Label: ourLabel,
 		Connection: &Connection{
 			DID:    ourDID.Did(),

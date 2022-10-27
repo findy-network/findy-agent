@@ -6,7 +6,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -79,66 +78,12 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 	glog.V(3).Infoln("Responder/callee DID:", p.Callee.URI())
 }
 
-func (p *Callee) ConnReqToRespWithSet(
-	f func(m didexchange.PwMsg),
-) (
-	respMsg didexchange.PwMsg,
-	err error,
-) {
+func (p *Callee) Store() (err error) {
 	defer err2.Return(&err)
 
-	/*reqDoc := p.Msg.FieldObj().(*didexchange.Request).Connection.DIDDoc
-	assert.That(reqDoc != nil)
-
-	responseMsg := p.respMsgAndOurDID()
-	p.Name = p.Msg.Nonce()
-
-	connReqDID := p.Msg.Did()
-
-	var callerDID core.DID
-	if method.DIDType(connReqDID) == method.TypePeer {
-		docBytes := try.To1(json.Marshal(reqDoc))
-		callerDID = try.To1(p.agent.NewOutDID(connReqDID, string(docBytes)))
-	} else { // did:sov: is the default still
-		// old 160-connection protocol handles old DIDs as plain
-		rawDID := strings.TrimPrefix(connReqDID, "did:sov:")
-		if rawDID == connReqDID {
-			connReqDID = "did:sov:" + rawDID
-			glog.V(3).Infoln("+++ normalizing Did()",
-				rawDID, " ==>", connReqDID)
-		}
-
-		connReqVK := p.Msg.VerKey()
-		callerDID = try.To1(p.agent.NewOutDID(connReqDID, connReqVK))
-		p.agent.AddDIDCache(callerDID.(*ssi.DID))
-	}
-
-	f(responseMsg) // let caller set msg values
-
-	p.Caller = callerDID // this MUST be before next line!*/
 	p.startStore() // Save their DID and pairwise info
-
-	// responseMsg := p.respMsgAndOurDID()
-	// respMsg = responseMsg
-
 	// Check the result for error handling AND for consuming async's result
 	try.To(p.storeResult())
 
-	return nil, nil
+	return nil
 }
-
-/*
-func (p *Callee) respMsgAndOurDID() (msg didcomm.PwMsg) {
-	if p.Callee == nil {
-		glog.Warning("------ no enough information to create DID ------")
-		p.Callee = try.To1(p.agent.NewDID(utils.Settings.DIDMethod(), ""))
-	}
-	responseMsg := p.factor.Create(didcomm.MsgInit{
-		DIDObj:   p.Callee,
-		Nonce:    p.Name,
-		Name:     p.Msg.Nonce(),
-		Endpoint: p.Msg.Endpoint().Endp,
-	}).(didcomm.PwMsg)
-	return responseMsg
-}
-*/

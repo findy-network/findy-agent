@@ -188,7 +188,7 @@ func TestConnectionRequestor(t *testing.T) {
 
 			pipe := sec.Pipe{In: theirDID, Out: ourDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
-			fmt.Println(string(unpacked))
+			//fmt.Println(string(unpacked))
 
 			// TODO: compare contents
 			// assert.Equal(string(unpacked), string(tt.requestPayload))
@@ -196,6 +196,8 @@ func TestConnectionRequestor(t *testing.T) {
 			request := aries.PayloadCreator.NewFromData(unpacked)
 			assert.NoError(err)
 			assert.Equal(request.Type(), tt.requestPayloadType)
+			assert.Equal(request.ID(), tt.invitationID)
+			assert.Equal(request.ThreadID(), tt.invitationID)
 			httpPayload = []byte{}
 
 			// 3. Handle response -> expect that no message is sent to other end
@@ -302,7 +304,7 @@ func TestConnectionInvitor(t *testing.T) {
 
 			pipe := sec.Pipe{In: ourDID, Out: theirDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
-			fmt.Println(string(unpacked))
+			//fmt.Println(string(unpacked))
 			httpPayload = []byte{}
 
 			request := aries.PayloadCreator.NewFromData(unpacked)

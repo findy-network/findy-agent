@@ -261,19 +261,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 		Key:  myEndp.VerKey,
 	})
 
-	try.To1(calleePw.ConnReqToRespWithSet(func(m didexchange.PwMsg) {
-		// Legacy: calculate our endpoint for the pairwise
-		// when DIDDoc is used for all the DIDs extra info.
-
-		// pubEndp := *cnxAddr           // set our agent's URL as a base addr
-		// pubEndp.ConnID = connectionID // set our pw DID to actual agent DID in addr
-		// pubEndp.VerKey = m.VerKey()   // set our pw VerKey as well
-
-		// m.SetEndpoint(service.Addr{
-		// 	Endp: pubEndp.Address(),
-		// 	Key:  pubEndp.VerKey,
-		// })
-	}))
+	try.To(calleePw.Store())
 
 	// todo: send NACK here if fails
 	// NOTE: verify can be done only after their DID is stored to KMS
@@ -388,10 +376,8 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
 	opl, state := try.To2(respMsg.Next("", nil))
-	// Update that PSM is successfully Ready
-	if state.IsReady() {
-		try.To(prot.UpdatePSM(meDID, connectionID, task, opl, state))
-	} else {
+	wpl := opl
+	if !state.IsReady() {
 		pipe := sec.Pipe{
 			In:  caller,
 			Out: callee,
@@ -402,9 +388,9 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 		// Sending went OK, update PSM once again
 		completeMsg := opl.FieldObj().(didexchange.PwMsg)
-		wpl, state := completeMsg.Wait()
-		try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
+		wpl, state = completeMsg.Wait()
 	}
+	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
 
 	return nil
 }

@@ -32,7 +32,7 @@ func (f *requestFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 		ID:     init.AID,
 		Thread: &decorator.Thread{ID: init.Nonce},
 	}
-	return NewRequest(r)
+	return newRequest(r)
 }
 
 func (f *requestFactor) NewMessage(data []byte) didcomm.MessageHdr {
@@ -45,7 +45,7 @@ func init() {
 	aries.Creator.Add(pltype.DIDOrgAriesConnectionRequest, requestCreator)
 }
 
-func NewRequest(r *Request) *requestImpl {
+func newRequest(r *Request) *requestImpl {
 	return &requestImpl{Request: r}
 }
 

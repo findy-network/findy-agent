@@ -232,7 +232,7 @@ func TestNewRequest(t *testing.T) {
 			nonce := "NONCE"
 			didDoc := didIn.NewDoc(ae)
 
-			msg := NewRequest(&Request{
+			msg := newRequest(&Request{
 				Label: "TestLabel",
 				Connection: &Connection{
 					DID:    "CALLER_DID",
