@@ -24,7 +24,7 @@ above to your shell configuration script (e.g. .bash_profile/.zshrc).
 
 `,
 	ValidArgs: []string{"bash", "zsh"},
-	Args:      cobra.ExactValidArgs(1),
+	Args:      cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		switch args[0] {
 		case "bash":

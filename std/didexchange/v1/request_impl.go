@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/core"
-	decorator0 "github.com/findy-network/findy-agent/std/decorator"
 	our "github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/lainio/err2"
@@ -78,7 +77,7 @@ func (m *requestImpl) Label() string {
 	return m.Request.Label
 }
 
-func (m *requestImpl) Thread() *decorator0.Thread {
+func (m *requestImpl) Thread() *our.Thread {
 	return m.Request.Thread
 }
 

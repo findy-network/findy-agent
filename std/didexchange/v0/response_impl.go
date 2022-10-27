@@ -134,8 +134,8 @@ func (m *responseImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error 
 	return nil
 }
 
-func (r *responseImpl) Endpoint() service.Addr {
-	services := common.Services(r.Connection.DIDDoc)
+func (m *responseImpl) Endpoint() service.Addr {
+	services := common.Services(m.Connection.DIDDoc)
 	if len(services) == 0 {
 		return service.Addr{}
 	}

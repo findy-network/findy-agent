@@ -8,7 +8,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/findy-network/findy-agent/std/decorator"
 	our "github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
@@ -23,7 +22,7 @@ func (f *completeFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 	c := &Complete{
 		Type:   init.Type,
 		ID:     init.AID,
-		Thread: checkThread(&decorator.Thread{}, init.Nonce),
+		Thread: checkThread(&our.Thread{}, init.Nonce),
 	}
 	return newComplete(c)
 }
