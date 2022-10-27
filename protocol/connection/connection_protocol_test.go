@@ -18,6 +18,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
 	"github.com/findy-network/findy-agent/method"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	v1 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	gomock "github.com/golang/mock/gomock"
@@ -189,16 +190,18 @@ func TestConnectionRequestor(t *testing.T) {
 			pipe := sec.Pipe{In: theirDID, Out: ourDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
 			//fmt.Println(string(unpacked))
-
-			// TODO: compare contents
-			// assert.Equal(string(unpacked), string(tt.requestPayload))
-
-			request := aries.PayloadCreator.NewFromData(unpacked)
-			assert.NoError(err)
-			assert.Equal(request.Type(), tt.requestPayloadType)
-			assert.Equal(request.ID(), tt.invitationID)
-			assert.Equal(request.ThreadID(), tt.invitationID)
 			httpPayload = []byte{}
+
+			requestPl := aries.PayloadCreator.NewFromData(unpacked)
+			assert.NoError(err)
+			assert.Equal(requestPl.Type(), tt.requestPayloadType)
+			assert.Equal(requestPl.ID(), tt.invitationID)
+			assert.Equal(requestPl.ThreadID(), tt.invitationID)
+
+			requestMsg := requestPl.FieldObj().(didexchange.PwMsg)
+			assert.Equal(requestMsg.Did(), ourDID.Did())
+			assert.Equal(requestMsg.Endpoint(), try.To1(ourDID.AEndp()))
+			assert.Equal(requestMsg.VerKey(), ourDID.VerKey())
 
 			// 3. Handle response -> expect that no message is sent to other end
 			payload := aries.PayloadCreator.NewFromData(tt.responsePayload)
@@ -220,6 +223,8 @@ func TestConnectionRequestor(t *testing.T) {
 
 				complete := aries.PayloadCreator.NewFromData(unpacked)
 				assert.Equal(complete.Type(), tt.completePayloadType)
+				assert.Equal(complete.ID(), tt.invitationID)
+				assert.Equal(complete.ThreadID(), tt.invitationID)
 			}
 		})
 	}
@@ -307,25 +312,22 @@ func TestConnectionInvitor(t *testing.T) {
 			//fmt.Println(string(unpacked))
 			httpPayload = []byte{}
 
-			request := aries.PayloadCreator.NewFromData(unpacked)
+			responsePl := aries.PayloadCreator.NewFromData(unpacked)
 			assert.NoError(err)
-			assert.Equal(request.Type(), tt.responsePayloadType)
+			assert.Equal(responsePl.Type(), tt.responsePayloadType)
+			assert.Equal(responsePl.ID(), tt.invitationID)
+			assert.Equal(responsePl.ThreadID(), tt.invitationID)
 
-			// TODO
-			// signature := &model.ConnectionSignature{
-			// 	Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
-			// 	SignVerKey: tt.theirVerKey,
-			// }
-			// var response model.ResponseImpl
-			// try.To(json.Unmarshal(unpacked, &response))
+			responseMsg := responsePl.FieldObj().(didexchange.PwMsg)
+			assert.Equal(responseMsg.Did(), theirDID.Did())
+			assert.Equal(responseMsg.Endpoint(), try.To1(theirDID.AEndp()))
+			assert.Equal(responseMsg.VerKey(), theirDID.VerKey())
 
-			// assert.Equal(response.Type(), tt.responsePayloadType)
-			// assert.Equal(response.Thread().ID, tt.invitationID)
-			// assert.Equal(signature.Type, response.ConnectionSignature.Type)
-			// assert.Equal(signature.SignVerKey, response.ConnectionSignature.SignVerKey)
-			// assert.NotEmpty(response.ConnectionSignature.Signature)
-			// assert.NotEmpty(response.ConnectionSignature.SignedData)
-			// assert.NotEmpty(response.ID())
+			assert.NoError(
+				responseMsg.Verify(theirDID.Packager().Crypto(),
+					theirDID.Packager().KMS()),
+			)
+
 		})
 	}
 

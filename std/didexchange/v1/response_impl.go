@@ -103,7 +103,7 @@ func (m *responseImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState
 		Thread: checkThread(&our.Thread{}, m.Response.Thread.PID),
 	})
 	return aries.PayloadCreator.NewMsg(
-		m.Response.Thread.ID,
+		m.Response.Thread.PID,
 		pltype.DIDOrgAriesDIDExchangeComplete,
 		msg,
 	), psm.Sending, nil
@@ -112,7 +112,7 @@ func (m *responseImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState
 func (m *responseImpl) Wait() (didcomm.Payload, psm.SubState) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	return aries.PayloadCreator.NewMsg(
-		m.Response.Thread.ID,
+		m.Response.Thread.PID,
 		pltype.DIDOrgAriesDIDExchangeComplete,
 		emptyMsg,
 	), psm.ReadyACK
