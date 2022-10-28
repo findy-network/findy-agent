@@ -2,6 +2,7 @@ package indy
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/findy-network/findy-agent/agent/aries"
@@ -159,7 +160,7 @@ func (p *Packager) StorageProvider() storage.Provider {
 }
 
 var (
-	ErrWrongSignature error
+	ErrWrongSignature = fmt.Errorf("signature validation failed")
 )
 
 type Crypto struct {

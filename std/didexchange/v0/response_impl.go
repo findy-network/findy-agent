@@ -268,6 +268,6 @@ func signAndStamp(ourDID core.DID, src []byte) (data, dst []byte, vk string, err
 	kms := ourDID.Packager().KMS()
 
 	kh := try.To1(kms.Get(ourDID.KID()))
-	dst = try.To1(c.Sign(src, kh))
+	dst = try.To1(c.Sign(data, kh))
 	return data, dst, ourDID.VerKey(), nil
 }
