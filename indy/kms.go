@@ -49,12 +49,17 @@ func (k *KMS) Get(KID string) (interface{}, error) {
 	k.kms.RLock()
 	defer k.kms.RUnlock()
 
-	verKey := k.kms.verKeyByKeyID[KID]
+	verKey, ok := k.kms.verKeyByKeyID[KID]
+	var handle *Handle
 
-	return &Handle{
-		Wallet: k.handle(),
-		VerKey: verKey,
-	}, nil
+	if ok {
+		handle = &Handle{
+			Wallet: k.handle(),
+			VerKey: verKey,
+		}
+	}
+
+	return handle, nil
 }
 
 func (k *KMS) Rotate(kt kms.KeyType, KID string) (string, interface{}, error) {
@@ -72,11 +77,20 @@ func (k *KMS) CreateAndExportPubKeyBytes(kt kms.KeyType) (string, []byte, error)
 	panic("implement me")
 }
 
-func (k *KMS) PubKeyBytesToHandle(pubKey []byte, kt kms.KeyType) (interface{}, error) {
+func (k *KMS) getKeyIDByVerKey(verKey string) string {
 	k.kms.RLock()
 	defer k.kms.RUnlock()
-	verKey := base58.Encode(pubKey)
 	keyID := k.kms.keyIDByVerKey[verKey]
+	return keyID
+}
+
+func (k *KMS) PubKeyBytesToHandle(pubKey []byte, kt kms.KeyType) (interface{}, error) {
+	verKey := base58.Encode(pubKey)
+	keyID := k.getKeyIDByVerKey(verKey)
+	if keyID == "" {
+		keyID = verKey
+		k.Add(keyID, verKey)
+	}
 	return k.Get(keyID)
 }
 
