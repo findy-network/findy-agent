@@ -6,13 +6,13 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/aries"
 	"github.com/findy-network/findy-agent/agent/didcomm"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
-	"github.com/findy-network/findy-agent/agent/sec"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
@@ -64,7 +64,7 @@ func newResponseMsg(data []byte) *responseImpl {
 	dto.FromJSON(data, &mImpl)
 	mImpl.checkThread()
 
-	mImpl.Connection = try.To1(verifySignature(mImpl.ConnectionSignature)) // TODO: return err
+	mImpl.Connection = try.To1(connectionFromSignedData(mImpl.ConnectionSignature)) // TODO: return/store err
 
 	return &mImpl
 }
@@ -98,7 +98,6 @@ func (m *responseImpl) SetType(t string) {
 }
 
 func (m *responseImpl) JSON() []byte {
-	// m.Response.Sign()
 	return dto.ToJSONBytes(m)
 }
 
@@ -131,7 +130,7 @@ func (m *responseImpl) RoutingKeys() []string {
 }
 
 func (m *responseImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
-	return nil
+	return m.verifySignature(c)
 }
 
 func (m *responseImpl) Endpoint() service.Addr {
@@ -156,11 +155,8 @@ func (m *responseImpl) Wait() (didcomm.Payload, psm.SubState) {
 	return try.To2(m.Next("", nil))
 }
 
-func verifySignature(cs *ConnectionSignature) (c *Connection, err error) {
-	defer err2.Returnf(&err, "verify sign")
-
-	did := ssi.NewDid("", cs.SignVerKey)
-	pipe := &sec.Pipe{Out: did}
+func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error) {
+	defer err2.Returnf(&err, "connection from signature")
 
 	data := try.To1(utils.DecodeB64(cs.SignedData))
 	if len(data) == 0 {
@@ -168,14 +164,31 @@ func verifySignature(cs *ConnectionSignature) (c *Connection, err error) {
 		glog.Error(s)
 		return nil, fmt.Errorf(s)
 	}
+	connectionJSON := data[8:]
 
-	signature := try.To1(utils.DecodeB64(cs.Signature))
+	var connection Connection
+	dto.FromJSON(connectionJSON, &connection)
 
-	ok, _ := try.To2(pipe.Verify(data, signature))
-	if !ok {
-		glog.Error("cannot verify signature")
-		return nil, nil
+	rawDID := common.ID(connection.DIDDoc)
+	connection.DID = strings.TrimPrefix(rawDID, "did:sov:")
+
+	return &connection, nil
+}
+
+func (m *responseImpl) verifySignature(verifier crypto.Crypto) (err error) {
+	defer err2.Returnf(&err, "verify sign")
+
+	data := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.SignedData))
+	if len(data) == 0 {
+		s := "missing or invalid signature data"
+		glog.Error(s)
+		return fmt.Errorf(s)
 	}
+
+	signature := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.Signature))
+
+	did := ssi.NewDid("", m.Response.ConnectionSignature.SignVerKey)
+	try.To(verifier.Verify(signature, data, did.SignKey()))
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
@@ -189,12 +202,7 @@ func verifySignature(cs *ConnectionSignature) (c *Connection, err error) {
 		glog.V(3).Info("verified connection signature w/ ts:", time.Unix(timestamp, 0))
 	}
 
-	connectionJSON := data[8:]
-
-	var connection Connection
-	dto.FromJSON(connectionJSON, &connection)
-
-	return &connection, nil
+	return nil
 }
 
 func verifyTimestamp(data []byte) (timestamp int64, valid bool) {
@@ -260,6 +268,6 @@ func signAndStamp(ourDID core.DID, src []byte) (data, dst []byte, vk string, err
 	kms := ourDID.Packager().KMS()
 
 	kh := try.To1(kms.Get(ourDID.KID()))
-	sign := try.To1(c.Sign(src, kh))
-	return data, sign, ourDID.VerKey(), nil
+	dst = try.To1(c.Sign(src, kh))
+	return data, dst, ourDID.VerKey(), nil
 }

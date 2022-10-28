@@ -324,9 +324,13 @@ func TestConnectionInvitor(t *testing.T) {
 			assert.Equal(responseMsg.VerKey(), theirDID.VerKey())
 
 			assert.NoError(
-				responseMsg.Verify(theirDID.Packager().Crypto(),
+				responseMsg.Verify(
+					theirDID.Packager().Crypto(),
 					theirDID.Packager().KMS()),
 			)
+
+			// make sure signature match
+			//assert.Equal(string(unpacked), string(tt.responsePayload))
 
 		})
 	}
