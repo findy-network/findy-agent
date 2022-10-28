@@ -14,7 +14,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/service"
-	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
@@ -130,7 +129,7 @@ func (m *responseImpl) RoutingKeys() []string {
 }
 
 func (m *responseImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
-	return m.verifySignature(c)
+	return m.verifySignature(c, keyManager)
 }
 
 func (m *responseImpl) Endpoint() service.Addr {
@@ -175,7 +174,7 @@ func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error
 	return &connection, nil
 }
 
-func (m *responseImpl) verifySignature(verifier crypto.Crypto) (err error) {
+func (m *responseImpl) verifySignature(verifier crypto.Crypto, keyManager kms.KeyManager) (err error) {
 	defer err2.Returnf(&err, "verify sign")
 
 	data := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.SignedData))
@@ -187,8 +186,9 @@ func (m *responseImpl) verifySignature(verifier crypto.Crypto) (err error) {
 
 	signature := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.Signature))
 
-	did := ssi.NewDid("", m.Response.ConnectionSignature.SignVerKey)
-	try.To(verifier.Verify(signature, data, did.SignKey()))
+	keyBytes := try.To1(base58.Decode(m.Response.ConnectionSignature.SignVerKey))
+	keyHandle := try.To1(keyManager.PubKeyBytesToHandle(keyBytes, kms.ED25519))
+	try.To(verifier.Verify(signature, data, keyHandle))
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {

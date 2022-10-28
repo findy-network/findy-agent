@@ -329,9 +329,6 @@ func TestConnectionInvitor(t *testing.T) {
 					theirDID.Packager().KMS()),
 			)
 
-			// make sure signature match
-			//assert.Equal(string(unpacked), string(tt.responsePayload))
-
 		})
 	}
 

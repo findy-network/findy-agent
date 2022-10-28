@@ -44,6 +44,7 @@ func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
 	}
 }
 
+// TODO: check if this is needed in "pipe-level"
 // Verify verifies signature of the message and returns the verification key.
 // Note! It throws err2 type of error and needs an error handler in the call
 // stack.
@@ -51,11 +52,15 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
 	defer err2.Returnf(&err, "pipe sign")
 
 	c := p.crypto()
-	try.To(c.Verify(signature, msg, p.Out.SignKey()))
+	kh := p.Out.SignKey()
+	assert.INotNil(kh)
+
+	try.To(c.Verify(signature, msg, kh))
 
 	return true, p.Out.VerKey(), nil
 }
 
+// TODO: check if this is needed in "pipe-level"
 // Sign sings the message and returns the verification key. Note! It throws err2
 // type of error and needs an error handler in the call stack.
 func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
