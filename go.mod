@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/findy-network/findy-common-go v0.2.0
-	github.com/findy-network/findy-wrapper-go v0.30.20
+	github.com/findy-network/findy-wrapper-go v0.30.21
 	github.com/go-co-op/gocron v1.17.1
 	github.com/golang/glog v1.0.0
 	github.com/golang/mock v1.6.0
