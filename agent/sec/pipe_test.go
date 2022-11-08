@@ -9,15 +9,11 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/aries"
-	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sec"
-	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/common"
-	"github.com/findy-network/findy-agent/std/decorator"
-	"github.com/findy-network/findy-agent/std/didexchange"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
@@ -329,21 +325,9 @@ func TestPipe_pack(t *testing.T) {
 	packPipe := sec.NewPipeByVerkey(didIn, didOut.VerKey(),
 		[]string{didRoute1.VerKey(), didRoute2.VerKey()})
 
-	// Simulate actual aries message
-	plID := utils.UUID()
-	doc := didIn.NewDoc(service.Addr{
-		Endp: "http://example.com",
-		Key:  didIn.VerKey(),
-	})
-	msg := didexchange.NewRequest(&didexchange.Request{
-		Label: "test",
-		Connection: &didexchange.Connection{
-			DID:    didIn.Did(),
-			DIDDoc: doc,
-		},
-		Thread: &decorator.Thread{ID: utils.UUID()},
-	})
-	pl := aries.PayloadCreator.NewMsg(plID, pltype.AriesConnectionRequest, msg)
+	// Simulate aries message
+	msgString := `{"@id":"id","@type":"type"}`
+	pl := aries.PayloadCreator.NewFromData([]byte(msgString))
 
 	// Pack message
 	route2bytes, _, err := packPipe.Pack(pl.JSON())
@@ -391,9 +375,8 @@ func TestPipe_pack(t *testing.T) {
 	assert.Equal(didOut.VerKey(), dstKeys[0])
 
 	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
-	assert.That(dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
-	assert.That(dstMsg.MsgHdr().ID() == plID)
-	assert.That(dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	assert.That(dstMsg.MsgHdr().Type() == "type")
+	assert.That(dstMsg.MsgHdr().ID() == "id")
 }
 
 func TestPipe_packPeer(t *testing.T) {
@@ -432,20 +415,9 @@ func TestPipe_packPeer(t *testing.T) {
 		Out: out,
 	}
 
-	// Simulate actual aries message
-	plID := utils.UUID()
-	doc, ok := didIn.DOC().(*did.Doc)
-	assert.That(ok)
-
-	msg := didexchange.NewRequest(&didexchange.Request{
-		Label: "test",
-		Connection: &didexchange.Connection{
-			DID:    didIn.Did(),
-			DIDDoc: doc,
-		},
-		Thread: &decorator.Thread{ID: utils.UUID()},
-	})
-	pl := aries.PayloadCreator.NewMsg(plID, pltype.AriesConnectionRequest, msg)
+	// Simulate aries message
+	msgString := `{"@id":"id","@type":"type"}`
+	pl := aries.PayloadCreator.NewFromData([]byte(msgString))
 
 	// Pack message
 	route2bytes, _, err := packPipe.Pack(pl.JSON())
@@ -509,5 +481,5 @@ func TestPipe_packPeer(t *testing.T) {
 	//	dstMsg := aries.PayloadCreator.NewFromData(dstBytes)
 	//	assert.That( dstMsg.MsgHdr().Type() == pltype.AriesConnectionRequest)
 	//	assert.That( dstMsg.MsgHdr().ID() == plID)
-	//	assert.That( dstMsg.MsgHdr().FieldObj().(*didexchange.Request).Label == "test")
+	//	assert.That( dstMsg.MsgHdr().FieldObj().(*v0.Request).Label == "test")
 }

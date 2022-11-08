@@ -1,9 +1,6 @@
 package sec
 
 import (
-	"encoding/binary"
-	"time"
-
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/storage/api"
@@ -47,6 +44,7 @@ func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
 	}
 }
 
+// TODO: check if this is needed in "pipe-level"
 // Verify verifies signature of the message and returns the verification key.
 // Note! It throws err2 type of error and needs an error handler in the call
 // stack.
@@ -54,11 +52,15 @@ func (p Pipe) Verify(msg, signature []byte) (yes bool, vk string, err error) {
 	defer err2.Returnf(&err, "pipe sign")
 
 	c := p.crypto()
-	try.To(c.Verify(signature, msg, p.Out.SignKey()))
+	kh := p.Out.SignKey()
+	assert.INotNil(kh)
+
+	try.To(c.Verify(signature, msg, kh))
 
 	return true, p.Out.VerKey(), nil
 }
 
+// TODO: check if this is needed in "pipe-level"
 // Sign sings the message and returns the verification key. Note! It throws err2
 // type of error and needs an error handler in the call stack.
 func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
@@ -72,26 +74,6 @@ func (p Pipe) Sign(src []byte) (dst []byte, vk string, err error) {
 	vk = p.In.VerKey()
 
 	return
-}
-
-// SignAndStamp sings and stamps a message and returns the verification key.
-// Note! It throws err2 type of error and needs an error handler in the call
-// stack.
-func (p Pipe) SignAndStamp(src []byte) (data, dst []byte, vk string, err error) {
-	defer err2.Return(&err)
-
-	now := getEpochTime()
-
-	data = make([]byte, 8+len(src))
-	binary.BigEndian.PutUint64(data[0:], uint64(now))
-
-	l := copy(data[8:], src)
-	if l != len(src) {
-		glog.Warning("WARNING, NOT all bytes copied")
-	}
-
-	sign, verKey := try.To2(p.Sign(data))
-	return data, sign, verKey, nil
 }
 
 // Pack packs the byte slice and returns verification key as well.
@@ -134,10 +116,6 @@ func (p Pipe) IsNull() bool {
 // EA returns endpoint of the agent.
 func (p Pipe) EA() (ae service.Addr, err error) {
 	return p.Out.AEndp()
-}
-
-func getEpochTime() int64 {
-	return time.Now().Unix()
 }
 
 func (p Pipe) defMediaType() string {

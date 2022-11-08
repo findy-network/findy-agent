@@ -79,8 +79,13 @@ func (pl *PayloadImpl) MsgHdr() didcomm.MessageHdr {
 }
 
 func (pl *PayloadImpl) ThreadID() string {
-	if th := pl.Thread(); th != nil && th.ID != "" {
-		return th.ID
+	if th := pl.Thread(); th != nil {
+		if th.PID != "" {
+			return th.PID
+		}
+		if th.ID != "" {
+			return th.ID
+		}
 	}
 	return pl.ID()
 }

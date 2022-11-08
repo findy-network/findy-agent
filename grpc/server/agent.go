@@ -271,7 +271,10 @@ func (a *agentServer) CreateInvitation(
 	// TODO: add connection id to return struct as well, gRPC API Change
 	// Note: most of the old and current *our* clients parse connectionID from
 	// the invitation
-	return &pb.Invitation{JSON: jStr, URL: urlStr}, nil
+	return &pb.Invitation{
+		JSON: jStr,
+		URL:  urlStr,
+	}, nil
 }
 
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {

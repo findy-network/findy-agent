@@ -115,7 +115,7 @@ func Service(d core.DIDDoc, i int) did.Service {
 	return Services(d)[i]
 }
 
-func RountingKeys(d core.DIDDoc, i int) []string {
+func RoutingKeys(d core.DIDDoc, i int) []string {
 	service := Service(d, i)
 	return service.RoutingKeys
 }

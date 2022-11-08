@@ -1,7 +1,6 @@
 package connection
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -18,9 +17,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
-	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/method"
-	model "github.com/findy-network/findy-agent/std/didexchange"
+	"github.com/findy-network/findy-agent/std/didexchange"
 	v1 "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	gomock "github.com/golang/mock/gomock"
@@ -57,8 +55,8 @@ var (
 		ConnID:   endpointConnID,
 		VerKey:   "vk",
 	}
-	endpointStr    = "hostname/serviceName/caDID/caDID/connID"
-	endpointConnID = "connID"
+	endpointStr    = "hostname/serviceName/caDID/caDID/" + endpointConnID
+	endpointConnID = "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0"
 
 	re = regexp.MustCompile(`[\s\p{Zs}]{1,}`)
 )
@@ -83,17 +81,6 @@ func tearDown() {
 	}
 }
 
-func createInvitation(did core.DID) string {
-	inv := try.To1(invitation.Create(invitation.DIDExchangeVersionV0, invitation.AgentInfo{
-		InvitationType: pltype.AriesConnectionInvitation,
-		InvitationID:   "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
-		EndpointURL:    "http://example.com",
-		RecipientKey:   did.VerKey(),
-		AgentLabel:     "test",
-	}))
-	return try.To1(invitation.Build(inv))
-}
-
 func createAgent(id string) *ssi.DIDAgent {
 	a := new(ssi.DIDAgent)
 	const walletKey = "4Vwsj6Qcczmhk2Ak7H5GGvFE1cQCdRtWfW4jchahNUoE"
@@ -116,26 +103,45 @@ func readJSONFromFile(filename string) []byte {
 // Simulates requestor role
 func TestConnectionRequestor(t *testing.T) {
 	tests := []struct {
-		name            string
-		requestPayload  []byte
-		responsePayload []byte
-		ourSeed         string
-		ourDIDStr       string
-		theirSeed       string
-		theirVerKey     string
-		didMethod       method.Type
-		invitationID    string
+		name                string
+		invitationPayload   []byte
+		requestPayload      []byte
+		requestPayloadType  string
+		responsePayload     []byte
+		ourSeed             string
+		ourDIDStr           string
+		theirSeed           string
+		theirVerKey         string
+		didMethod           method.Type
+		invitationID        string
+		completePayloadType string
 	}{
 		{
-			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
-			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
-			ourSeed:         "000000000000000000000000Steward1",
-			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
-			theirSeed:       "000000000000000000000000Steward2",
-			theirVerKey:     "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
-			didMethod:       method.TypeSov,
-			invitationID:    "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			name:               "findy-agent v0",
+			invitationPayload:  readJSONFromFile("./test_data/v0/invitation-findy.json"),
+			requestPayload:     readJSONFromFile("./test_data/v0/request-findy.json"),
+			requestPayloadType: pltype.AriesConnectionRequest,
+			responsePayload:    readJSONFromFile("./test_data/v0/response-findy.json"),
+			ourSeed:            "000000000000000000000000Steward1",
+			ourDIDStr:          "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:          "000000000000000000000000Steward2",
+			theirVerKey:        "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:          method.TypeSov,
+			invitationID:       "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		},
+		{
+			name:                "findy-agent v1",
+			invitationPayload:   readJSONFromFile("./test_data/v1/invitation-findy.json"),
+			requestPayload:      readJSONFromFile("./test_data/v1/request-findy.json"),
+			requestPayloadType:  pltype.DIDOrgAriesDIDExchangeRequest,
+			responsePayload:     readJSONFromFile("./test_data/v1/response-findy.json"),
+			ourSeed:             "000000000000000000000000Steward1",
+			ourDIDStr:           "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:           "000000000000000000000000Steward2",
+			theirVerKey:         "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:           method.TypeSov,
+			invitationID:        "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			completePayloadType: pltype.DIDOrgAriesDIDExchangeComplete,
 		},
 	}
 	for _, tt := range tests {
@@ -146,21 +152,21 @@ func TestConnectionRequestor(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			ourAgent := createAgent("our-req")
-			theirAgent := createAgent("their-req")
+			ourAgent := createAgent("our-req" + tt.name)
+			theirAgent := createAgent("their-req" + tt.name)
 
 			ourDID := try.To1(ourAgent.NewDID(tt.didMethod, tt.ourSeed))
 			ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
 			theirDID := try.To1(theirAgent.NewDID(tt.didMethod, tt.theirSeed))
 
 			// 1. create invitation for "them" and create task
-			invitation := createInvitation(theirDID)
+			inv := try.To1(invitation.Translate(string(tt.invitationPayload)))
 			task, err := createConnectionTask(
 				&comm.TaskHeader{TypeID: pltype.CAPairwiseCreate, Method: tt.didMethod},
 				&v1.Protocol{
 					StartMsg: &v1.Protocol_DIDExchange{
 						DIDExchange: &v1.Protocol_DIDExchangeMsg{
-							InvitationJSON: invitation,
+							InvitationJSON: try.To1(invitation.Build(inv)),
 						},
 					},
 				},
@@ -183,13 +189,19 @@ func TestConnectionRequestor(t *testing.T) {
 
 			pipe := sec.Pipe{In: theirDID, Out: ourDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
-			assert.Equal(string(unpacked), string(tt.requestPayload))
-
-			var request model.RequestImpl
-			err = json.Unmarshal(unpacked, &request)
-			assert.NoError(err)
-			assert.Equal(pltype.AriesConnectionRequest, request.Type())
+			//fmt.Println(string(unpacked))
 			httpPayload = []byte{}
+
+			requestPl := aries.PayloadCreator.NewFromData(unpacked)
+			assert.NoError(err)
+			assert.Equal(requestPl.Type(), tt.requestPayloadType)
+			assert.Equal(requestPl.ID(), tt.invitationID)
+			assert.Equal(requestPl.ThreadID(), tt.invitationID)
+
+			requestMsg := requestPl.FieldObj().(didexchange.PwMsg)
+			assert.Equal(requestMsg.Did(), ourDID.Did())
+			assert.Equal(requestMsg.Endpoint(), try.To1(ourDID.AEndp()))
+			assert.Equal(requestMsg.VerKey(), ourDID.VerKey())
 
 			// 3. Handle response -> expect that no message is sent to other end
 			payload := aries.PayloadCreator.NewFromData(tt.responsePayload)
@@ -203,9 +215,17 @@ func TestConnectionRequestor(t *testing.T) {
 				Receiver: mockReceiver,
 				Address:  endpoint,
 			})
-
-			assert.Equal(len(httpPayload), 0)
 			assert.NoError(err)
+			if tt.completePayloadType == "" {
+				assert.Equal(len(httpPayload), 0)
+			} else {
+				unpacked, _, _ := pipe.Unpack(httpPayload)
+
+				complete := aries.PayloadCreator.NewFromData(unpacked)
+				assert.Equal(complete.Type(), tt.completePayloadType)
+				assert.Equal(complete.ID(), tt.invitationID)
+				assert.Equal(complete.ThreadID(), tt.invitationID)
+			}
 		})
 	}
 }
@@ -213,26 +233,40 @@ func TestConnectionRequestor(t *testing.T) {
 // Simulates invitor role
 func TestConnectionInvitor(t *testing.T) {
 	tests := []struct {
-		name            string
-		requestPayload  []byte
-		responsePayload []byte
-		ourSeed         string
-		ourDIDStr       string
-		theirSeed       string
-		theirVerKey     string
-		didMethod       method.Type
-		invitationID    string
+		name                string
+		requestPayload      []byte
+		responsePayload     []byte
+		responsePayloadType string
+		ourSeed             string
+		ourDIDStr           string
+		theirSeed           string
+		theirVerKey         string
+		didMethod           method.Type
+		invitationID        string
 	}{
 		{
-			name:            "findy-agent",
-			requestPayload:  readJSONFromFile("./test_data/agent-request-findy.json"),
-			responsePayload: readJSONFromFile("./test_data/agent-response-findy.json"),
-			ourSeed:         "000000000000000000000000Steward1",
-			ourDIDStr:       "Th7MpTaRZVRYnPiabds81Y",
-			theirSeed:       "000000000000000000000000Steward2",
-			theirVerKey:     "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
-			didMethod:       method.TypeSov,
-			invitationID:    "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+			name:                "findy-agent v0",
+			requestPayload:      readJSONFromFile("./test_data/v0/request-findy.json"),
+			responsePayload:     readJSONFromFile("./test_data/v0/response-findy.json"),
+			responsePayloadType: pltype.AriesConnectionResponse,
+			ourSeed:             "000000000000000000000000Steward1",
+			ourDIDStr:           "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:           "000000000000000000000000Steward2",
+			theirVerKey:         "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:           method.TypeSov,
+			invitationID:        "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+		},
+		{
+			name:                "findy-agent v1",
+			requestPayload:      readJSONFromFile("./test_data/v1/request-findy.json"),
+			responsePayload:     readJSONFromFile("./test_data/v1/response-findy.json"),
+			responsePayloadType: pltype.DIDOrgAriesDIDExchangeResponse,
+			ourSeed:             "000000000000000000000000Steward1",
+			ourDIDStr:           "Th7MpTaRZVRYnPiabds81Y",
+			theirSeed:           "000000000000000000000000Steward2",
+			theirVerKey:         "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy",
+			didMethod:           method.TypeSov,
+			invitationID:        "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
 		},
 	}
 	for _, tt := range tests {
@@ -242,9 +276,10 @@ func TestConnectionInvitor(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			ourAgent := createAgent("our-inv")
-			theirAgent := createAgent("their-inv")
+			ourAgent := createAgent("our-inv" + tt.name)
+			theirAgent := createAgent("their-inv" + tt.name)
 
+			// TODO: add test step for invitation creation
 			ourDID := try.To1(ourAgent.NewDID(tt.didMethod, tt.ourSeed))
 			ourDID.SetAEndp(service.Addr{Endp: "http://example.com", Key: ourDID.VerKey()})
 			theirDID := try.To1(theirAgent.NewDID(tt.didMethod, tt.theirSeed))
@@ -274,22 +309,26 @@ func TestConnectionInvitor(t *testing.T) {
 
 			pipe := sec.Pipe{In: ourDID, Out: theirDID}
 			unpacked, _, _ := pipe.Unpack(httpPayload)
+			//fmt.Println(string(unpacked))
 			httpPayload = []byte{}
 
-			signature := &model.ConnectionSignature{
-				Type:       "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/signature/1.0/ed25519Sha512_single",
-				SignVerKey: tt.theirVerKey,
-			}
-			var response model.ResponseImpl
-			try.To(json.Unmarshal(unpacked, &response))
+			responsePl := aries.PayloadCreator.NewFromData(unpacked)
+			assert.NoError(err)
+			assert.Equal(responsePl.Type(), tt.responsePayloadType)
+			assert.Equal(responsePl.ID(), tt.invitationID)
+			assert.Equal(responsePl.ThreadID(), tt.invitationID)
 
-			assert.Equal(pltype.AriesConnectionResponse, response.Type())
-			assert.Equal(tt.invitationID, response.Thread().ID)
-			assert.Equal(signature.Type, response.ConnectionSignature.Type)
-			assert.Equal(signature.SignVerKey, response.ConnectionSignature.SignVerKey)
-			assert.NotEmpty(response.ConnectionSignature.Signature)
-			assert.NotEmpty(response.ConnectionSignature.SignedData)
-			assert.NotEmpty(response.ID())
+			responseMsg := responsePl.FieldObj().(didexchange.PwMsg)
+			assert.Equal(responseMsg.Did(), theirDID.Did())
+			assert.Equal(responseMsg.Endpoint(), try.To1(theirDID.AEndp()))
+			assert.Equal(responseMsg.VerKey(), theirDID.VerKey())
+
+			assert.NoError(
+				responseMsg.Verify(
+					theirDID.Packager().Crypto(),
+					theirDID.Packager().KMS()),
+			)
+
 		})
 	}
 

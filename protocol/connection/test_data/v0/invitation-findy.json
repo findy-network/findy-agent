@@ -1,0 +1,9 @@
+{
+    "serviceEndpoint": "http://example.com",
+    "recipientKeys": [
+        "8QhFxKxyaFsJy4CyxeYX34dFH8oWqyBv1P4HLQCsoeLy"
+    ],
+    "@id": "d3dbb3af-63d4-4c88-85a4-36f0a0b889e0",
+    "label": "test",
+    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation"
+}
