@@ -5,8 +5,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/core"
-	"github.com/hyperledger/aries-framework-go/pkg/crypto"
-	"github.com/hyperledger/aries-framework-go/pkg/kms"
 )
 
 // PwMsg is an interface for pairwise protocol messages.
@@ -22,7 +20,7 @@ type PwMsg interface {
 	DIDDocument() core.DIDDoc
 	RoutingKeys() []string
 
-	Verify(c crypto.Crypto, keyManager kms.KeyManager) error
+	Verify(DID core.DID) error
 
 	PayloadToSend(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error)
 	PayloadToWait() (didcomm.Payload, psm.SubState)
@@ -54,7 +52,7 @@ func (m *UnsupportedPwMsgBase) RoutingKeys() []string {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
+func (m *UnsupportedPwMsgBase) Verify(DID core.DID) error {
 	panic("unsupported")
 }
 

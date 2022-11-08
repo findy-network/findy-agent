@@ -13,9 +13,7 @@ import (
 	our "github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-agent/std/sov/did"
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/crypto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/protocol/decorator"
-	"github.com/hyperledger/aries-framework-go/pkg/kms"
 
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -106,6 +104,6 @@ func (m *commonImpl) RoutingKeys() []string {
 	return common.Service(doc, 0).RoutingKeys // TODO: convert did:key
 }
 
-func (m *commonImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
-	return m.DIDDoc.Data.Verify(c, keyManager)
+func (m *commonImpl) Verify(DID core.DID) error {
+	return m.DIDDoc.Data.Verify(DID.Packager().Crypto(), DID.Packager().KMS())
 }

@@ -323,11 +323,7 @@ func TestConnectionInvitor(t *testing.T) {
 			assert.Equal(responseMsg.Endpoint(), try.To1(theirDID.AEndp()))
 			assert.Equal(responseMsg.VerKey(), theirDID.VerKey())
 
-			assert.NoError(
-				responseMsg.Verify(
-					theirDID.Packager().Crypto(),
-					theirDID.Packager().KMS()),
-			)
+			assert.NoError(responseMsg.Verify(theirDID))
 
 		})
 	}
