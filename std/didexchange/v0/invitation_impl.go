@@ -115,7 +115,7 @@ func (m *invitationImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) erro
 	return nil
 }
 
-func (m *invitationImpl) Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *invitationImpl) PayloadToSend(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
 	// build a connection request message to send to another agent
 	msg := newRequest(&Request{
 		Label: ourLabel,
@@ -133,7 +133,7 @@ func (m *invitationImpl) Next(ourLabel string, ourDID core.DID) (didcomm.Payload
 
 }
 
-func (m *invitationImpl) Wait() (didcomm.Payload, psm.SubState) {
+func (m *invitationImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	return aries.PayloadCreator.New(
 		didcomm.PayloadInit{
 			ID:   m.thread.ID,

@@ -111,7 +111,7 @@ func (m *invitationImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) erro
 	return nil
 }
 
-func (m *invitationImpl) Next(ourLabel string, ourDID core.DID) (
+func (m *invitationImpl) PayloadToSend(ourLabel string, ourDID core.DID) (
 	pl didcomm.Payload,
 	st psm.SubState,
 	err error,
@@ -133,7 +133,7 @@ func (m *invitationImpl) Next(ourLabel string, ourDID core.DID) (
 
 }
 
-func (m *invitationImpl) Wait() (didcomm.Payload, psm.SubState) {
+func (m *invitationImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	return aries.PayloadCreator.New(
 		didcomm.PayloadInit{
 			ID:   m.thread.PID,

@@ -97,7 +97,7 @@ func (m *requestImpl) SetType(t string) {
 	m.Request.Type = t
 }
 
-func (m *requestImpl) Next(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
+func (m *requestImpl) PayloadToSend(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
 	defer err2.Returnf(&err, "next for v1 request")
 	msg := try.To1(newResponse(ourDID, &Response{
 		DID:    ourDID.Did(),
@@ -107,7 +107,7 @@ func (m *requestImpl) Next(_ string, ourDID core.DID) (pl didcomm.Payload, st ps
 	return aries.PayloadCreator.NewMsg(m.Request.Thread.PID, pltype.DIDOrgAriesDIDExchangeResponse, msg), psm.Sending, nil
 }
 
-func (m *requestImpl) Wait() (didcomm.Payload, psm.SubState) {
+func (m *requestImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	return aries.PayloadCreator.New(
 		didcomm.PayloadInit{
 			ID:   m.Request.Thread.PID,

@@ -9,10 +9,9 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 )
 
-// PwMsg is an interface for pairwise level messages. With this interface we
-// have managed to abstract and implement both old indy agent2agent handshake
-// and the Aries connection protocol. In the future there is chance that we are
-// able to do the same for Aries did exchange protocol.
+// PwMsg is an interface for pairwise protocol messages.
+// It abstracts the protocol message implementation and provides
+// needed data accessors for connection protocol engine.
 type PwMsg interface {
 	didcomm.MessageHdr
 
@@ -25,8 +24,8 @@ type PwMsg interface {
 
 	Verify(c crypto.Crypto, keyManager kms.KeyManager) error
 
-	Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error)
-	Wait() (didcomm.Payload, psm.SubState)
+	PayloadToSend(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error)
+	PayloadToWait() (didcomm.Payload, psm.SubState)
 }
 
 type UnsupportedPwMsgBase struct{}
@@ -59,11 +58,11 @@ func (m *UnsupportedPwMsgBase) Verify(c crypto.Crypto, keyManager kms.KeyManager
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) Next(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *UnsupportedPwMsgBase) PayloadToSend(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) Wait() (didcomm.Payload, psm.SubState) {
+func (m *UnsupportedPwMsgBase) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	panic("unsupported")
 }
 

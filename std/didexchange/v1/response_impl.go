@@ -98,7 +98,7 @@ func (m *responseImpl) SetType(t string) {
 	m.Response.Type = t
 }
 
-func (m *responseImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *responseImpl) PayloadToSend(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
 	msg := newComplete(&Complete{
 		Thread: checkThread(&our.Thread{}, m.Response.Thread.PID),
 	})
@@ -109,7 +109,7 @@ func (m *responseImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState
 	), psm.Sending, nil
 }
 
-func (m *responseImpl) Wait() (didcomm.Payload, psm.SubState) {
+func (m *responseImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	return aries.PayloadCreator.NewMsg(
 		m.Response.Thread.PID,

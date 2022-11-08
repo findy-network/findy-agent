@@ -81,7 +81,7 @@ func (m *completeImpl) SetType(t string) {
 	m.Complete.Type = t
 }
 
-func (m *completeImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *completeImpl) PayloadToSend(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
 	// we are ready at this end for this protocol
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	return aries.PayloadCreator.NewMsg(
@@ -91,6 +91,6 @@ func (m *completeImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState
 	), psm.ReadyACK, nil
 }
 
-func (m *completeImpl) Wait() (didcomm.Payload, psm.SubState) {
-	return try.To2(m.Next("", nil))
+func (m *completeImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
+	return try.To2(m.PayloadToSend("", nil))
 }

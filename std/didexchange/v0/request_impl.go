@@ -138,7 +138,7 @@ func (m *requestImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
 	return nil
 }
 
-func (m *requestImpl) Next(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
+func (m *requestImpl) PayloadToSend(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
 	defer err2.Returnf(&err, "next for v0 request")
 	endp := try.To1(ourDID.AEndp())
 	msg := try.To1(newResponse(&Response{
@@ -151,7 +151,7 @@ func (m *requestImpl) Next(_ string, ourDID core.DID) (pl didcomm.Payload, st ps
 	return aries.PayloadCreator.NewMsg(m.Request.Thread.ID, pltype.AriesConnectionResponse, msg), psm.Sending, nil
 }
 
-func (m *requestImpl) Wait() (didcomm.Payload, psm.SubState) {
+func (m *requestImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	return aries.PayloadCreator.New(
 		didcomm.PayloadInit{
 			ID:   m.Request.Thread.ID,

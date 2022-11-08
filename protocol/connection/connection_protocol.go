@@ -119,7 +119,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	if task.Role() == pb.Protocol_ADDRESSEE {
 		glog.V(3).Infof("it's us who waits connection (%v) to invitation", deTask.Invitation.ID())
-		pl, state := invMsg.Wait()
+		pl, state := invMsg.PayloadToWait()
 		try.To(prot.UpdatePSM(me, connectionID, task, pl, state))
 		return
 	}
@@ -153,7 +153,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 	wa.AddPipeToPWMap(secPipe, pwr.Name)
 
 	// Create payload to send
-	opl, state := try.To2(invMsg.Next(deTask.Label, caller))
+	opl, state := try.To2(invMsg.PayloadToSend(deTask.Label, caller))
 
 	// Update PSM state, and send the payload to other end
 	try.To(prot.UpdatePSM(me, connectionID, task, opl, state))
@@ -161,7 +161,7 @@ func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
 
 	// Sending went OK, update PSM once again
 	reqMsg := opl.FieldObj().(didexchange.PwMsg)
-	wpl, state := reqMsg.Wait()
+	wpl, state := reqMsg.PayloadToWait()
 	try.To(prot.UpdatePSM(me, connectionID, task, wpl, state))
 }
 
@@ -294,13 +294,13 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 	receiver.AddToPWMap(calleePw.Callee, caller, connectionID) // to access PW later, map it
 
 	// build the response payload, update PSM, and send the PL with sec.Pipe
-	opl, state := try.To2(reqMsg.Next("", calleePw.Callee))
+	opl, state := try.To2(reqMsg.PayloadToSend("", calleePw.Callee))
 	try.To(prot.UpdatePSM(meDID, connectionID, task, opl, state))
 	try.To(comm.SendPL(pipe, task, opl))
 
 	// update the PSM
 	respMsg := opl.FieldObj().(didexchange.PwMsg)
-	wpl, state := respMsg.Wait()
+	wpl, state := respMsg.PayloadToWait()
 	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
 
 	return nil
@@ -375,7 +375,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 	callee.SetAEndp(respEndp)
 	receiver.AddToPWMap(caller, callee, pwName) // to access PW later, map it
 
-	opl, state := try.To2(respMsg.Next("", nil))
+	opl, state := try.To2(respMsg.PayloadToSend("", nil))
 	wpl := opl
 	if !state.IsReady() {
 		pipe := sec.Pipe{
@@ -388,7 +388,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 		// Sending went OK, update PSM once again
 		completeMsg := opl.FieldObj().(didexchange.PwMsg)
-		wpl, state = completeMsg.Wait()
+		wpl, state = completeMsg.PayloadToWait()
 	}
 	try.To(prot.UpdatePSM(meDID, connectionID, task, wpl, state))
 

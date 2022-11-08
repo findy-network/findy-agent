@@ -144,14 +144,14 @@ func (m *responseImpl) Endpoint() service.Addr {
 	return service.Addr{Endp: addr, Key: key}
 }
 
-func (m *responseImpl) Next(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *responseImpl) PayloadToSend(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
 	// we are ready at this end for this protocol
 	emptyMsg := aries.MsgCreator.Create(didcomm.MsgInit{})
 	return aries.PayloadCreator.NewMsg(m.Response.Thread.ID, pltype.AriesConnectionResponse, emptyMsg), psm.ReadyACK, nil
 }
 
-func (m *responseImpl) Wait() (didcomm.Payload, psm.SubState) {
-	return try.To2(m.Next("", nil))
+func (m *responseImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
+	return try.To2(m.PayloadToSend("", nil))
 }
 
 func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error) {
