@@ -14,7 +14,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           args: "--out-${NO_FUTURE}format colored-line-number --timeout=3m"
-          version: v1.48.0
+          version: v1.50.1
           skip-cache: true
           # Optional: if set to true then the action don't cache or restore ~/go/pkg.
           skip-pkg-cache: true
