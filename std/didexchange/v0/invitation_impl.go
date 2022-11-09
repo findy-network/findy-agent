@@ -35,7 +35,7 @@ func (f *invitationFactor) NewMsg(init didcomm.MsgInit) didcomm.MessageHdr {
 }
 
 func (f *invitationFactor) NewMessage(data []byte) didcomm.MessageHdr {
-	return NewInvitationMsg(data)
+	return newInvitationMsg(data)
 }
 
 func init() {
@@ -60,7 +60,7 @@ func (m *invitationImpl) checkThread() {
 	m.thread = decorator.CheckThread(m.thread, m.Invitation.ID())
 }
 
-func NewInvitationMsg(data []byte) *invitationImpl {
+func newInvitationMsg(data []byte) *invitationImpl {
 	dataStr := string(data)
 	inv, err := invitation.Translate(dataStr)
 	if err != nil {
