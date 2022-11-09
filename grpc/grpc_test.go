@@ -262,7 +262,7 @@ func setUp() {
 
 	exportPath = filepath.Join(exportPath, "wallets")
 
-	if os.Getenv("CI") == "true" {
+	if runningInCITestEnv() {
 		server.ResetEnv(sw, exportPath)
 	}
 

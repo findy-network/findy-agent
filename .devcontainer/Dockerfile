@@ -9,7 +9,7 @@ COPY --from=indy-base /usr/lib/libindy.a /usr/lib/libindy.a
 COPY --from=indy-base /usr/lib/libindy.so /usr/lib/libindy.so
 
 # linter
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.48.0
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.50.1
 
 ENV GO_TOOLS="\
     github.com/cweill/gotests/gotests@latest \

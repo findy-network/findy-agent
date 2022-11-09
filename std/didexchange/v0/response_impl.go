@@ -27,6 +27,8 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+const missingInvalidErrorString = "missing or invalid signature data"
+
 var responseCreator = &responseFactor{}
 
 type responseFactor struct{}
@@ -159,7 +161,7 @@ func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error
 
 	data := try.To1(utils.DecodeB64(cs.SignedData))
 	if len(data) == 0 {
-		s := "missing or invalid signature data"
+		s := missingInvalidErrorString
 		glog.Error(s)
 		return nil, fmt.Errorf(s)
 	}
@@ -179,7 +181,7 @@ func (m *responseImpl) verifySignature(verifier crypto.Crypto, keyManager kms.Ke
 
 	data := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.SignedData))
 	if len(data) == 0 {
-		s := "missing or invalid signature data"
+		s := missingInvalidErrorString
 		glog.Error(s)
 		return fmt.Errorf(s)
 	}
