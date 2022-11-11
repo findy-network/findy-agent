@@ -40,8 +40,10 @@ func (f *invitationFactor) NewMessage(data []byte) didcomm.MessageHdr {
 
 func init() {
 	gob.Register(&invitationImpl{})
-	aries.Creator.Add(pltype.AriesOutOfBandInvitation, invitationCreator)
-	aries.Creator.Add(pltype.DIDOrgAriesOfBandInvitation, invitationCreator)
+	aries.Creator.Add(pltype.AriesOutOfBandInvitation10, invitationCreator)
+	aries.Creator.Add(pltype.AriesOutOfBandInvitation11, invitationCreator)
+	aries.Creator.Add(pltype.DIDOrgAriesOfBandInvitation10, invitationCreator)
+	aries.Creator.Add(pltype.DIDOrgAriesOfBandInvitation11, invitationCreator)
 }
 
 type invitationImpl struct {

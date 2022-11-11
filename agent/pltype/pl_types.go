@@ -105,13 +105,15 @@ const (
 )
 
 const (
-	HandlerComplete          = "complete"
-	AriesProtocolOutOfBand   = "out-of-band"
-	AriesOutOfBand           = Aries + "/" + AriesProtocolOutOfBand
-	AriesOutOfBandInvitation = AriesOutOfBand + "/1.0/" + Invitation
+	HandlerComplete            = "complete"
+	AriesProtocolOutOfBand     = "out-of-band"
+	AriesOutOfBand             = Aries + "/" + AriesProtocolOutOfBand
+	AriesOutOfBandInvitation10 = AriesOutOfBand + "/1.0/" + Invitation
+	AriesOutOfBandInvitation11 = AriesOutOfBand + "/1.1/" + Invitation
 
-	DIDOrgAriesOutOfBand        = DIDOrgAries + "/" + AriesProtocolOutOfBand
-	DIDOrgAriesOfBandInvitation = DIDOrgAriesOutOfBand + "/1.0/" + Invitation
+	DIDOrgAriesOutOfBand          = DIDOrgAries + "/" + AriesProtocolOutOfBand
+	DIDOrgAriesOfBandInvitation10 = DIDOrgAriesOutOfBand + "/1.0/" + Invitation
+	DIDOrgAriesOfBandInvitation11 = DIDOrgAriesOutOfBand + "/1.1/" + Invitation
 
 	AriesProtocolDIDExchange = "didexchange"
 	AriesDIDExchange         = Aries + "/" + AriesProtocolDIDExchange
