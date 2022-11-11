@@ -9,8 +9,8 @@ on:
 jobs:
   iop:
     runs-on: ubuntu-22.04
-      env:
-        NO_TTY: "1"
+    env:
+      NO_TTY: "1"
     steps:
       - name: checkout
         uses: actions/checkout@v3
