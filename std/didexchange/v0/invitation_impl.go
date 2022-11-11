@@ -14,8 +14,6 @@ import (
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/findy-network/findy-common-go/std/didexchange/invitation"
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/crypto"
-	"github.com/hyperledger/aries-framework-go/pkg/kms"
 )
 
 var invitationCreator = &invitationFactor{}
@@ -111,7 +109,7 @@ func (m *invitationImpl) RoutingKeys() []string {
 	return m.Invitation.Services()[0].RoutingKeysAsB58()
 }
 
-func (m *invitationImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
+func (m *invitationImpl) Verify(DID core.DID) error {
 	return nil
 }
 

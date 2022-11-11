@@ -151,7 +151,7 @@ func TestPackTowardsPubKeyOnly(t *testing.T) {
 	assert.INotNil(packed)
 }
 
-func TestSignVerifyWithSeparatedWallets(t *testing.T) {
+func TestPackUnpackWithSeparatedWallets(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 	// we need to use two different agents that we have 2 different key and
@@ -190,16 +190,6 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 	received, _ := try.To2(p2.Unpack(packed))
 	assert.DeepEqual(message, received)
 
-	sign, _, err := p.Sign(message)
-	assert.NoError(err)
-
-	// Signature verification must done from p2 because p2 has only pubKey of
-	// the DID in the 'wallet' where p2 is connected to. This way the test
-	// follows the real world situation
-	ok, _, err := p2.Verify(message, sign)
-	assert.NoError(err)
-
-	assert.That(ok)
 }
 
 func TestIndyPipe(t *testing.T) {
@@ -243,26 +233,6 @@ func TestIndyPipe(t *testing.T) {
 	p2 := sec.Pipe{In: didIn2, Out: didOut2}
 	received, _ := try.To2(p2.Unpack(packed))
 	assert.DeepEqual(message, received)
-
-	sign, vk, err := p.Sign(message)
-	assert.NoError(err)
-	assert.Equal(p2.Out.VerKey(), vk)
-
-	// Signature verification must be done from p2 because p2 has only pubKey
-	// of the DID in the 'wallet' where p2 is connected to. This way the test
-	// follows the real world situation
-	ok, _, err := p2.Verify(message, sign)
-	assert.NoError(err)
-
-	assert.That(ok)
-
-	p3 := sec.Pipe{Out: didOut2}
-
-	// Signature verification must be done from p2 because p2 has only pubKey
-	// Now we test the pipe which have only one end, no sender
-	ok, _, err = p3.Verify(message, sign)
-	assert.NoError(err)
-	assert.That(ok)
 }
 
 type protected struct {

@@ -18,10 +18,9 @@ import (
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/findy-network/findy-agent/std/decorator"
+	"github.com/findy-network/findy-agent/std/didexchange/signature"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/golang/glog"
-	"github.com/hyperledger/aries-framework-go/pkg/crypto"
-	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 	"github.com/mr-tron/base58"
@@ -130,8 +129,8 @@ func (m *responseImpl) RoutingKeys() []string {
 	return common.Service(m.Connection.DIDDoc, 0).RoutingKeys
 }
 
-func (m *responseImpl) Verify(c crypto.Crypto, keyManager kms.KeyManager) error {
-	return m.verifySignature(c, keyManager)
+func (m *responseImpl) Verify(DID core.DID) error {
+	return m.verifySignature(DID)
 }
 
 func (m *responseImpl) Endpoint() service.Addr {
@@ -176,7 +175,7 @@ func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error
 	return &connection, nil
 }
 
-func (m *responseImpl) verifySignature(verifier crypto.Crypto, keyManager kms.KeyManager) (err error) {
+func (m *responseImpl) verifySignature(DID core.DID) (err error) {
 	defer err2.Returnf(&err, "verify sign")
 
 	data := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.SignedData))
@@ -186,11 +185,11 @@ func (m *responseImpl) verifySignature(verifier crypto.Crypto, keyManager kms.Ke
 		return fmt.Errorf(s)
 	}
 
-	signature := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.Signature))
+	signatureData := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.Signature))
 
-	keyBytes := try.To1(base58.Decode(m.Response.ConnectionSignature.SignVerKey))
-	keyHandle := try.To1(keyManager.PubKeyBytesToHandle(keyBytes, kms.ED25519))
-	try.To(verifier.Verify(signature, data, keyHandle))
+	verifier := signature.Verifier{DID: DID}
+
+	try.To(verifier.Verify(data, signatureData))
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
@@ -266,10 +265,8 @@ func signAndStamp(ourDID core.DID, src []byte) (data, dst []byte, vk string, err
 		glog.Warning("WARNING, NOT all bytes copied")
 	}
 
-	c := ourDID.Packager().Crypto()
-	kms := ourDID.Packager().KMS()
+	signer := signature.Signer{DID: ourDID}
+	dst = try.To1(signer.Sign(data))
 
-	kh := try.To1(kms.Get(ourDID.KID()))
-	dst = try.To1(c.Sign(data, kh))
 	return data, dst, ourDID.VerKey(), nil
 }

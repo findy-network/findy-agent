@@ -265,10 +265,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 
 	// todo: send NACK here if fails
 	// NOTE: verify can be done only after their DID is stored to KMS
-	try.To(reqMsg.Verify(
-		callerDID.Packager().Crypto(),
-		callerDID.Packager().KMS(),
-	))
+	try.To(reqMsg.Verify(callerDID))
 
 	caller := calleePw.Caller // the other end, we're here the callee
 	callerEndp := endp.NewAddrFromPublic(reqMsg.Endpoint())
@@ -346,10 +343,7 @@ func handleConnectionResponse(packet comm.Packet) (err error) {
 
 	// todo: send NACK here if fails
 	// NOTE: verify can be done only after their DID is stored to KMS
-	try.To(respMsg.Verify(
-		callee.Packager().Crypto(),
-		callee.Packager().KMS(),
-	))
+	try.To(respMsg.Verify(callee))
 
 	pwName := pwr.Name
 	route := respMsg.RoutingKeys()
