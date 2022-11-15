@@ -28,12 +28,20 @@ type Verifier struct {
 	core.DID
 }
 
-func (s *Verifier) Verify(data, signature []byte) (err error) {
+func (v *Verifier) verify(verKey string, data, signature []byte) (err error) {
 	defer err2.Returnf(&err, "verifier DID")
 
-	keyBytes := try.To1(base58.Decode(s.VerKey()))
-	keyHandle := try.To1(s.Packager().KMS().PubKeyBytesToHandle(keyBytes, kms.ED25519))
-	try.To(s.Packager().Crypto().Verify(signature, data, keyHandle))
+	keyBytes := try.To1(base58.Decode(verKey))
+	keyHandle := try.To1(v.Packager().KMS().PubKeyBytesToHandle(keyBytes, kms.ED25519))
+	try.To(v.Packager().Crypto().Verify(signature, data, keyHandle))
 
 	return nil
+}
+
+func (v *Verifier) Verify(data, signature []byte) (err error) {
+	return v.verify(v.VerKey(), data, signature)
+}
+
+func (v *Verifier) VerifyWithKey(key string, data, signature []byte) (err error) {
+	return v.verify(key, data, signature)
 }

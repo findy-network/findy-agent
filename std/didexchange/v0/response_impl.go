@@ -189,7 +189,7 @@ func (m *responseImpl) verifySignature(DID core.DID) (err error) {
 
 	verifier := signature.Verifier{DID: DID}
 
-	try.To(verifier.Verify(data, signatureData))
+	try.To(verifier.VerifyWithKey(m.Response.ConnectionSignature.SignVerKey, data, signatureData))
 
 	timestamp, ok := verifyTimestamp(data)
 	if !ok {
