@@ -34,6 +34,12 @@ test-check: prep
 			AGENT_DEFAULT=$(AGENT_DEFAULT) \
 			AGENT_BOB=$(AGENT_BOB)
 
+test-check-aip20: prep
+	cd .docker/findy-agent-backchannel/env && \
+		make aath-test-check-aip20 \
+			AGENT_DEFAULT=$(AGENT_DEFAULT) \
+			AGENT_BOB=$(AGENT_BOB)
+
 build:
 	cd ../dev/docker && \
 		docker-compose down && \

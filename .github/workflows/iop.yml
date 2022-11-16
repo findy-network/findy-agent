@@ -30,6 +30,10 @@ jobs:
         run: |
           cd ./scripts/aath
           make test-check AGENT_DEFAULT=findy AGENT_BOB=javascript
+      - name: test AIP2.0 findy as default with acapy-main
+        run: |
+          cd ./scripts/aath
+          make test-check-aip20 AGENT_DEFAULT=findy AGENT_BOB=acapy-main
       - name: store agency logs
         if: ${{ always() }}
         run: |
