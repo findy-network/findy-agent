@@ -52,7 +52,7 @@ func init() {
 }
 
 func newResponse(r *Response, ourDID core.DID) (impl *responseImpl, err error) {
-	defer err2.Returnf(&err, "new response %s", r.ID)
+	defer err2.Handle(&err, "new response %s", r.ID)
 
 	r.ConnectionSignature = try.To1(newConnectionSignature(r.Connection, ourDID))
 
@@ -156,7 +156,7 @@ func (m *responseImpl) PayloadToWait() (didcomm.Payload, psm.SubState) {
 }
 
 func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error) {
-	defer err2.Returnf(&err, "connection from signature")
+	defer err2.Handle(&err, "connection from signature")
 
 	data := try.To1(utils.DecodeB64(cs.SignedData))
 	if len(data) == 0 {
@@ -176,7 +176,7 @@ func connectionFromSignedData(cs *ConnectionSignature) (c *Connection, err error
 }
 
 func (m *responseImpl) verifySignature(DID core.DID) (err error) {
-	defer err2.Returnf(&err, "verify sign")
+	defer err2.Handle(&err, "verify sign")
 
 	data := try.To1(utils.DecodeB64(m.Response.ConnectionSignature.SignedData))
 	if len(data) == 0 {
@@ -231,7 +231,7 @@ func verifyTimestamp(data []byte) (timestamp int64, valid bool) {
 }
 
 func newConnectionSignature(connection *Connection, ourDID core.DID) (cs *ConnectionSignature, err error) {
-	defer err2.Returnf(&err, "build connection sign")
+	defer err2.Handle(&err, "build connection sign")
 
 	connectionJSON := try.To1(json.Marshal(connection))
 
@@ -253,7 +253,7 @@ func getEpochTime() int64 {
 // Note! It throws err2 type of error and needs an error handler in the call
 // stack.
 func signAndStamp(ourDID core.DID, src []byte) (data, dst []byte, vk string, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	now := getEpochTime()
 

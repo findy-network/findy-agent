@@ -29,7 +29,7 @@ func (r CreateResult) JSON() ([]byte, error) {
 }
 
 func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	result := <-wallet.GenerateKey(c.Seed)
 	try.To(result.Err())

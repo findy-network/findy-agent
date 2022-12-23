@@ -79,7 +79,7 @@ func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
 }
 
 func (p *Callee) Store() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	p.startStore() // Save their DID and pairwise info
 	// Check the result for error handling AND for consuming async's result

@@ -36,7 +36,7 @@ func (c *CreateCmd) Validate() error {
 }
 
 func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	stewardAgent := new(cloud.Agent)
 	stewardAgent.OpenPool(c.PoolName)

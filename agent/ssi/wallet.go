@@ -119,7 +119,7 @@ func (w *Wallet) Open() (f *async.Future) {
 }
 
 func (w *Wallet) OpenWallet() (h int, err error) {
-	defer err2.Returnf(&err, "open wallet")
+	defer err2.Handle(&err, "open wallet")
 
 	f := w.Open()
 	try.To(f.Result().Err())

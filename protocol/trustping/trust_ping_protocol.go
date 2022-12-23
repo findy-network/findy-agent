@@ -38,7 +38,7 @@ func init() {
 }
 
 func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Returnf(&err, "createTrustPingTask")
+	defer err2.Handle(&err, "createTrustPingTask")
 
 	glog.V(1).Infof("Create task for TrustPing with connection id %s", header.ConnID)
 

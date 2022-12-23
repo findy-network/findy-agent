@@ -39,7 +39,7 @@ type commonImpl struct {
 }
 
 func newDIDDocAttach(ourDID core.DID) (attachment *decorator.Attachment, err error) {
-	defer err2.Returnf(&err, "new v1 did doc attachment")
+	defer err2.Handle(&err, "new v1 did doc attachment")
 
 	didDocBytes := try.To1(json.Marshal(ourDID.DOC()))
 	data := decorator.AttachmentData{

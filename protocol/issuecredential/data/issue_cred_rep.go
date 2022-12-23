@@ -51,7 +51,7 @@ func (rep *IssueCredRep) Type() byte {
 // BuildCredRequest builds credential request which is PROVER/HOLDER SIDE
 // action.
 func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err error) {
-	defer err2.Returnf(&err, "get cred req from ledger by: %v", packet.Receiver.ID())
+	defer err2.Handle(&err, "get cred req from ledger by: %v", packet.Receiver.ID())
 
 	a := packet.Receiver
 	w := a.Wallet()
@@ -62,7 +62,7 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 
 	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.MyCA().RootDid().Did(), rep.CredDefID))
 
-	defer err2.Returnf(&err, "build request from cred def ID: %v", rep.CredDefID)
+	defer err2.Handle(&err, "build request from cred def ID: %v", rep.CredDefID)
 
 	// build credential request to send back to an issuer
 	r := <-anoncreds.ProverCreateCredentialReq(w, a.RootDid().Did(), rep.CredOffer,
@@ -76,7 +76,7 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 // IssuerBuildCred builds credentials in -- ISSUER SIDE --. Note! values are
 // needed here!!
 func (rep *IssueCredRep) IssuerBuildCred(packet comm.Packet, credReq string) (c string, err error) {
-	defer err2.Returnf(&err, "build cred req by: %v", packet.Receiver.ID())
+	defer err2.Handle(&err, "build cred req by: %v", packet.Receiver.ID())
 
 	wa := packet.Receiver
 	w := wa.Wallet()
@@ -97,7 +97,7 @@ func (rep *IssueCredRep) StoreCred(packet comm.Packet, cred string) error {
 }
 
 func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	res := try.To1(psm.GetRep(bucketType, key))
 

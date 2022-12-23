@@ -40,7 +40,7 @@ func (c ImportCmd) Validate() error {
 }
 
 func (c ImportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Returnf(&err, "import wallet cmd")
+	defer err2.Handle(&err, "import wallet cmd")
 
 	walletCfg := wallet.Config{
 		ID: c.WalletName,

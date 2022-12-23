@@ -36,7 +36,7 @@ Example
 		return BindEnvs(exportEnvs, cmd.Name())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		try.To(expCmd.Validate())
 		if !rootFlags.dryRun {
 			try.To1(expCmd.Exec(os.Stdout))

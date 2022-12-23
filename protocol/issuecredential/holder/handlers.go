@@ -18,7 +18,7 @@ import (
 
 // HandleCredentialOffer is protocol function for CRED_OFF at prover/holder
 func HandleCredentialOffer(packet comm.Packet) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	// First check who is starting the protocol. If we receive this as a first
 	// message, other end (SA) is offering a cred for us. Otherwise we have
@@ -47,7 +47,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "cred offer ask user (%v)",
+			defer err2.Handle(&err, "cred offer ask user (%v)",
 				packet.Receiver.RootDid().Did())
 
 			offer := im.FieldObj().(*issuecredential.Offer)
@@ -67,7 +67,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 			if credDefID, ok := subMsg["cred_def_id"]; ok {
 				rep.CredDefID = credDefID.(string)
 			}
-			defer err2.Returnf(&err, "cred def (%v)", rep.CredDefID)
+			defer err2.Handle(&err, "cred def (%v)", rep.CredDefID)
 
 			rep.Values = values
 			preview.StoreCredPreview(&offer.CredentialPreview, rep)
@@ -104,7 +104,7 @@ func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.IssueCredentialACK,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "issuing user action handler")
+			defer err2.Handle(&err, "issuing user action handler")
 
 			iMsg := im.(didcomm.Msg)
 			ack = iMsg.Ready()
@@ -149,7 +149,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		WaitingNext: pltype.Terminate, // no next state, we are fine
 
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "cred issue")
+			defer err2.Handle(&err, "cred issue")
 
 			issue := im.FieldObj().(*issuecredential.Issue)
 			agent := packet.Receiver

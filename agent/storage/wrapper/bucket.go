@@ -36,7 +36,7 @@ func (b *bucket) Put(key string, value []byte, tags ...storage.Tag) (err error) 
 // If key cannot be found, then an error wrapping ErrDataNotFound will be returned.
 // If key is empty, then an error will be returned.
 func (b *bucket) Get(key string) (data []byte, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	glog.V(7).Infoln("bucket::Get", key)
 

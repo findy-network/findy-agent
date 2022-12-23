@@ -34,7 +34,7 @@ func (c *CreateCmd) Validate() error {
 }
 
 func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	pCfd := <-findypool.CreateConfig(c.Name, findypool.Config{GenesisTxn: c.Txn})
 	if pCfd.Err() != nil {

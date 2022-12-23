@@ -17,7 +17,7 @@ type kmsStorage struct {
 }
 
 func newKmsStorage(owner *Storage) (k *kmsStorage, err error) {
-	defer err2.Returnf(&err, "new kms storage")
+	defer err2.Handle(&err, "new kms storage")
 
 	k = &kmsStorage{
 		owner:    owner,

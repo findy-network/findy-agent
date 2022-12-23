@@ -40,7 +40,7 @@ func (a *agentServer) Enter(
 	rm *pb.ModeCmd,
 	err error,
 ) {
-	defer err2.Returnf(&err, "agent server enter mode cmd")
+	defer err2.Handle(&err, "agent server enter mode cmd")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent enter mode:", mode.TypeID, mode.IsInput)
@@ -109,7 +109,7 @@ func (a *agentServer) Ping(
 	_ *pb.PingMsg,
 	err error,
 ) {
-	defer err2.Returnf(&err, "agent server ping")
+	defer err2.Handle(&err, "agent server ping")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent ping:", pm.ID)
@@ -139,7 +139,7 @@ func (a *agentServer) CreateSchema(
 	os *pb.Schema,
 	err error,
 ) {
-	defer err2.Returnf(&err, "create schema")
+	defer err2.Handle(&err, "create schema")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create schema:", s.Name)
@@ -149,7 +149,7 @@ func (a *agentServer) CreateSchema(
 		Version: s.Version,
 		Attrs:   s.Attributes,
 	}
-	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+	defer err2.Handle(&err, "by DID(%v) and wallet(%v)",
 		ca.RootDid().Did(), ca.ID())
 
 	try.To(sch.Create(ca.RootDid().Did()))
@@ -165,13 +165,13 @@ func (a *agentServer) CreateCredDef(
 	_ *pb.CredDef,
 	err error,
 ) {
-	defer err2.Returnf(&err, "create creddef")
+	defer err2.Handle(&err, "create creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent create creddef:", cdc.Tag,
 		"schema:", cdc.SchemaID)
 
-	defer err2.Returnf(&err, "by DID(%v) and wallet(%v)",
+	defer err2.Handle(&err, "by DID(%v) and wallet(%v)",
 		ca.RootDid().Did(), ca.WorkerEA().ID())
 
 	sch := &vc.Schema{ID: cdc.SchemaID}
@@ -201,12 +201,12 @@ func (a *agentServer) GetSchema(
 	_ *pb.SchemaData,
 	err error,
 ) {
-	defer err2.Returnf(&err, "get schema")
+	defer err2.Handle(&err, "get schema")
 
 	caDID, ca := try.To2(ca(ctx))
 	rootDID := ca.RootDid().Did()
 	glog.V(1).Infoln(caDID, "-agent get schema:", s.ID)
-	defer err2.Returnf(&err, "get schema (%v) by root (%v)", s.ID, rootDID)
+	defer err2.Handle(&err, "get schema (%v) by root (%v)", s.ID, rootDID)
 
 	sID, schema := try.To2(ledger.ReadSchema(ca.Pool(), rootDID, s.ID))
 	return &pb.SchemaData{ID: sID, Data: schema}, nil
@@ -219,11 +219,11 @@ func (a *agentServer) GetCredDef(
 	_ *pb.CredDefData,
 	err error,
 ) {
-	defer err2.Returnf(&err, "get creddef")
+	defer err2.Handle(&err, "get creddef")
 
 	caDID, ca := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent get creddef:", cd.ID)
-	defer err2.Returnf(&err, "get credDef (%v) by root (%v)", cd.ID, ca.RootDid().Did())
+	defer err2.Handle(&err, "get credDef (%v) by root (%v)", cd.ID, ca.RootDid().Did())
 
 	def := try.To1(vc.CredDefFromLedger(ca.RootDid().Did(), cd.ID))
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
@@ -236,7 +236,7 @@ func (a *agentServer) CreateInvitation(
 	i *pb.Invitation,
 	err error,
 ) {
-	defer err2.Returnf(&err, "create invitation")
+	defer err2.Handle(&err, "create invitation")
 
 	id := base.ID
 
@@ -278,7 +278,7 @@ func (a *agentServer) CreateInvitation(
 }
 
 func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	glog.V(5).Infoln("========== start pre-alloc:", id)
 	defDIDMethod := utils.Settings.DIDMethod()
@@ -322,7 +322,7 @@ func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error)
 }
 
 func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.ClientID, err error) {
-	defer err2.Returnf(&err, "give answer")
+	defer err2.Handle(&err, "give answer")
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Give/Resume protocol:",
@@ -458,7 +458,7 @@ loop:
 }
 
 func processQuestion(ctx context.Context, notify bus.AgentNotify) (as *pb.Question, err error) {
-	defer err2.Returnf(&err, "processQuestion")
+	defer err2.Handle(&err, "processQuestion")
 
 	notificationType := notificationTypeID[notify.NotificationType]
 	notificationProtocolType := pltype.ProtocolTypeForFamily(notify.ProtocolFamily)

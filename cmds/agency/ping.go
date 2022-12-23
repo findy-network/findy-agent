@@ -30,7 +30,7 @@ func (c PingCmd) Validate() error {
 }
 
 func (c PingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	if err = c.GrpcCmd.Validate(); err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c PingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
 }
 
 func (c PingCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	p := bytes.NewReader([]byte(""))
 

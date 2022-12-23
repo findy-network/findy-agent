@@ -30,7 +30,7 @@ func NewPeerFromDID(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	doc := new(did.Doc)
 	try.To(json.Unmarshal(d.Doc, doc))
@@ -50,7 +50,7 @@ func NewPeer(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Returnf(&err, "new did:peer")
+	defer err2.Handle(&err, "new did:peer")
 
 	keys := hStorage.Storage().KMS()
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
@@ -90,7 +90,7 @@ func NewPeerFromDoc(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Returnf(&err, "new did:peer from did")
+	defer err2.Handle(&err, "new did:peer from did")
 
 	doc := try.To1(did.ParseDocument([]byte(didDoc)))
 	pk := doc.VerificationMethod[0].Value
@@ -215,7 +215,7 @@ func (p Peer) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID,
 }
 
 func NewDoc(pk, addr string) (d *did.Doc, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	pubKey := try.To1(base58.Decode(pk))
 

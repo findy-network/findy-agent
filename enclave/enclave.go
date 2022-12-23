@@ -90,7 +90,7 @@ func WipeSealedBox() {
 
 // NewWalletKey creates and stores a new indy wallet key to the enclave.
 func NewWalletKey(email string) (key string, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	value := &db.Data{Write: decrypt}
 	already, err := db.GetKeyValueFromBucket(buckets[emailBucket],
@@ -120,7 +120,7 @@ func NewWalletKey(email string) (key string, err error) {
 }
 
 func NewWalletMasterSecret(did string) (sec string, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	value := &db.Data{Write: decrypt}
 	already, err := db.GetKeyValueFromBucket(buckets[masterSecretBucket],
@@ -224,7 +224,7 @@ func SetKeysDID(key, DID string) (err error) {
 }
 
 func generateKey() (key string, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	r := <-wallet.GenerateKey("")
 	try.To(r.Err())

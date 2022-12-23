@@ -44,7 +44,7 @@ func (c ExportCmd) Validate() error {
 }
 
 func (c ExportCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Returnf(&err, "export wallet cmd")
+	defer err2.Handle(&err, "export wallet cmd")
 
 	agent := cloud.NewEA()
 	wallet := *ssi.NewRawWalletCfg(c.WalletName, c.WalletKey)

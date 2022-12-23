@@ -216,7 +216,7 @@ func (a *DIDAgent) VDR() *vdr.VDR {
 }
 
 func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, err error) {
-	defer err2.Returnf(&err, "new DID")
+	defer err2.Handle(&err, "new DID")
 
 	glog.V(3).Infof("New '%s': %v", didMethod.DIDString(), args)
 
@@ -236,7 +236,7 @@ func (a *DIDAgent) NewDID(didMethod method.Type, args ...string) (_ core.DID, er
 }
 
 func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	sDID := storage.DID{
 		KID: coreDID.KID(),
@@ -250,7 +250,7 @@ func (a *DIDAgent) saveDID(coreDID core.DID) (err error) {
 }
 
 func (a *DIDAgent) NewOutDID(didInfo ...string) (id core.DID, err error) {
-	defer err2.Returnf(&err, "new out DID")
+	defer err2.Handle(&err, "new out DID")
 
 	switch method.DIDType(didInfo[0]) {
 	case method.TypeKey, method.TypePeer:
@@ -380,7 +380,7 @@ func (a *DIDAgent) localKey(didName string) (f *async.Future) {
 }
 
 func (a *DIDAgent) SaveTheirDID(did, vk string) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	newDID := NewDid(did, vk)
 	a.DidCache.Add(newDID)

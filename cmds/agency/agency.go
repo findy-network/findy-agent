@@ -119,7 +119,7 @@ var (
 )
 
 func (c *Cmd) Validate() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	c.SetMustHaveDefaults()
 
@@ -158,7 +158,7 @@ func (c *Cmd) Exec(_ io.Writer) (r cmds.Result, err error) {
 }
 
 func (c *Cmd) Setup() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	c.printStartupArgs()
 	try.To(c.initSealedBox())
@@ -173,7 +173,7 @@ func (c *Cmd) Setup() (err error) {
 }
 
 func (c *Cmd) Run() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	c.startBackupTasks()
 	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
@@ -210,7 +210,7 @@ func (c *Cmd) startBackupTasks() {
 }
 
 func StartAgency(serverCmd *Cmd) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	try.To(serverCmd.Setup())
 	try.To(serverCmd.Run())
@@ -220,7 +220,7 @@ func StartAgency(serverCmd *Cmd) (err error) {
 }
 
 func (c *Cmd) initSealedBox() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	sealedBoxPath := c.EnclavePath
 	if sealedBoxPath == "" {

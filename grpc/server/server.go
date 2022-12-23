@@ -50,7 +50,7 @@ func Serve(conf *rpc.ServerCfg) {
 }
 
 func taskFrom(protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	header := &comm.TaskHeader{
 		TaskID:       utils.UUID(),

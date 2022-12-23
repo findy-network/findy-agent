@@ -25,7 +25,7 @@ func (c CountCmd) Validate() (err error) {
 }
 
 func (c CountCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	baseCfg := client.BuildClientConnBase(c.TLSPath, c.Addr, c.Port, nil)
 	conn := client.TryOpen(c.AdminID, baseCfg)

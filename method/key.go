@@ -22,7 +22,7 @@ func NewKey(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Returnf(&err, "new did:key")
+	defer err2.Handle(&err, "new did:key")
 
 	keys := hStorage.Storage().KMS()
 	kid, pk := try.To2(keys.CreateAndExportPubKeyBytes(kms.ED25519))
@@ -40,7 +40,7 @@ func NewKeyFromDID(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Returnf(&err, "new did:key from did")
+	defer err2.Handle(&err, "new did:key from did")
 
 	keys := hStorage.Storage().KMS()
 	pk := try.To1(fingerprint.PubKeyFromDIDKey(didStr))

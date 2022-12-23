@@ -133,7 +133,7 @@ func readConfigFile() {
 // BindEnvs calls viper.BindEnv with envMap and cmdName which can be empty if
 // flag is general.
 func BindEnvs(envMap map[string]string, cmdName string) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 	for flagKey, envName := range envMap {
 		finalEnvName := getEnvName(cmdName, envName)
 		try.To(viper.BindEnv(flagKey, finalEnvName))

@@ -47,7 +47,7 @@ Example
 		return BindEnvs(stewardCreateEnvs, "STEWARD")
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		try.To(createStewardCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true

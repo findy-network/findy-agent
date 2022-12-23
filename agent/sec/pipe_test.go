@@ -252,7 +252,7 @@ func getRecipientKeysFromBytes(msg []byte) (keys []string, err error) {
 }
 
 func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	protData := try.To1(utils.DecodeB64(msg["protected"].(string)))
 

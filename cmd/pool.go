@@ -44,7 +44,7 @@ Example
 
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		Cmd := pool.CreateCmd{
 			Name: poolName,
 			Txn:  poolGen,
@@ -77,7 +77,7 @@ Example
 		return BindEnvs(poolPingEnvs, "POOL")
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		Cmd := pool.PingCmd{
 			Name: poolName,
 		}
