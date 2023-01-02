@@ -186,7 +186,7 @@ func (a *Agent) CAEndp(connID string) (endP *endp.Addr) {
 }
 
 func (a *Agent) PwPipe(connID string) (cp sec.Pipe, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	a.pwLock.Lock()
 	defer a.pwLock.Unlock()

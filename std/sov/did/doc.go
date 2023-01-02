@@ -15,14 +15,14 @@ type Doc struct {
 }
 
 func (d *Doc) MarshalJSON() (_ []byte, err error) {
-	defer err2.Returnf(&err, "marshal sov doc")
+	defer err2.Handle(&err, "marshal sov doc")
 
 	b := try.To1(json.Marshal(d.DataDoc))
 	return b, nil
 }
 
 func (d *Doc) UnmarshalJSON(b []byte) (err error) {
-	defer err2.Returnf(&err, "unmarshal sov doc")
+	defer err2.Handle(&err, "unmarshal sov doc")
 
 	data := new(DataDoc)
 	try.To(json.Unmarshal(b, data))

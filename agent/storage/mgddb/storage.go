@@ -42,7 +42,7 @@ type Storage struct {
 }
 
 func New(config api.AgentStorageConfig) (a *Storage, err error) {
-	defer err2.Returnf(&err, "afgo storage new")
+	defer err2.Handle(&err, "afgo storage new")
 
 	try.To(os.MkdirAll(config.FilePath, os.ModePerm))
 
@@ -117,7 +117,7 @@ func (s *Storage) SaveDID(did api.DID) (err error) {
 }
 
 func (s *Storage) GetDID(id string) (did *api.DID, err error) {
-	defer err2.Returnf(&err, fmt.Sprintf("did storage get did %s", id))
+	defer err2.Handle(&err, fmt.Sprintf("did storage get did %s", id))
 
 	bytes := try.To1(s.didStore.Get(id))
 
@@ -132,7 +132,7 @@ func (s *Storage) SaveConnection(conn api.Connection) error {
 }
 
 func (s *Storage) GetConnection(id string) (conn *api.Connection, err error) {
-	defer err2.Returnw(&err, fmt.Sprintf("conn storage get conn %s", id))
+	defer err2.Handle(&err, fmt.Sprintf("conn storage get conn %s", id))
 
 	assert.That(id != "", "connection ID is empty")
 
@@ -145,7 +145,7 @@ func (s *Storage) GetConnection(id string) (conn *api.Connection, err error) {
 }
 
 func (s *Storage) ListConnections() (res []api.Connection, err error) {
-	defer err2.Returnf(&err, "conn storage list conn")
+	defer err2.Handle(&err, "conn storage list conn")
 
 	res = make([]api.Connection, 0)
 	conn := &api.Connection{}

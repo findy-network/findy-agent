@@ -39,7 +39,7 @@ func init() {
 }
 
 func newRequest(ourDID core.DID, r *Request) (req *requestImpl, err error) {
-	defer err2.Returnf(&err, "new v1 request")
+	defer err2.Handle(&err, "new v1 request")
 	r.DIDDoc = try.To1(newDIDDocAttach(ourDID))
 	return &requestImpl{commonImpl{
 		commonData{
@@ -98,7 +98,7 @@ func (m *requestImpl) SetType(t string) {
 }
 
 func (m *requestImpl) PayloadToSend(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
-	defer err2.Returnf(&err, "next for v1 request")
+	defer err2.Handle(&err, "next for v1 request")
 	msg := try.To1(newResponse(ourDID, &Response{
 		DID:    ourDID.Did(),
 		Thread: checkThread(&our.Thread{}, m.Request.Thread.PID),

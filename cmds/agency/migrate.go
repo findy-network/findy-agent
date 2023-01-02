@@ -28,7 +28,7 @@ type _ /*seedAgent*/ struct {
 }
 
 func (c MigrateCmd) Validate() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	assert.P.NotEmpty(c.InputReg, "need the input file")
 	assert.P.NotEmpty(c.OutputReg, "need the output file")
@@ -37,7 +37,7 @@ func (c MigrateCmd) Validate() (err error) {
 }
 
 func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	try.To(c.sealedBox())
 	try.To(ag.Register.Load(c.InputReg))
@@ -106,7 +106,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 }
 
 func (c MigrateCmd) sealedBox() (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	home := utils.IndyBaseDir()
 	sealedBoxPath := filepath.Join(home, ".indy_client/enclave.bolt")

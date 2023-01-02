@@ -21,7 +21,7 @@ var treeCmd = &cobra.Command{
 	Long:  treeDoc,
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		if len(args) == 0 {
 			printStructure(rootCmd, "", 0, true)
 		} else {

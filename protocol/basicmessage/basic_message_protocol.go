@@ -41,7 +41,7 @@ func init() {
 }
 
 func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Returnf(&err, "createBasicMessageTask")
+	defer err2.Handle(&err, "createBasicMessageTask")
 
 	var content string
 	if protocol != nil {
@@ -71,7 +71,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 		Ca:          ca,
 		T:           t,
 		Setup: func(key psm.StateKey, om didcomm.MessageHdr) (err error) {
-			defer err2.Return(&err)
+			defer err2.Handle(&err)
 
 			bmTask, ok := t.(*taskBasicMessage)
 			assert.P.True(ok)
@@ -95,7 +95,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 
 func handleBasicMessage(packet comm.Packet) (err error) {
 	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-		defer err2.Returnf(&err, "basic message")
+		defer err2.Handle(&err, "basic message")
 
 		pw := try.To1(packet.Receiver.FindPWByID(connID))
 		assert.D.True(pw != nil, "pairwise is nil")

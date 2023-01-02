@@ -35,7 +35,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAIssueCredentialAcceptPropose},
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "credential propose handler")
+			defer err2.Handle(&err, "credential propose handler")
 
 			wa := packet.Receiver
 			meDID := wa.MyDID().Did()
@@ -98,7 +98,7 @@ func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
 		WaitingNext: pltype.IssueCredentialRequest,
 		SendOnNACK:  pltype.IssueCredentialNACK,
 		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "credential propose user action handler")
+			defer err2.Handle(&err, "credential propose user action handler")
 
 			iMsg := im.(didcomm.Msg)
 			ack = iMsg.Ready()
@@ -132,7 +132,7 @@ func HandleCredentialRequest(packet comm.Packet) (err error) {
 		SendNext:    pltype.IssueCredentialIssue,
 		WaitingNext: pltype.IssueCredentialACK,
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "cred req")
+			defer err2.Handle(&err, "cred req")
 
 			req := im.FieldObj().(*issuecredential.Request)
 			agent := packet.Receiver
@@ -161,7 +161,7 @@ func HandleCredentialACK(packet comm.Packet) (err error) {
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
 		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
-			defer err2.Returnf(&err, "cred ACK")
+			defer err2.Handle(&err, "cred ACK")
 			return true, nil
 		},
 	})

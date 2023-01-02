@@ -13,7 +13,7 @@ type Signer struct {
 }
 
 func (s *Signer) Sign(src []byte) (dst []byte, err error) {
-	defer err2.Returnf(&err, "signer DID")
+	defer err2.Handle(&err, "signer DID")
 
 	c := s.Packager().Crypto()
 	kms := s.Packager().KMS()
@@ -29,7 +29,7 @@ type Verifier struct {
 }
 
 func (v *Verifier) verify(verKey string, data, signature []byte) (err error) {
-	defer err2.Returnf(&err, "verifier DID")
+	defer err2.Handle(&err, "verifier DID")
 
 	keyBytes := try.To1(base58.Decode(verKey))
 	keyHandle := try.To1(v.Packager().KMS().PubKeyBytesToHandle(keyBytes, kms.ED25519))

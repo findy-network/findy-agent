@@ -74,7 +74,7 @@ func UpdatePSM(
 ) (
 	err error,
 ) {
-	defer err2.Returnf(&err, "create psm")
+	defer err2.Handle(&err, "create psm")
 
 	if glog.V(5) {
 		glog.Infof("-- %s->%s[%s:%s]",
@@ -167,7 +167,7 @@ func AddAndSetFlagUpdatePSM(
 	subState psm.SubState,
 	unsetSubState psm.SubState) (err error) {
 
-	defer err2.Returnf(&err, "mark archive psm")
+	defer err2.Handle(&err, "mark archive psm")
 
 	m := try.To1(psm.GetPSM(machineKey))
 

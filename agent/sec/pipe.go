@@ -46,7 +46,7 @@ func NewPipeByVerkey(did core.DID, verkey string, route []string) *Pipe {
 
 // Pack packs the byte slice and returns verification key as well.
 func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
-	defer err2.Returnf(&err, "sec pipe pack")
+	defer err2.Handle(&err, "sec pipe pack")
 
 	media := p.defMediaType()
 	glog.V(15).Infoln("---- wallet handle:", p.In.Storage().Handle())
@@ -68,7 +68,7 @@ func (p Pipe) Pack(src []byte) (dst []byte, vk string, err error) {
 
 // Unpack unpacks the source bytes and returns our verification key as well.
 func (p Pipe) Unpack(src []byte) (dst []byte, vk string, err error) {
-	defer err2.Returnf(&err, "sec pipe unpack")
+	defer err2.Handle(&err, "sec pipe unpack")
 
 	env := try.To1(p.packager().UnpackMessage(src))
 	dst = env.Message
@@ -90,7 +90,8 @@ func (p Pipe) defMediaType() string {
 	return defaultMediaType
 }
 
-func (p Pipe) crypto() cryptoapi.Crypto {
+// crypto
+func (p Pipe) _() cryptoapi.Crypto {
 	if p.packager() == nil {
 		glog.V(10).Infoln("-- using Indy crypto as a default")
 		return new(indy.Crypto)

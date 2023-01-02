@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func New(storage api.AgentStorage) (v *VDR, err error) {
-	defer err2.Returnf(&err, "vdr new")
+	defer err2.Handle(&err, "vdr new")
 	v = &VDR{
 		keyVDR: &key.VDR{},
 	}

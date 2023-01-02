@@ -61,7 +61,7 @@ type Transfer func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err e
 // the function calls the Save callback where the caller can perform needed
 // processing.
 func StartPSM(ts Initial) (err error) {
-	defer err2.Returnf(&err, "aries start PSM")
+	defer err2.Handle(&err, "aries start PSM")
 
 	wDID := ts.Ca.WDID()
 	wa := ts.Ca.WorkerEA()
@@ -114,7 +114,7 @@ func newPayload(ts Initial) didcomm.Payload {
 // decision is given to the PSM. The PSM can continue or it can send NACK to
 // other end and terminate. All that's defined in Again struct.
 func ContinuePSM(shift Again) (err error) {
-	defer err2.Returnf(&err, "continue PSM")
+	defer err2.Handle(&err, "continue PSM")
 
 	wDID := shift.CA.WDID()
 	wa := shift.CA.WorkerEA()
@@ -185,7 +185,7 @@ func ContinuePSM(shift Again) (err error) {
 // of the NACK cases: when receiving NACK even not responding, and when
 // terminating current PSM with NACK.
 func ExecPSM(ts Transition) (err error) {
-	defer err2.Returnf(&err, "PSM transition")
+	defer err2.Handle(&err, "PSM transition")
 
 	ackFlag := psm.ACK
 	meDID := ts.Receiver.MyDID().Did()
@@ -308,7 +308,7 @@ func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
 }
 
 func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	protocolType := aries.ProtocolForType(header.TypeID)
 	taskCreator, ok := creators[protocolType]

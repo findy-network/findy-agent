@@ -38,7 +38,7 @@ func validateTimestamp(timeStr string) (t time.Time, err error) {
 }
 
 func (at *AriesTime) UnmarshalJSON(b []byte) (err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	t := try.To1(validateTimestamp(strings.Trim(string(b), "\"")))
 

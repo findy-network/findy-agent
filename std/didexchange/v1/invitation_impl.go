@@ -116,7 +116,7 @@ func (m *invitationImpl) PayloadToSend(ourLabel string, ourDID core.DID) (
 	st psm.SubState,
 	err error,
 ) {
-	defer err2.Returnf(&err, "next for v1 invitation")
+	defer err2.Handle(&err, "next for v1 invitation")
 
 	// build a connection request message to send to another agent
 	msg := try.To1(newRequest(ourDID, &Request{

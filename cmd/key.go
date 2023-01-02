@@ -41,7 +41,7 @@ Example
 		return BindEnvs(keyEnvs, "KEY")
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		try.To(keyCreateCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true

@@ -44,7 +44,7 @@ func init() {
 }
 
 func newResponse(ourDID core.DID, r *Response) (resp *responseImpl, err error) {
-	defer err2.Returnf(&err, "new response %s", ourDID.Did())
+	defer err2.Handle(&err, "new response %s", ourDID.Did())
 
 	r.DIDDoc = try.To1(newDIDDocAttach(ourDID))
 	return &responseImpl{commonImpl{

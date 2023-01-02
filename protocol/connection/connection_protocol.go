@@ -72,7 +72,7 @@ func createConnectionTask(
 	t comm.Task,
 	err error,
 ) {
-	defer err2.Returnf(&err, "createConnectionTask")
+	defer err2.Handle(&err, "createConnectionTask")
 
 	var inv invitation.Invitation
 	var label string
@@ -202,7 +202,7 @@ func buildRouting(addr, rKey string, rKeys []string, didMethod method.Type) []st
 // handleConnectionRequest is handled by 'responder' aka callee.
 // The party who receives conn_req.
 func handleConnectionRequest(packet comm.Packet) (err error) {
-	defer err2.Returnf(&err, "connection req")
+	defer err2.Handle(&err, "connection req")
 
 	// The agent DID
 	meDID := packet.Receiver.MyDID().Did()
@@ -304,7 +304,7 @@ func handleConnectionRequest(packet comm.Packet) (err error) {
 }
 
 func handleConnectionResponse(packet comm.Packet) (err error) {
-	defer err2.Returnf(&err, "connection response")
+	defer err2.Handle(&err, "connection response")
 
 	connectionID := packet.Address.ConnID
 	meDID := packet.Receiver.MyDID().Did()

@@ -57,7 +57,7 @@ func (c *AgentStorage) Key() string {
 }
 
 func (c *AgentStorage) OpenWallet() (h int, err error) {
-	defer err2.Returnf(&err, "open agent storage from cfg")
+	defer err2.Handle(&err, "open agent storage from cfg")
 
 	storages.Lock()
 	defer storages.Unlock()
@@ -90,7 +90,7 @@ func (c *AgentStorage) OpenWallet() (h int, err error) {
 }
 
 func (c *AgentStorage) CloseWallet(handle int) (err error) {
-	defer err2.Returnf(&err, "close agent storage from cfg")
+	defer err2.Handle(&err, "close agent storage from cfg")
 
 	storages.Lock()
 	defer storages.Unlock()

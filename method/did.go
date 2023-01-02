@@ -93,7 +93,7 @@ func NewFromDID(
 	id core.DID,
 	err error,
 ) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	switch DIDType(didStr[0]) {
 	case TypePeer:

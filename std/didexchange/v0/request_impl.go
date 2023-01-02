@@ -137,7 +137,7 @@ func (m *requestImpl) Verify(DID core.DID) error {
 }
 
 func (m *requestImpl) PayloadToSend(_ string, ourDID core.DID) (pl didcomm.Payload, st psm.SubState, err error) {
-	defer err2.Returnf(&err, "next for v0 request")
+	defer err2.Handle(&err, "next for v0 request")
 	endp := try.To1(ourDID.AEndp())
 	msg := try.To1(newResponse(&Response{
 		Connection: &Connection{

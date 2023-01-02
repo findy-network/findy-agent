@@ -91,7 +91,7 @@ loop:
 }
 
 func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pid *pb.ProtocolID, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent Resume protocol:", state.ProtocolID.TypeID, state.ProtocolID.ID)
@@ -103,7 +103,7 @@ func (s *didCommServer) Resume(ctx context.Context, state *pb.ProtocolState) (pi
 }
 
 func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolID, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	caDID, receiver := try.To2(ca(ctx))
 	glog.V(1).Infoln(caDID, "-agent release protocol:", id.ID)
@@ -115,7 +115,7 @@ func (s *didCommServer) Release(ctx context.Context, id *pb.ProtocolID) (ps *pb.
 }
 
 func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *pb.ProtocolID, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	caDID, receiver := try.To2(ca(ctx))
 	task := try.To1(taskFrom(protocol))
@@ -125,7 +125,7 @@ func (s *didCommServer) Start(ctx context.Context, protocol *pb.Protocol) (pid *
 }
 
 func (s *didCommServer) Status(ctx context.Context, id *pb.ProtocolID) (ps *pb.ProtocolStatus, err error) {
-	defer err2.Return(&err)
+	defer err2.Handle(&err)
 
 	caDID, receiver := try.To2(ca(ctx))
 	key := psm.NewStateKey(receiver.WorkerEA(), id.ID)

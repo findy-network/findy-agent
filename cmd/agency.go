@@ -75,7 +75,7 @@ Example
 		return BindEnvs(agencyStartEnvs, "AGENCY")
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 
 		try.To(aCmd.Validate())
 		if !rootFlags.dryRun {
@@ -106,7 +106,7 @@ Example
 		return BindEnvs(agencyPingEnvs, "AGENCY")
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 		try.To(paCmd.Validate())
 		if !rootFlags.dryRun {
 			cmd.SilenceUsage = true
@@ -128,7 +128,7 @@ Example
 	findy-agent agency migrate <old-reg> <new-reg> [enclave-key]
 	`,
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		defer err2.Return(&err)
+		defer err2.Handle(&err)
 
 		migrateCmd.InputReg = args[0]
 		migrateCmd.OutputReg = args[1]
