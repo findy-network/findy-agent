@@ -90,7 +90,8 @@ func (p Pipe) defMediaType() string {
 	return defaultMediaType
 }
 
-func (p Pipe) crypto() cryptoapi.Crypto {
+// crypto
+func (p Pipe) _() cryptoapi.Crypto {
 	if p.packager() == nil {
 		glog.V(10).Infoln("-- using Indy crypto as a default")
 		return new(indy.Crypto)

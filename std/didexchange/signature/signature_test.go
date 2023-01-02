@@ -75,7 +75,7 @@ func TestSignVerifyWithSeparatedWallets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.PushTester(t)
 			defer assert.PopTester()
-			defer err2.Catch(func(err error) {
+			defer err2.Catch(func(_ error) {
 				utils.Settings.SetDIDMethod(method.TypeSov)
 			})
 			utils.Settings.SetDIDMethod(tt.method)
