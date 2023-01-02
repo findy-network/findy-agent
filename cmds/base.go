@@ -15,7 +15,8 @@ import (
 	"github.com/lainio/err2/try"
 )
 
-const walletKeyLength = 44
+const walletKeyLength1 = 43
+const walletKeyLength2 = 44
 
 var ErrInvalid = errors.New("invalid command, check arguments")
 
@@ -51,9 +52,9 @@ func ValidateKey(k string, name string) error {
 	if k == "" {
 		return fmt.Errorf("%s key cannot be empty", name)
 	}
-	if len(k) != walletKeyLength {
-		return fmt.Errorf("%s key is not valid (%d/%d)", name,
-			len(k), walletKeyLength)
+	if len(k) != walletKeyLength1 && len(k) != walletKeyLength2 {
+		return fmt.Errorf("%s key is not valid %d <> %d|%d", name,
+			len(k), walletKeyLength1, walletKeyLength2)
 	}
 	return nil
 }
