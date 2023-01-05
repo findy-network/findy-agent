@@ -1,0 +1,2 @@
+dev:
+  - any: ['!go.mod', '!go.sum']
