@@ -183,3 +183,6 @@ run:
 
 iop:
 	gh workflow run iop.yml --ref $(CURRENT_BRANCH)
+
+release:
+	gh workflow run do-release.yml
