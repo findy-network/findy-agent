@@ -3,5 +3,5 @@ updates:
   - package-ecosystem: gomod
     directory: /
     schedule:
-      interval: monthly
+      interval: daily
     target-branch: "dev"
