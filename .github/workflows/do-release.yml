@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Tag release if changes
     steps:
-      - uses: findy-network/releaser-action@v5
+      - uses: findy-network/releaser-action@v5.1
         with:
           # use personal access token so that events are created for tag push
           token: ${{ secrets.RELEASER_PAT }}
