@@ -23,6 +23,9 @@ FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
 
 LABEL org.opencontainers.image.source https://github.com/findy-network/findy-agent
 
+# TODO: remove (healthcheck utility)
+RUN apt-get update && apt-get install -y curl
+
 COPY --from=agent-builder /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
 ADD ./scripts/deploy/healthcheck.sh .
