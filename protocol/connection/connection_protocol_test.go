@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	storage "github.com/findy-network/findy-agent/agent/storage/api"
+	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/didexchange"
 	v1 "github.com/findy-network/findy-common-go/grpc/agency/v1"
@@ -78,6 +80,20 @@ func tearDown() {
 	for _, a := range agents {
 		a.WalletH.Close()
 		a.StorageH.Close()
+	}
+	indyInstallationRoot := utils.IndyBaseDir() // TODO: function name is bad, caused a bug.
+
+	removeFiles(indyInstallationRoot, ".indy_client/wallet/connection-test-agent-*")
+	removeFiles(indyInstallationRoot, ".indy_client/worker/connection-test-agent-*")
+}
+
+func removeFiles(home, nameFilter string) {
+	filter := filepath.Join(home, nameFilter)
+	files, _ := filepath.Glob(filter)
+	for _, f := range files {
+		if err := os.RemoveAll(f); err != nil {
+			panic(err)
+		}
 	}
 }
 
