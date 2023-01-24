@@ -19,7 +19,7 @@ von-up: clone
 # TODO: use von-network image when ARM is supported
 #	cd .docker/von-network && ./manage build && ./manage up
 	docker pull ghcr.io/lauravuo/von-network:latest
-	docker tag ghcr.io/lauravuo/von-network:latest von-network-base
+	-docker tag ghcr.io/lauravuo/von-network:latest von-network-base
 	cd .docker/von-network && ./manage up
 	../dev/docker/wait-for-ledger.sh
 

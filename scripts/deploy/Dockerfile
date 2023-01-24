@@ -23,11 +23,9 @@ FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
 
 LABEL org.opencontainers.image.source https://github.com/findy-network/findy-agent
 
-# healthcheck utility
-RUN apt-get update && apt-get install -y curl
-
 COPY --from=agent-builder /go/bin/findy-agent /findy-agent
 ADD ./scripts/deploy/import-wallet.sh .
+ADD ./scripts/deploy/healthcheck.sh .
 
 EXPOSE 8080
 EXPOSE 50051
@@ -63,8 +61,8 @@ ENV FCLI_STEWARD_POOL_NAME "${FCLI_POOL_NAME}"
 ENV FCLI_STEWARD_WALLET_KEY "${FCLI_IMPORT_WALLET_KEY}"
 ENV FCLI_STEWARD_SEED "000000000000000000000000Steward1"
 
-RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' > /start.sh && \
-    echo './import-wallet.sh' >> /start.sh && \
-    echo '/findy-agent agency start' >> /start.sh && chmod a+x /start.sh
+RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' >/start.sh && \
+    echo './import-wallet.sh' >>/start.sh && \
+    echo '/findy-agent agency start' >>/start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "/start.sh"]
