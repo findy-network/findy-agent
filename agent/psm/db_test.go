@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/findy-network/findy-common-go/crypto/db"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -36,7 +35,7 @@ func setUp() {
 }
 
 func tearDown() {
-	db.Close()
+	Close()
 
 	os.Remove(dbPath)
 }
