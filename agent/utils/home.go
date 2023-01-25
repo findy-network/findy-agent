@@ -5,6 +5,7 @@ import (
 	"os/user"
 )
 
+// IndyBaseDir TODO: the function name is bad, why I cannot remember?
 func IndyBaseDir() string {
 	if v := os.Getenv("HOME"); v != "" {
 		return v
