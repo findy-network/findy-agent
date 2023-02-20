@@ -1,6 +1,6 @@
 module github.com/findy-network/findy-agent
 
-go 1.18
+go 1.20
 
 require (
 	github.com/findy-network/findy-common-go v0.2.4
