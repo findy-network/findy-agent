@@ -164,7 +164,7 @@ func rmIncoming(addr *endp.Addr) {
 }
 
 func transportPL(ourAddress *endp.Addr, data []byte) {
-	defer err2.CatchAll(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error("transport payload error:", err)
 	}, func(exception interface{}) {
 		if utils.Settings.LocalTestMode() {

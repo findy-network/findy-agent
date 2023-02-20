@@ -65,7 +65,7 @@ func removeFiles(home, nameFilter string) {
 }
 
 func setUp() {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		fmt.Println("error on setup", err)
 	})
 

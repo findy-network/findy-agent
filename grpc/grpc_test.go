@@ -219,7 +219,7 @@ func setUpLedger() {
 }
 
 func setUp() {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		fmt.Println("error on setup", err)
 	})
 
@@ -855,7 +855,7 @@ func TestTrustPing(t *testing.T) {
 }
 
 func runPSMHook(intCh chan struct{}) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.V(1).Infoln("WARNING: error when reading response:", err)
 	})
 	conn := client.TryOpen("findy-root", baseCfg)

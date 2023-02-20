@@ -424,7 +424,7 @@ func (a *DIDAgent) LoadDID(did string) core.DID {
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {
-	defer err2.CatchAll(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, err)
 	}, func(v any) {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, v)

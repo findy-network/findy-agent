@@ -52,7 +52,7 @@ func createTrustPingTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm
 }
 
 func startTrustPing(ca comm.Receiver, t comm.Task) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 	try.To(prot.StartPSM(prot.Initial{
@@ -91,7 +91,7 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 }
 
 func fillTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error("Failed to fill trust ping status: ", err)
 	})
 
