@@ -1,6 +1,6 @@
 FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04 AS indy-base
 
-FROM golang:1.18-buster AS agent-builder
+FROM golang:1.20-buster AS agent-builder
 
 ENV INDY_LIB_VERSION="1.16.0"
 

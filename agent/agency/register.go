@@ -72,7 +72,7 @@ func timeToBackup() bool {
 }
 
 func Backup() {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Warning(err)
 	})
 

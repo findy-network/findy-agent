@@ -128,7 +128,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 	err2.SetTracers(os.Stderr)
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		t.Error(err)
 	})
 
@@ -287,7 +287,7 @@ var (
 func setUp() {
 	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
-	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+	assert.SetDefaultAsserter(assert.AsserterFormattedCallerInfo)
 
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
