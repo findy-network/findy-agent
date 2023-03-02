@@ -36,7 +36,7 @@ func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
 		go func() {
-			defer err2.CatchTrace(func(err error) {
+			defer err2.Catch(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
 			})
 
@@ -239,7 +239,7 @@ type endingInfo struct {
 }
 
 func triggerEnd(info endingInfo) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error("trigger PSM end notification:", err)
 	})
 

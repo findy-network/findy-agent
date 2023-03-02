@@ -103,7 +103,7 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 // message from cloud EA, and saves the received credentials to cloud EA's
 // wallet.
 func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 
@@ -199,7 +199,7 @@ func handleCredentialNACK(packet comm.Packet) (err error) {
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 
@@ -231,7 +231,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 }
 
 func fillIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error("Failed to fill issue credential status: ", err)
 	})
 

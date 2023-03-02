@@ -126,7 +126,7 @@ func Fprint(w io.Writer, a ...interface{}) {
 func Progress(w io.Writer) chan<- struct{} {
 	done := make(chan struct{})
 	go func() {
-		defer err2.CatchTrace(func(err error) {
+		defer err2.Catch(func(err error) {
 			glog.Error(err)
 		})
 		for {

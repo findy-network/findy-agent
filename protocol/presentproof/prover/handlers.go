@@ -66,7 +66,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 }
 
 func UserActionProofPresentation(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 

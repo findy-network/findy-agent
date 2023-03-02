@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -26,6 +27,8 @@ var rootCmd = &cobra.Command{
 Findy agent cli tool
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		assert.SetDefaultAsserter(assert.AsserterToError)
+		err2.SetPanicTracer(os.Stderr)
 		agency.ParseLoggingArgs(rootFlags.logging)
 		handleViperFlags(cmd)
 		aCmd.PreRun()

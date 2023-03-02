@@ -61,7 +61,7 @@ var (
 func setUp() {
 	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
-	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+	assert.SetDefaultAsserter(assert.AsserterFormattedCallerInfo)
 
 	// init pipe package, TODO: try to find out how to get media profile
 	// from...
@@ -195,7 +195,7 @@ func TestPackUnpackWithSeparatedWallets(t *testing.T) {
 func TestIndyPipe(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.CatchAll(func(err error) {
+	defer err2.Catch(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
 	}, func(v any) {
@@ -270,7 +270,7 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 func TestPipe_pack(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.CatchAll(func(err error) {
+	defer err2.Catch(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
 	}, func(v any) {
@@ -352,7 +352,7 @@ func TestPipe_pack(t *testing.T) {
 func TestPipe_packPeer(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.CatchAll(func(err error) {
+	defer err2.Catch(func(err error) {
 		fmt.Println(err)
 		t.Fail()
 	}, func(v any) {
