@@ -28,6 +28,7 @@ go.work.bak
 .secrets
 .vscode
 .data
+.temp
 
 __debug_bin
 

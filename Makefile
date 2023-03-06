@@ -16,8 +16,13 @@ GO := go
 
 COV_FILE:=coverage.txt
 
+SCAN_SCRIPT_URL="https://raw.githubusercontent.com/findy-network/setup-go-action/master/scanner/cp_scan.sh"
+
 scan:
-	@scripts/scan.sh $(ARGS)
+	@curl -s $(SCAN_SCRIPT_URL) | bash
+
+scan_and_report:
+	@curl -s $(SCAN_SCRIPT_URL) | bash -s v > licenses.txt
 
 drop_wrap:
 	$(GO) mod edit -dropreplace github.com/findy-network/findy-wrapper-go
