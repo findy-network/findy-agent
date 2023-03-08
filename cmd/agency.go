@@ -155,7 +155,7 @@ var (
 const registerBackupInterval = 12 * time.Hour
 
 func init() {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		log.Println(err)
 	})
 

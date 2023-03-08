@@ -45,7 +45,7 @@ var (
 func setUp() {
 	err2.SetTracers(os.Stderr)
 	assert.D = assert.AsserterCallerInfo
-	assert.DefaultAsserter = assert.AsserterFormattedCallerInfo
+	assert.SetDefaultAsserter(assert.AsserterFormattedCallerInfo)
 
 	// first, create agent 1 with the storages
 	walletID := fmt.Sprintf("signature-test-agent-11%d", time.Now().Unix())

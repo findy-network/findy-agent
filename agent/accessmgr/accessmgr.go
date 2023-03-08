@@ -47,7 +47,7 @@ func Start() {
 
 	started = true
 	go func() {
-		defer err2.CatchTrace(func(err error) {
+		defer err2.Catch(func(err error) {
 			glog.Error(err)
 		})
 		glog.V(1).Infoln("wallet access mgr started")

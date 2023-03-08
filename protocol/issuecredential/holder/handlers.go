@@ -93,7 +93,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 // userActionCredential is called when Holder has received a Cred_Offer and it's
 // transferred the question to user: if she accepts the credential.
 func UserActionCredential(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 

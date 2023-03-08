@@ -323,7 +323,7 @@ func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, er
 
 // FindAndStartTask start the protocol by using CA API Type in the packet.PL.
 func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Errorf("Cannot start protocol: %s", err)
 	})
 

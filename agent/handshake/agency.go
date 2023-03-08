@@ -129,7 +129,7 @@ func LoadRegistered(filename string) (err error) {
 		return fmt.Errorf("load register: %s", err)
 	}
 	go func() {
-		defer err2.CatchAll(func(err error) {
+		defer err2.Catch(func(err error) {
 			glog.Fatal(err)
 		}, func(exception interface{}) {
 			glog.Fatal(exception)

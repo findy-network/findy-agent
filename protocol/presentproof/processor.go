@@ -158,7 +158,7 @@ func generateProofRequest(proofTask *taskPresentProof) *anoncreds.ProofRequest {
 }
 
 func startProofProtocol(ca comm.Receiver, t comm.Task) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 
@@ -236,7 +236,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 
@@ -301,7 +301,7 @@ func handleProofNACK(packet comm.Packet) (err error) {
 }
 
 func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error("Failed to fill present proof status: ", err)
 	})
 

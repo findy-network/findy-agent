@@ -15,7 +15,7 @@ func TestConnection_ReadDoc(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 	err2.SetTracers(os.Stderr)
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		t.Error(err)
 	})
 

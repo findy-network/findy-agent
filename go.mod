@@ -1,18 +1,18 @@
 module github.com/findy-network/findy-agent
 
-go 1.18
+go 1.20
 
 require (
-	github.com/findy-network/findy-common-go v0.2.6
+	github.com/findy-network/findy-common-go v0.2.7
 	github.com/findy-network/findy-wrapper-go v0.30.28
-	github.com/go-co-op/gocron v1.18.0
-	github.com/golang/glog v1.0.0
+	github.com/go-co-op/gocron v1.18.1
+	github.com/golang/glog v1.1.0
 	github.com/golang/mock v1.6.0
 	github.com/google/tink/go v1.6.1
 	github.com/google/uuid v1.3.0
 	github.com/hyperledger/aries-framework-go v0.1.8
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20220322085443-50e8f9bd208b
-	github.com/lainio/err2 v0.8.13
+	github.com/lainio/err2 v0.8.14
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
@@ -71,7 +71,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/square/go-jose/v3 v3.0.0-20200630053402-0a67ce9b0693 // indirect
-	github.com/stretchr/testify v1.8.1 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/teserakt-io/golang-ed25519 v0.0.0-20210104091850-3888c087a4c8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -79,6 +79,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
+	golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3 // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect

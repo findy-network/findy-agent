@@ -23,7 +23,7 @@ func init() {
 }
 
 func startProtocol(ca comm.Receiver, t comm.Task) {
-	defer err2.CatchTrace(func(err error) {
+	defer err2.Catch(func(err error) {
 		glog.Error(err)
 	})
 
