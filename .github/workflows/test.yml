@@ -148,9 +148,10 @@ jobs:
         with:
           name: ${{ github.sha }}-coverage2.txt
       - name: upload coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage1.txt,./coverage2.txt
+          fail_ci_if_error: true
 
   e2e:
     runs-on: ubuntu-latest
