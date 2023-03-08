@@ -112,7 +112,7 @@ jobs:
     container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     steps:
       - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates
+        run: apt-get update && apt-get install -y build-essential ca-certificates curl
       - name: setup
         uses: actions/setup-go@v3
         with:
@@ -122,7 +122,7 @@ jobs:
 
       # licence scan
       - name: scan
-        run: make scan
+        run: make scan | grep "Licensing OK"
 
   test-docker-image:
     runs-on: ubuntu-latest
@@ -148,9 +148,10 @@ jobs:
         with:
           name: ${{ github.sha }}-coverage2.txt
       - name: upload coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           files: ./coverage1.txt,./coverage2.txt
+          fail_ci_if_error: true
 
   e2e:
     runs-on: ubuntu-latest
