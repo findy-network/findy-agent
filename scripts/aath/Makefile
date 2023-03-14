@@ -22,7 +22,7 @@ prep: record-logs
 # by default tags are defined in findy-agent-backchannel
 test: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test \
+		make aath \
 			AGENT_DEFAULT=$(AGENT_DEFAULT) \
 			AGENT_BOB=$(AGENT_BOB) \
 			INCLUDE_TAGS=$(INCLUDE_TAGS)
@@ -30,7 +30,7 @@ test: prep
 # check returns failure exit code, suitable for CI
 test-check: prep
 	cd .docker/findy-agent-backchannel/env && \
-		make aath-test-check \
+		make aath-check \
 			AGENT_DEFAULT=$(AGENT_DEFAULT) \
 			AGENT_BOB=$(AGENT_BOB)
 

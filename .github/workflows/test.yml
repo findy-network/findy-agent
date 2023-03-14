@@ -70,7 +70,7 @@ jobs:
           FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
       - name: store coverage file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ github.sha }}-coverage1.txt
           path: ./coverage1.txt
@@ -100,7 +100,7 @@ jobs:
           FCLI_AGENCY_DID_METHOD: "2"
 
       - name: store coverage file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ github.sha }}-coverage2.txt
           path: ./coverage2.txt
@@ -133,26 +133,6 @@ jobs:
       - name: docker image
         run: make image
 
-  upload-coverage:
-    runs-on: ubuntu-latest
-    needs: [test-default, test-peer]
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: download coverage file
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-coverage1.txt
-      - name: download coverage file
-        uses: actions/download-artifact@v2
-        with:
-          name: ${{ github.sha }}-coverage2.txt
-      - name: upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage1.txt,./coverage2.txt
-          fail_ci_if_error: true
-
   e2e:
     runs-on: ubuntu-latest
     needs: [lint]
@@ -178,12 +158,58 @@ jobs:
         run: make e2e_ci
       - name: Collect docker logs
         if: ${{ failure() }}
-        uses: jwalton/gh-docker-logs@v2.0.2
+        uses: jwalton/gh-docker-logs@v2
         with:
           dest: "./tests_output/docker-logs"
       - name: archive logs
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: e2e-logs
           path: tests_output
+
+  e2e-full:
+    runs-on: ubuntu-latest
+    steps:
+      - name: test e2e flow
+        uses: findy-network/e2e-test-action@master
+        with:
+          service: "core"
+          service-context: ./
+          service-dockerfile: ./scripts/deploy/Dockerfile
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: './go.mod'
+      - name: convert coverage to txt
+        run: go tool covdata textfmt -i=coverage -o coverage-e2e.txt
+      - name: store coverage file
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.sha }}-coverage-e2e.txt
+          path: ./coverage-e2e.txt
+          retention-days: 1
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: [test-default, test-peer, e2e-full]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage1.txt
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage2.txt
+      - name: download coverage file
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ github.sha }}-coverage-e2e.txt
+      - name: upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage1.txt,./coverage2.txt,./coverage-e2e.txt
+          fail_ci_if_error: true
+
