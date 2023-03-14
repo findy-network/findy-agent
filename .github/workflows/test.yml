@@ -3,27 +3,34 @@ on:
   push:
 jobs:
 
-  lint:
+  check:
     runs-on: ubuntu-latest
+    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
+    env:
+      TEST_WORKDIR: /github/home/.test/
+      CI: true
     steps:
-      - uses: actions/setup-go@v3
+      - name: setup go, lint and scan
+        uses: findy-network/setup-go-action@master
         with:
-          go-version: 1.20.x
-      - uses: actions/checkout@v3
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+          linter-config-path: .golangci.yml
+
+      - name: test and measure coverage (peer did)
+        run: make test_cov_out COV_FILE=coverage-peer.txt
+        env:
+          FCLI_AGENCY_DID_METHOD: "2"
+
+      - name: store coverage file
+        uses: actions/upload-artifact@v3
         with:
-          args: "--out-${NO_FUTURE}format colored-line-number --timeout=15m"
-          version: v1.51.1
-          skip-cache: true
-          # Optional: if set to true then the action don't cache or restore ~/go/pkg.
-          skip-pkg-cache: true
-          # Optional: if set to true then the action don't cache or restore ~/.cache/go-build.
-          skip-build-cache: true
+          name: ${{ github.sha }}-coverage-peer.txt
+          path: ./coverage-peer.txt
+          retention-days: 1
+
 
   test-default:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: [check]
     env:
       TEST_WORKDIR: /github/home/.test/
       CI: true
@@ -54,7 +61,7 @@ jobs:
       - name: setup
         uses: actions/setup-go@v3
         with:
-          go-version: 1.20.x
+          go-version-file: './go.mod'
       - name: checkout
         uses: actions/checkout@v3
 
@@ -62,7 +69,7 @@ jobs:
       - name: test and measure coverage
         run: |
           curl http://localhost:9000/genesis > gen_txn_file
-          make test_grpcv_cov_out COV_FILE=coverage1.txt
+          make test_grpcv_cov_out COV_FILE=coverage-default.txt
         env:
           TEST_TIMEOUT: 6000s
           TEST_ARGS: "-vmodule=grpc_test*=5 -v=0 -logtostderr"
@@ -72,70 +79,13 @@ jobs:
       - name: store coverage file
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.sha }}-coverage1.txt
-          path: ./coverage1.txt
+          name: ${{ github.sha }}-coverage-default.txt
+          path: ./coverage-default.txt
           retention-days: 1
-
-  test-peer:
-    runs-on: ubuntu-latest
-    needs: [lint]
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
-    env:
-      TEST_WORKDIR: /github/home/.test/
-      CI: true
-    steps:
-      - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates
-      - name: setup
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.20.x
-      - name: checkout
-        uses: actions/checkout@v3
-
-      # test round for peer-did and mem-ledger
-      - name: test and measure coverage (peer did)
-        run: make test_cov_out COV_FILE=coverage2.txt
-        env:
-          FCLI_AGENCY_DID_METHOD: "2"
-
-      - name: store coverage file
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.sha }}-coverage2.txt
-          path: ./coverage2.txt
-          retention-days: 1
-
-  license-scan:
-    runs-on: ubuntu-latest
-    needs: [lint]
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
-    steps:
-      - name: Install make & certs
-        run: apt-get update && apt-get install -y build-essential ca-certificates curl
-      - name: setup
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.20.x
-      - name: checkout
-        uses: actions/checkout@v3
-
-      # licence scan
-      - name: scan
-        run: make scan | grep "Licensing OK"
-
-  test-docker-image:
-    runs-on: ubuntu-latest
-    needs: [lint]
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - name: docker image
-        run: make image
 
   e2e:
     runs-on: ubuntu-latest
-    needs: [lint]
+    needs: [check]
     steps:
       # install indy
       - uses: actions/checkout@v3
@@ -146,7 +96,7 @@ jobs:
       - name: setup
         uses: actions/setup-go@v3
         with:
-          go-version: 1.20.x
+          go-version-file: './go.mod'
       - name: checkout
         uses: actions/checkout@v3
       - name: install cli
@@ -170,6 +120,7 @@ jobs:
 
   e2e-full:
     runs-on: ubuntu-latest
+    needs: [check]
     steps:
       - name: test e2e flow
         uses: findy-network/e2e-test-action@master
@@ -191,25 +142,25 @@ jobs:
 
   upload-coverage:
     runs-on: ubuntu-latest
-    needs: [test-default, test-peer, e2e-full]
+    needs: [check, test-default, e2e-full]
     steps:
       - name: checkout
         uses: actions/checkout@v3
       - name: download coverage file
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: ${{ github.sha }}-coverage1.txt
+          name: ${{ github.sha }}-coverage-default.txt
       - name: download coverage file
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: ${{ github.sha }}-coverage2.txt
+          name: ${{ github.sha }}-coverage-peer.txt
       - name: download coverage file
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ${{ github.sha }}-coverage-e2e.txt
       - name: upload coverage
         uses: codecov/codecov-action@v3
         with:
-          files: ./coverage1.txt,./coverage2.txt,./coverage-e2e.txt
+          files: ./coverage-default.txt,./coverage-peer.txt,./coverage-e2e.txt
           fail_ci_if_error: true
 
