@@ -5,11 +5,17 @@ jobs:
 
   check:
     runs-on: ubuntu-latest
-    container: ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
     env:
       TEST_WORKDIR: /github/home/.test/
       CI: true
     steps:
+      # install indy
+      - uses: actions/checkout@v3
+        with:
+          repository: "findy-network/findy-wrapper-go"
+      - name: install indy
+        run: make indy_to_debian
+
       - name: setup go, lint and scan
         uses: findy-network/setup-go-action@master
         with:
@@ -122,6 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check]
     steps:
+      # TODO: implement graceful shutdown to collect coverage data
       - name: test e2e flow
         uses: findy-network/e2e-test-action@master
         with:
