@@ -2,6 +2,8 @@ FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04 AS indy-base
 
 FROM golang:1.20-buster AS agent-builder
 
+ARG GOBUILD_ARGS=""
+
 ENV INDY_LIB_VERSION="1.16.0"
 
 # install indy deps and files from base
@@ -17,7 +19,7 @@ RUN go mod download
 
 COPY . ./
 
-RUN make install
+RUN make install GOBUILD_ARGS=${GOBUILD_ARGS}
 
 FROM ghcr.io/findy-network/findy-base:indy-1.16.ubuntu-18.04
 
@@ -32,6 +34,9 @@ ADD ./scripts/deploy/healthcheck.sh .
 
 EXPOSE 8080
 EXPOSE 50051
+
+# used when running instrumented binary
+ENV GOCOVERDIR /coverage
 
 # override when running container:
 
@@ -65,7 +70,7 @@ ENV FCLI_STEWARD_WALLET_KEY "${FCLI_IMPORT_WALLET_KEY}"
 ENV FCLI_STEWARD_SEED "000000000000000000000000Steward1"
 
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' >/start.sh && \
-    echo './import-wallet.sh' >>/start.sh && \
-    echo '/findy-agent agency start' >>/start.sh && chmod a+x /start.sh
+  echo './import-wallet.sh' >>/start.sh && \
+  echo '/findy-agent agency start' >>/start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "/start.sh"]
