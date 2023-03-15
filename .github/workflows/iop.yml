@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  iop-acapy:
+  iop:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
