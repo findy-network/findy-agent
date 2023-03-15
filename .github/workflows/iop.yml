@@ -36,7 +36,7 @@ jobs:
           docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
       - name: archive logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: iop-logs
           path: scripts/aath/.logs

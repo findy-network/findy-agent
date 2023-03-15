@@ -13,6 +13,7 @@ CURRENT_BRANCH=$(shell scripts/branch.sh .)
 
 GO := go
 # GO := go1.18beta2
+GOBUILD_ARGS:=
 
 COV_FILE:=coverage.txt
 
@@ -167,6 +168,7 @@ install:
 	$(eval VERSION = $(shell cat ./VERSION) $(shell date))
 	@echo "Installing version $(VERSION)"
 	$(GO) install \
+		${GOBUILD_ARGS} \
 		-ldflags "-X 'github.com/findy-network/findy-agent/agent/utils.Version=$(VERSION)'" \
 		./...
 
