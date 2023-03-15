@@ -13,7 +13,7 @@ CURRENT_BRANCH=$(shell scripts/branch.sh .)
 
 GO := go
 # GO := go1.18beta2
-GOBUILD_ARGS:=""
+GOBUILD_ARGS:=
 
 COV_FILE:=coverage.txt
 
