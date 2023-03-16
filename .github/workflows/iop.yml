@@ -9,41 +9,39 @@ on:
 jobs:
   iop:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - their_agent: "acapy"
+          - their_agent: "javascript"
+          - their_agent: "findy"
     env:
       NO_TTY: "1"
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: test findy as Bob with ACAPy
+      - name: test findy as Bob with ${{ matrix.their_agent }}
         run: |
           cd ./scripts/aath
-          make run-check AGENT_DEFAULT=acapy AGENT_BOB=findy
-      - name: test findy as default agent with ACAPy
+          make run-check AGENT_DEFAULT=${{ matrix.their_agent }} AGENT_BOB=findy
+      - name: test findy as default agent with ${{ matrix.their_agent }}
         run: |
           cd ./scripts/aath
-          make test-check AGENT_DEFAULT=findy AGENT_BOB=acapy
-      - name: test findy as Bob with javascript
-        run: |
-          cd ./scripts/aath
-          make test-check AGENT_DEFAULT=javascript AGENT_BOB=findy
-      - name: test findy as default with javascript
-        run: |
-          cd ./scripts/aath
-          make test-check AGENT_DEFAULT=findy AGENT_BOB=javascript
+          make test-check AGENT_DEFAULT=findy AGENT_BOB=${{ matrix.their_agent }}
       - name: store agency logs
-        if: ${{ always() }}
+        if: ${{ failure() }}
         run: |
           docker logs docker_core_1 > scripts/aath/.logs/docker_core_1-$(date +%s).log 2>&1 &
       - name: archive logs
-        if: ${{ always() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
           name: iop-logs
           path: scripts/aath/.logs
       - uses: 8398a7/action-slack@v3
+        if: ${{ failure() }}
         with:
           status: ${{ job.status }}
           fields: repo,action,eventName,ref,workflow,job,took
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: ${{ failure() }}
