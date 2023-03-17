@@ -3,7 +3,7 @@ module github.com/findy-network/findy-agent
 go 1.20
 
 require (
-	github.com/findy-network/findy-common-go v0.2.12
+	github.com/findy-network/findy-common-go v0.2.13
 	github.com/findy-network/findy-wrapper-go v0.30.30
 	github.com/go-co-op/gocron v1.18.1
 	github.com/golang/glog v1.1.0
@@ -36,7 +36,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
