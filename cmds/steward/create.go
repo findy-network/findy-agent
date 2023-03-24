@@ -29,10 +29,8 @@ func (c *CreateCmd) Validate() error {
 	if c.PoolName == "" {
 		return errors.New("pool name cannot be empty")
 	}
-	if err := cmds.ValidateSeed(c.StewardSeed); err != nil {
-		return err
-	}
-	return nil
+
+	return cmds.ValidateSeed(c.StewardSeed)
 }
 
 func (c *CreateCmd) Exec(w io.Writer) (r cmds.Result, err error) {

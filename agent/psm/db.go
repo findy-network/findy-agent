@@ -137,7 +137,7 @@ func AddPSM(p *PSM) (err error) {
 // GetPSM get existing PSM from DB. If the PSM doesn't exist it returns error.
 // See FindPSM for version which doesn't return error if the PSM doesn't exist.
 func GetPSM(k StateKey) (m *PSM, err error) {
-	found := false
+	var found bool
 	found, err = get(k, BucketPSM, func(d []byte) {
 		m = NewPSM(d)
 	})

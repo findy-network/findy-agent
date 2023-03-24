@@ -109,7 +109,7 @@ func (m *invitationImpl) RoutingKeys() []string {
 	return m.Invitation.Services()[0].RoutingKeysAsB58()
 }
 
-func (m *invitationImpl) Verify(DID core.DID) error {
+func (m *invitationImpl) Verify(_ core.DID) error {
 	return nil
 }
 

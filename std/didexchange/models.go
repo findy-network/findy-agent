@@ -52,11 +52,11 @@ func (m *UnsupportedPwMsgBase) RoutingKeys() []string {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) Verify(DID core.DID) error {
+func (m *UnsupportedPwMsgBase) Verify(_ core.DID) error {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) PayloadToSend(ourLabel string, ourDID core.DID) (didcomm.Payload, psm.SubState, error) {
+func (m *UnsupportedPwMsgBase) PayloadToSend(_ string, _ core.DID) (didcomm.Payload, psm.SubState, error) {
 	panic("unsupported")
 }
 
@@ -64,10 +64,10 @@ func (m *UnsupportedPwMsgBase) PayloadToWait() (didcomm.Payload, psm.SubState) {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) SetID(id string) {
+func (m *UnsupportedPwMsgBase) SetID(_ string) {
 	panic("unsupported")
 }
 
-func (m *UnsupportedPwMsgBase) SetType(t string) {
+func (m *UnsupportedPwMsgBase) SetType(_ string) {
 	panic("unsupported")
 }

@@ -40,7 +40,7 @@ func (k *KMS) Add(KID, verKey string) {
 	k.kms.keyIDByVerKey[verKey] = KID
 }
 
-func (k *KMS) Create(kt kms.KeyType) (string, interface{}, error) {
+func (k *KMS) Create(_ kms.KeyType) (string, interface{}, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -62,17 +62,17 @@ func (k *KMS) Get(KID string) (interface{}, error) {
 	return handle, nil
 }
 
-func (k *KMS) Rotate(kt kms.KeyType, KID string) (string, interface{}, error) {
+func (k *KMS) Rotate(_ kms.KeyType, _ string) (string, interface{}, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (k *KMS) ExportPubKeyBytes(KID string) ([]byte, kms.KeyType, error) {
+func (k *KMS) ExportPubKeyBytes(_ string) ([]byte, kms.KeyType, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (k *KMS) CreateAndExportPubKeyBytes(kt kms.KeyType) (string, []byte, error) {
+func (k *KMS) CreateAndExportPubKeyBytes(_ kms.KeyType) (string, []byte, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -84,7 +84,7 @@ func (k *KMS) getKeyIDByVerKey(verKey string) string {
 	return keyID
 }
 
-func (k *KMS) PubKeyBytesToHandle(pubKey []byte, kt kms.KeyType) (interface{}, error) {
+func (k *KMS) PubKeyBytesToHandle(pubKey []byte, _ kms.KeyType) (interface{}, error) {
 	verKey := base58.Encode(pubKey)
 	keyID := k.getKeyIDByVerKey(verKey)
 	if keyID == "" {
@@ -94,7 +94,7 @@ func (k *KMS) PubKeyBytesToHandle(pubKey []byte, kt kms.KeyType) (interface{}, e
 	return k.Get(keyID)
 }
 
-func (k *KMS) ImportPrivateKey(privKey interface{}, kt kms.KeyType, opts ...kms.PrivateKeyOpts) (string, interface{}, error) {
+func (k *KMS) ImportPrivateKey(_ interface{}, _ kms.KeyType, _ ...kms.PrivateKeyOpts) (string, interface{}, error) {
 	//TODO implement me
 	panic("implement me")
 }

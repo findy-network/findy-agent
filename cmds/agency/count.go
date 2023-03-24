@@ -18,10 +18,7 @@ type CountCmd struct {
 }
 
 func (c CountCmd) Validate() (err error) {
-	if err := c.GrpcCmd.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.GrpcCmd.Validate()
 }
 
 func (c CountCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {

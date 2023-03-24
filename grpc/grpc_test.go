@@ -1374,7 +1374,7 @@ func BenchmarkIssue(b *testing.B) {
 	connID := agents[0].ConnID[i]
 	// warm up
 	{
-		r := try.To1(client.Pairwise{
+		try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
@@ -1383,11 +1383,9 @@ func BenchmarkIssue(b *testing.B) {
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}}))
-		for range r {
-		}
 	}
 	for n := 0; n < b.N; n++ {
-		r := try.To1(client.Pairwise{
+		try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.IssueWithAttrs(ctx, agents[0].CredDefID,
@@ -1396,8 +1394,6 @@ func BenchmarkIssue(b *testing.B) {
 					Name:  "email",
 					Value: strLiteral("email", "", i+1),
 				}}}))
-		for range r {
-		}
 	}
 	try.To(conn.Close())
 }
@@ -1418,24 +1414,20 @@ func BenchmarkReqProof(b *testing.B) {
 			Name:      "email",
 			CredDefID: agents[0].CredDefID,
 		}}
-		r := try.To1(client.Pairwise{
+		try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs}))
-		for range r {
-		}
 	}
 	for n := 0; n < b.N; n++ {
 		attrs := []*agency2.Protocol_Proof_Attribute{{
 			Name:      "email",
 			CredDefID: agents[0].CredDefID,
 		}}
-		r := try.To1(client.Pairwise{
+		try.To1(client.Pairwise{
 			ID:   connID,
 			Conn: conn,
 		}.ReqProofWithAttrs(ctx, &agency2.Protocol_Proof{Attributes: attrs}))
-		for range r {
-		}
 	}
 	try.To(conn.Close())
 }
@@ -1723,8 +1715,8 @@ type handleStatusFn func(
 ) handleAction
 
 func handleStatusProoReq(
-	t *testing.T,
-	conn client.Conn,
+	_ *testing.T,
+	_ client.Conn,
 	status *agency2.AgentStatus,
 	_ bool,
 ) handleAction {
@@ -1744,7 +1736,7 @@ func handleStatusProoReq(
 }
 
 func handleStatusBMEcho(
-	t *testing.T,
+	_ *testing.T,
 	conn client.Conn,
 	status *agency2.AgentStatus,
 	_ bool,
@@ -1840,7 +1832,7 @@ func TestInvitation_Multiple(t *testing.T) {
 	if testMode == TestModeRunOne {
 		return
 	}
-	caDID := ""
+	var caDID string
 	{
 		// first onboard a new agent that we can start all over
 		conn := client.TryOpen("findy-root", baseCfg)
@@ -1888,8 +1880,8 @@ func TestInvitationForSamePublicDID(t *testing.T) {
 		handshake.SetSteward(steward)
 	}()
 
-	caDID := ""
-	caDID2 := ""
+	var caDID string
+	var caDID2 string
 	ctx := context.Background()
 	{
 		seed := createTrustAnchor(t)

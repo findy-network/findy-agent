@@ -126,9 +126,8 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 			if len(credInfo) == fetchMax {
 				glog.V(1).Info("--- There's more cred infos for attr ---")
 				continue
-			} else {
-				break
 			}
+			break
 		}
 		selfAttestedNeedsToBeSet := !foundAlready && len(aInfo.Restrictions) == 0
 
@@ -162,9 +161,8 @@ func (rep *PresentProofRep) processAttributes(w2 int,
 			if len(credInfo) == fetchMax {
 				glog.V(1).Info("--- There's more pred infos for attr ---")
 				continue
-			} else {
-				break
 			}
+			break
 		}
 	}
 

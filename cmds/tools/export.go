@@ -37,10 +37,7 @@ func (c ExportCmd) Validate() error {
 	if c.Filename == "" {
 		return errors.New("export path cannot be empty")
 	}
-	if err := cmds.ValidateKey(c.ExportKey, "export"); err != nil {
-		return err
-	}
-	return nil
+	return cmds.ValidateKey(c.ExportKey, "export")
 }
 
 func (c ExportCmd) Exec(w io.Writer) (r cmds.Result, err error) {

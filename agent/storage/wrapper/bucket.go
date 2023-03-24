@@ -85,13 +85,13 @@ func (b *bucket) GetBulk(keys ...string) ([][]byte, error) {
 }
 
 // AFGO-placeholder
-func (b *bucket) Query(expression string, options ...storage.QueryOption) (storage.Iterator, error) {
+func (b *bucket) Query(expression string, _ ...storage.QueryOption) (storage.Iterator, error) {
 	glog.V(7).Infoln("bucket::Query", expression)
 	panic("implement me")
 }
 
 // AFGO-placeholder
-func (b *bucket) Batch(operations []storage.Operation) error {
+func (b *bucket) Batch(_ []storage.Operation) error {
 	glog.V(7).Infoln("bucket::Batch")
 	panic("implement me")
 }

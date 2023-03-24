@@ -90,7 +90,7 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 	})
 }
 
-func fillTrustPingStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
+func fillTrustPingStatus(_ string, _ string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
 	defer err2.Catch(func(err error) {
 		glog.Error("Failed to fill trust ping status: ", err)
 	})

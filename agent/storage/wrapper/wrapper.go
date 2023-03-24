@@ -223,7 +223,7 @@ func (s *StorageProvider) getAll(bucketID byte, transform db.Filter) (res [][]by
 }
 
 // AFGO StorageProvider placeholder implementations
-func (s *StorageProvider) SetStoreConfig(name string, config storage.StoreConfiguration) error {
+func (s *StorageProvider) SetStoreConfig(name string, _ storage.StoreConfiguration) error {
 	glog.V(7).Infoln("StorageProvider::SetStoreConfig", name)
 	panic("implement me")
 }

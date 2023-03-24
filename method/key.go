@@ -17,7 +17,7 @@ type Key struct {
 
 func NewKey(
 	hStorage managed.Wallet,
-	args ...string,
+	_ ...string,
 ) (
 	id core.DID,
 	err error,
@@ -56,7 +56,7 @@ func (k Key) Route() []string {
 func (k Key) RecipientKeys() []string {
 	return []string{k.String()}
 }
-func (k Key) NewDoc(ae service.Addr) core.DIDDoc {
+func (k Key) NewDoc(_ service.Addr) core.DIDDoc {
 	assert.NotImplemented("did:key doesn't support service endpoints")
 	return nil
 }

@@ -29,10 +29,7 @@ func (c Cmd) Validate() error {
 	if c.WalletName == "" {
 		return errors.New("wallet name cannot be empty")
 	}
-	if err := c.ValidateWalletKey(); err != nil {
-		return err
-	}
-	return nil
+	return c.ValidateWalletKey()
 }
 
 func (c Cmd) ValidateWalletKey() error {

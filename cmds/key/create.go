@@ -14,10 +14,7 @@ type CreateCmd struct {
 }
 
 func (c *CreateCmd) Validate() error {
-	if err := cmds.ValidateSeed(c.Seed); err != nil {
-		return err
-	}
-	return nil
+	return cmds.ValidateSeed(c.Seed)
 }
 
 type CreateResult struct {
