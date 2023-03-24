@@ -62,17 +62,17 @@ func (b Base) Storage() managed.Wallet {
 	return b.handle
 }
 
-func (b Base) StartEndp(storageH managed.Wallet, connectionID string) {
+func (b Base) StartEndp(_ managed.Wallet, _ string) {
 	// todo: check how this is implemented in ssi.DID.
 	// It seems that it's simple, but unnesseary.
 }
 
-func (b Base) Store(mgdWallet, mgdStorage managed.Wallet) {
+func (b Base) Store(_, _ managed.Wallet) {
 	// todo: check the implementation from ssi.DID
 	// it seems that there is nothing to do, all is saved already.
 }
 
-func (b Base) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID, pw core.PairwiseMeta) {
+func (b Base) SavePairwiseForDID(_ managed.Wallet, _ core.DID, _ core.PairwiseMeta) {
 	// nothing to do at this level because we don't have virtual functions
 	// the implementation must be done at the lower impl level like Peer
 }
@@ -87,6 +87,6 @@ func (b Base) AEndp() (ae service.Addr, err error) {
 	return
 }
 
-func (b Base) SetAEndp(ae service.Addr) {
+func (b Base) SetAEndp(_ service.Addr) {
 	// Key don't use and peer has its document already
 }

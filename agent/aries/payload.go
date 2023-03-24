@@ -90,7 +90,7 @@ func (pl *PayloadImpl) ThreadID() string {
 	return pl.ID()
 }
 
-func (pl *PayloadImpl) SetThread(t *decorator.Thread) {
+func (pl *PayloadImpl) SetThread(_ *decorator.Thread) {
 	panic("no implementation")
 	//pl.Msg.(*MsgImpl).Thread = t
 }

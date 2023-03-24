@@ -18,10 +18,7 @@ type LoggingCmd struct {
 }
 
 func (c LoggingCmd) Validate() error {
-	if err := c.GrpcCmd.Validate(); err != nil {
-		return err
-	}
-	return nil
+	return c.GrpcCmd.Validate()
 }
 
 func (c LoggingCmd) RPCExec(w io.Writer) (r cmds.Result, err error) {

@@ -61,15 +61,15 @@ func (i *Indy) OurPackager() api.Packager {
 // We needed direct wrapping to because Go couldn't keep on with transitive
 // type support of aggregated types.
 
-func (i *Indy) OpenStore(name string) (storage.Store, error) {
+func (i *Indy) OpenStore(_ string) (storage.Store, error) {
 	panic("not implemented") // TODO: Implement
 }
 
-func (i *Indy) SetStoreConfig(name string, config storage.StoreConfiguration) error {
+func (i *Indy) SetStoreConfig(_ string, _ storage.StoreConfiguration) error {
 	panic("not implemented") // TODO: Implement
 }
 
-func (i *Indy) GetStoreConfig(name string) (storage.StoreConfiguration, error) {
+func (i *Indy) GetStoreConfig(_ string) (storage.StoreConfiguration, error) {
 	panic("not implemented") // TODO: Implement
 }
 

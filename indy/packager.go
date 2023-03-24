@@ -172,7 +172,7 @@ type Crypto struct {
 //	cipherText in []byte
 //	nonce in []byte
 //	error in case of errors during encryption
-func (c *Crypto) Encrypt(msg []byte, aad []byte, kh interface{}) ([]byte, []byte, error) {
+func (c *Crypto) Encrypt(_ []byte, _ []byte, _ interface{}) ([]byte, []byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -182,7 +182,7 @@ func (c *Crypto) Encrypt(msg []byte, aad []byte, kh interface{}) ([]byte, []byte
 //
 //	plainText in []byte
 //	error in case of errors
-func (c *Crypto) Decrypt(cipher []byte, aad []byte, nonce []byte, kh interface{}) ([]byte, error) {
+func (c *Crypto) Decrypt(_ []byte, _ []byte, _ []byte, _ interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -220,13 +220,13 @@ func (c *Crypto) Verify(signature []byte, msg []byte, kh interface{}) (err error
 
 // ComputeMAC computes message authentication code (MAC) for code data
 // using a matching MAC primitive in kh key handle
-func (c *Crypto) ComputeMAC(data []byte, kh interface{}) ([]byte, error) {
+func (c *Crypto) ComputeMAC(_ []byte, _ interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
 // VerifyMAC determines if mac is a correct authentication code (MAC) for data
 // using a matching MAC primitive in kh key handle and returns nil if so, otherwise it returns an error.
-func (c *Crypto) VerifyMAC(mac []byte, data []byte, kh interface{}) error {
+func (c *Crypto) VerifyMAC(_ []byte, _ []byte, _ interface{}) error {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -239,7 +239,7 @@ func (c *Crypto) VerifyMAC(mac []byte, data []byte, kh interface{}) error {
 //
 //	RecipientWrappedKey containing the wrapped cek value
 //	error in case of errors
-func (c *Crypto) WrapKey(cek []byte, apu []byte, apv []byte, recPubKey *crypto.PublicKey, opts ...crypto.WrapKeyOpts) (*crypto.RecipientWrappedKey, error) {
+func (c *Crypto) WrapKey(_ []byte, _ []byte, _ []byte, _ *crypto.PublicKey, _ ...crypto.WrapKeyOpts) (*crypto.RecipientWrappedKey, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -252,7 +252,7 @@ func (c *Crypto) WrapKey(cek []byte, apu []byte, apv []byte, recPubKey *crypto.P
 //
 //	unwrapped key in raw bytes
 //	error in case of errors
-func (c *Crypto) UnwrapKey(recWK *crypto.RecipientWrappedKey, kh interface{}, opts ...crypto.WrapKeyOpts) ([]byte, error) {
+func (c *Crypto) UnwrapKey(_ *crypto.RecipientWrappedKey, _ interface{}, _ ...crypto.WrapKeyOpts) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -262,7 +262,7 @@ func (c *Crypto) UnwrapKey(recWK *crypto.RecipientWrappedKey, kh interface{}, op
 //
 //	signature in []byte
 //	error in case of errors
-func (c *Crypto) SignMulti(messages [][]byte, kh interface{}) ([]byte, error) {
+func (c *Crypto) SignMulti(_ [][]byte, _ interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -271,7 +271,7 @@ func (c *Crypto) SignMulti(messages [][]byte, kh interface{}) ([]byte, error) {
 // returns:
 //
 //	error in case of errors or nil if signature verification was successful
-func (c *Crypto) VerifyMulti(messages [][]byte, signature []byte, kh interface{}) error {
+func (c *Crypto) VerifyMulti(_ [][]byte, _ []byte, _ interface{}) error {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -280,7 +280,7 @@ func (c *Crypto) VerifyMulti(messages [][]byte, signature []byte, kh interface{}
 // returns:
 //
 //	error in case of errors or nil if signature proof verification was successful
-func (c *Crypto) VerifyProof(revealedMessages [][]byte, proof []byte, nonce []byte, kh interface{}) error {
+func (c *Crypto) VerifyProof(_ [][]byte, _ []byte, _ []byte, _ interface{}) error {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -290,6 +290,6 @@ func (c *Crypto) VerifyProof(revealedMessages [][]byte, proof []byte, nonce []by
 //
 //	signature proof in []byte
 //	error in case of errors
-func (c *Crypto) DeriveProof(messages [][]byte, bbsSignature []byte, nonce []byte, revealedIndexes []int, kh interface{}) ([]byte, error) {
+func (c *Crypto) DeriveProof(_ [][]byte, _ []byte, _ []byte, _ []int, _ interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }

@@ -39,7 +39,7 @@ type ReceiverMock interface {
 // go install github.com/golang/mock/mockgen
 // /go/bin/mockgen -package connection -source ./protocol/connection/connection_protocol_test.go ReceiverMock > ./protocol/connection/mock_test.go
 
-func sendAndWaitHTTPRequest(urlStr string, msg io.Reader, timeout time.Duration) (data []byte, err error) {
+func sendAndWaitHTTPRequest(_ string, msg io.Reader, _ time.Duration) (data []byte, err error) {
 	httpPayload, _ = io.ReadAll(msg)
 	return []byte{}, nil
 }

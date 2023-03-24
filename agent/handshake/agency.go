@@ -140,10 +140,6 @@ func LoadRegistered(filename string) (err error) {
 		alreadyRegistered := make(map[string]bool)
 
 		agency.Register.EnumValues(func(caDID string, values []string) (next bool) {
-			// default is to continue even on cached errors, set this that
-			// even on panics we will continue
-			next = true
-
 			email := values[0]
 			rootDid := values[1]
 			caVerKey := ""

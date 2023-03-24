@@ -140,10 +140,8 @@ func (a *Agent) AttachSAImpl(implID string) {
 	glog.V(3).Infof("setting implementation (%s)", a.SAImplID())
 	if a.IsCA() {
 		wa, ok := a.WorkerEA().(*Agent)
-		if !ok {
-			glog.Errorf("type assert, wrong agent type for %s",
-				a.RootDid().Did())
-		}
+		assert.That(ok, "type assert, wrong agent type for %s",
+			a.RootDid().Did())
 		wa.SetSAImplID(implID)
 	}
 }

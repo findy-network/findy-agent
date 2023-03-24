@@ -132,7 +132,7 @@ func (m *requestImpl) RoutingKeys() []string {
 	return common.Service(m.Connection.DIDDoc, 0).RoutingKeys
 }
 
-func (m *requestImpl) Verify(DID core.DID) error {
+func (m *requestImpl) Verify(_ core.DID) error {
 	return nil
 }
 

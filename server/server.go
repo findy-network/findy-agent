@@ -67,7 +67,7 @@ func BuildHostAddr(scheme string, hostPort uint) {
 	}
 }
 
-func tellVersion(w http.ResponseWriter, r *http.Request) {
+func tellVersion(w http.ResponseWriter, _ *http.Request) {
 	defer err2.Catch(func(err error) {
 		glog.Warningln(err)
 	})
@@ -77,7 +77,7 @@ func tellVersion(w http.ResponseWriter, r *http.Request) {
 	try.To1(w.Write([]byte(utils.Version)))
 }
 
-func checkReady(w http.ResponseWriter, r *http.Request) {
+func checkReady(w http.ResponseWriter, _ *http.Request) {
 	defer err2.Catch(func(err error) {
 		glog.Warningln(err)
 	})
