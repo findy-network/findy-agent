@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
@@ -132,6 +133,8 @@ func (a *agentServer) Ping(
 	return &pb.PingMsg{ID: pm.ID, PingController: saReply}, nil
 }
 
+var createLockToSlowDownIndylib sync.Mutex
+
 func (a *agentServer) CreateSchema(
 	ctx context.Context,
 	s *pb.SchemaCreate,
@@ -139,6 +142,9 @@ func (a *agentServer) CreateSchema(
 	os *pb.Schema,
 	err error,
 ) {
+	createLockToSlowDownIndylib.Lock()
+	defer createLockToSlowDownIndylib.Unlock()
+
 	defer err2.Handle(&err, "create schema")
 
 	caDID, ca := try.To2(ca(ctx))
@@ -165,6 +171,9 @@ func (a *agentServer) CreateCredDef(
 	_ *pb.CredDef,
 	err error,
 ) {
+	createLockToSlowDownIndylib.Lock()
+	defer createLockToSlowDownIndylib.Unlock()
+
 	defer err2.Handle(&err, "create creddef")
 
 	caDID, ca := try.To2(ca(ctx))
