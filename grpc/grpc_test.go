@@ -2073,52 +2073,34 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 	conn := client.TryOpen(ca.DID, baseCfg)
 	schemaName := fmt.Sprintf("NEW_SCHEMA_%v", ut)
 
-	ctx := context.Background()
-	c := agency2.NewAgentServiceClient(conn)
+	createSchemaAndCredDef := func() {
+		ctx := context.Background()
+		c := agency2.NewAgentServiceClient(conn)
+		r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
+			Name:       schemaName,
+			Version:    "1.0",
+			Attributes: []string{"attr1", "attr2", "attr3"},
+		})
+		assert.NoError(err)
+		assert.NotEmpty(r.ID)
+		glog.V(1).Infoln(r.ID)
+		schemaID := r.ID
 
-	// Round 1
-	r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
-		Name:       schemaName,
-		Version:    "1.0",
-		Attributes: []string{"attr1", "attr2", "attr3"},
-	})
-	assert.NoError(err)
-	assert.NotEmpty(r.ID)
-	glog.V(1).Infoln(r.ID)
-	schemaID := r.ID
+		waitForSchema(t, c, schemaID)
 
-	waitForSchema(t, c, schemaID)
+		cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
+			SchemaID: schemaID,
+			Tag:      "TAG_4_TEST",
+		})
+		assert.NoError(err)
+		assert.NotEmpty(cdResult.ID)
 
-	cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
-		SchemaID: schemaID,
-		Tag:      "TAG_4_TEST",
-	})
-	assert.NoError(err)
-	assert.NotEmpty(cdResult.ID)
+		waitForCredDef(t, c, cdResult.ID)
+	}
 
-	waitForCredDef(t, c, cdResult.ID)
-
-	// Round 2
-	r, err = c.CreateSchema(ctx, &agency2.SchemaCreate{
-		Name:       schemaName,
-		Version:    "1.0",
-		Attributes: []string{"attr1", "attr2", "attr3"},
-	})
-	assert.NoError(err)
-	assert.NotEmpty(r.ID)
-	glog.V(1).Infoln(r.ID)
-	schemaID = r.ID
-
-	waitForSchema(t, c, schemaID)
-
-	cdResult, err = c.CreateCredDef(ctx, &agency2.CredDefCreate{
-		SchemaID: schemaID,
-		Tag:      "TAG_4_TEST",
-	})
-	assert.NoError(err)
-	assert.NotEmpty(cdResult.ID)
-
-	waitForCredDef(t, c, cdResult.ID)
+	for i := 0; i < 20; i++ {
+		createSchemaAndCredDef()
+	}
 
 	assert.NoError(conn.Close())
 }
