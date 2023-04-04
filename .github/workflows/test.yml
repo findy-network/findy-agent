@@ -79,7 +79,7 @@ jobs:
           TEST_TIMEOUT: 6000s
           TEST_ARGS: "-vmodule=grpc_test*=5 -v=0 -logtostderr"
           FCLI_POOL_NAME: "von"
-          FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von,FINDY_MEM_LEDGER,cache"
+          FCLI_AGENCY_POOL_NAME: "FINDY_LEDGER,von"
 
       - name: store coverage file
         uses: actions/upload-artifact@v3

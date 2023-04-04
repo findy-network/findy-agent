@@ -129,9 +129,8 @@ test_grpcv_cov_out:
 		-coverpkg=github.com/findy-network/findy-agent/... \
 		-coverprofile=$(COV_FILE)  \
 		-covermode=atomic \
-		./...
-#		./grpc/... \
-#		$(TEST_ARGS) | tee ../testr.log
+		./grpc/... \
+		$(TEST_ARGS) | tee ../testr.log
 
 testrv:
 	$(GO) test -v -timeout $(TEST_TIMEOUT) -p 1 -failfast -race ./... $(TEST_ARGS) | tee ../testr.log

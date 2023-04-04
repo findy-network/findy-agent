@@ -2098,7 +2098,7 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 		waitForCredDef(t, c, cdResult.ID)
 	}
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 100; i++ {
 		createSchemaAndCredDef()
 	}
 
