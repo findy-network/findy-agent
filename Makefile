@@ -129,7 +129,7 @@ test_grpcv_cov_out:
 		-coverpkg=github.com/findy-network/findy-agent/... \
 		-coverprofile=$(COV_FILE)  \
 		-covermode=atomic \
-		./grpc/...
+		./...
 #		./grpc/... \
 #		$(TEST_ARGS) | tee ../testr.log
 
