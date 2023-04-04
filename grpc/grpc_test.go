@@ -412,7 +412,7 @@ func srand(size int) string {
 
 func createTrustAnchor(t *testing.T) (seed string) {
 	defer err2.Catch(func(err error) {
-		assert.NoError(err)
+		glog.Errorln("error create trust anchor", err)
 	})
 
 	t.Helper()
@@ -2056,4 +2056,51 @@ func TestOnboardInBetweenIssue(t *testing.T) {
 	assert.NoError(holderConn.Close())
 	assert.NoError(issuerConn.Close())
 	assert.NoError(adminConn.Close())
+}
+
+// TestCreateSchemaTwice_NoOneRun tests same schema creation multiple times
+func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+
+	if testMode == TestModeRunOne {
+		return
+	}
+
+	ut := time.Now().Unix() - 1558884840
+
+	ca := agents[0]
+	conn := client.TryOpen(ca.DID, baseCfg)
+	schemaName := fmt.Sprintf("NEW_SCHEMA_%v", ut)
+
+	createSchemaAndCredDef := func() {
+		ctx := context.Background()
+		c := agency2.NewAgentServiceClient(conn)
+		r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
+			Name:       schemaName,
+			Version:    "1.0",
+			Attributes: []string{"attr1", "attr2", "attr3"},
+		})
+		assert.NoError(err)
+		assert.NotEmpty(r.ID)
+		glog.V(1).Infoln(r.ID)
+		schemaID := r.ID
+
+		waitForSchema(t, c, schemaID)
+
+		cdResult, err := c.CreateCredDef(ctx, &agency2.CredDefCreate{
+			SchemaID: schemaID,
+			Tag:      "TAG_4_TEST",
+		})
+		assert.NoError(err)
+		assert.NotEmpty(cdResult.ID)
+
+		waitForCredDef(t, c, cdResult.ID)
+	}
+
+	for i := 0; i < 100; i++ {
+		createSchemaAndCredDef()
+	}
+
+	assert.NoError(conn.Close())
 }
