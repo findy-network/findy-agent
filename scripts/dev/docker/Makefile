@@ -43,6 +43,9 @@ gen-cert: docker-host
 		mv ./cert/server/cert.conf.tmp ./cert/server/cert.conf
 	cd ./cert && ./gen.sh server
 
+up-von:  gen-yml down von-up gen-cert ledger-ready
+	@echo "see the conf/genesis.txt"
+
 up:  gen-yml down von-up gen-cert agency
 up-d:  gen-yml down von-up gen-cert agency-d
 
