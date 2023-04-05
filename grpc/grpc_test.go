@@ -2105,9 +2105,9 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 
 		waitForCredDef(t, c, cdResult.ID)
 	}
-	firstTimeCall := true
-	createSchemaAndCredDef(firstTimeCall)
-	createSchemaAndCredDef(!firstTimeCall)
+	sameAgain := false
+	createSchemaAndCredDef(sameAgain)
+	createSchemaAndCredDef(!sameAgain)
 
 	assert.NoError(conn.Close())
 }
