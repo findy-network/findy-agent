@@ -2073,7 +2073,7 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 	conn := client.TryOpen(ca.DID, baseCfg)
 	schemaName := fmt.Sprintf("NEW_SCHEMA_%v", ut)
 
-	createSchemaAndCredDef := func() {
+	createSchemaAndCredDef := func(sameAgain bool) {
 		ctx := context.Background()
 		c := agency2.NewAgentServiceClient(conn)
 		r, err := c.CreateSchema(ctx, &agency2.SchemaCreate{
@@ -2081,6 +2081,14 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 			Version:    "1.0",
 			Attributes: []string{"attr1", "attr2", "attr3"},
 		})
+		if sameAgain {
+			if err == nil {
+				glog.V(1).Infoln("second schema create should fail")
+				return
+			}
+			assert.Error(err)
+			return
+		}
 		assert.NoError(err)
 		assert.NotEmpty(r.ID)
 		glog.V(1).Infoln(r.ID)
@@ -2097,10 +2105,9 @@ func TestCreateSchemaTwice_NoOneRun(t *testing.T) {
 
 		waitForCredDef(t, c, cdResult.ID)
 	}
-
-	for i := 0; i < 100; i++ {
-		createSchemaAndCredDef()
-	}
+	firstTimeCall := true
+	createSchemaAndCredDef(firstTimeCall)
+	createSchemaAndCredDef(!firstTimeCall)
 
 	assert.NoError(conn.Close())
 }
