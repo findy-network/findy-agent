@@ -52,6 +52,6 @@ jobs:
         if: ${{ failure() }}
         with:
           status: ${{ job.status }}
-          fields: repo,action,eventName,ref,workflow,job,took
+          fields: repo,action,eventName,ref,workflow
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
