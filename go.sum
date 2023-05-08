@@ -166,8 +166,8 @@ github.com/envoyproxy/protoc-gen-validate v0.3.0-java/go.mod h1:iSmxcyjqTsJpI2R4
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/fatih/structs v1.1.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga6PJ7M=
-github.com/findy-network/findy-common-go v0.2.21 h1:ntsJFxkVAY33elbz68scsCTAVzKzLn4fi74gAadVcjw=
-github.com/findy-network/findy-common-go v0.2.21/go.mod h1:HE/+BlwvNCM+KjGEoRuiiwJjlQZU7QMiIaJPa+TrNhU=
+github.com/findy-network/findy-common-go v0.2.22 h1:SrPx5s4k30LeuWff1OrxcnfkOFMvHQQwwE+pGhu2W9g=
+github.com/findy-network/findy-common-go v0.2.22/go.mod h1:Q9X22HORrIDEoq4W7GWk0rUC+cxJAiMm8dxEwEDFpN0=
 github.com/findy-network/findy-wrapper-go v0.30.32 h1:5CtjAzslDxlQQfxZgZexeLqzgRbwH54N7HUcHZi1Zr8=
 github.com/findy-network/findy-wrapper-go v0.30.32/go.mod h1:XY7EkmeHyIpDF+OapFioMia1iLyyExqS39JSPCF1aWg=
 github.com/form3tech-oss/jwt-go v3.2.5+incompatible h1:/l4kBbb4/vGSsdtB5nUe8L7B9mImVMaBPw9L/0TBHU8=
