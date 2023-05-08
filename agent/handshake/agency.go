@@ -20,6 +20,7 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -83,6 +84,7 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 
 	// Build new agent with wallet
 	agent = new(cloud.Agent)
+	ca := agent
 	aw := ssi.NewRawWalletCfg(agentName, key)
 	walletAlreadyExists := aw.Create()
 	assert.P.Truef(!walletAlreadyExists,
@@ -112,6 +114,18 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 	glog.V(2).Infof("--- Saving enclave key for %s", anchorDid.KID())
 	caDid = try.To1(agent.NewDID(method.TypeSov, ""))
 	try.To(enclave.SetKeysDID(key, caDid.Did()))
+
+	glog.V(2).Infof("Creating a master secret into worker's wallet (%s)", caDid.Did())
+	masterSec, err := enclave.NewWalletMasterSecret(caDid.Did())
+	if err != nil {
+		glog.Error(err)
+		panic(err)
+	}
+	r := <-anoncreds.ProverCreateMasterSecret(ca.Wallet(), masterSec)
+	if r.Err() != nil || masterSec != r.Str1() {
+		glog.Error(r.Err())
+		panic(r.Err())
+	}
 
 	return agent, caDid, nil
 }

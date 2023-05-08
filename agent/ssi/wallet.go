@@ -76,7 +76,7 @@ func (w Wallet) WorkerWallet() *Wallet {
 
 // WorkerWalletBy makes a copy of the wallet cfg which name ends with suffix
 func (w Wallet) WorkerWalletBy(suffix string) *Wallet {
-	walletPath := workerWalletPath()
+	walletPath := walletPath()
 	w.Config.StorageConfig = &wallet.StorageConfig{Path: walletPath}
 	w.Config.ID += suffix
 	w.worker = true
