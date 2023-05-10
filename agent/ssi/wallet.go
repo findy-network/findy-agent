@@ -139,7 +139,7 @@ func (w *Wallet) WantsBackup() bool {
 	return w.worker
 }
 
-func (w *Wallet) Exists(worker bool) bool {
+func (w *Wallet) Exists() bool {
 	path := walletPath()
 	name := filepath.Join(path, w.Config.ID)
 	_, err := os.Stat(name)

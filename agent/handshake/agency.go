@@ -177,8 +177,7 @@ func LoadRegistered(filename string) (err error) {
 				}
 
 				aw := ssi.NewRawWalletCfg(name, key)
-				wantToSeeWorker := false
-				if !aw.Exists(wantToSeeWorker) {
+				if !aw.Exists() {
 					glog.Warningf("wallet '%s' not exist. Skipping this"+
 						" agent allocation and move to next", name)
 					return true
