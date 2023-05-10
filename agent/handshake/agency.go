@@ -75,7 +75,7 @@ type Agency struct{}
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
 func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, err error) {
-	defer err2.Handle(&err, "create archor")
+	defer err2.Handle(&err, "create anchor")
 
 	key := try.To1(enclave.NewWalletKey(agentName))
 	defer func() {
@@ -115,17 +115,12 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 	caDid = try.To1(agent.NewDID(method.TypeSov, ""))
 	try.To(enclave.SetKeysDID(key, caDid.Did()))
 
-	glog.V(2).Infof("Creating a master secret into worker's wallet (%s)", caDid.Did())
+	glog.V(2).Infof("Creating a master secret into agent wallet (%s)", caDid.Did())
 	masterSec, err := enclave.NewWalletMasterSecret(caDid.Did())
-	if err != nil {
-		glog.Error(err)
-		panic(err)
-	}
+	assert.NoError(err)
 	r := <-anoncreds.ProverCreateMasterSecret(ca.Wallet(), masterSec)
-	if r.Err() != nil || masterSec != r.Str1() {
-		glog.Error(r.Err())
-		panic(r.Err())
-	}
+	assert.NoError(r.Err())
+	assert.Equal(masterSec, r.Str1())
 
 	return agent, caDid, nil
 }
