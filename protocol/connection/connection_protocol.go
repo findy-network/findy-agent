@@ -406,7 +406,7 @@ func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) 
 		glog.Error("Failed to get connection status: ", err)
 	})
 
-	assert.D.True(ps != nil)
+	assert.That(ps != nil)
 
 	key := psm.StateKey{
 		DID:   workerDID,

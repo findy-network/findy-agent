@@ -32,7 +32,7 @@ var (
 // also returns the current Enable status.
 func Send(mw managed.Wallet) bool {
 	if enabled {
-		assert.D.True(started, "access manager must be started!")
+		assert.That(started, "access manager must be started!")
 
 		input <- mw
 	}
@@ -43,7 +43,7 @@ func Send(mw managed.Wallet) bool {
 // Mgr is enabled if WalletBackupPath agency settings is set.
 func Start() {
 	enabled = utils.Settings.WalletBackupPath() != ""
-	assert.D.True(enabled, "wallet backup path must be set!")
+	assert.That(enabled, "wallet backup path must be set!")
 
 	started = true
 	go func() {

@@ -47,7 +47,7 @@ func getPairwiseRep(key psm.StateKey) (rep *pairwiseRep, err error) {
 
 	var ok bool
 	rep, ok = res.(*pairwiseRep)
-	assert.D.True(ok, "pairwise type mismatch")
+	assert.That(ok, "pairwise type mismatch")
 
 	return rep, nil
 }

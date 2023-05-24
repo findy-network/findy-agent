@@ -109,7 +109,7 @@ func GetIssueCredRep(key psm.StateKey) (rep *IssueCredRep, err error) {
 	var ok bool
 	rep, ok = res.(*IssueCredRep)
 
-	assert.D.True(ok, "issue cred type mismatch")
+	assert.That(ok, "issue cred type mismatch")
 
 	return rep, nil
 }

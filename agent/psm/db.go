@@ -142,7 +142,7 @@ func GetPSM(k StateKey) (m *PSM, err error) {
 		m = NewPSM(d)
 	})
 	if !found {
-		assert.D.True(m == nil)
+		assert.That(m == nil)
 		return nil, fmt.Errorf("PSM with key %s/%s not found", k.DID, k.Nonce)
 	}
 	return m, err

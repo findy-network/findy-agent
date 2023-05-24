@@ -247,7 +247,7 @@ func GetPresentProofRep(key psm.StateKey) (rep *PresentProofRep, err error) {
 	var ok bool
 	rep, ok = res.(*PresentProofRep)
 
-	assert.D.True(ok, "present proof type mismatch")
+	assert.That(ok, "present proof type mismatch")
 
 	return rep, nil
 }

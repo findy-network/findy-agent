@@ -45,7 +45,7 @@ func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 
 	var content string
 	if protocol != nil {
-		assert.P.True(
+		assert.That(
 			protocol.GetBasicMessage() != nil,
 			"basic message protocol data missing")
 
@@ -74,7 +74,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 			defer err2.Handle(&err)
 
 			bmTask, ok := t.(*taskBasicMessage)
-			assert.P.True(ok)
+			assert.That(ok)
 
 			rep := &basicMessageRep{
 				StateKey:  key,
@@ -98,7 +98,7 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 		defer err2.Handle(&err, "basic message")
 
 		pw := try.To1(packet.Receiver.FindPWByID(connID))
-		assert.D.True(pw != nil, "pairwise is nil")
+		assert.That(pw != nil, "pairwise is nil")
 
 		bm := im.FieldObj().(*basicmessage.Basicmessage)
 
@@ -140,7 +140,7 @@ func fillBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 		glog.Error("Failed to fill basic message status: ", err)
 	})
 
-	assert.D.True(ps != nil)
+	assert.That(ps != nil)
 
 	status := ps
 

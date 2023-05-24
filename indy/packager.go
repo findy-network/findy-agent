@@ -92,7 +92,7 @@ func (p *Packager) PackMessage(envelope *transport.Envelope) (b []byte, err erro
 
 	wallet := p.handle()
 	toDID := envelope.ToKeys[0]
-	assert.D.True(toDID != "")
+	assert.That(toDID != "")
 
 	toVerKey := p.didStrToVerKey(toDID)
 	senderKey := p.didStrToVerKey(string(envelope.FromKey))

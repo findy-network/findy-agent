@@ -139,7 +139,7 @@ func (a *DIDAgent) IsWorker() bool {
 }
 
 func (a *DIDAgent) AssertWallet() {
-	assert.D.True(a.WalletH != nil && a.StorageH != nil)
+	assert.That(a.WalletH != nil && a.StorageH != nil)
 }
 
 func (a *DIDAgent) assertPool() {
@@ -210,7 +210,7 @@ func (a *DIDAgent) Pool() (v int) {
 
 func (a *DIDAgent) VDR() *vdr.VDR {
 	aStorage, ok := a.Storage().(*mgddb.Storage)
-	assert.D.True(ok, "TODO: update type later!!")
+	assert.That(ok, "TODO: update type later!!")
 
 	return try.To1(vdr.New(aStorage))
 }
@@ -430,7 +430,7 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, v)
 	})
 
-	assert.D.True(connection.TheirDID != "")
+	assert.That(connection.TheirDID != "")
 
 	d := a.LoadDID(connection.TheirDID)
 	// TODO: implement!
@@ -440,7 +440,7 @@ func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {
 
 func (a *DIDAgent) FindPWByName(name string) (pw *storage.Connection, err error) {
 	a.AssertWallet()
-	assert.D.True(name != "")
+	assert.That(name != "")
 	return a.ConnectionStorage().GetConnection(name)
 }
 

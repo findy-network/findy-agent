@@ -6,8 +6,8 @@ import (
 	"github.com/lainio/err2/assert"
 )
 
-func TestCmd_Build(t *testing.T) {
-	assert.PushTester(t)
+func TestCmd_BuildNOK(t *testing.T) {
+	assert.PushTester(t, assert.Production)
 	defer assert.PopTester()
 
 	invalid := Cmd{
@@ -15,7 +15,13 @@ func TestCmd_Build(t *testing.T) {
 		WalletPwd:  "test-key",
 	}
 	err := invalid.Validate()
+	assert.SetDefault(assert.Test)
 	assert.Error(err)
+}
+
+func TestCmd_BuildOK(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
 
 	c := Cmd{
 		PoolName:          "tste",
@@ -30,6 +36,6 @@ func TestCmd_Build(t *testing.T) {
 		HandshakeRegister: "findy.json",
 		PsmDB:             "psm.bolt",
 	}
-	err = c.Validate()
+	err := c.Validate()
 	assert.NoError(err)
 }

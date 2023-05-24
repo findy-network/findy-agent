@@ -49,12 +49,12 @@ func setUp() {
 	// AFGO
 	var err error
 	afgoTestStorage, err = mgddb.New(storageTestConfig.AgentStorageConfig)
-	assert.D.True(err == nil)
-	assert.D.True(afgoTestStorage != nil)
+	assert.That(err == nil)
+	assert.That(afgoTestStorage != nil)
 
 	testVdr, err := myvdr.New(afgoTestStorage)
-	assert.D.True(err == nil)
-	assert.D.True(testVdr != nil)
+	assert.That(err == nil)
+	assert.That(testVdr != nil)
 
 	tests = append(
 		tests,
@@ -69,12 +69,12 @@ func setUp() {
 	)
 
 	testKey, _, err = ed25519.GenerateKey(rand.Reader)
-	assert.D.True(err == nil)
+	assert.That(err == nil)
 }
 
 func tearDown() {
 	err := afgoTestStorage.Close()
-	assert.D.True(err == nil)
+	assert.That(err == nil)
 
 	_ = os.RemoveAll(storageTestConfig.AgentID + ".bolt")
 }

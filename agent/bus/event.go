@@ -104,7 +104,7 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 
 	AgentMaps[m].Lock()
 	_, alreadyExists := AgentMaps[m].agentStationMap[key]
-	assert.D.Truef(!alreadyExists, "key: %s, already exists", key)
+	assert.That(!alreadyExists, "key: %s, already exists", key)
 
 	AgentMaps[m].agentStationMap[key] = c
 	AgentMaps[m].Unlock()

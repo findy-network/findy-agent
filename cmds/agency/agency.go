@@ -123,14 +123,14 @@ func (c *Cmd) Validate() (err error) {
 
 	c.SetMustHaveDefaults()
 
-	assert.P.NotEmpty(c.HostScheme, "host scheme cannot be empty")
-	assert.P.True(c.StewardDid == "" || (c.WalletName != "" && c.WalletPwd != ""), "wallet identification cannot be empty")
-	assert.P.NotEmpty(c.PoolName, "pool name cannot be empty")
-	assert.P.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
-	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
-	assert.P.True(c.HostPort != 0, "host port cannot be zero")
-	assert.P.NotEmpty(c.PsmDB, "psmd database location must be given")
-	assert.P.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
+	assert.NotEmpty(c.HostScheme, "host scheme cannot be empty")
+	assert.That(c.StewardDid == "" || (c.WalletName != "" && c.WalletPwd != ""), "wallet identification cannot be empty")
+	assert.NotEmpty(c.PoolName, "pool name cannot be empty")
+	assert.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
+	assert.NotEmpty(c.HostAddr, "host address cannot be empty")
+	assert.That(c.HostPort != 0, "host port cannot be zero")
+	assert.NotEmpty(c.PsmDB, "psmd database location must be given")
+	assert.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
 	if c.RegisterBackupName == "" {
 		glog.Warning("handshake register backup should be empty in production")
 	}
@@ -281,8 +281,8 @@ func (c *Cmd) checkSteward() {
 	if c.StewardDid == "" {
 		glog.Infoln("Steward is not configured, skipping steward initialisation.")
 	} else {
-		assert.P.True(c.WalletName != "", "Steward wallet name must be given")
-		assert.P.True(c.WalletPwd != "", "Steward wallet key must be given")
+		assert.That(c.WalletName != "", "Steward wallet name must be given")
+		assert.That(c.WalletPwd != "", "Steward wallet key must be given")
 
 		steward := openStewardWallet(c.StewardDid, c)
 		handshake.SetSteward(steward)

@@ -191,8 +191,8 @@ func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, no
 func tryCaDID(psmKey psm.StateKey) string {
 	waReceiver := comm.ActiveRcvrs.Get(psmKey.DID)
 	myCA := waReceiver.MyCA()
-	assert.D.True(myCA != nil, "we must have CA for our WA")
+	assert.That(myCA != nil, "we must have CA for our WA")
 	caDID := myCA.MyDID().Did()
-	assert.D.True(caDID != "", "we must get CA DID for API caller")
+	assert.That(caDID != "", "we must get CA DID for API caller")
 	return caDID
 }

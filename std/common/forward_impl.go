@@ -71,7 +71,7 @@ func (p *forwardImpl) JSON() []byte {
 }
 
 func (p *forwardImpl) Thread() *decorator.Thread {
-	assert.D.True(false, "Should not be here")
+	assert.That(false, "Should not be here")
 	return nil
 }
 
