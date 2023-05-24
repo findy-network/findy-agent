@@ -27,7 +27,7 @@ var rootCmd = &cobra.Command{
 Findy agent cli tool
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		assert.SetDefaultAsserter(assert.AsserterToError)
+		assert.SetDefault(assert.Production)
 		err2.SetPanicTracer(os.Stderr)
 		agency.ParseLoggingArgs(rootFlags.logging)
 		handleViperFlags(cmd)
