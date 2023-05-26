@@ -286,7 +286,7 @@ var (
 
 func setUp() {
 	err2.SetTracers(os.Stderr)
-	assert.D = assert.AsserterCallerInfo
+
 	assert.SetDefault(assert.TestFull)
 
 	// init pipe package, TODO: try to find out how to get media profile

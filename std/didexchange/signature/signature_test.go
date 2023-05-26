@@ -44,7 +44,7 @@ var (
 
 func setUp() {
 	err2.SetTracers(os.Stderr)
-	assert.D = assert.AsserterCallerInfo
+
 	assert.SetDefault(assert.TestFull)
 
 	// first, create agent 1 with the storages
