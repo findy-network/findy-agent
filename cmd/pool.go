@@ -51,7 +51,6 @@ Example
 		}
 		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(Cmd.Exec(os.Stdout))
 		}
 		return nil
@@ -83,7 +82,6 @@ Example
 		}
 		try.To(Cmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(Cmd.Exec(os.Stdout))
 		}
 		return nil

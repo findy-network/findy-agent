@@ -50,7 +50,6 @@ Example
 		defer err2.Handle(&err)
 		try.To(createStewardCmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(createStewardCmd.Exec(os.Stdout))
 		}
 		return nil

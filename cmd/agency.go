@@ -79,7 +79,6 @@ Example
 
 		try.To(aCmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(aCmd.Exec(os.Stdout))
 		}
 		return nil
@@ -109,7 +108,6 @@ Example
 		defer err2.Handle(&err)
 		try.To(paCmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(paCmd.Exec(os.Stdout))
 		}
 		return nil
@@ -139,7 +137,6 @@ Example
 		try.To(migrateCmd.Validate())
 
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(migrateCmd.Exec(os.Stdout))
 		}
 		return nil

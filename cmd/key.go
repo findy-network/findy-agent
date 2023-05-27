@@ -44,7 +44,6 @@ Example
 		defer err2.Handle(&err)
 		try.To(keyCreateCmd.Validate())
 		if !rootFlags.dryRun {
-			cmd.SilenceUsage = true
 			try.To1(keyCreateCmd.Exec(os.Stdout))
 		}
 		return nil
