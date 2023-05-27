@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"strings"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	myhttp "github.com/findy-network/findy-common-go/http"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -28,7 +30,7 @@ import (
 // path (serviceName), and a host port, a server port as an argument. The server
 // port is the port to listen, and the host port is the actual port on the
 // Internet, the port the world sees, and is assigned to endpoints.
-func StartHTTPServer(serverPort uint) error {
+func StartHTTPServer(serverPort uint) <-chan os.Signal {
 	sp := fmt.Sprintf(":%v", serverPort)
 	mux := http.NewServeMux()
 
@@ -45,11 +47,11 @@ func StartHTTPServer(serverPort uint) error {
 			serverPort, pattern)
 		glog.Infof("***** New DID-Server v2.0 Path: '%s' *******", pattern2)
 	}
-	server := http.Server{
+	server := &http.Server{
 		Addr:    sp,
 		Handler: mux,
 	}
-	return server.ListenAndServe()
+	return myhttp.Run(server)
 }
 
 func buildNewTransportPath(pattern string) string {

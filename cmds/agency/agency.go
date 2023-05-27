@@ -19,6 +19,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/enclave"
+	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	"github.com/findy-network/findy-agent/method"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage" // protocols needed
 	_ "github.com/findy-network/findy-agent/protocol/connection"
@@ -27,6 +28,8 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
+	"github.com/findy-network/findy-common-go/crypto/db"
+	myhttp "github.com/findy-network/findy-common-go/http"
 	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	indypool "github.com/findy-network/findy-wrapper-go/pool"
@@ -176,8 +179,14 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Handle(&err)
 
 	c.startBackupTasks()
-	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
-	try.To(server.StartHTTPServer(c.ServerPort))
+	startGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
+	shutdownCh := server.StartHTTPServer(c.ServerPort)
+	<-shutdownCh
+	glog.Infoln("shutdown signaled: starting to shudowns: gRPC..")
+	grpcserver.Server.GracefulStop()
+	glog.Infoln("shutdown signaled: starting to shudowns: HTTP..")
+	myhttp.GracefulStop()
+	db.GracefulStop()
 
 	return nil
 }
