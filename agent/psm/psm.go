@@ -72,6 +72,7 @@ const (
 	Failure
 	Archiving
 	Archived
+	SystemReboot // for graceful shutdown
 )
 
 const (
@@ -113,6 +114,8 @@ func (ss SubState) String() string {
 		return "ReadyNACKArchiving"
 	case ReadyNACK | Archived:
 		return "ReadyNACKArchived"
+	case SystemReboot:
+		return "SystemReboot"
 	default:
 		return "Unknown State"
 	}
