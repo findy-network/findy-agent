@@ -11,6 +11,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
@@ -182,10 +183,13 @@ func (c *Cmd) Run() (err error) {
 	startGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
 	shutdownCh := server.StartHTTPServer(c.ServerPort)
 	<-shutdownCh
-	glog.Infoln("shutdown signaled: starting to shudowns: gRPC..")
-	grpcserver.Server.GracefulStop()
-	glog.Infoln("shutdown signaled: starting to shudowns: HTTP..")
+	glog.Infoln("shutdown signaled: signaling gRPC clients: SystemReboot..")
+	bus.BroadcastReboot()
+	glog.Infoln("shutdown signaled: starting to shudown: HTTP..")
 	myhttp.GracefulStop()
+	glog.Infoln("shutdown signaled: starting to shudown: gRPC..")
+	grpcserver.Server.GracefulStop()
+	glog.Infoln("shutdown signaled: starting to shudown: databases..")
 	db.GracefulStop()
 
 	return nil
