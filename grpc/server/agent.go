@@ -371,6 +371,9 @@ loop:
 		select {
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
+			if notify.IsReboot() {
+				break loop
+			}
 			assert.That(clientID.ID == notify.ClientID)
 			agentStatus := processNofity(notify)
 			agentStatus.ClientID.ID = notify.ClientID
@@ -428,6 +431,9 @@ loop:
 		select {
 		case notify := <-notifyChan:
 			glog.V(1).Infoln("notification", notify.ID, "arrived")
+			if notify.IsReboot() {
+				break loop
+			}
 			assert.That(waitClientID == notify.ClientID)
 
 			var question *pb.Question

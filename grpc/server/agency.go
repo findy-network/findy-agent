@@ -104,6 +104,9 @@ loop:
 	for {
 		select {
 		case notify := <-notifyChan:
+			if notify.IsReboot() {
+				break loop
+			}
 			handleNotify(hook, server, notify)
 
 		case <-ctx.Done():
@@ -155,7 +158,11 @@ func handleCleanupNotify(notify bus.AgentNotify) {
 	try.To(psm.RmPSM(p))
 }
 
-func handleNotify(hook *ops.DataHook, server ops.AgencyService_PSMHookServer, notify bus.AgentNotify) {
+func handleNotify(
+	hook *ops.DataHook,
+	server ops.AgencyService_PSMHookServer,
+	notify bus.AgentNotify,
+) {
 	defer err2.Catch(func(err error) {
 		glog.Errorln("ERROR in psm hook notify handler", err)
 	})
