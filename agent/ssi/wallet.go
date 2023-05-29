@@ -68,26 +68,17 @@ func NewRawWalletCfg(name, key string) (w *Wallet) {
 	}
 }
 
-// WorkerWallet makes a copy of the wallet cfg, normally CA`s wallet
-func (w Wallet) WorkerWallet() *Wallet {
-	const suffix = "_w"
-	return w.WorkerWalletBy(suffix)
-}
-
 // WorkerWalletBy makes a copy of the wallet cfg which name ends with suffix
 func (w Wallet) WorkerWalletBy(suffix string) *Wallet {
-	walletPath := workerWalletPath()
+	// We have removed the use of "physical worker wallet".
+	// Ensure here that we use only agent's single wallet
+	// TODO: refactor and remove worker/ca relation
+	assert.Equal(suffix, "")
+	walletPath := walletPath()
 	w.Config.StorageConfig = &wallet.StorageConfig{Path: walletPath}
 	w.Config.ID += suffix
 	w.worker = true
 	return &w
-}
-
-func workerWalletPath() string {
-	const workerSubPath = "/.indy_client/worker"
-
-	home := utils.IndyBaseDir()
-	return filepath.Join(home, workerSubPath)
 }
 
 func walletPath() string {
@@ -148,11 +139,8 @@ func (w *Wallet) WantsBackup() bool {
 	return w.worker
 }
 
-func (w *Wallet) Exists(worker bool) bool {
+func (w *Wallet) Exists() bool {
 	path := walletPath()
-	if worker {
-		path = workerWalletPath()
-	}
 	name := filepath.Join(path, w.Config.ID)
 	_, err := os.Stat(name)
 	return !os.IsNotExist(err)
@@ -160,9 +148,6 @@ func (w *Wallet) Exists(worker bool) bool {
 
 func (w *Wallet) UniqueID() string {
 	path := walletPath()
-	if w.worker {
-		path = workerWalletPath()
-	}
 	return filepath.Join(path, w.Config.ID)
 }
 

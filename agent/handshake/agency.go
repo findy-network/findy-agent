@@ -20,6 +20,7 @@ import (
 	"github.com/findy-network/findy-agent/enclave"
 	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-wrapper-go"
+	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
@@ -74,7 +75,7 @@ type Agency struct{}
 // future we could build them in advance to pool where we could allocate them
 // when needed. Needs to wallet renaming or indexing.
 func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, err error) {
-	defer err2.Handle(&err, "create archor")
+	defer err2.Handle(&err, "create anchor")
 
 	key := try.To1(enclave.NewWalletKey(agentName))
 	defer func() {
@@ -83,6 +84,7 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 
 	// Build new agent with wallet
 	agent = new(cloud.Agent)
+	ca := agent
 	aw := ssi.NewRawWalletCfg(agentName, key)
 	walletAlreadyExists := aw.Create()
 	assert.That(!walletAlreadyExists,
@@ -112,6 +114,13 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 	glog.V(2).Infof("--- Saving enclave key for %s", anchorDid.KID())
 	caDid = try.To1(agent.NewDID(method.TypeSov, ""))
 	try.To(enclave.SetKeysDID(key, caDid.Did()))
+
+	glog.V(2).Infof("Creating a master secret into agent wallet (%s)", caDid.Did())
+	masterSec, err := enclave.NewWalletMasterSecret(caDid.Did())
+	assert.NoError(err)
+	r := <-anoncreds.ProverCreateMasterSecret(ca.Wallet(), masterSec)
+	assert.NoError(r.Err())
+	assert.Equal(masterSec, r.Str1())
 
 	return agent, caDid, nil
 }
@@ -168,8 +177,7 @@ func LoadRegistered(filename string) (err error) {
 				}
 
 				aw := ssi.NewRawWalletCfg(name, key)
-				wantToSeeWorker := false
-				if !aw.Exists(wantToSeeWorker) {
+				if !aw.Exists() {
 					glog.Warningf("wallet '%s' not exist. Skipping this"+
 						" agent allocation and move to next", name)
 					return true

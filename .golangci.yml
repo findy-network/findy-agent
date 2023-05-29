@@ -132,6 +132,6 @@ issues:
       - typecheck
 run:
 service:
-  golangci-lint-version: 1.51.1 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.52.2 # use the fixed version to not introduce new linters unexpectedly
   prepare:
     - echo "here I can run custom commands, but no preparation needed for this repo"

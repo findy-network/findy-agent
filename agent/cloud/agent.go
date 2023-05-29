@@ -11,7 +11,6 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/enclave"
-	"github.com/findy-network/findy-wrapper-go/anoncreds"
 	"github.com/findy-network/findy-wrapper-go/wallet"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -222,7 +221,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 			panic(err)
 		}
 		aWallet.Credentials.Key = key
-		walletInitializedBefore := aWallet.Create()
+		aWallet.Create()
 
 		wca := &Agent{
 			DIDAgent: ssi.DIDAgent{
@@ -241,19 +240,6 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 
 		comm.ActiveRcvrs.Add(waDID, wca)
 
-		if !walletInitializedBefore {
-			glog.V(2).Infof("Creating a master secret into worker's wallet (%s)", ca.myDID.Did())
-			masterSec, err := enclave.NewWalletMasterSecret(ca.myDID.Did())
-			if err != nil {
-				glog.Error(err)
-				panic(err)
-			}
-			r := <-anoncreds.ProverCreateMasterSecret(wca.Wallet(), masterSec)
-			if r.Err() != nil || masterSec != r.Str1() {
-				glog.Error(r.Err())
-				panic(r.Err())
-			}
-		}
 		wca.loadPWMap()
 
 		return wca
@@ -287,7 +273,7 @@ func (a *Agent) WEA() (wa *Agent) {
 	}
 	glog.V(4).Infoln("worker NOT ready, starting creation process")
 	waDID := ca.WDID()
-	return ca.workerAgent(waDID, "_worker")
+	return ca.workerAgent(waDID, "")
 }
 
 func (a *Agent) WorkerEA() comm.Receiver {

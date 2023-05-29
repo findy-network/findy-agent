@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/findy-network/findy-common-go v0.2.25-0.20230529101050-d82a0ab69e24
-	github.com/findy-network/findy-wrapper-go v0.30.32-0.20230405082622-70bc0ad73992
-	github.com/go-co-op/gocron v1.19.0
+	github.com/findy-network/findy-wrapper-go v0.30.32
+	github.com/go-co-op/gocron v1.28.0
 	github.com/golang/glog v1.1.1
 	github.com/golang/mock v1.6.0
 	github.com/google/tink/go v1.6.1
@@ -65,7 +65,7 @@ require (
 	github.com/prometheus/procfs v0.7.1 // indirect
 	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/rs/xid v1.3.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
@@ -79,11 +79,11 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
+	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect

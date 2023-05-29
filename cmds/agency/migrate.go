@@ -70,7 +70,7 @@ func (c MigrateCmd) Exec(w io.Writer) (r cmds.Result, err error) {
 	// 		}
 
 	// 		aw := ssi.NewRawWalletCfg(rippedEmail, key)
-	// 		if !aw.Exists(false) {
+	// 		if !aw.Exists() {
 	// 			cmds.Fprintf(w, "wallet '%s' not exist\n", rippedEmail)
 	// 			return true
 	// 		}

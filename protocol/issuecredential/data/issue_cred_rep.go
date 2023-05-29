@@ -60,8 +60,6 @@ func (rep *IssueCredRep) BuildCredRequest(packet comm.Packet) (cr string, err er
 	// Get CRED DEF from the ledger
 	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.RootDid().Did(), rep.CredDefID))
 
-	_, rep.CredDef = try.To2(ledger.ReadCredDef(a.Pool(), a.MyCA().RootDid().Did(), rep.CredDefID))
-
 	defer err2.Handle(&err, "build request from cred def ID: %v", rep.CredDefID)
 
 	// build credential request to send back to an issuer

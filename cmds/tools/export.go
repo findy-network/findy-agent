@@ -29,7 +29,7 @@ func (c ExportCmd) Validate() error {
 			return err
 		}
 	} else {
-		exists := ssi.NewWalletCfg(c.WalletName, c.WalletKey).Exists(false)
+		exists := ssi.NewWalletCfg(c.WalletName, c.WalletKey).Exists()
 		if !exists {
 			return errors.New("legacy wallet not exist")
 		}

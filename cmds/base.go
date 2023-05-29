@@ -37,7 +37,7 @@ func (c Cmd) ValidateWalletKey() error {
 }
 
 func (c Cmd) ValidateWalletExistence(should bool) error {
-	exists := ssi.NewRawWalletCfg(c.WalletName, c.WalletKey).Exists(false)
+	exists := ssi.NewRawWalletCfg(c.WalletName, c.WalletKey).Exists()
 	ok := (should && exists) || (!should && !exists)
 	if !ok {
 		return fmt.Errorf("wallet exists: %v", exists)

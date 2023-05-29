@@ -176,22 +176,15 @@ func (a *agentServer) CreateCredDef(
 
 	sch := &vc.Schema{ID: cdc.SchemaID}
 	try.To(sch.FromLedger(ca.RootDid().Did()))
-	r := <-anoncreds.IssuerCreateAndStoreCredentialDef(
-		ca.WorkerEA().Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
-		cdc.Tag, findy.NullString, findy.NullString)
 	rCA := <-anoncreds.IssuerCreateAndStoreCredentialDef(
 		ca.Wallet(), ca.RootDid().Did(), sch.Stored.Str2(),
 		cdc.Tag, findy.NullString, findy.NullString)
-	try.To(r.Err())
 	try.To(rCA.Err())
 
-	cd := r.Str2()
-	if r.Str1() != rCA.Str1() {
-		glog.Error("CA/WA cred def ids are different", rCA.Str1(), r.Str1())
-	}
+	cd := rCA.Str2()
 	glog.V(1).Infoln("=== starting legded writer with CA cred def")
 	err = ledger.WriteCredDef(ca.Pool(), ca.Wallet(), ca.RootDid().Did(), cd)
-	return &pb.CredDef{ID: r.Str1()}, nil
+	return &pb.CredDef{ID: rCA.Str1()}, nil
 }
 
 func (a *agentServer) GetSchema(
