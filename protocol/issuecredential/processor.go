@@ -64,8 +64,8 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 
 	if protocol != nil {
 		cred := protocol.GetIssueCredential()
-		assert.P.True(cred != nil, "issue credential data missing")
-		assert.P.True(
+		assert.That(cred != nil, "issue credential data missing")
+		assert.That(
 			protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
 			"role is needed for issuing protocol")
 
@@ -73,7 +73,7 @@ func createIssueCredentialTask(header *comm.TaskHeader, protocol *pb.Protocol) (
 			dto.FromJSONStr(cred.GetAttributesJSON(), &credAttrs)
 			glog.V(3).Infoln("set cred attrs from json")
 		} else {
-			assert.P.True(cred.GetAttributes() != nil, "issue credential attributes data missing")
+			assert.That(cred.GetAttributes() != nil, "issue credential attributes data missing")
 			credAttrs = make([]didcomm.CredentialAttribute, len(cred.GetAttributes().GetAttributes()))
 			for i, attribute := range cred.GetAttributes().GetAttributes() {
 				credAttrs[i] = didcomm.CredentialAttribute{
@@ -108,7 +108,7 @@ func startIssueCredentialByPropose(ca comm.Receiver, t comm.Task) {
 	})
 
 	credTask, ok := t.(*taskIssueCredential)
-	assert.P.True(ok)
+	assert.That(ok)
 
 	// ensure that mime type is set - some agent implementations are depending on it
 	for index, attr := range credTask.CredentialAttrs {
@@ -203,7 +203,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	assert.D.True(im.Thread().ID != "", "continue issue credential, packet thread ID missing")
+	assert.That(im.Thread().ID != "", "continue issue credential, packet thread ID missing")
 
 	var continuators = map[string]continuatorFunc{
 		pltype.SAIssueCredentialAcceptPropose: issuer.ContinueCredentialPropose,
@@ -216,7 +216,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	}
 
 	state := try.To1(psm.GetPSM(key))
-	assert.D.True(state != nil, "continue issue credential, task not found")
+	assert.That(state != nil, "continue issue credential, task not found")
 
 	credTask := state.LastState().T.(*taskIssueCredential)
 
@@ -235,7 +235,7 @@ func fillIssueCredentialStatus(workerDID string, taskID string, ps *pb.ProtocolS
 		glog.Error("Failed to fill issue credential status: ", err)
 	})
 
-	assert.D.True(ps != nil)
+	assert.That(ps != nil)
 
 	status := ps
 

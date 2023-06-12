@@ -165,7 +165,7 @@ func (a *Agent) MyCA() comm.Receiver {
 
 // CAEndp returns endpoint of the CA.
 func (a *Agent) CAEndp(connID string) (endP *endp.Addr) {
-	assert.D.True(a.IsCA())
+	assert.That(a.IsCA())
 
 	hostname := utils.Settings.HostAddr()
 	caDID := a.MyDID().Did()
@@ -209,7 +209,7 @@ func (a *Agent) workerAgent(waDID, suffix string) (wa *Agent) {
 	ca := a // to help us to read the code, receiver is CA
 	return ca.worker.testAndSet(func() *Agent {
 		glog.V(2).Infof("starting worker agent (%s) creation process", waDID)
-		assert.P.True(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
+		assert.That(waDID == ca.WDID(), "Agent URL doesn't match with Transport")
 
 		cfg := ca.WalletH.Config().(*ssi.Wallet)
 		aWallet := cfg.WorkerWalletBy(suffix)
@@ -256,7 +256,7 @@ func (a *Agent) MasterSecret() (string, error) {
 
 // WDID returns DID string of the WA and CALLED from CA.
 func (a *Agent) WDID() string {
-	assert.D.True(a.IsCA())
+	assert.That(a.IsCA())
 
 	// in the gRPC API version both DIDs are same
 	wDID := a.myDID.Did()

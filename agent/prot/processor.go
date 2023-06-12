@@ -130,7 +130,7 @@ func ContinuePSM(shift Again) (err error) {
 	meDID := PSM.Key.DID
 
 	pairwise := try.To1(wa.FindPWByID(connID))
-	assert.D.True(pairwise != nil, "pairwise should not be nil")
+	assert.That(pairwise != nil, "pairwise should not be nil")
 
 	inDID := wa.LoadDID(pairwise.MyDID)
 	outDID := wa.LoadTheirDID(*pairwise)
@@ -218,7 +218,7 @@ func ExecPSM(ts Transition) (err error) {
 	if ts.InOut != nil {
 
 		pairwise := try.To1(ts.Receiver.FindPWByID(connID))
-		assert.D.True(pairwise != nil, "pairwise should not be nil")
+		assert.That(pairwise != nil, "pairwise should not be nil")
 		inDID := ts.Receiver.LoadDID(pairwise.MyDID)
 
 		outDID := ts.Receiver.LoadTheirDID(*pairwise)

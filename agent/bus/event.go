@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/findy-network/findy-agent/agent/didcomm"
+	"github.com/findy-network/findy-agent/agent/utils"
 	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	"github.com/golang/glog"
 	"github.com/lainio/err2/assert"
@@ -36,6 +37,16 @@ type AgentNotify struct {
 	Role             pb.Protocol_Role
 	*IssuePropose
 	*ProofVerify
+}
+
+const sysRebootType = "SystemReboot"
+
+func NewRebootAgentNotify() *AgentNotify {
+	return &AgentNotify{NotificationType: "SystemReboot", ID: utils.UUID()}
+}
+
+func (an *AgentNotify) IsReboot() bool {
+	return an.NotificationType == sysRebootType
 }
 
 type IssuePropose struct {
@@ -73,7 +84,7 @@ type agentStation struct {
 }
 
 var (
-	AgentMaps = [...]agentStation{
+	agentMaps = [...]agentStation{
 		{
 			agentStationMap: make(agentStationMap),
 			buffer: buffer{
@@ -102,12 +113,12 @@ var (
 func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 	c := make(AgentStateChan, 1)
 
-	AgentMaps[m].Lock()
-	_, alreadyExists := AgentMaps[m].agentStationMap[key]
-	assert.D.Truef(!alreadyExists, "key: %s, already exists", key)
+	agentMaps[m].Lock()
+	_, alreadyExists := agentMaps[m].agentStationMap[key]
+	assert.That(!alreadyExists, "key: %s, already exists", key)
 
-	AgentMaps[m].agentStationMap[key] = c
-	AgentMaps[m].Unlock()
+	agentMaps[m].agentStationMap[key] = c
+	agentMaps[m].Unlock()
 
 	glog.V(4).Infoln(key.AgentDID, "notify ADD for: ", key.ClientID)
 
@@ -120,10 +131,10 @@ func (m mapIndex) AgentAddListener(key AgentKeyType) AgentStateChan {
 // checkBuffered sends all buffered notifications to listeners and reset the
 // buffer. TODO: make buffer persistent.
 func (m mapIndex) checkBuffered() {
-	AgentMaps[m].buffer.Lock()
-	defer AgentMaps[m].buffer.Unlock()
+	agentMaps[m].buffer.Lock()
+	defer agentMaps[m].buffer.Unlock()
 
-	l := AgentMaps[m].buffer.buf
+	l := agentMaps[m].buffer.buf
 
 	// using linked list this way it's safe to remove items during iteration
 	for e := l.Front(); e != nil; {
@@ -149,16 +160,16 @@ func (m mapIndex) checkBuffered() {
 
 // AgentRmListener removes the listener.
 func (m mapIndex) AgentRmListener(key AgentKeyType) {
-	AgentMaps[m].Lock()
-	defer AgentMaps[m].Unlock()
+	agentMaps[m].Lock()
+	defer agentMaps[m].Unlock()
 
 	if glog.V(4) {
 		glog.Infoln(key.AgentDID, " notify RM for:", key.ClientID)
 	}
-	ch, ok := AgentMaps[m].agentStationMap[key]
+	ch, ok := agentMaps[m].agentStationMap[key]
 	if ok {
 		close(ch)
-		delete(AgentMaps[m].agentStationMap, key)
+		delete(agentMaps[m].agentStationMap, key)
 	}
 }
 
@@ -168,8 +179,8 @@ func (m mapIndex) AgentRmListener(key AgentKeyType) {
 //
 // TODO: add persistence that agency can be restarted.
 func (m mapIndex) AgentBroadcast(state AgentNotify) {
-	AgentMaps[m].Lock()
-	defer AgentMaps[m].Unlock()
+	agentMaps[m].Lock()
+	defer agentMaps[m].Unlock()
 
 	if !m.broadcast(&state) { //
 		glog.V(3).Infoln(state.ClientID, "there are no one to listen us!")
@@ -181,14 +192,14 @@ func (m mapIndex) AgentBroadcast(state AgentNotify) {
 }
 
 func (m mapIndex) pushBufferedNotify(state *AgentNotify) {
-	AgentMaps[m].Unlock()
-	AgentMaps[m].buffer.Lock()
-	defer AgentMaps[m].buffer.Unlock()
-	defer AgentMaps[m].Lock()
+	agentMaps[m].Unlock()
+	agentMaps[m].buffer.Lock()
+	defer agentMaps[m].buffer.Unlock()
+	defer agentMaps[m].Lock()
 
-	if AgentMaps[m].buffer.buf != nil {
+	if agentMaps[m].buffer.buf != nil {
 		glog.V(13).Infoln(state.ClientID, "+++ push buffered", state.AgentDID)
-		AgentMaps[m].buffer.buf.PushBack(state)
+		agentMaps[m].buffer.buf.PushBack(state)
 	}
 }
 
@@ -198,13 +209,13 @@ func (m mapIndex) pushBufferedNotify(state *AgentNotify) {
 // forecast. In the end it does it in reserve order. Go's normal defer is not
 // used to make easier to read what functions does.
 func (m mapIndex) lockedBroadcast(state *AgentNotify) (sent bool) {
-	AgentMaps[m].buffer.Unlock() // Free buffer lock which was on in caller
-	AgentMaps[m].Lock()          // Lock map level lock for broadcast function
+	agentMaps[m].buffer.Unlock() // Free buffer lock which was on in caller
+	agentMaps[m].Lock()          // Lock map level lock for broadcast function
 
 	sent = m.broadcast(state)
 
-	AgentMaps[m].Unlock()      // first free the map level lock
-	AgentMaps[m].buffer.Lock() // 2nd put our lock for buffer on
+	agentMaps[m].Unlock()      // first free the map level lock
+	agentMaps[m].buffer.Lock() // 2nd put our lock for buffer on
 
 	return sent
 }
@@ -213,7 +224,7 @@ func (m mapIndex) lockedBroadcast(state *AgentNotify) (sent bool) {
 // the maps.
 func (m mapIndex) broadcast(state *AgentNotify) (found bool) {
 	broadcastKey := state.AgentKeyType
-	for listenKey, ch := range AgentMaps[m].agentStationMap {
+	for listenKey, ch := range agentMaps[m].agentStationMap {
 		hit := broadcastKey.AgentDID == listenKey.AgentDID ||
 			listenKey.AgentDID == AllAgents
 		if hit {

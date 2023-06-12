@@ -55,6 +55,9 @@ loop:
 		case status := <-statusChan:
 			glog.V(3).Infof("grpc %s state in %s", status, task.ID())
 			switch status {
+			case psm.SystemReboot:
+				glog.V(1).Info("system reboot notify, break out")
+				break loop
 			case psm.ReadyACK, psm.ACK:
 				statusCode = pb.ProtocolState_OK
 				break loop
@@ -67,6 +70,9 @@ loop:
 			}
 		case status := <-userActionChan:
 			switch status {
+			case psm.SystemReboot:
+				glog.V(1).Info("system reboot notify, break out")
+				break loop
 			case psm.Waiting:
 				glog.V(1).Infoln("waiting arrived")
 				status := &pb.ProtocolState{

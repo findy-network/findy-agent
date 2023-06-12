@@ -8,6 +8,7 @@ wpool_size=${wsize:-"50"}
 
 enclaveFile=${enclave:-"mem/enclave.bolt"}
 register=${register:-"mem/findy.json"}
+psm_file=${psm_file:-"mem/findy.bolt"}
 
 if [[ -z ${no_clean} && ! -z ${pool} ]]; then
 	echo -n "'no_clean' not defined, going to reset all. "
@@ -36,6 +37,7 @@ $agency agency start $@ \
 --register-backup-interval 0h \
 --enclave-path $enclaveFile \
 --host-address localhost \
+--psm-database-file "$psm_file" \
 --wallet-pool $wpool_size
 EOM
 

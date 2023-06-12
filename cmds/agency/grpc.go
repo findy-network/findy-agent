@@ -6,7 +6,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func StartGrpcServer(useTLS bool, port int, tlsCertPath, jwtSecret string) {
+func startGrpcServer(useTLS bool, port int, tlsCertPath, jwtSecret string) {
 	if plugin := plugins.GetPlugin("GRPC"); plugin != nil {
 		p := plugin.(*grpc.PluginServer)
 		p.Init(useTLS, port, tlsCertPath, jwtSecret)

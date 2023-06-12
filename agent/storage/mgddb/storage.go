@@ -67,11 +67,11 @@ func New(config api.AgentStorageConfig) (a *Storage, err error) {
 	var ok bool
 	didStore := try.To1(me.OpenStore(NameDID))
 	me.didStore, ok = didStore.(wrapper.Store)
-	assert.D.True(ok, "did store should always be wrapper store")
+	assert.That(ok, "did store should always be wrapper store")
 
 	connStore := try.To1(me.OpenStore(NameConnection))
 	me.connStore, ok = connStore.(wrapper.Store)
-	assert.D.True(ok, "conn store should always be wrapper store")
+	assert.That(ok, "conn store should always be wrapper store")
 
 	vdr := try.To1(vdr.New(me))
 

@@ -81,7 +81,7 @@ func New(
 	case TypeKey:
 		return NewKey(hStorage, args...)
 	default:
-		assert.D.Truef(false, "did method (%v) not supported", method)
+		assert.That(false, "did method (%v) not supported", method)
 	}
 	return
 }

@@ -43,7 +43,7 @@ func AgentStorage(h int) api.AgentStorage {
 	storage, ok := agentStorages.indys[h]
 	if !ok {
 		glog.Warningf("handle not found!")
-		assert.D.True(ok, "indy handle must exist in the handle map")
+		assert.That(ok, "indy handle must exist in the handle map")
 	}
 	return storage
 }

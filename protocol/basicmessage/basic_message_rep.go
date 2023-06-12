@@ -51,7 +51,7 @@ func getBasicMessageRep(workerDID, taskID string) (rep *basicMessageRep, err err
 	}))
 
 	bmrep, ok := res.(*basicMessageRep)
-	assert.D.True(ok, "basic message type mismatch")
+	assert.That(ok, "basic message type mismatch")
 
 	return bmrep, nil
 }

@@ -26,7 +26,7 @@ import (
 var Server *grpc.Server
 
 func Serve(conf *rpc.ServerCfg) {
-	assert.D.True(conf != nil, "GRPC server needs configuration")
+	assert.That(conf != nil, "GRPC server needs configuration")
 	if conf.PKI != nil {
 		glog.V(1).Infof("starting gRPC server with\ncrt:\t%s\nkey:\t%s\nclient:\t%s",
 			conf.PKI.Server.CertFile, conf.PKI.Server.KeyFile, conf.PKI.Client.CertFile)
@@ -85,7 +85,7 @@ func uniqueTypeID(role pb.Protocol_Role, id pb.Protocol_Type) string {
 	i := int32(10*role) + int32(id)
 	glog.V(5).Infoln("unique id:", i, typeID[i])
 	s, ok := typeID[i]
-	assert.D.Truef(ok, "cannot find typeid for (%d+%d)", role, id)
+	assert.That(ok, "cannot find typeid for (%d+%d)", role, id)
 	return s
 }
 

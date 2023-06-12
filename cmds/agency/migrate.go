@@ -30,8 +30,8 @@ type _ /*seedAgent*/ struct {
 func (c MigrateCmd) Validate() (err error) {
 	defer err2.Handle(&err)
 
-	assert.P.NotEmpty(c.InputReg, "need the input file")
-	assert.P.NotEmpty(c.OutputReg, "need the output file")
+	assert.NotEmpty(c.InputReg, "need the input file")
+	assert.NotEmpty(c.OutputReg, "need the output file")
 
 	return nil
 }

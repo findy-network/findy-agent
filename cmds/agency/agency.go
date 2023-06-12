@@ -11,6 +11,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/accessmgr"
 	"github.com/findy-network/findy-agent/agent/agency"
+	"github.com/findy-network/findy-agent/agent/bus"
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/handshake"
 	"github.com/findy-network/findy-agent/agent/pool"
@@ -19,6 +20,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds"
 	"github.com/findy-network/findy-agent/enclave"
+	grpcserver "github.com/findy-network/findy-agent/grpc/server"
 	"github.com/findy-network/findy-agent/method"
 	_ "github.com/findy-network/findy-agent/protocol/basicmessage" // protocols needed
 	_ "github.com/findy-network/findy-agent/protocol/connection"
@@ -27,6 +29,8 @@ import (
 	_ "github.com/findy-network/findy-agent/protocol/presentproof"
 	_ "github.com/findy-network/findy-agent/protocol/trustping"
 	"github.com/findy-network/findy-agent/server"
+	"github.com/findy-network/findy-common-go/crypto/db"
+	myhttp "github.com/findy-network/findy-common-go/http"
 	_ "github.com/findy-network/findy-wrapper-go/addons" // Install ledger plugins
 	"github.com/findy-network/findy-wrapper-go/config"
 	indypool "github.com/findy-network/findy-wrapper-go/pool"
@@ -123,14 +127,14 @@ func (c *Cmd) Validate() (err error) {
 
 	c.SetMustHaveDefaults()
 
-	assert.P.NotEmpty(c.HostScheme, "host scheme cannot be empty")
-	assert.P.True(c.StewardDid == "" || (c.WalletName != "" && c.WalletPwd != ""), "wallet identification cannot be empty")
-	assert.P.NotEmpty(c.PoolName, "pool name cannot be empty")
-	assert.P.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
-	assert.P.NotEmpty(c.HostAddr, "host address cannot be empty")
-	assert.P.True(c.HostPort != 0, "host port cannot be zero")
-	assert.P.NotEmpty(c.PsmDB, "psmd database location must be given")
-	assert.P.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
+	assert.NotEmpty(c.HostScheme, "host scheme cannot be empty")
+	assert.That(c.StewardDid == "" || (c.WalletName != "" && c.WalletPwd != ""), "wallet identification cannot be empty")
+	assert.NotEmpty(c.PoolName, "pool name cannot be empty")
+	assert.NotEmpty(c.ServiceName, "service name 2 cannot be empty")
+	assert.NotEmpty(c.HostAddr, "host address cannot be empty")
+	assert.That(c.HostPort != 0, "host port cannot be zero")
+	assert.NotEmpty(c.PsmDB, "psmd database location must be given")
+	assert.NotEmpty(c.HandshakeRegister, "handshake register path cannot be empty")
 	if c.RegisterBackupName == "" {
 		glog.Warning("handshake register backup should be empty in production")
 	}
@@ -176,8 +180,17 @@ func (c *Cmd) Run() (err error) {
 	defer err2.Handle(&err)
 
 	c.startBackupTasks()
-	StartGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
-	try.To(server.StartHTTPServer(c.ServerPort))
+	startGrpcServer(c.GRPCTLS, c.GRPCPort, c.TLSCertPath, c.JWTSecret)
+	shutdownCh := server.StartHTTPServer(c.ServerPort)
+	<-shutdownCh
+	glog.Infoln("shutdown signaled: signaling gRPC clients: SystemReboot..")
+	bus.BroadcastReboot()
+	glog.Infoln("shutdown signaled: starting to shudown: HTTP..")
+	myhttp.GracefulStop()
+	glog.Infoln("shutdown signaled: starting to shudown: gRPC..")
+	grpcserver.Server.GracefulStop()
+	glog.Infoln("shutdown signaled: starting to shudown: databases..")
+	db.GracefulStop()
 
 	return nil
 }
@@ -281,8 +294,8 @@ func (c *Cmd) checkSteward() {
 	if c.StewardDid == "" {
 		glog.Infoln("Steward is not configured, skipping steward initialisation.")
 	} else {
-		assert.P.True(c.WalletName != "", "Steward wallet name must be given")
-		assert.P.True(c.WalletPwd != "", "Steward wallet key must be given")
+		assert.That(c.WalletName != "", "Steward wallet name must be given")
+		assert.That(c.WalletPwd != "", "Steward wallet key must be given")
 
 		steward := openStewardWallet(c.StewardDid, c)
 		handshake.SetSteward(steward)

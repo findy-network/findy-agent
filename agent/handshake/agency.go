@@ -87,14 +87,14 @@ func AnchorAgent(agentName, seed string) (agent *cloud.Agent, caDid core.DID, er
 	ca := agent
 	aw := ssi.NewRawWalletCfg(agentName, key)
 	walletAlreadyExists := aw.Create()
-	assert.P.Truef(!walletAlreadyExists,
+	assert.That(!walletAlreadyExists,
 		"wallet (%s) cannot exist when onboarding", agentName)
 	agent.OpenWallet(*aw)
 
 	glog.V(10).Infof("--- Using seed '%s' in anchor agent", seed)
 	anchorDid := try.To1(agent.NewDID(method.TypeSov, seed))
 	if steward != nil {
-		assert.P.True(seed == "", "seed should be empty when agency is operating with steward")
+		assert.That(seed == "", "seed should be empty when agency is operating with steward")
 
 		indyAnchor := anchorDid.(*ssi.DID)
 		// Promote new agent by Trusted Anchor DID if steward is available

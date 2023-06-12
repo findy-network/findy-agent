@@ -83,7 +83,7 @@ func (b Base) StoreResult() error {
 }
 
 func (b Base) AEndp() (ae service.Addr, err error) {
-	assert.D.NoImplementation()
+	assert.NotImplemented()
 	return
 }
 

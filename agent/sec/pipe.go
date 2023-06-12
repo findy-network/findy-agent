@@ -103,7 +103,7 @@ func (p Pipe) packager() api.Packager {
 	if p.In == nil {
 		return nil
 	}
-	assert.D.True(p.In.Storage() != nil)
+	assert.That(p.In.Storage() != nil)
 
 	return p.In.Packager()
 }

@@ -64,8 +64,8 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 	var proofPredicates []didcomm.ProofPredicate
 	if protocol != nil {
 		proof := protocol.GetPresentProof()
-		assert.P.True(proof != nil, "present proof data missing")
-		assert.P.True(
+		assert.That(proof != nil, "present proof data missing")
+		assert.That(
 			protocol.GetRole() == pb.Protocol_INITIATOR || protocol.GetRole() == pb.Protocol_ADDRESSEE,
 			"role is needed for proof protocol")
 
@@ -74,7 +74,7 @@ func createPresentProofTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 			dto.FromJSONStr(proof.GetAttributesJSON(), &proofAttrs)
 			glog.V(3).Infoln("set proof attrs from json:", proof.GetAttributesJSON())
 		} else {
-			assert.P.True(proof.GetAttributes() != nil, "present proof attributes data missing")
+			assert.That(proof.GetAttributes() != nil, "present proof attributes data missing")
 			proofAttrs = make([]didcomm.ProofAttribute, len(proof.GetAttributes().GetAttributes()))
 			for i, attribute := range proof.GetAttributes().GetAttributes() {
 				proofAttrs[i] = didcomm.ProofAttribute{
@@ -163,7 +163,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 	})
 
 	proofTask, ok := t.(*taskPresentProof)
-	assert.P.True(ok)
+	assert.That(ok)
 
 	switch t.Type() {
 	case pltype.CAProofPropose: // ----- prover will start -----
@@ -240,7 +240,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 		glog.Error(err)
 	})
 
-	assert.D.True(im.Thread().ID != "", "continue present proof, packet thread ID missing")
+	assert.That(im.Thread().ID != "", "continue present proof, packet thread ID missing")
 
 	var continuators = map[string]continuatorFunc{
 		pltype.SAPresentProofAcceptPropose: verifier.ContinueProposePresentation,
@@ -254,7 +254,7 @@ func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
 	}
 
 	state := try.To1(psm.GetPSM(*key))
-	assert.D.True(state != nil, "continue present proof, task not found")
+	assert.That(state != nil, "continue present proof, task not found")
 
 	proofTask := state.LastState().T
 
@@ -305,7 +305,7 @@ func fillPresentProofStatus(workerDID string, taskID string, ps *pb.ProtocolStat
 		glog.Error("Failed to fill present proof status: ", err)
 	})
 
-	assert.D.True(ps != nil)
+	assert.That(ps != nil)
 
 	status := ps
 

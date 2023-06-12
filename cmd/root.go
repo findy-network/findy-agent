@@ -20,14 +20,15 @@ const envPrefix = "FCLI"
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Version: utils.Version,
-	Use:     "findy-agent",
-	Short:   "Findy agent cli tool",
+	SilenceUsage: true,
+	Version:      utils.Version,
+	Use:          "findy-agent",
+	Short:        "Findy agent cli tool",
 	Long: `
 Findy agent cli tool
 	`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		assert.SetDefaultAsserter(assert.AsserterToError)
+		assert.SetDefault(assert.Production)
 		err2.SetPanicTracer(os.Stderr)
 		agency.ParseLoggingArgs(rootFlags.logging)
 		handleViperFlags(cmd)

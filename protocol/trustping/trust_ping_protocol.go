@@ -95,7 +95,7 @@ func fillTrustPingStatus(_ string, _ string, ps *pb.ProtocolStatus) *pb.Protocol
 		glog.Error("Failed to fill trust ping status: ", err)
 	})
 
-	assert.D.True(ps != nil)
+	assert.That(ps != nil)
 
 	status := ps
 
