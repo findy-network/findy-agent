@@ -71,6 +71,6 @@ ENV FCLI_STEWARD_SEED "000000000000000000000000Steward1"
 
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' >/start.sh && \
   echo './import-wallet.sh' >>/start.sh && \
-  echo '/findy-agent agency start' >>/start.sh && chmod a+x /start.sh
+  echo 'exec /findy-agent agency start' >>/start.sh && chmod a+x /start.sh
 
 ENTRYPOINT ["/bin/bash", "-c", "/start.sh"]
