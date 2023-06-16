@@ -2,7 +2,6 @@ name: test
 on:
   push:
 jobs:
-
   check:
     runs-on: ubuntu-latest
     env:
@@ -32,7 +31,6 @@ jobs:
           name: ${{ github.sha }}-coverage-peer.txt
           path: ./coverage-peer.txt
           retention-days: 1
-
 
   test-default:
     runs-on: ubuntu-latest
@@ -66,7 +64,7 @@ jobs:
       - name: setup
         uses: actions/setup-go@v3
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       - name: checkout
         uses: actions/checkout@v3
 
@@ -100,7 +98,7 @@ jobs:
       - name: setup
         uses: actions/setup-go@v3
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       - name: checkout
         uses: actions/checkout@v3
       - name: install cli
@@ -134,7 +132,7 @@ jobs:
           service-dockerfile: ./scripts/deploy/Dockerfile
       - uses: actions/setup-go@v3
         with:
-          go-version-file: './go.mod'
+          go-version-file: "./go.mod"
       - name: convert coverage to txt
         run: go tool covdata textfmt -i=coverage -o coverage-e2e.txt
       - name: store coverage file
@@ -166,5 +164,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage-default.txt,./coverage-peer.txt,./coverage-e2e.txt
-          fail_ci_if_error: ${github.ref_name != "dev"}
-
+          fail_ci_if_error: ${{ github.ref_name != 'dev' }}
