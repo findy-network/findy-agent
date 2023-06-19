@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/findy-network/findy-common-go v0.2.25
-	github.com/findy-network/findy-wrapper-go v0.30.32
+	github.com/findy-network/findy-wrapper-go v0.30.34
 	github.com/go-co-op/gocron v1.28.3
 	github.com/golang/glog v1.1.1
 	github.com/golang/mock v1.6.0
@@ -17,11 +17,11 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
-	google.golang.org/grpc v1.55.0
+	google.golang.org/grpc v1.56.0
 )
 
 require (
-	cloud.google.com/go/compute v1.19.0 // indirect
+	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/chacha20poly1305 v0.0.0-20201124145622-1a5aba2a8b29 // indirect
