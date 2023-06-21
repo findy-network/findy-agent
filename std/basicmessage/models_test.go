@@ -26,9 +26,6 @@ func TestNewTimeField(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 
-	assert.PushTester(t)
-	defer assert.PopTester()
-
 	var testMsg Basicmessage
 	dto.FromJSON([]byte(timeJSON), &testMsg)
 	timeValue := testMsg.SentTime
@@ -41,9 +38,6 @@ func TestNewTimeField(t *testing.T) {
 }
 
 func TestNewTimeFieldRFC3339(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
-
 	assert.PushTester(t)
 	defer assert.PopTester()
 
@@ -61,9 +55,6 @@ func TestNewBasicmessage(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 
-	assert.PushTester(t)
-	defer assert.PopTester()
-
 	ipl := aries.PayloadCreator.NewFromData([]byte(mbJSON))
 
 	assert.Equal("a70a5db1-0b35-41d2-a602-e355ec4df67f", ipl.ID())
@@ -75,9 +66,6 @@ func TestNewBasicmessage(t *testing.T) {
 }
 
 func TestBasicMessage_MsgPingPong(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
-
 	assert.PushTester(t)
 	defer assert.PopTester()
 
