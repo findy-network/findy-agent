@@ -8,6 +8,7 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/utils"
 	"github.com/findy-network/findy-agent/cmds/agency"
+	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
@@ -32,6 +33,7 @@ Findy agent cli tool
 		err2.SetPanicTracer(os.Stderr)
 		agency.ParseLoggingArgs(rootFlags.logging)
 		handleViperFlags(cmd)
+		glog.CopyStandardLogTo("ERROR") // for err2
 		aCmd.PreRun()
 	},
 }
