@@ -29,9 +29,7 @@ func (s *didCommServer) Run(
 			Info:  err.Error(),
 			State: pb.ProtocolState_ERR,
 		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
+		try.Out(server.Send(status)).Logf("error sending response")
 		return err
 	})
 

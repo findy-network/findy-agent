@@ -342,9 +342,8 @@ func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_Liste
 		status := &pb.AgentStatus{
 			ClientID: &pb.ClientID{ID: clientID.ID},
 		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
+		// just log the error 'cause there nothing to for now
+		try.Out(server.Send(status)).Logf("error sending response")
 		return err
 	})
 
