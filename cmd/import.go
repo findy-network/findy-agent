@@ -47,9 +47,9 @@ Example
 var impCmd = tools.ImportCmd{}
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	flags := importCmd.Flags()
 	flags.StringVar(&impCmd.WalletName, "wallet-name", "", flagInfo("wallet name", importCmd.Name(), importEnvs["wallet-name"]))

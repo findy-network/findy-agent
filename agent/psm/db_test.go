@@ -24,9 +24,9 @@ func TestMain(m *testing.M) {
 }
 
 func setUp() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		fmt.Println("error on setup", err)
-	})
+	}))
 
 	// We don't want logs on file with tests
 	try.To(flag.Set("logtostderr", "true"))

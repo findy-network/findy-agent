@@ -162,9 +162,9 @@ func (d *DID) SetWallet(w managed.Wallet) {
 // so the call doesn't block. The meta data is set "pairwise". See StoreResult()
 // for status.
 func (d *DID) Store(mgdWallet, mgdStorage managed.Wallet) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorf("Error storing DID: %s", err)
-	})
+	}))
 
 	ds, vk, _ := d.data.Strs()
 	idJSON := did.Did{Did: ds, VerKey: vk}
@@ -223,9 +223,9 @@ func (d *DID) StoreResult() error {
 }
 
 func (d *DID) SavePairwiseForDID(mStorage managed.Wallet, tDID core.DID, pw core.PairwiseMeta) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warningf("save pairwise for DID error: %v", err)
-	})
+	}))
 
 	theirDID := tDID.(*DID)
 

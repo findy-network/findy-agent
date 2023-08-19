@@ -55,9 +55,9 @@ func (h *Handle) Config() managed.WalletCfg {
 // NOT important or desired to call this function during the agency process is
 // running.
 func (h *Handle) Close() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warning("closing error:", err)
-	})
+	}))
 
 	h.l.Lock()
 	defer h.l.Unlock()
@@ -102,9 +102,9 @@ func (h *Handle) Handle() int {
 // reopen opens the wallet by its configuration. Open is always called by Wallet
 // Manager because it will keep track of wallet handles and max amount of them.
 func (h *Handle) reopen() int {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("error when reopening wallet: ", err)
-	})
+	}))
 
 	h.h = try.To1(h.cfg.OpenWallet())
 
@@ -145,9 +145,9 @@ func (m *Mgr) Open(cfg managed.WalletCfg) managed.Wallet {
 }
 
 func (m *Mgr) openNewWallet(cfg managed.WalletCfg) managed.Wallet {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("error when opening wallet: ", err)
-	})
+	}))
 
 	handle := try.To1(cfg.OpenWallet())
 

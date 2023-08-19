@@ -61,9 +61,9 @@ func createBasicMessageTask(header *comm.TaskHeader, protocol *pb.Protocol) (t c
 }
 
 func startBasicMessage(ca comm.Receiver, t comm.Task) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error(err)
-	})
+	}))
 
 	try.To(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.BasicMessageSend,
@@ -136,9 +136,9 @@ func handleBasicMessage(packet comm.Packet) (err error) {
 }
 
 func fillBasicMessageStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("Failed to fill basic message status: ", err)
-	})
+	}))
 
 	assert.That(ps != nil)
 

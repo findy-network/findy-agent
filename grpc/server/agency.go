@@ -73,7 +73,7 @@ func (a agencyService) Onboard(
 }
 
 func (a agencyService) PSMHook(hook *ops.DataHook, server ops.AgencyService_PSMHookServer) (err error) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &ops.AgencyStatus{
 			ID: err.Error(),
@@ -81,7 +81,7 @@ func (a agencyService) PSMHook(hook *ops.DataHook, server ops.AgencyService_PSMH
 		if err := server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
 		}
-	})
+	}))
 	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
 	user := jwt.User(ctx)
 	if user != a.Root {
@@ -144,9 +144,9 @@ loop:
 }
 
 func handleCleanupNotify(notify bus.AgentNotify) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error(err)
-	})
+	}))
 
 	glog.V(1).Infoln("cleanup notification", notify.ID, "arrived")
 
@@ -163,9 +163,9 @@ func handleNotify(
 	server ops.AgencyService_PSMHookServer,
 	notify bus.AgentNotify,
 ) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorln("ERROR in psm hook notify handler", err)
-	})
+	}))
 
 	glog.V(1).Infoln("notification", notify.ID, "arrived")
 

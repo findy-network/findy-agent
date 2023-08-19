@@ -94,9 +94,9 @@ var (
 )
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	f := poolCmd.PersistentFlags()
 	f.StringVar(&poolName, "name", "", flagInfo("name of the pool", poolCmd.Name(), poolCreateEnvs["name"]))

@@ -100,9 +100,9 @@ func createConnectionTask(
 }
 
 func startConnectionProtocol(ca comm.Receiver, task comm.Task) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("ERROR in starting connection protocol:", err)
-	})
+	}))
 
 	deTask, ok := task.(*taskDIDExchange)
 	assert.That(ok)
@@ -402,9 +402,9 @@ func saveConnectionEndpoint(mgdStorage managed.Wallet, connectionID, theirEndpoi
 }
 
 func fillPairwiseStatus(workerDID string, taskID string, ps *pb.ProtocolStatus) *pb.ProtocolStatus {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("Failed to get connection status: ", err)
-	})
+	}))
 
 	assert.That(ps != nil)
 

@@ -150,9 +150,9 @@ func waitForTxnCount(t *testing.T, count int) {
 }
 
 func getIndyLedgerTxnCount(t *testing.T) (count int) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		t.Log("Failed to fetch txn count from ledger:", err, "ignoring...")
-	})
+	}))
 
 	if !strings.HasPrefix(ledgerStore, "FINDY_LEDGER") {
 		// count txns only in indy ledger
@@ -219,9 +219,9 @@ func setUpLedger() {
 }
 
 func setUp() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		fmt.Println("error on setup", err)
-	})
+	}))
 
 	calcTestMode()
 
@@ -306,9 +306,9 @@ func setUp() {
 
 // calcTestMode calculates current test mode
 func calcTestMode() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.V(0).Infoln(err)
-	})
+	}))
 
 	_, exists := os.LookupEnv("TEST_MODE_ONE")
 	if exists {
@@ -411,9 +411,9 @@ func srand(size int) string {
 }
 
 func createTrustAnchor(t *testing.T) (seed string) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorln("error create trust anchor", err)
-	})
+	}))
 
 	t.Helper()
 
@@ -855,9 +855,9 @@ func TestTrustPing(t *testing.T) {
 }
 
 func runPSMHook(intCh chan struct{}) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.V(1).Infoln("WARNING: error when reading response:", err)
-	})
+	}))
 	conn := client.TryOpen("findy-root", baseCfg)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -912,8 +912,6 @@ func TestBasicMessage(t *testing.T) {
 var allPermissive = true
 
 func TestSetPermissive(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
 	for i, ca := range agents {
 		conn := client.TryOpen(ca.DID, baseCfg)
 
@@ -1247,8 +1245,6 @@ func TestProposeProofJSON(t *testing.T) {
 }
 
 func TestListen(t *testing.T) {
-	assert.PushTester(t)
-	defer assert.PopTester()
 	waitCh := make(chan struct{})
 	intCh := make(chan struct{})
 	readyCh := make(chan struct{})
@@ -1324,11 +1320,11 @@ func TestListenPWStatus(t *testing.T) {
 
 	var notification *agency2.Question
 	go func() {
-		defer err2.Catch(func(err error) {
+		defer err2.Catch(err2.Err(func(err error) {
 			if !errors.Is(err, context.Canceled) {
 				glog.Error(err)
 			}
-		})
+		}))
 		for status := range ch {
 			if status.Status.Notification.TypeID == agency2.Notification_STATUS_UPDATE {
 				notification = status

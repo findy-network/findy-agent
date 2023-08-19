@@ -67,9 +67,12 @@ func StartPSM(ts Initial) (err error) {
 	wa := ts.Ca.WorkerEA()
 	connID := ts.T.ConnectionID()
 
-	defer err2.Handle(&err, func() {
+	defer err2.Handle(&err, func(err error) error {
 		opl := newPayload(ts)
 		_ = UpdatePSM(wDID, connID, ts.T, opl, psm.Failure)
+
+		return err
+
 	})
 
 	pipe := try.To1(wa.PwPipe(connID))
@@ -207,8 +210,11 @@ func ExecPSM(ts Transition) (err error) {
 	// Create protocol task in protocol implementation
 	task := try.To1(CreateTask(ts.TaskHeader, nil))
 
-	defer err2.Handle(&err, func() {
+	defer err2.Handle(&err, func(err error) error {
 		_ = UpdatePSM(meDID, connID, task, ts.Payload, psm.Failure)
+
+		return err
+
 	})
 
 	try.To(UpdatePSM(meDID, connID, task, ts.Payload, psm.Received))
@@ -295,9 +301,9 @@ func AddStatusProvider(t string, proc comm.ProtProc) {
 }
 
 func updatePSM(receiver comm.Receiver, t comm.Task, state psm.SubState) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorf("error in psm update: %s", err)
-	})
+	}))
 	msg := aries.MsgCreator.Create(didcomm.MsgInit{
 		Type:   t.Type(),
 		Thread: decorator.NewThread(t.ID(), ""),
@@ -323,9 +329,9 @@ func CreateTask(header *comm.TaskHeader, protocol *pb.Protocol) (t comm.Task, er
 
 // FindAndStartTask start the protocol by using CA API Type in the packet.PL.
 func FindAndStartTask(receiver comm.Receiver, task comm.Task) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorf("Cannot start protocol: %s", err)
-	})
+	}))
 
 	proc, ok := starters[task.Type()]
 	if !ok {

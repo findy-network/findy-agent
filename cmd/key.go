@@ -53,9 +53,9 @@ Example
 var keyCreateCmd = key.CreateCmd{}
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	createKeyCmd.Flags().StringVar(&keyCreateCmd.Seed, "seed", "", flagInfo("seed for wallet key creation", keyCmd.Name(), keyEnvs["seed"]))
 

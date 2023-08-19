@@ -15,9 +15,9 @@ func TestConnection_ReadDoc(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
 	err2.SetTracers(os.Stderr)
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		t.Error(err)
-	})
+	}))
 
 	type args struct {
 		filename string

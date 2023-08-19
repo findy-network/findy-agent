@@ -138,9 +138,9 @@ func LoadRegistered(filename string) (err error) {
 		return fmt.Errorf("load register: %s", err)
 	}
 	go func() {
-		defer err2.Catch(func(err error) {
+		defer err2.Catch(err2.Err(func(err error) {
 			glog.Fatal(err)
-		}, func(exception interface{}) {
+		}), func(exception interface{}) {
 			glog.Fatal(exception)
 		})
 
@@ -158,10 +158,10 @@ func LoadRegistered(filename string) (err error) {
 			name := strings.Replace(email, "@", "_", -1)
 
 			// don't let crash on panics
-			defer err2.Catch(func(err error) {
+			defer err2.Catch(err2.Err(func(err error) {
 				glog.Errorf("error: %s in agency load (email %s,DID:%s)",
 					err, email, caDID)
-			})
+			}))
 
 			if !alreadyRegistered[name] {
 				glog.V(2).Infof("Loading enclave key for root: %s, ca: %s", rootDid, caDID)

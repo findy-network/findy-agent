@@ -87,9 +87,9 @@ var rootEnvs = map[string]string{
 }
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	cobra.OnInitialize(initConfig)
 
@@ -164,9 +164,9 @@ func handleViperFlags(cmd *cobra.Command) {
 }
 
 func setRequiredStringFlags(cmd *cobra.Command) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	try.To(viper.BindPFlags(cmd.LocalFlags()))
 	if cmd.PreRunE != nil {

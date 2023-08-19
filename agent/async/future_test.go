@@ -63,9 +63,9 @@ func TestFuture_GetValue_And_SetChan(t *testing.T) {
 
 func TestFuture_TestWithErrorResult(t *testing.T) {
 	readValue := func(f *Future) {
-		defer err2.Catch(func(err error) {
+		defer err2.Catch(err2.Err(func(err error) {
 			// eat the error
-		})
+		}))
 		f.value()
 	}
 

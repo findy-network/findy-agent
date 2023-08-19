@@ -178,7 +178,7 @@ func (p Peer) URI() string {
 func (b Base) buildDIDKeyStr(rk string) string {
 	keys := b.handle.Storage().KMS()
 	pk := try.To1(base58.Decode(rk))
-	_ = try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
+	try.To1(keys.PubKeyBytesToHandle(pk, kms.ED25519))
 	didkey, _ := fingerprint.CreateDIDKey(pk)
 	return didkey
 }
@@ -194,9 +194,9 @@ func (p Peer) AEndp() (ae service.Addr, err error) {
 
 func (p Peer) SavePairwiseForDID(mStorage managed.Wallet, theirDID core.DID,
 	pw core.PairwiseMeta) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warningf("save pairwise for DID error: %v", err)
-	})
+	}))
 
 	connection, _ := mStorage.Storage().ConnectionStorage().GetConnection(pw.Name)
 
