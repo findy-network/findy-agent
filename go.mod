@@ -9,7 +9,7 @@ require (
 	github.com/golang/glog v1.1.2
 	github.com/golang/mock v1.6.0
 	github.com/google/tink/go v1.6.1
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/hyperledger/aries-framework-go v0.1.8
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20221025204933-b807371b6f1e
 	github.com/lainio/err2 v0.9.1
