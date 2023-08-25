@@ -76,7 +76,7 @@ ENV FCLI_STEWARD_WALLET_KEY "${FCLI_IMPORT_WALLET_KEY}"
 ENV FCLI_STEWARD_SEED "000000000000000000000000Steward1"
 
 RUN echo '[[ ! -z "$STARTUP_FILE_STORAGE_S3" ]] && /s3-copy $STARTUP_FILE_STORAGE_S3 agent /' >/start.sh && \
-  echo '[[ ! -z "$GENESIS_TRANSACTIONS" ]] && echo $GENESIS_TRANSACTIONS > /genesis_transactions' >>/start.sh && \
+  echo '[[ ! -z "$GENESIS_TRANSACTIONS" ]] && echo $GENESIS_TRANSACTIONS > $FCLI_POOL_GENESIS_TXN_FILE' >>/start.sh && \
   echo './import-wallet.sh' >>/start.sh && \
   echo 'exec /findy-agent agency start' >>/start.sh && chmod a+x /start.sh
 
