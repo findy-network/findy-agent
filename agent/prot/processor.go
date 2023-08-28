@@ -70,9 +70,7 @@ func StartPSM(ts Initial) (err error) {
 	defer err2.Handle(&err, func(err error) error {
 		opl := newPayload(ts)
 		_ = UpdatePSM(wDID, connID, ts.T, opl, psm.Failure)
-
 		return err
-
 	})
 
 	pipe := try.To1(wa.PwPipe(connID))
@@ -212,9 +210,7 @@ func ExecPSM(ts Transition) (err error) {
 
 	defer err2.Handle(&err, func(err error) error {
 		_ = UpdatePSM(meDID, connID, task, ts.Payload, psm.Failure)
-
 		return err
-
 	})
 
 	try.To(UpdatePSM(meDID, connID, task, ts.Payload, psm.Received))
