@@ -165,3 +165,4 @@ jobs:
         with:
           files: ./coverage-default.txt,./coverage-peer.txt,./coverage-e2e.txt
           fail_ci_if_error: ${{ github.ref_name != 'dev' }}
+          verbose: true
