@@ -60,9 +60,9 @@ func testSendAndWaitHTTPRequest(urlStr string, msg io.Reader, _ time.Duration) (
 }
 
 func ResetEnv(w *ssi.Wallet, exportPath string) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		fmt.Println(err)
-	})
+	}))
 	// Remove files
 	try.To(os.RemoveAll(utils.IndyBaseDir() + "/.indy_client"))
 	try.To(os.RemoveAll(exportPath))

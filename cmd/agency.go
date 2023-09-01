@@ -152,9 +152,9 @@ var (
 const registerBackupInterval = 12 * time.Hour
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	aCmd.VersionInfo = "findy-agent v" + utils.Version
 

@@ -48,9 +48,9 @@ Example
 var expCmd = tools.ExportCmd{}
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	flags := exportCmd.Flags()
 	flags.StringVar(&expCmd.WalletName, "wallet-name", "", flagInfo("wallet name", exportCmd.Name(), exportEnvs["wallet-name"]))

@@ -59,9 +59,9 @@ Example
 var createStewardCmd = steward.CreateCmd{}
 
 func init() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		log.Println(err)
-	})
+	}))
 
 	f := stewardCreateCmd.Flags()
 	f.StringVar(&createStewardCmd.PoolName, "pool-name", "FINDY_MEM_LEDGER", flagInfo("pool name", stewardCmd.Name(), stewardCreateEnvs["pool-name"]))

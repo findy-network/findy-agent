@@ -10,9 +10,9 @@ import (
 )
 
 func WalletLocations() []string {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		_, _ = fmt.Fprintln(os.Stderr, err)
-	})
+	}))
 
 	home := try.To1(os.UserHomeDir())
 	indyWallets := filepath.Join(home, ".indy_client/wallet")

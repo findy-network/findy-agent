@@ -132,9 +132,9 @@ func NewEA() *Agent {
 
 // AttachSAImpl sets implementation ID for SA to use for mocks and auto accepts.
 func (a *Agent) AttachSAImpl(implID string) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorln("attach sa impl:", err)
-	})
+	}))
 	a.SetSAImplID(implID)
 	glog.V(3).Infof("setting implementation (%s)", a.SAImplID())
 	if a.IsCA() {
@@ -296,9 +296,9 @@ func (a *Agent) ExportWallet(key string, exportPath string) string {
 }
 
 func (a *Agent) loadPWMap() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("cannot load PW map:", err)
-	})
+	}))
 
 	a.AssertWallet()
 

@@ -23,15 +23,14 @@ func (s *didCommServer) Run(
 ) (
 	err error,
 ) {
-	defer err2.Handle(&err, func() {
+	defer err2.Handle(&err, func(err error) error {
 		glog.Errorf("grpc run error: %s", err)
 		status := &pb.ProtocolState{
 			Info:  err.Error(),
 			State: pb.ProtocolState_ERR,
 		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
+		try.Out(server.Send(status)).Logf("error sending response")
+		return err
 	})
 
 	glog.V(3).Infoln("run() call")

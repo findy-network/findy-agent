@@ -337,14 +337,14 @@ func (a *agentServer) Give(ctx context.Context, answer *pb.Answer) (cid *pb.Clie
 }
 
 func (a *agentServer) Listen(clientID *pb.ClientID, server pb.AgentService_ListenServer) (err error) {
-	defer err2.Handle(&err, func() {
+	defer err2.Handle(&err, func(err error) error {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.AgentStatus{
 			ClientID: &pb.ClientID{ID: clientID.ID},
 		}
-		if err := server.Send(status); err != nil {
-			glog.Errorln("error sending response:", err)
-		}
+		// just log the error 'cause there nothing to for now
+		try.Out(server.Send(status)).Logf("error sending response")
+		return err
 	})
 
 	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
@@ -390,7 +390,7 @@ loop:
 }
 
 func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitServer) (err error) {
-	defer err2.Handle(&err, func() {
+	defer err2.Handle(&err, func(err error) error {
 		glog.Errorf("grpc agent listen error: %s", err)
 		status := &pb.Question{
 			Status: &pb.AgentStatus{
@@ -400,6 +400,7 @@ func (a *agentServer) Wait(clientID *pb.ClientID, server pb.AgentService_WaitSer
 		if err = server.Send(status); err != nil {
 			glog.Errorln("error sending response:", err)
 		}
+		return err
 	})
 
 	ctx := try.To1(jwt.CheckTokenValidity(server.Context()))
@@ -429,8 +430,7 @@ loop:
 			}
 			assert.That(waitClientID == notify.ClientID)
 
-			var question *pb.Question
-			question = try.To1(processQuestion(ctx, notify))
+			question := try.To1(processQuestion(ctx, notify))
 			if question != nil {
 				question.Status.ClientID.ID = clientID.ID
 				try.To(server.Send(question))

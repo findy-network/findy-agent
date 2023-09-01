@@ -302,9 +302,9 @@ func (a *DIDAgent) myCreateDID(seed string) (agentDid *DID) {
 	f := new(async.Future)
 	ch := make(findy.Channel, 1)
 	go func() {
-		defer err2.Catch(func(err error) {
+		defer err2.Catch(err2.Err(func(err error) {
 			glog.Errorf("AddDID failed: %s", err)
-		})
+		}))
 		// Catch did result here and store it also to the agent storage
 		didRes := <-did.CreateAndStore(a.Wallet(), did.Did{Seed: seed})
 		glog.V(5).Infof("agent storage Add DID %s", didRes.Data.Str1)
@@ -363,9 +363,9 @@ func (a *DIDAgent) KMS() kms.KeyManager {
 
 // localKey returns a future to the verkey of the DID from a local wallet.
 func (a *DIDAgent) localKey(didName string) (f *async.Future) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorln("error when fetching localKey: ", err)
-	})
+	}))
 
 	// using did storage to get the verkey - could be also fetched from indy wallet directly
 	// eventually all data should be fetched from agent storage and not from indy wallet
@@ -421,9 +421,9 @@ func (a *DIDAgent) LoadDID(did string) core.DID {
 }
 
 func (a *DIDAgent) LoadTheirDID(connection storage.Connection) core.DID {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, err)
-	}, func(v any) {
+	}), func(v any) {
 		glog.Warningf("load connection (%s) error: %v", connection.ID, v)
 	})
 

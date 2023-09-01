@@ -70,9 +70,9 @@ func BuildHostAddr(scheme string, hostPort uint) {
 }
 
 func tellVersion(w http.ResponseWriter, _ *http.Request) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warningln(err)
-	})
+	}))
 	if glog.V(12) {
 		glog.Info("/version requested")
 	}
@@ -80,9 +80,9 @@ func tellVersion(w http.ResponseWriter, _ *http.Request) {
 }
 
 func checkReady(w http.ResponseWriter, _ *http.Request) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warningln(err)
-	})
+	}))
 	if agency.Ready.IsReady() {
 		w.WriteHeader(http.StatusOK)
 		try.To1(w.Write([]byte("OK ready")))
@@ -108,10 +108,10 @@ func errorResponse(w http.ResponseWriter) {
 }
 
 func protocolTransport(w http.ResponseWriter, r *http.Request) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("error:", err)
 		errorResponse(w)
-	})
+	}))
 
 	ourAddress := logRequestInfo("Incoming Aries TRANSPORT", r)
 
@@ -166,9 +166,9 @@ func rmIncoming(addr *endp.Addr) {
 }
 
 func transportPL(ourAddress *endp.Addr, data []byte) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("transport payload error:", err)
-	}, func(exception interface{}) {
+	}), func(exception interface{}) {
 		if utils.Settings.LocalTestMode() {
 			panic(exception)
 		} else {

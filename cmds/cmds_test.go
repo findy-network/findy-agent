@@ -65,9 +65,9 @@ func removeFiles(home, nameFilter string) {
 }
 
 func setUp() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		fmt.Println("error on setup", err)
-	})
+	}))
 
 	enclavePath, exportPath := setupPaths()
 	agencyCmd = agency.Cmd{

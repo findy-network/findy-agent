@@ -36,9 +36,9 @@ func NotifyEdge(ne notifyEdge) {
 	r := comm.ActiveRcvrs.Get(ne.did)
 	if r != nil {
 		go func() {
-			defer err2.Catch(func(err error) {
+			defer err2.Catch(err2.Err(func(err error) {
 				glog.Warningf("=======\n%s\n=======", err)
-			})
+			}))
 
 			bus.WantAllAgentActions.AgentBroadcast(bus.AgentNotify{
 				AgentKeyType:     bus.AgentKeyType{AgentDID: ne.did},
@@ -239,9 +239,9 @@ type endingInfo struct {
 }
 
 func triggerEnd(info endingInfo) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Error("trigger PSM end notification:", err)
-	})
+	}))
 
 	key := psm.StateKey{
 		DID:   info.meDID,

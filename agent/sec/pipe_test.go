@@ -195,10 +195,10 @@ func TestPackUnpackWithSeparatedWallets(t *testing.T) {
 func TestIndyPipe(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
-	}, func(v any) {
+	}), func(v any) {
 		println(v)
 		utils.Settings.SetDIDMethod(method.TypeSov)
 	})
@@ -270,10 +270,10 @@ func getRecipientKeys(msg map[string]interface{}) (keys []string, err error) {
 func TestPipe_pack(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		println(err)
 		utils.Settings.SetDIDMethod(method.TypeSov)
-	}, func(v any) {
+	}), func(v any) {
 		println(v)
 		utils.Settings.SetDIDMethod(method.TypeSov)
 	})
@@ -352,10 +352,10 @@ func TestPipe_pack(t *testing.T) {
 func TestPipe_packPeer(t *testing.T) {
 	assert.PushTester(t)
 	defer assert.PopTester()
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		fmt.Println(err)
 		t.Fail()
-	}, func(v any) {
+	}), func(v any) {
 		fmt.Println(v)
 		t.Error(v)
 	})

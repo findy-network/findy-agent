@@ -72,9 +72,9 @@ func timeToBackup() bool {
 }
 
 func Backup() {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Warning(err)
-	})
+	}))
 
 	backupFileName := utils.Settings.RegisterBackupName()
 	if backupFileName == "" {

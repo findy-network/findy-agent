@@ -63,9 +63,9 @@ func NewCalleePairwise(
 }
 
 func (p *Callee) CheckPreallocation(cnxAddr *endp.Addr) {
-	defer err2.Catch(func(err error) {
+	defer err2.Catch(err2.Err(func(err error) {
 		glog.Errorf("Error loading connection: %s (%v)", cnxAddr.ConnID, err)
-	})
+	}))
 
 	// ssi.DIDAgent implements comm.Receiver interface
 	// ssi.Agent is other interface, that's why the cast
