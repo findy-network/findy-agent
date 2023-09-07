@@ -19,7 +19,7 @@ jobs:
       NO_TTY: "1"
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: test findy as Bob with ${{ matrix.their_agent }}
         # TODO: javascript agent behaving badly, enable when problems fixed
         if: ${{ matrix.their_agent != 'javascript' }}
