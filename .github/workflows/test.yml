@@ -62,7 +62,7 @@ jobs:
 
       # setup go-env
       - name: setup
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: "./go.mod"
       - name: checkout
@@ -96,7 +96,7 @@ jobs:
       - name: install indy
         run: make indy_to_debian
       - name: setup
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version-file: "./go.mod"
       - name: checkout
@@ -130,7 +130,7 @@ jobs:
           service: "core"
           service-context: ./
           service-dockerfile: ./scripts/deploy/Dockerfile
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version-file: "./go.mod"
       - name: convert coverage to txt
