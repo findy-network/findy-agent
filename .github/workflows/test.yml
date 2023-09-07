@@ -9,7 +9,7 @@ jobs:
       CI: true
     steps:
       # install indy
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
@@ -39,7 +39,7 @@ jobs:
       CI: true
     steps:
       # setup von-network ledger
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "bcgov/von-network"
           ref: "22973513c99cc9a286a6f181ca5c5f354a4eb2ee"
@@ -54,7 +54,7 @@ jobs:
           ./manage start
 
       # install indy
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
@@ -66,7 +66,7 @@ jobs:
         with:
           go-version-file: "./go.mod"
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # test round for sov-did (default) and indy ledger
       - name: test and measure coverage
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # install indy
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: "findy-network/findy-wrapper-go"
       - name: install indy
@@ -100,7 +100,7 @@ jobs:
         with:
           go-version-file: "./go.mod"
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: install cli
         run: |
           curl https://raw.githubusercontent.com/findy-network/findy-agent-cli/HEAD/install.sh > install.sh
@@ -147,7 +147,7 @@ jobs:
     needs: [check, test-default, e2e-full]
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: download coverage file
         uses: actions/download-artifact@v3
         with:
