@@ -2,7 +2,7 @@ module github.com/findy-network/findy-agent
 
 go 1.21
 
-toolchain 1.21.0
+toolchain go1.21.0
 
 require (
 	github.com/findy-network/findy-common-go v0.2.35
