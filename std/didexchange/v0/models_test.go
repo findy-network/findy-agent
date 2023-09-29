@@ -189,7 +189,7 @@ func TestConnection_ReadJSON(t *testing.T) {
 			auths := common.Authentications(doc)
 
 			assert.INotNil(auths)
-			assert.Equal(tt.expAuth, string(auths[0].VerificationMethod.Type))
+			assert.Equal(tt.expAuth, auths[0].VerificationMethod.Type)
 
 			recipKey := common.Service(doc, 0).RecipientKeys[0]
 			assert.Equal("8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)

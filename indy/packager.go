@@ -299,7 +299,7 @@ func (c *Crypto) DeriveProof(_ [][]byte, _ []byte, _ []byte, _ []int, _ interfac
 //
 //	blinded values in []byte
 //	error in case of errors
-func (c *Crypto) Blind(kh interface{}, values ...map[string]interface{}) ([][]byte, error) {
+func (c *Crypto) Blind(_ interface{}, _ ...map[string]interface{}) ([][]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -308,7 +308,7 @@ func (c *Crypto) Blind(kh interface{}, values ...map[string]interface{}) ([][]by
 //
 //	correctness proof in []byte
 //	error in case of errors
-func (c *Crypto) GetCorrectnessProof(kh interface{}) ([]byte, error) {
+func (c *Crypto) GetCorrectnessProof(_ interface{}) ([]byte, error) {
 	panic("not implemented") // TODO: Implement
 }
 
@@ -319,7 +319,7 @@ func (c *Crypto) GetCorrectnessProof(kh interface{}) ([]byte, error) {
 //	signature in []byte
 //	correctness proof in []byte
 //	error in case of errors
-func (c *Crypto) SignWithSecrets(kh interface{}, values map[string]interface{},
-	secrets []byte, correctnessProof []byte, nonces [][]byte, did string) ([]byte, []byte, error) {
+func (c *Crypto) SignWithSecrets(_ interface{}, _ map[string]interface{},
+	_ []byte, _ []byte, _ [][]byte, _ string) ([]byte, []byte, error) {
 	panic("not implemented") // TODO: Implement
 }
