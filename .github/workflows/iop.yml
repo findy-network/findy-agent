@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - their_agent: "acapy"
+          - their_agent: "acapy-main"
           - their_agent: "javascript"
           - their_agent: "findy"
     env:
