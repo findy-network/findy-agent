@@ -1,4 +1,4 @@
-AGENT_DEFAULT?=acapy
+AGENT_DEFAULT?=acapy-main
 AGENT_BOB?=findy
 INCLUDE_TAGS?='@AcceptanceTest'
 
