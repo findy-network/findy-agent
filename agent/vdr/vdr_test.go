@@ -11,6 +11,7 @@ import (
 	"github.com/findy-network/findy-agent/agent/storage/cfg"
 	"github.com/findy-network/findy-agent/agent/storage/mgddb"
 	myvdr "github.com/findy-network/findy-agent/agent/vdr"
+	"github.com/hyperledger/aries-framework-go/component/models/did/endpoint"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/framework/aries/api/vdr"
 	"github.com/lainio/err2/assert"
@@ -102,7 +103,7 @@ func TestVDRCreateAndRead(t *testing.T) {
 		}},
 		Service: []did.Service{{
 			Type:            "DidcCommServiceType",
-			ServiceEndpoint: "http://example.com",
+			ServiceEndpoint: endpoint.NewDIDCommV1Endpoint("http://example.com"),
 		}},
 	}
 

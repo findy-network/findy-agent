@@ -109,6 +109,10 @@ func (m *requestImpl) VerKey() string {
 }
 
 func (m *requestImpl) Endpoint() service.Addr {
+	defer err2.Catch(err2.Err(func(err error) {
+		glog.Errorf("Getting endpoint failed: %s", err)
+	}))
+
 	assert.NotNil(m)
 	assert.NotNil(m.Connection)
 	assert.That(m.Connection.DIDDoc != nil)
@@ -118,7 +122,7 @@ func (m *requestImpl) Endpoint() service.Addr {
 	}
 
 	serv := common.Service(m.Connection.DIDDoc, 0)
-	addr := serv.ServiceEndpoint
+	addr := try.To1(serv.ServiceEndpoint.URI())
 	key := serv.RecipientKeys[0] // TODO: convert did:key
 
 	return service.Addr{Endp: addr, Key: key}

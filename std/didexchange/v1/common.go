@@ -86,6 +86,10 @@ func (m *commonImpl) VerKey() (key string) {
 }
 
 func (m *commonImpl) Endpoint() (addr service.Addr) {
+	defer err2.Catch(err2.Err(func(err error) {
+		glog.Errorf("Getting endpoint failed: %s", err)
+	}))
+
 	doc := m.DIDDocument()
 
 	if len(common.Services(doc)) == 0 {
@@ -93,7 +97,7 @@ func (m *commonImpl) Endpoint() (addr service.Addr) {
 	}
 
 	serv := common.Service(doc, 0)
-	endp := serv.ServiceEndpoint
+	endp := try.To1(serv.ServiceEndpoint.URI())
 	key := serv.RecipientKeys[0] // TODO: convert did:key
 
 	return service.Addr{Endp: endp, Key: key}

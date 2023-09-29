@@ -401,7 +401,7 @@ func NewDoc(did core.DID, ae service.Addr) *sov.Doc {
 		ServiceEndpoint: ae.Endp,
 	}
 	return &sov.Doc{DataDoc: &sov.DataDoc{
-		Context:   "https://w3id.org/did/v1",
+		Context:   "https://w3id.org/did/v0.11",
 		ID:        didURI,
 		PublicKey: []sov.PublicKey{pubK},
 		Service:   []sov.Service{service},

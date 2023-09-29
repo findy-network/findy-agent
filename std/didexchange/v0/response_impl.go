@@ -134,12 +134,16 @@ func (m *responseImpl) Verify(DID core.DID) error {
 }
 
 func (m *responseImpl) Endpoint() service.Addr {
+	defer err2.Catch(err2.Err(func(err error) {
+		glog.Errorf("Getting endpoint failed: %s", err)
+	}))
+
 	services := common.Services(m.Connection.DIDDoc)
 	if len(services) == 0 {
 		return service.Addr{}
 	}
 
-	addr := services[0].ServiceEndpoint
+	addr := try.To1(services[0].ServiceEndpoint.URI())
 	key := services[0].RecipientKeys[0]
 
 	return service.Addr{Endp: addr, Key: key}
