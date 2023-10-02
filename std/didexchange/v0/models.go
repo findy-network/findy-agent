@@ -88,7 +88,8 @@ func (c *Connection) UnmarshalJSON(b []byte) (err error) {
 	defer err2.Handle(&err, "unmarshal connection")
 
 	data := new(AFGOConnection)
-	if err := json.Unmarshal(b, data); err == nil {
+	if err := json.Unmarshal(b, data); err == nil &&
+		(len(data.Doc.Service) > 0 && data.Doc.Service[0].Type != "IndyAgent") {
 		c.DID = data.DID
 		c.DIDDoc = data.Doc
 		return nil

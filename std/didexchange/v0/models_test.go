@@ -8,10 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/findy-network/findy-agent/agent/aries"
+	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/sec"
+	"github.com/findy-network/findy-agent/agent/service"
 	"github.com/findy-network/findy-agent/agent/ssi"
 	"github.com/findy-network/findy-agent/agent/utils"
+	"github.com/findy-network/findy-agent/method"
 	"github.com/findy-network/findy-agent/std/common"
+	"github.com/findy-network/findy-agent/std/decorator"
 	"github.com/findy-network/findy-common-go/dto"
 	"github.com/hyperledger/aries-framework-go/pkg/didcomm/transport"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
@@ -21,41 +26,46 @@ import (
 
 // example json
 var connectionRequest = `  {
-    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
-    "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
-    "label": "Alice Agent",
-    "connection": {
-      "DID": "ERYihzndieTdh4UA7Q6Y3C",
-      "DIDDoc": {
-        "@context": "https://www.w3.org/2019/did/v1",
-        "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
-        "publicKey": [
-          {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
-            "type": "Ed25519VerificationKey2018",
-            "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
-          }
-        ],
-        "authentication": [
-          {
-            "type": "Ed25519SignatureAuthentication2018",
-            "publicKey": [
-		    "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
-		  ]
-          }
-        ],
-        "service": [
-          {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C;indy",
-            "type": "IndyAgent",
-            "priority": 0,
-            "recipientKeys": ["8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"],
-            "serviceEndpoint": "http://192.168.65.3:8030"
-          }
-        ]
-      }
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
+  "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
+  "label": "TestLabel",
+  "connection": {
+    "DID": "CALLER_DID",
+    "DIDDoc": {
+      "@context": [
+        "https://www.w3.org/ns/did/v1"
+      ],
+      "id": "did:peer:1zQmdB2swHNtwWPgvJfNGEJMFWqbcc2LZa3yciScoDtKqMLP",
+      "verificationMethod": [
+        {
+          "controller": "",
+          "id": "1",
+          "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu",
+          "type": "Ed25519VerificationKey2018"
+        }
+      ],
+      "service": [
+        {
+          "id": "didcomm",
+          "priority": 0,
+          "recipientKeys": [
+            "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
+          ],
+          "serviceEndpoint": "http://www.address.com",
+          "type": "did-communication"
+        }
+      ],
+      "authentication": [
+        {
+          "controller": "",
+          "id": "1",
+          "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu",
+          "type": "Ed25519VerificationKey2018"
+        }
+      ]
     }
   }
+}
 `
 
 // Connection request taken from Python Agent output for example json.
@@ -172,7 +182,7 @@ func TestConnection_ReadJSON(t *testing.T) {
 		expAuth string
 		req     string
 	}{
-		{"sov method", "Ed25519VerificationKey2018", connectionRequestSov},
+		{"sov method", "Ed25519SignatureAuthentication2018", connectionRequestSov},
 		{"peer method", "Ed25519VerificationKey2018", connectionRequest},
 	}
 	for _, tt := range tests {
@@ -197,62 +207,60 @@ func TestConnection_ReadJSON(t *testing.T) {
 	}
 }
 
-// func TestNewRequest(t *testing.T) {
-// 	assert.PushTester(t)
-// 	defer assert.PopTester()
-// 	tests := []struct {
-// 		name   string
-// 		method method.Type
-// 	}{
-// 		{"sov method", method.TypeSov},
-// 		{"peer method", method.TypePeer},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			assert.PushTester(t)
-// 			defer assert.PopTester()
-// 			ae := service.Addr{
-// 				Endp: "http://www.address.com",
-// 				Key:  "SERVICE_KEY",
-// 			}
-// 			arg := ""
-// 			if tt.method == method.TypePeer {
-// 				arg = ae.Endp
-// 			}
-// 			didIn, _ := agent.NewDID(tt.method, arg)
-// 			assert.INotNil(didIn)
+func TestNewRequest(t *testing.T) {
+	assert.PushTester(t)
+	defer assert.PopTester()
+	tests := []struct {
+		name   string
+		method method.Type
+	}{
+		{"sov method", method.TypeSov},
+		{"peer method", method.TypePeer},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.PushTester(t)
+			defer assert.PopTester()
 
-// 			nonce := "NONCE"
-// 			didDoc := didIn.NewDoc(ae)
+			ae := service.Addr{
+				Endp: "http://www.address.com",
+				Key:  "SERVICE_KEY",
+			}
+			arg := ""
+			if tt.method == method.TypePeer {
+				arg = ae.Endp
+			}
+			didIn, _ := agent.NewDID(tt.method, arg)
+			assert.INotNil(didIn)
 
-// 			msg := newRequest(&Request{
-// 				Label: "TestLabel",
-// 				Connection: &Connection{
-// 					DID:    "CALLER_DID",
-// 					DIDDoc: didDoc,
-// 				},
-// 				Thread: &decorator.Thread{ID: nonce},
-// 			})
+			nonce := "NONCE"
+			didDoc := didIn.NewDoc(ae)
 
-// 			opl := aries.PayloadCreator.NewMsg(
-// 				nonce, pltype.AriesConnectionRequest, msg)
-// 			oplJSON := opl.JSON()
+			msg := newRequest(&Request{
+				Label: "TestLabel",
+				Connection: &Connection{
+					DID:    "CALLER_DID",
+					DIDDoc: didDoc,
+				},
+				Thread: &decorator.Thread{ID: nonce},
+			})
 
-// 			ipl := aries.PayloadCreator.NewFromData(oplJSON)
-// 			iplJSON := ipl.JSON()
+			opl := aries.PayloadCreator.NewMsg(
+				nonce, pltype.AriesConnectionRequest, msg)
+			oplJSON := opl.JSON()
 
-// 			fmt.Println(string(oplJSON))
-// 			fmt.Println(string(iplJSON))
+			ipl := aries.PayloadCreator.NewFromData(oplJSON)
+			iplJSON := ipl.JSON()
 
-// 			assert.DeepEqual(oplJSON, iplJSON)
+			assert.DeepEqual(oplJSON, iplJSON)
 
-// 			assert.Equal(ipl.Type(), pltype.AriesConnectionRequest)
+			assert.Equal(ipl.Type(), pltype.AriesConnectionRequest)
 
-// 			req := ipl.MsgHdr().FieldObj().(*Request)
-// 			assert.INotNil(req)
-// 		})
-// 	}
-// }
+			req := ipl.MsgHdr().FieldObj().(*Request)
+			assert.INotNil(req)
+		})
+	}
+}
 
 func TestMain(m *testing.M) {
 	setUp()
