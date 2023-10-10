@@ -24,7 +24,7 @@ import (
 	"github.com/lainio/err2/assert"
 )
 
-// Connection request taken from Python Agent output for example json.
+// example json
 var connectionRequest = `  {
     "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
     "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
@@ -63,6 +63,7 @@ var connectionRequest = `  {
   }
 `
 
+// Connection request taken from Python Agent output for example json.
 var connectionRequestSov = `  {
     "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
     "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
