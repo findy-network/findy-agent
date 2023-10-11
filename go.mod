@@ -6,7 +6,7 @@ toolchain go1.21.0
 
 require (
 	github.com/findy-network/findy-common-go v0.2.42
-	github.com/findy-network/findy-wrapper-go v0.30.44
+	github.com/findy-network/findy-wrapper-go v0.30.45
 	github.com/go-co-op/gocron v1.35.1
 	github.com/golang/glog v1.1.2
 	github.com/golang/mock v1.6.0
@@ -19,7 +19,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
-	google.golang.org/grpc v1.58.2
+	google.golang.org/grpc v1.58.3
 )
 
 require (
