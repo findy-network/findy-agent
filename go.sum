@@ -175,7 +175,6 @@ github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/envoyproxy/protoc-gen-validate v0.3.0-java/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
-github.com/fatih/structs v1.1.0/go.mod h1:9NiDSp5zOcgEDl+j00MP/WkGVPOlPRLejGD8Ga6PJ7M=
 github.com/findy-network/findy-common-go v0.2.43 h1:mUUDSvZxedQWMoS2Ekr0FYxJlhks4MrNrlydC6rA564=
 github.com/findy-network/findy-common-go v0.2.43/go.mod h1:FIso7HZ0vXODdOWPuoy8DW1A/ZTMBVEZntkceMsGAoE=
 github.com/findy-network/findy-wrapper-go v0.30.45 h1:NuUNzP2YcybSrw2gzI4imF7NCwdncVdQUUmbi0oIHyw=
