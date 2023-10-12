@@ -23,9 +23,7 @@ func init() {
 }
 
 func startProtocol(ca comm.Receiver, t comm.Task) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Error(err)
-	}))
+	defer err2.Catch()
 
 	try.To(prot.StartPSM(prot.Initial{
 		SendNext:    pltype.BasicMessageSend,

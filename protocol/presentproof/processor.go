@@ -158,9 +158,7 @@ func generateProofRequest(proofTask *taskPresentProof) *anoncreds.ProofRequest {
 }
 
 func startProofProtocol(ca comm.Receiver, t comm.Task) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Error(err)
-	}))
+	defer err2.Catch()
 
 	proofTask, ok := t.(*taskPresentProof)
 	assert.That(ok)
@@ -236,9 +234,7 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 }
 
 func continueProtocol(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Error(err)
-	}))
+	defer err2.Catch()
 
 	assert.That(im.Thread().ID != "", "continue present proof, packet thread ID missing")
 
