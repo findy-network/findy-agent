@@ -86,9 +86,7 @@ func (m *commonImpl) VerKey() (key string) {
 }
 
 func (m *commonImpl) Endpoint() (addr service.Addr) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Errorf("Getting endpoint failed: %s", err)
-	}))
+	defer err2.Catch()
 
 	doc := m.DIDDocument()
 

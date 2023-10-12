@@ -3,7 +3,6 @@ package common
 import (
 	"github.com/findy-network/findy-agent/core"
 	sov "github.com/findy-network/findy-agent/std/sov/did"
-	"github.com/golang/glog"
 	"github.com/hyperledger/aries-framework-go/component/models/did/endpoint"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/lainio/err2"
@@ -90,9 +89,8 @@ func getEndpointType(t interface{}) string {
 }
 
 func SetServices(d core.DIDDoc, s []did.Service) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Errorf("Setting services failed: %s", err)
-	}))
+	defer err2.Catch()
+
 	switch doc := d.(type) {
 	case *did.Doc:
 		doc.Service = s

@@ -134,9 +134,7 @@ func (m *responseImpl) Verify(DID core.DID) error {
 }
 
 func (m *responseImpl) Endpoint() service.Addr {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Errorf("Getting endpoint failed: %s", err)
-	}))
+	defer err2.Catch()
 
 	services := common.Services(m.Connection.DIDDoc)
 	if len(services) == 0 {

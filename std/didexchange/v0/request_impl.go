@@ -109,9 +109,7 @@ func (m *requestImpl) VerKey() string {
 }
 
 func (m *requestImpl) Endpoint() service.Addr {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Errorf("Getting endpoint failed: %s", err)
-	}))
+	defer err2.Catch()
 
 	assert.NotNil(m)
 	assert.NotNil(m.Connection)
