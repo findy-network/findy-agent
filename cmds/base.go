@@ -10,7 +10,6 @@ import (
 
 	"github.com/findy-network/findy-agent/agent/cloud"
 	"github.com/findy-network/findy-agent/agent/ssi"
-	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 )
@@ -123,9 +122,7 @@ func Fprint(w io.Writer, a ...interface{}) {
 func Progress(w io.Writer) chan<- struct{} {
 	done := make(chan struct{})
 	go func() {
-		defer err2.Catch(err2.Err(func(err error) {
-			glog.Error(err)
-		}))
+		defer err2.Catch()
 		for {
 			select {
 			case <-done:

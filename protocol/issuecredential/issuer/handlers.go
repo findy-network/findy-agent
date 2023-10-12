@@ -87,9 +87,7 @@ func HandleCredentialPropose(packet comm.Packet) (err error) {
 
 // todo lapi: im message is old legacy api type!!
 func ContinueCredentialPropose(ca comm.Receiver, im didcomm.Msg) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Error(err)
-	}))
+	defer err2.Catch()
 
 	try.To(prot.ContinuePSM(prot.Again{
 		CA:          ca,

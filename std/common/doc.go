@@ -3,7 +3,9 @@ package common
 import (
 	"github.com/findy-network/findy-agent/core"
 	sov "github.com/findy-network/findy-agent/std/sov/did"
+	"github.com/hyperledger/aries-framework-go/component/models/did/endpoint"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
+	"github.com/lainio/err2"
 	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/mr-tron/base58"
@@ -61,7 +63,7 @@ func Services(d core.DIDDoc) []did.Service {
 		servCount := len(doc.Service)
 		retval := make([]did.Service, servCount)
 		for i, service := range doc.Service {
-			retval[i].ServiceEndpoint = service.ServiceEndpoint
+			retval[i].ServiceEndpoint = endpoint.NewDIDCommV1Endpoint(service.ServiceEndpoint)
 			retval[i].Type = service.Type
 			retval[i].ID = service.ID
 			retval[i].RoutingKeys = service.RoutingKeys
@@ -74,7 +76,21 @@ func Services(d core.DIDDoc) []did.Service {
 	}
 }
 
+func getEndpointType(t interface{}) string {
+	if epType, ok := t.(endpoint.EndpointType); ok {
+		switch epType {
+		case endpoint.DIDCommV1:
+			return "did-communication"
+		case endpoint.DIDCommV2:
+			return "DIDCommMessaging"
+		}
+	}
+	return ""
+}
+
 func SetServices(d core.DIDDoc, s []did.Service) {
+	defer err2.Catch()
+
 	switch doc := d.(type) {
 	case *did.Doc:
 		doc.Service = s
@@ -82,8 +98,8 @@ func SetServices(d core.DIDDoc, s []did.Service) {
 		servCount := len(s)
 		retval := make([]sov.Service, servCount)
 		for i, service := range s {
-			retval[i].ServiceEndpoint = service.ServiceEndpoint
-			retval[i].Type = service.Type
+			retval[i].ServiceEndpoint = try.To1(service.ServiceEndpoint.URI())
+			retval[i].Type = getEndpointType(service.Type)
 			retval[i].ID = service.ID
 			retval[i].RoutingKeys = service.RoutingKeys
 			retval[i].RecipientKeys = service.RecipientKeys

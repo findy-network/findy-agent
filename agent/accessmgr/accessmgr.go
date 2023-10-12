@@ -47,9 +47,7 @@ func Start() {
 
 	started = true
 	go func() {
-		defer err2.Catch(err2.Err(func(err error) {
-			glog.Error(err)
-		}))
+		defer err2.Catch()
 		glog.V(1).Infoln("wallet access mgr started")
 		for walletCfg := range input {
 			accessed.Lock()

@@ -144,9 +144,7 @@ loop:
 }
 
 func handleCleanupNotify(notify bus.AgentNotify) {
-	defer err2.Catch(err2.Err(func(err error) {
-		glog.Error(err)
-	}))
+	defer err2.Catch()
 
 	glog.V(1).Infoln("cleanup notification", notify.ID, "arrived")
 

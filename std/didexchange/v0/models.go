@@ -85,13 +85,16 @@ func (c *Connection) MarshalJSON() (_ []byte, err error) {
 }
 
 func (c *Connection) UnmarshalJSON(b []byte) (err error) {
-	defer err2.Handle(&err, "unmarshal connection")
+	defer err2.Handle(&err)
 
 	data := new(AFGOConnection)
 	if err := json.Unmarshal(b, data); err == nil {
-		c.DID = data.DID
-		c.DIDDoc = data.Doc
-		return nil
+		isNotIndyAgent := len(data.Doc.Service) > 0 && data.Doc.Service[0].Type != "IndyAgent"
+		if isNotIndyAgent {
+			c.DID = data.DID
+			c.DIDDoc = data.Doc
+			return nil
+		}
 	}
 
 	dataSov := new(DataConnection)

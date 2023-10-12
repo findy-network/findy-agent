@@ -26,41 +26,46 @@ import (
 
 // example json
 var connectionRequest = `  {
-    "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
-    "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
-    "label": "Alice Agent",
-    "connection": {
-      "DID": "ERYihzndieTdh4UA7Q6Y3C",
-      "DIDDoc": {
-        "@context": "https://www.w3.org/2019/did/v1",
-        "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C",
-        "publicKey": [
-          {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C#1",
-            "type": "Ed25519VerificationKey2018",
-            "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
-          }
-        ],
-        "authentication": [
-          {
-            "type": "Ed25519SignatureAuthentication2018",
-            "publicKey": [
-		    "did:sov:ERYihzndieTdh4UA7Q6Y3C#1"
-		  ]
-          }
-        ],
-        "service": [
-          {
-            "id": "did:sov:ERYihzndieTdh4UA7Q6Y3C;indy",
-            "type": "IndyAgent",
-            "priority": 0,
-            "recipientKeys": ["8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"],
-            "serviceEndpoint": "http://192.168.65.3:8030"
-          }
-        ]
-      }
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
+  "@id": "670bc804-2c06-453c-aee6-48d3c929b488",
+  "label": "TestLabel",
+  "connection": {
+    "DID": "CALLER_DID",
+    "DIDDoc": {
+      "@context": [
+        "https://www.w3.org/ns/did/v1"
+      ],
+      "id": "did:peer:1zQmdB2swHNtwWPgvJfNGEJMFWqbcc2LZa3yciScoDtKqMLP",
+      "verificationMethod": [
+        {
+          "controller": "",
+          "id": "1",
+          "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu",
+          "type": "Ed25519VerificationKey2018"
+        }
+      ],
+      "service": [
+        {
+          "id": "didcomm",
+          "priority": 0,
+          "recipientKeys": [
+            "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu"
+          ],
+          "serviceEndpoint": "http://www.address.com",
+          "type": "did-communication"
+        }
+      ],
+      "authentication": [
+        {
+          "controller": "",
+          "id": "1",
+          "publicKeyBase58": "8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu",
+          "type": "Ed25519VerificationKey2018"
+        }
+      ]
     }
   }
+}
 `
 
 // Connection request taken from Python Agent output for example json.
@@ -144,12 +149,12 @@ func TestConnection_ReadDoc(t *testing.T) {
 		{"w3c sample", args{"./json/w3c-doc-sample.json"}, true},
 		{"sov from afgo", args{"./json/sov.json"}, true},
 		{"our peer did doc", args{"./json/our-peer-did-doc.json"}, true},
-		{"acapy 160", args{"json/160-acapy.json"}, false},
-		{"afgo def", args{"json/afgo-default.json"}, false},
+		{"acapy 160", args{"json/160-acapy.json"}, true},
+		{"afgo def", args{"json/afgo-default.json"}, true},
 		{"afgo interop", args{"json/afgo-interop.json"}, false},
 		{"dotnet", args{"json/dotnet.json"}, true},
 		{"ours", args{"json/ours-160-prepared.json"}, true},
-		{"js", args{"json/javascript.json"}, false},
+		{"js", args{"json/javascript.json"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -173,13 +178,14 @@ func TestConnection_ReadJSON(t *testing.T) {
 	defer assert.PopTester()
 	err2.SetTracers(os.Stderr)
 	tests := []struct {
-		name string
-		req  string
+		name    string
+		expAuth string
+		req     string
 	}{
-		{"sov method", connectionRequestSov},
-		{"peer method", connectionRequest},
+		{"sov method", "Ed25519SignatureAuthentication2018", connectionRequestSov},
+		{"peer method", "Ed25519VerificationKey2018", connectionRequest},
 	}
-	for i, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.PushTester(t)
 			defer assert.PopTester()
@@ -193,11 +199,7 @@ func TestConnection_ReadJSON(t *testing.T) {
 			auths := common.Authentications(doc)
 
 			assert.INotNil(auths)
-			if i == 0 {
-				assert.Equal("Ed25519SignatureAuthentication2018", auths[0].VerificationMethod.Type)
-			} else {
-				assert.Equal("Ed25519VerificationKey2018", auths[0].VerificationMethod.Type)
-			}
+			assert.Equal(tt.expAuth, auths[0].VerificationMethod.Type)
 
 			recipKey := common.Service(doc, 0).RecipientKeys[0]
 			assert.Equal("8KLQJNs7cJFY5vcRTWzb33zYr5zhDrcaX6jgD5Uaofcu", recipKey)
@@ -219,6 +221,7 @@ func TestNewRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.PushTester(t)
 			defer assert.PopTester()
+
 			ae := service.Addr{
 				Endp: "http://www.address.com",
 				Key:  "SERVICE_KEY",

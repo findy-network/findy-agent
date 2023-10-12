@@ -5,22 +5,21 @@ import (
 	"github.com/hyperledger/aries-framework-go/pkg/kms/localkms"
 	"github.com/hyperledger/aries-framework-go/pkg/secretlock"
 	"github.com/hyperledger/aries-framework-go/pkg/secretlock/noop"
-	"github.com/hyperledger/aries-framework-go/spi/storage"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
 )
 
 type kmsStorage struct {
 	kms      kms.KeyManager
-	owner    *Storage
+	owner    kms.Store
 	noopLock secretlock.Service
 }
 
 func newKmsStorage(owner *Storage) (k *kmsStorage, err error) {
-	defer err2.Handle(&err, "new kms storage")
+	defer err2.Handle(&err)
 
 	k = &kmsStorage{
-		owner:    owner,
+		owner:    try.To1(kms.NewAriesProviderWrapper(owner)),
 		noopLock: &noop.NoLock{},
 	}
 
@@ -31,7 +30,7 @@ func newKmsStorage(owner *Storage) (k *kmsStorage, err error) {
 	return
 }
 
-func (k *kmsStorage) StorageProvider() storage.Provider {
+func (k *kmsStorage) StorageProvider() kms.Store {
 	return k.owner
 }
 

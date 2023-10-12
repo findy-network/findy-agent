@@ -9,6 +9,7 @@ import (
 	"github.com/findy-network/findy-agent/core"
 	"github.com/findy-network/findy-agent/std/common"
 	"github.com/golang/glog"
+	"github.com/hyperledger/aries-framework-go/component/models/did/endpoint"
 	"github.com/hyperledger/aries-framework-go/pkg/doc/did"
 	"github.com/hyperledger/aries-framework-go/pkg/kms"
 	"github.com/hyperledger/aries-framework-go/pkg/vdr/fingerprint"
@@ -74,7 +75,7 @@ func NewPeer(
 			Type:            "did-communication",
 			Priority:        0,
 			RecipientKeys:   []string{base58.Encode(pk)},
-			ServiceEndpoint: args[0],
+			ServiceEndpoint: endpoint.NewDIDCommV1Endpoint(args[0]),
 		}}),
 	))
 
@@ -126,7 +127,7 @@ func (p Peer) NewDoc(ae service.Addr) core.DIDDoc {
 			Type:            "did-communication",
 			Priority:        0,
 			RecipientKeys:   []string{base58.Encode(p.pk)},
-			ServiceEndpoint: ae.Endp,
+			ServiceEndpoint: endpoint.NewDIDCommV1Endpoint(ae.Endp),
 		}}),
 	))
 	return doc
@@ -184,10 +185,12 @@ func (b Base) buildDIDKeyStr(rk string) string {
 }
 
 func (p Peer) AEndp() (ae service.Addr, err error) {
+	defer err2.Handle(&err)
+
 	assert.That(p.doc != nil)
 	srv := common.Service(p.doc, 0)
 	return service.Addr{
-		Endp: srv.ServiceEndpoint,
+		Endp: try.To1(srv.ServiceEndpoint.URI()),
 		Key:  srv.RecipientKeys[0],
 	}, nil
 }
@@ -237,7 +240,7 @@ func NewDoc(pk, addr string) (d *did.Doc, err error) {
 			Type:            "did-communication",
 			Priority:        0,
 			RecipientKeys:   []string{pk},
-			ServiceEndpoint: addr,
+			ServiceEndpoint: endpoint.NewDIDCommV1Endpoint(addr),
 		}}),
 	)), nil
 }
