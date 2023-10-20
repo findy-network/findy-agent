@@ -1,16 +1,14 @@
 package cmd
 
 import (
+	goflag "flag"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	"github.com/findy-network/findy-agent/agent/utils"
-	"github.com/findy-network/findy-agent/cmds/agency"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
-	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -22,19 +20,22 @@ const envPrefix = "FCLI"
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	SilenceUsage: true,
-	Version:      utils.Version,
 	Use:          "findy-agent",
 	Short:        "Findy agent cli tool",
 	Long: `
 Findy agent cli tool
 	`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		assert.SetDefault(assert.Production)
-		err2.SetPanicTracer(os.Stderr)
-		agency.ParseLoggingArgs(rootFlags.logging)
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		defer err2.Handle(&err)
+
+		// NOTE! Very important. Adds support for std flag pkg users: glog, err2
+		goflag.Parse()
+
+		try.To(goflag.Set("logtostderr", "true"))
 		handleViperFlags(cmd)
 		glog.CopyStandardLogTo("ERROR") // for err2
-		aCmd.PreRun()
+		//aCmd.PreRun()
+		return nil
 	},
 }
 
@@ -105,6 +106,8 @@ func init() {
 
 	try.To(BindEnvs(rootEnvs, ""))
 
+	// NOTE! Very important. Adds support for std flag pkg users: glog, err2
+	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 }
 
 func initConfig() {

@@ -72,7 +72,7 @@ setup environment and especially install `libindy`.
 2. Clone [findy-agent](https://github.com/findy-network/findy-agent) (this repo)
 3. Install needed Go packages: `make deps`.
 4. Install the command line application: `make install`
-5. Verify the installation: `findy-agent -version`
+5. Verify the installation: `findy-agent version`
 
    It should output similar to:
    `findy-agent version 0.xx.xx`
