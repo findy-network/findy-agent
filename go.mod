@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/findy-network/findy-common-go v0.2.44
+	github.com/findy-network/findy-common-go v0.2.45
 	github.com/findy-network/findy-wrapper-go v0.30.46
 	github.com/go-co-op/gocron v1.35.2
 	github.com/golang/glog v1.1.2
@@ -15,7 +15,7 @@ require (
 	github.com/hyperledger/aries-framework-go v0.3.2
 	github.com/hyperledger/aries-framework-go/component/models v0.0.0-20230901120639-e17eddd3ad3e
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20230901120639-e17eddd3ad3e
-	github.com/lainio/err2 v0.9.41
+	github.com/lainio/err2 v0.9.51
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
@@ -92,7 +92,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	go.etcd.io/bbolt v1.3.7 // indirect
+	go.etcd.io/bbolt v1.3.8 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
