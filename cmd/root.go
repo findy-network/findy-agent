@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/findy-network/findy-common-go/utils"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
 	"github.com/lainio/err2/try"
@@ -31,6 +32,8 @@ Findy agent cli tool
 		// NOTE! Very important. Adds support for std flag pkg users: glog, err2
 		goflag.Parse()
 
+		// let's support our old logging env
+		utils.ParseLoggingArgs(rootFlags.logging)
 		try.To(goflag.Set("logtostderr", "true"))
 		handleViperFlags(cmd)
 		glog.CopyStandardLogTo("ERROR") // for err2
