@@ -17,7 +17,7 @@ require (
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20230901120639-e17eddd3ad3e
 	github.com/lainio/err2 v0.9.51
 	github.com/mr-tron/base58 v1.2.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
 	google.golang.org/grpc v1.59.0
