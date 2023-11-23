@@ -6,7 +6,7 @@ toolchain go1.21.0
 
 require (
 	github.com/findy-network/findy-common-go v0.2.48
-	github.com/findy-network/findy-wrapper-go v0.30.48
+	github.com/findy-network/findy-wrapper-go v0.30.49
 	github.com/go-co-op/gocron v1.36.0
 	github.com/golang/glog v1.2.0
 	github.com/golang/mock v1.6.0
