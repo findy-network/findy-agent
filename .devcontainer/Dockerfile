@@ -15,7 +15,7 @@ COPY --from=indy-base /usr/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
 COPY --from=indy-base /usr/lib/libssl.so.1.1 /usr/lib/libssl.so.1.1
 
 # linter
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
 
 ENV GO_TOOLS="\
   github.com/cweill/gotests/gotests@latest \
