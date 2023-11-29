@@ -74,7 +74,7 @@ func (s *StorageProvider) Init() (err error) {
 		path = s.conf.FilePath
 	}
 
-	filename := path + "/" + s.conf.FileName + ".bolt"
+	filename := path + "/" + s.conf.FileName + ".bolt" //nolint:goconst
 
 	if len(s.conf.BucketIDs) == 0 {
 		return fmt.Errorf("no buckets specified")

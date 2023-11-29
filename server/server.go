@@ -171,10 +171,9 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 	}), func(exception interface{}) {
 		if utils.Settings.LocalTestMode() {
 			panic(exception)
-		} else {
-			glog.Error(exception)
-			debug.PrintStack()
 		}
+		glog.Error(exception)
+		debug.PrintStack()
 	})
 
 	// First find the security pipe for the correct crypto. Then unpack the
