@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/findy-network/findy-common-go v0.2.48
+	github.com/findy-network/findy-common-go v0.2.49
 	github.com/findy-network/findy-wrapper-go v0.30.49
 	github.com/go-co-op/gocron v1.36.0
 	github.com/golang/glog v1.2.0
@@ -95,12 +95,12 @@ require (
 	go.etcd.io/bbolt v1.3.8 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.15.0 // indirect
+	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.18.0 // indirect
-	golang.org/x/oauth2 v0.14.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/oauth2 v0.15.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230913181813-007df8e322eb // indirect
