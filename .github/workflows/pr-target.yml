@@ -12,7 +12,7 @@ jobs:
     if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
     steps:
       - id: label-the-PR
-        uses: actions/labeler@v4
+        uses: actions/labeler@v5
 
   # automerge successful dependabot PRs
   dependabot:
