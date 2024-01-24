@@ -11,7 +11,7 @@ require (
 	github.com/golang/glog v1.2.0
 	github.com/golang/mock v1.6.0
 	github.com/google/tink/go v1.7.0
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/hyperledger/aries-framework-go v0.3.2
 	github.com/hyperledger/aries-framework-go/component/models v0.0.0-20230901120639-e17eddd3ad3e
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20230901120639-e17eddd3ad3e
