@@ -176,8 +176,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/findy-network/findy-common-go v0.2.58 h1:dyq8Hnsr4p5XZc+uedYOH5u4y4/IlRgmpesLEmQ0NY0=
 github.com/findy-network/findy-common-go v0.2.58/go.mod h1:emh9s6xbPvOFstNJJfv75o+aF5nNGMcqfr5kLAUJS7U=
-github.com/findy-network/findy-wrapper-go v0.30.57 h1:bD5hHOcG7RbpCZ5a20QdmGMAPTIfe2h6RaCagZtSK74=
-github.com/findy-network/findy-wrapper-go v0.30.57/go.mod h1:EZK37O9R+vF30agqEiL6yfmykMQeI9pJ+uBQjOBwUf0=
+github.com/findy-network/findy-wrapper-go v0.30.58 h1:NMeA6yrAlEw1cxg2NWCLHz1L1+i4ubIIbKWJKcU/1QU=
+github.com/findy-network/findy-wrapper-go v0.30.58/go.mod h1:EZK37O9R+vF30agqEiL6yfmykMQeI9pJ+uBQjOBwUf0=
 github.com/form3tech-oss/jwt-go v3.2.5+incompatible h1:/l4kBbb4/vGSsdtB5nUe8L7B9mImVMaBPw9L/0TBHU8=
 github.com/form3tech-oss/jwt-go v3.2.5+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
