@@ -75,7 +75,7 @@ ENV FCLI_STEWARD_POOL_NAME "${FCLI_POOL_NAME}"
 ENV FCLI_STEWARD_WALLET_KEY "${FCLI_IMPORT_WALLET_KEY}"
 ENV FCLI_STEWARD_SEED "000000000000000000000000Steward1"
 
-RUN echo '[[ ! -z "$GENESIS_TRANSACTIONS" ]] && echo $GENESIS_TRANSACTIONS > $FCLI_POOL_GENESIS_TXN_FILE' >/start.sh && \
+RUN echo '[[ ! -z "$GENESIS_TRANSACTIONS" ]] && echo "$GENESIS_TRANSACTIONS" > $FCLI_POOL_GENESIS_TXN_FILE' >/start.sh && \
   echo './import-wallet.sh' >>/start.sh && \
   echo 'exec /findy-agent agency start' >>/start.sh && chmod a+x /start.sh
 
