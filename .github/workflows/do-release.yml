@@ -9,8 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Tag release if changes
     steps:
-      - uses: findy-network/releaser-action@v5.1
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
         with:
-          # use personal access token so that events are created for tag push
-          token: ${{ secrets.RELEASER_PAT }}
+          app-id: ${{ secrets.AGENCY_RELEASER_ID }}
+          private-key: ${{ secrets.AGENCY_RELEASER_KEY }}
+      - uses: findy-network/releaser-action@master
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
           gate: test,iop
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
