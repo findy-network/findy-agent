@@ -46,7 +46,7 @@ func HandleCredentialOffer(packet comm.Packet) (err error) {
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "cred offer ask user (%v)",
 				packet.Receiver.RootDid().Did())
 
@@ -146,7 +146,7 @@ func HandleCredentialIssue(packet comm.Packet) (err error) {
 		SendNext:    pltype.IssueCredentialACK,
 		WaitingNext: pltype.Terminate, // no next state, we are fine
 
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "cred issue")
 
 			issue := im.FieldObj().(*issuecredential.Issue)

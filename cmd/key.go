@@ -17,7 +17,7 @@ var keyCmd = &cobra.Command{
 	Long: `
 Parent command for handling keys
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		SubCmdNeeded(cmd)
 	},
 }
@@ -37,10 +37,10 @@ Example
 	findy-agent tools key create \
 		--seed 00000000000000000000thisisa_test
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(_ *cobra.Command, _ []string) (err error) {
 		return BindEnvs(keyEnvs, "KEY")
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		try.To(keyCreateCmd.Validate())
 		if !rootFlags.dryRun {

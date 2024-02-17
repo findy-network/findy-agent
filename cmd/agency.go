@@ -19,7 +19,7 @@ var AgencyCmd = &cobra.Command{
 	Long: `
 Parent command for starting and pinging agency
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		SubCmdNeeded(cmd)
 	},
 }
@@ -71,10 +71,10 @@ Example
 		--steward-wallet-key 6cih1cVgRH8...dv67o8QbufxaTHot3Qxp \
 		--steward-did Th7MpTaRZVRYnPiabds81Y
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(*cobra.Command, []string) (err error) {
 		return BindEnvs(agencyStartEnvs, "AGENCY")
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(*cobra.Command, []string) (err error) {
 		defer err2.Handle(&err)
 
 		try.To(aCmd.Validate())
@@ -101,10 +101,10 @@ Example
 	findy-agent agency ping \
 		--base-address http://localhost:8080
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(_ *cobra.Command, _ []string) (err error) {
 		return BindEnvs(agencyPingEnvs, "AGENCY")
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		try.To(paCmd.Validate())
 		if !rootFlags.dryRun {
@@ -125,7 +125,7 @@ at the start up.
 Example
 	findy-agent agency migrate <old-reg> <new-reg> [enclave-key]
 	`,
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, args []string) (err error) {
 		defer err2.Handle(&err)
 
 		migrateCmd.InputReg = args[0]

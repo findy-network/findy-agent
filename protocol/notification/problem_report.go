@@ -30,7 +30,7 @@ func startProtocol(ca comm.Receiver, t comm.Task) {
 		WaitingNext: pltype.Terminate,
 		Ca:          ca,
 		T:           t,
-		Setup: func(key psm.StateKey, om didcomm.MessageHdr) error {
+		Setup: func(psm.StateKey, didcomm.MessageHdr) error {
 			// todo: fill the report data here
 			return nil
 		},
@@ -38,7 +38,7 @@ func startProtocol(ca comm.Receiver, t comm.Task) {
 }
 
 func handleProblemReport(packet comm.Packet) (err error) {
-	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+	tHandler := func(_ string, im, _ didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Handle(&err, "basic message")
 
 		problemReport := im.FieldObj().(*common.ProblemReport)

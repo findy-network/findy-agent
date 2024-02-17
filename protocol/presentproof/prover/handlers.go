@@ -37,7 +37,7 @@ func HandleRequestPresentation(packet comm.Packet) (err error) {
 		SendNext:    sendNext,
 		WaitingNext: waitingNext,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.CANotifyUserAction},
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "proof req handler")
 
 			agent := packet.Receiver

@@ -17,7 +17,7 @@ var poolCmd = &cobra.Command{
 	Long: `
 Parent command for pool commands
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		SubCmdNeeded(cmd)
 	},
 }
@@ -39,11 +39,11 @@ Example
 		--name findy-pool \
 		--genesis-txn-file my-genesis-txn-file
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(*cobra.Command, []string) (err error) {
 		return BindEnvs(poolCreateEnvs, "POOL")
 
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		Cmd := pool.CreateCmd{
 			Name: poolName,
@@ -72,10 +72,10 @@ Example
 	findy-agent ledger pool ping \
 		--name findy-pool
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(_ *cobra.Command, _ []string) (err error) {
 		return BindEnvs(poolPingEnvs, "POOL")
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		Cmd := pool.PingCmd{
 			Name: poolName,
