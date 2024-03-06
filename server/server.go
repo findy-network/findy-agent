@@ -19,6 +19,8 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	grpcserver "github.com/findy-network/findy-agent/grpc/server"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	myhttp "github.com/findy-network/findy-common-go/http"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
@@ -38,6 +40,7 @@ func StartHTTPServer(serverPort uint) <-chan os.Signal {
 	pattern := setHandler(utils.Settings.ServiceName(), mux, protocolTransport)
 	pattern2 := buildNewTransportPath(pattern)
 	mux.HandleFunc(pattern2, protocolTransport)
+	mux.HandleFunc("/dyn", dynInvitation)
 	mux.HandleFunc("/version", tellVersion)
 	mux.HandleFunc("/ready", checkReady)
 	mux.HandleFunc("/", tellVersion)
@@ -106,6 +109,35 @@ func errorResponse(w http.ResponseWriter) {
 	glog.V(2).Info("Returning 500")
 	w.WriteHeader(http.StatusInternalServerError)
 	_, _ = w.Write([]byte("500 - Error"))
+}
+
+// dynInvitation implements dynamic invitation resolver for a agent. This is a
+// GET method
+func dynInvitation(w http.ResponseWriter, r *http.Request) {
+	defer err2.Catch()
+
+	ourAddress := logRequestInfo("dynamic Invitation req", r)
+
+	canContinue := ourAddress != nil
+
+	if !canContinue {
+		errorResponse(w)
+		return
+	}
+
+	base := new(pb.InvitationBase)
+	caDID := ourAddress.PlRcvr
+	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
+	if !ok {
+		glog.Errorf("no ca did (%s)", caDID)
+		return
+	}
+	base.ID = ourAddress.ConnID
+	base.Label = ourAddress.EdgeToken
+	i := try.To1(grpcserver.CreateInvitation(rcvr, base))
+	try.To1(w.Write([]byte(i.GetURL())))
+
+	w.Header().Set("Content-Type", "text/plain")
 }
 
 func protocolTransport(w http.ResponseWriter, r *http.Request) {
