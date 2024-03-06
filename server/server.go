@@ -22,6 +22,7 @@ import (
 	myhttp "github.com/findy-network/findy-common-go/http"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -185,22 +186,12 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 	rcvrWA := rcvrCA.WEA()
 	pipe := rcvrWA.SecPipe(ourAddress.ConnID)
 
-	// In case of connection-invite, we use common EA/CA pipe
-	if pipe.IsNull() {
-		// TODO: this should never happen
-		panic("invitations aren't transported thru these anymore")
-		//pipe = agency.CurrentTr(ourAddress).PayloadPipe()
-	}
+	assert.ThatNot(pipe.IsNull(), "invitations aren't transported thru these anymore")
 
-	d, vk, err := pipe.Unpack(data)
-	if err != nil {
-		// Send error result to the other end, IF we SOME how can
-		// In most cases we cannot, so ..
-
-		// for now
-		glog.Error("cannot unpack the envelope", err)
-		panic(err)
-	}
+	r := try.Out2(pipe.Unpack(data)).Logf().Handle(func(err error) error {
+		return fmt.Errorf("cannot unpack the envelope: %w", err)
+	})
+	d, vk := r.Val1, r.Val2
 
 	inPL := aries.PayloadCreator.NewFromData(d)
 	ourAddress.VerKey = vk // set associated verkey to our endp
