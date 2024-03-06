@@ -58,7 +58,7 @@ func startTrustPing(ca comm.Receiver, t comm.Task) {
 		WaitingNext: pltype.TrustPingResponse,
 		Ca:          ca,
 		T:           t,
-		Setup: func(key psm.StateKey, hdr didcomm.MessageHdr) error {
+		Setup: func(psm.StateKey, didcomm.MessageHdr) error {
 			return nil
 		},
 	}))
@@ -69,7 +69,7 @@ func handleTrustPing(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.TrustPingResponse,
 		WaitingNext: pltype.Terminate,
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, _, om didcomm.MessageHdr) (ack bool, err error) {
 			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},
@@ -81,7 +81,7 @@ func handleTrustPingResponse(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.Terminate,
 		WaitingNext: pltype.Terminate,
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, _, om didcomm.MessageHdr) (ack bool, err error) {
 			glog.V(3).Info("-- Thread ID: ", om.Thread().ID)
 			return true, nil
 		},

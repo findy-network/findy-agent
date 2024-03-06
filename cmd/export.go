@@ -32,10 +32,10 @@ Example
 		--key walletExportKey \
 		--file path/to/my-export-wallet
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 		return BindEnvs(exportEnvs, cmd.Name())
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		try.To(expCmd.Validate())
 		if !rootFlags.dryRun {

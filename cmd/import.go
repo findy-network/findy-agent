@@ -31,10 +31,10 @@ Example
 		--key walletImportKey \
 		--file /path/to/my-import-wallet
 	`,
-	PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 		return BindEnvs(importEnvs, cmd.Name())
 	},
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 		try.To(impCmd.Validate())
 		if !rootFlags.dryRun {

@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	Long: `
 Findy agent cli tool
 	`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 
 		// NOTE! Very important. Adds support for std flag pkg users: glog, err2

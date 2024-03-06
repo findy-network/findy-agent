@@ -20,7 +20,7 @@ var treeCmd = &cobra.Command{
 	Short: "Prints the findy-agent command structure",
 	Long:  treeDoc,
 	Args:  cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, args []string) (err error) {
 		defer err2.Handle(&err)
 		if len(args) == 0 {
 			printStructure(rootCmd, "", 0, true)

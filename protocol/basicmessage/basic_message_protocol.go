@@ -92,7 +92,7 @@ func startBasicMessage(ca comm.Receiver, t comm.Task) {
 }
 
 func handleBasicMessage(packet comm.Packet) (err error) {
-	tHandler := func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+	tHandler := func(connID string, im, _ didcomm.MessageHdr) (ack bool, err error) {
 		defer err2.Handle(&err, "basic message")
 
 		pw := try.To1(packet.Receiver.FindPWByID(connID))

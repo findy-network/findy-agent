@@ -22,7 +22,7 @@ func TestCache_lazyAdd(t *testing.T) {
 		{"2nd", fields{nil}, args{"DID_STRING2", NewDid("DID_STRING2", "VER_KEY2")}},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, func(*testing.T) {
 			c := &Cache{
 				cache: tt.fields.cache,
 			}

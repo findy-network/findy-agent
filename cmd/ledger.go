@@ -11,7 +11,7 @@ var ledgerCmd = &cobra.Command{
 	Long: `
 Parent command for ledger specific actions
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		SubCmdNeeded(cmd)
 	},
 }
