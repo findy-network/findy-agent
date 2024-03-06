@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/findy-network/findy-agent/agent/bus"
+	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/pltype"
 	"github.com/findy-network/findy-agent/agent/prot"
@@ -222,8 +223,8 @@ func (a *agentServer) GetCredDef(
 	return &pb.CredDefData{ID: cd.ID, Data: def}, nil
 }
 
-func (a *agentServer) CreateInvitation(
-	ctx context.Context,
+func CreateInvitation(
+	receiver comm.Receiver,
 	base *pb.InvitationBase,
 ) (
 	i *pb.Invitation,
@@ -239,7 +240,7 @@ func (a *agentServer) CreateInvitation(
 		glog.V(4).Infoln("generating connection id:", id)
 	}
 
-	addr := try.To1(preallocatePWDID(ctx, id))
+	addr := try.To1(preallocatePWDID(receiver, id))
 
 	label := base.Label
 	if base.Label == "" {
@@ -270,13 +271,25 @@ func (a *agentServer) CreateInvitation(
 	}, nil
 }
 
-func preallocatePWDID(ctx context.Context, id string) (ep *endp.Addr, err error) {
+func (a *agentServer) CreateInvitation(
+	ctx context.Context,
+	base *pb.InvitationBase,
+) (
+	i *pb.Invitation,
+	err error,
+) {
+	defer err2.Handle(&err, "create invitation")
+
+	_, receiver := try.To2(ca(ctx))
+	return CreateInvitation(receiver, base)
+}
+
+func preallocatePWDID(receiver comm.Receiver, id string) (ep *endp.Addr, err error) {
 	defer err2.Handle(&err)
 
 	glog.V(5).Infoln("========== start pre-alloc:", id)
 	defDIDMethod := utils.Settings.DIDMethod()
 
-	_, receiver := try.To2(ca(ctx))
 	ep = receiver.CAEndp(id)
 
 	wa := receiver.WorkerEA()
