@@ -118,9 +118,9 @@ func dynInvitation(w http.ResponseWriter, r *http.Request) {
 
 	params := r.URL.Query()
 
-	caDID := params.Get("ca")
-	label := params.Get("l")
-	uuid := params.Get("uuid")
+	caDID := params.Get("did")
+	label := params.Get("label")
+	resultAsURL := params.Get("url")
 	glog.V(1).Infof("ca: %v, label: %v", caDID, label)
 
 	canContinue := caDID != "" && label != ""
@@ -129,19 +129,23 @@ func dynInvitation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	base := new(pb.InvitationBase)
+	base := &pb.InvitationBase{Label: label}
 	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
 	if !ok {
 		glog.Errorf("no CA DID (%s)", caDID)
 		errorResponse(w)
 		return
 	}
-	base.ID = uuid // CreateInvitation creates a new UUID if empty
-	base.Label = label
 	i := try.To1(grpcserver.CreateInvitation(rcvr, base))
-	try.To1(w.Write([]byte(i.GetURL())))
 
-	w.Header().Set("Content-Type", "text/plain")
+	if resultAsURL != "" {
+		try.To1(w.Write([]byte(i.GetURL())))
+		w.Header().Set("Content-Type", "text/plain")
+		return
+	}
+
+	try.To1(w.Write([]byte(i.GetJSON())))
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func protocolTransport(w http.ResponseWriter, r *http.Request) {
