@@ -11,7 +11,7 @@ var toolsCmd = &cobra.Command{
 	Long: `
 Parent command for all generic findy-agent tools
 	`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		SubCmdNeeded(cmd)
 	},
 }

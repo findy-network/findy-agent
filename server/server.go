@@ -19,9 +19,12 @@ import (
 	"github.com/findy-network/findy-agent/agent/endp"
 	"github.com/findy-network/findy-agent/agent/psm"
 	"github.com/findy-network/findy-agent/agent/utils"
+	grpcserver "github.com/findy-network/findy-agent/grpc/server"
+	pb "github.com/findy-network/findy-common-go/grpc/agency/v1"
 	myhttp "github.com/findy-network/findy-common-go/http"
 	"github.com/golang/glog"
 	"github.com/lainio/err2"
+	"github.com/lainio/err2/assert"
 	"github.com/lainio/err2/try"
 )
 
@@ -37,6 +40,7 @@ func StartHTTPServer(serverPort uint) <-chan os.Signal {
 	pattern := setHandler(utils.Settings.ServiceName(), mux, protocolTransport)
 	pattern2 := buildNewTransportPath(pattern)
 	mux.HandleFunc(pattern2, protocolTransport)
+	mux.HandleFunc("/dyn", dynInvitation)
 	mux.HandleFunc("/version", tellVersion)
 	mux.HandleFunc("/ready", checkReady)
 	mux.HandleFunc("/", tellVersion)
@@ -105,6 +109,43 @@ func errorResponse(w http.ResponseWriter) {
 	glog.V(2).Info("Returning 500")
 	w.WriteHeader(http.StatusInternalServerError)
 	_, _ = w.Write([]byte("500 - Error"))
+}
+
+// dynInvitation implements dynamic invitation resolver for a agent. This is a
+// GET method
+func dynInvitation(w http.ResponseWriter, r *http.Request) {
+	defer err2.Catch()
+
+	params := r.URL.Query()
+
+	caDID := params.Get("did")
+	label := params.Get("label")
+	resultAsURL := params.Get("url")
+	glog.V(1).Infof("ca: %v, label: %v", caDID, label)
+
+	canContinue := caDID != "" && label != ""
+	if !canContinue {
+		errorResponse(w)
+		return
+	}
+
+	base := &pb.InvitationBase{Label: label}
+	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
+	if !ok {
+		glog.Errorf("no CA DID (%s)", caDID)
+		errorResponse(w)
+		return
+	}
+	i := try.To1(grpcserver.CreateInvitation(rcvr, base))
+
+	if resultAsURL != "" {
+		try.To1(w.Write([]byte(i.GetURL())))
+		w.Header().Set("Content-Type", "text/plain")
+		return
+	}
+
+	try.To1(w.Write([]byte(i.GetJSON())))
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func protocolTransport(w http.ResponseWriter, r *http.Request) {
@@ -185,22 +226,12 @@ func transportPL(ourAddress *endp.Addr, data []byte) {
 	rcvrWA := rcvrCA.WEA()
 	pipe := rcvrWA.SecPipe(ourAddress.ConnID)
 
-	// In case of connection-invite, we use common EA/CA pipe
-	if pipe.IsNull() {
-		// TODO: this should never happen
-		panic("invitations aren't transported thru these anymore")
-		//pipe = agency.CurrentTr(ourAddress).PayloadPipe()
-	}
+	assert.ThatNot(pipe.IsNull(), "invitations aren't transported thru these anymore")
 
-	d, vk, err := pipe.Unpack(data)
-	if err != nil {
-		// Send error result to the other end, IF we SOME how can
-		// In most cases we cannot, so ..
-
-		// for now
-		glog.Error("cannot unpack the envelope", err)
-		panic(err)
-	}
+	r := try.Out2(pipe.Unpack(data)).Logf().Handle(func(err error) error {
+		return fmt.Errorf("cannot unpack the envelope: %w", err)
+	})
+	d, vk := r.Val1, r.Val2
 
 	inPL := aries.PayloadCreator.NewFromData(d)
 	ourAddress.VerKey = vk // set associated verkey to our endp

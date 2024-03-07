@@ -15,7 +15,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the version and build information of the CLI tool",
 	Long:  versionDoc,
-	RunE: func(c *cobra.Command, args []string) (err error) {
+	RunE: func(_ *cobra.Command, _ []string) (err error) {
 		defer err2.Handle(&err)
 
 		try.To1(fmt.Println(utils.Version))

@@ -93,6 +93,7 @@ func Backup() {
 func ResetRegistered(filename string) error {
 	utils.Settings.SetRegisterName(filename)
 	fmt.Println("Note! Resetting handshake register, on-boarding starts over.")
+	Ready.RegisteringComplete()
 	return Register.Reset(filename)
 }
 

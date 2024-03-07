@@ -188,7 +188,7 @@ func handleCredentialNACK(packet comm.Packet) (err error) {
 		Packet:      packet,
 		SendNext:    pltype.Terminate, // this ends here
 		WaitingNext: pltype.Terminate, // no next state
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, _, _ didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "cred NACK")
 			// return false to mark this PSM to NACK!
 			return false, nil

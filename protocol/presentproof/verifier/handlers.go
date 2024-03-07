@@ -75,7 +75,7 @@ func HandleProposePresentation(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptPropose},
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "proof propose handler")
 
 			agent := packet.Receiver
@@ -121,7 +121,7 @@ func ContinueProposePresentation(ca comm.Receiver, im didcomm.Msg) {
 		SendNext:    pltype.PresentProofRequest,
 		WaitingNext: pltype.PresentProofPresentation,
 		SendOnNACK:  pltype.PresentProofNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+		Transfer: func(_ comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "proof propose user action handler")
 
 			// Does user allow continue?
@@ -163,7 +163,7 @@ func HandlePresentation(packet comm.Packet) (err error) {
 		WaitingNext: waitingNext,
 		SendOnNACK:  pltype.PresentProofNACK,
 		TaskHeader:  &comm.TaskHeader{UserActionPLType: pltype.SAPresentProofAcceptValues},
-		InOut: func(connID string, im, om didcomm.MessageHdr) (ack bool, err error) {
+		InOut: func(_ string, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "proof presentation handler")
 
 			agent := packet.Receiver
@@ -210,7 +210,7 @@ func ContinueHandlePresentation(ca comm.Receiver, im didcomm.Msg) {
 		SendNext:    pltype.PresentProofACK,
 		WaitingNext: pltype.Terminate,
 		SendOnNACK:  pltype.PresentProofNACK,
-		Transfer: func(wa comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
+		Transfer: func(_ comm.Receiver, im, om didcomm.MessageHdr) (ack bool, err error) {
 			defer err2.Handle(&err, "proof values user action handler")
 
 			// Does user allow continue?
