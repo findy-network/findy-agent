@@ -40,3 +40,18 @@ func TestReadyHandler(t *testing.T) {
 	assert.Equal("OK ready", string(data))
 	assert.Equal(http.StatusOK, res.StatusCode)
 }
+
+func TestDynHandler(t *testing.T) {
+	defer assert.PushTester(t)()
+
+	req := httptest.NewRequest(http.MethodGet, "/dyn", nil)
+	w := httptest.NewRecorder()
+
+	dynInvitation(w, req)
+	res := w.Result()
+	defer res.Body.Close()
+	data, err := io.ReadAll(res.Body)
+	assert.NoError(err)
+	assert.Equal("500 - Error", string(data))
+	assert.Equal(res.StatusCode, http.StatusInternalServerError)
+}
