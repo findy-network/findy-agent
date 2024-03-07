@@ -116,24 +116,28 @@ func errorResponse(w http.ResponseWriter) {
 func dynInvitation(w http.ResponseWriter, r *http.Request) {
 	defer err2.Catch()
 
-	ourAddress := logRequestInfo("dynamic Invitation req", r)
+	params := r.URL.Query()
 
-	canContinue := ourAddress != nil
+	caDID := params.Get("ca")
+	label := params.Get("l")
+	uuid := params.Get("uuid")
+	glog.V(1).Infof("ca: %v, label: %v", caDID, label)
 
+	canContinue := caDID != "" && label != ""
 	if !canContinue {
 		errorResponse(w)
 		return
 	}
 
 	base := new(pb.InvitationBase)
-	caDID := ourAddress.PlRcvr
 	rcvr, ok := agency.Handler(caDID).(comm.Receiver)
 	if !ok {
-		glog.Errorf("no ca did (%s)", caDID)
+		glog.Errorf("no CA DID (%s)", caDID)
+		errorResponse(w)
 		return
 	}
-	base.ID = ourAddress.ConnID
-	base.Label = ourAddress.EdgeToken
+	base.ID = uuid // CreateInvitation creates a new UUID if empty
+	base.Label = label
 	i := try.To1(grpcserver.CreateInvitation(rcvr, base))
 	try.To1(w.Write([]byte(i.GetURL())))
 
