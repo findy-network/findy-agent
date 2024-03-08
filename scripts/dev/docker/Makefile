@@ -1,5 +1,3 @@
-VON_NETWORK_VERSION:=7365a190a72edccccdffcdbce95e043cb8d9ac63
-
 FCLI:="findy-agent-cli"
 AUTH_URL:="http://localhost:8888"
 AUTH_KEY:="15308490f1e4026284594dd08d31291bc8ef2aeac730d0daf6ff87bb92d4336c"
@@ -15,14 +13,10 @@ gen-yml: docker-host
 clone:
 	mkdir -p .docker
 	-git clone https://github.com/bcgov/von-network .docker/von-network
-	cd .docker/von-network && git reset --hard $(VON_NETWORK_VERSION)
 
 von-up: clone
-#	cd .docker/von-network && ./manage build && ./manage up
-# TODO: use von-network image when ARM is supported
-	docker pull ghcr.io/lauravuo/von-network:latest
-	-docker tag ghcr.io/lauravuo/von-network:latest von-network-base
-	cd .docker/von-network && ./manage up
+# TODO: ARM support
+	cd .docker/von-network && ./manage build && ./manage up
 
 # resolve docker host similarly as is done in von-network
 docker-host:
