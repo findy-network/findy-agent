@@ -6,7 +6,7 @@ toolchain go1.21.0
 
 require (
 	github.com/findy-network/findy-common-go v0.2.67
-	github.com/findy-network/findy-wrapper-go v0.30.65
+	github.com/findy-network/findy-wrapper-go v0.30.66
 	github.com/go-co-op/gocron v1.37.0
 	github.com/golang/glog v1.2.0
 	github.com/golang/mock v1.6.0
@@ -15,7 +15,7 @@ require (
 	github.com/hyperledger/aries-framework-go v0.3.2
 	github.com/hyperledger/aries-framework-go/component/models v0.0.0-20230901120639-e17eddd3ad3e
 	github.com/hyperledger/aries-framework-go/spi v0.0.0-20230901120639-e17eddd3ad3e
-	github.com/lainio/err2 v0.9.52
+	github.com/lainio/err2 v1.0.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
