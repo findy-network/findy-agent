@@ -53,10 +53,17 @@ jobs:
     needs: push-image
     runs-on: ubuntu-latest
     steps:
+      - name: Generate a token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.AGENCY_RELEASER_ID }}
+          private-key: ${{ secrets.AGENCY_RELEASER_KEY }}
       - name: checkout
         uses: actions/checkout@v4
         with:
           ref: master
+          token: ${{ steps.generate_token.outputs.token }}
       - name: merge
         run: |
           git fetch --tags origin
