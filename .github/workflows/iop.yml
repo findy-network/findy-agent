@@ -13,7 +13,7 @@ jobs:
       matrix:
         include:
           - their_agent: "acapy-main"
-          - their_agent: "javascript"
+#          - their_agent: "javascript"
           - their_agent: "findy"
     env:
       NO_TTY: "1"
@@ -21,20 +21,14 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
       - name: test findy as Bob with ${{ matrix.their_agent }}
-        # TODO: javascript agent behaving badly, enable when problems fixed
-        if: ${{ matrix.their_agent != 'javascript' }}
         run: |
           cd ./scripts/aath
           make run-check AGENT_DEFAULT=${{ matrix.their_agent }} AGENT_BOB=findy
       - name: test findy as default agent with ${{ matrix.their_agent }}
-        # TODO: javascript agent behaving badly, enable when problems fixed
-        if: ${{ matrix.their_agent != 'javascript' }}
         run: |
           cd ./scripts/aath
           make test-check AGENT_DEFAULT=findy AGENT_BOB=${{ matrix.their_agent }}
       - name: test findy as default agent with ${{ matrix.their_agent }}
-        # TODO: javascript agent behaving badly, remove when problems fixed
-        if: ${{ matrix.their_agent == 'javascript' }}
         run: |
           cd ./scripts/aath
           make run-check AGENT_DEFAULT=findy AGENT_BOB=${{ matrix.their_agent }}
