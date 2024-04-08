@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/findy-network/findy-agent-auth/acator/grpcenclave/rpcserver"
 	"github.com/findy-network/findy-agent/agent/agency"
 	"github.com/findy-network/findy-agent/agent/comm"
 	"github.com/findy-network/findy-agent/agent/pltype"
@@ -40,6 +41,7 @@ func Serve(conf *rpc.ServerCfg) {
 		ops.RegisterAgencyServiceServer(s, &agencyService{Root: root})
 		ops.RegisterDevOpsServiceServer(s, &devOpsServer{Root: root})
 
+		try.To(rpcserver.RegisterAuthnServer(s))
 		glog.V(3).Infoln("GRPC OK")
 		return nil
 	}
