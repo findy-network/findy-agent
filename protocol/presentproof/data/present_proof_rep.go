@@ -20,7 +20,7 @@ type PresentProofRep struct {
 	psm.StateKey
 	ProofReq   string
 	Proof      string
-	Values     string // currently only used for Task API to get data
+	Values     []string // TODO: reserved for indy-WQL
 	WeProposed bool
 	Attributes []didcomm.ProofAttribute
 }
@@ -84,10 +84,16 @@ func (rep *PresentProofRep) CreateProof(packet comm.Packet, rootDID string) (err
 	return nil
 }
 
-func (rep *PresentProofRep) processAttributes(w2 int,
-	proofReq anoncreds.ProofRequest) (anoncreds.RequestedCredentials, []anoncreds.Credentials) {
-
-	r := <-anoncreds.ProverSearchCredentialsForProofReq(w2, rep.ProofReq, findy.NullString)
+func (rep *PresentProofRep) processAttributes(
+	w2 int,
+	proofReq anoncreds.ProofRequest,
+) (
+	anoncreds.RequestedCredentials,
+	[]anoncreds.Credentials,
+) {
+	// TODO: build from rep.Values, see Go findy-wrapper-go, anoncreds_test.go
+	wql := findy.NullString
+	r := <-anoncreds.ProverSearchCredentialsForProofReq(w2, rep.ProofReq, wql)
 	try.To(r.Err())
 	searchHandle := r.Handle()
 

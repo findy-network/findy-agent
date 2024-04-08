@@ -7,7 +7,7 @@ agent/utils/salt.go
 ONEfindy.bak.json
 ONEfindy.json
 ONEdata.gob
-Session.vim
+*.vim
 go.work.bak
 
 # Binaries for programs and plugins

@@ -189,7 +189,6 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 
 				rep := &data.PresentProofRep{
 					StateKey:   key,
-					Values:     proofTask.Comment, // TODO: serialize values here?
 					WeProposed: true,
 				}
 				return psm.AddRep(rep)
@@ -221,7 +220,6 @@ func startProofProtocol(ca comm.Receiver, t comm.Task) {
 				// create Rep and save it for PSM to run protocol
 				rep := &data.PresentProofRep{
 					StateKey: key,
-					Values:   proofTask.Comment, // TODO: serialize attributes here?,
 					// Verifier cannot provide this..
 					ProofReq: proofReqStr, //  .. but it gives this one.
 				}
