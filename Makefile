@@ -5,7 +5,7 @@ TEST_PKG?=./grpc/...
 VERSION=$(shell cat ./VERSION)
 LEDGER_NAME:=FINDY_FILE_LEDGER
 
-API_BRANCH=$(shell scripts/branch.sh ../findy-agent-api/)
+AUTH_BRANCH=$(shell scripts/branch.sh ../findy-agent-auth/)
 GRPC_BRANCH=$(shell scripts/branch.sh ../findy-common-go/)
 WRAP_BRANCH=$(shell scripts/branch.sh ../findy-wrapper-go/)
 
@@ -31,10 +31,10 @@ drop_wrap:
 drop_comm:
 	$(GO) mod edit -dropreplace github.com/findy-network/findy-common-go
 
-drop_api:
-	$(GO) mod edit -dropreplace github.com/findy-network/findy-agent-api
+drop_auth:
+	$(GO) mod edit -dropreplace github.com/findy-network/findy-agent-auth
 
-drop_all: drop_api drop_comm drop_wrap
+drop_all: drop_auth drop_comm drop_wrap
 
 repl_wrap:
 	$(GO) mod edit -replace github.com/findy-network/findy-wrapper-go=../findy-wrapper-go
@@ -42,12 +42,12 @@ repl_wrap:
 repl_comm:
 	$(GO) mod edit -replace github.com/findy-network/findy-common-go=../findy-common-go
 
-repl_api:
-	$(GO) mod edit -replace github.com/findy-network/findy-agent-api=../findy-agent-api
+repl_auth:
+	$(GO) mod edit -replace github.com/findy-network/findy-agent-auth=../findy-agent-auth
 
-repl_all: repl_api repl_comm repl_wrap
+repl_all: repl_auth repl_comm repl_wrap
 
-modules: modules_comm modules_wrap modules_api
+modules: modules_comm modules_wrap modules_auth
 
 modules_comm: drop_comm
 	@echo Syncing modules: findy-common-go/$(GRPC_BRANCH)
@@ -57,9 +57,9 @@ modules_wrap: drop_wrap
 	@echo Syncing modules: findy-wrapper-go/$(WRAP_BRANCH)
 	$(GO) get github.com/findy-network/findy-wrapper-go@$(WRAP_BRANCH)
 
-modules_api: drop_api
-	@echo Syncing modules: findy-agent-api/$(API_BRANCH)
-	$(GO) get github.com/findy-network/findy-agent-api@$(API_BRANCH)
+modules_auth: drop_auth
+	@echo Syncing modules: findy-agent-auth/$(AUTH_BRANCH)
+	$(GO) get github.com/findy-network/findy-agent-auth@$(AUTH_BRANCH)
 
 deps:
 	$(GO) get -t ./...
