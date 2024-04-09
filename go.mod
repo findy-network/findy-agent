@@ -7,7 +7,7 @@ toolchain go1.21.0
 require (
 	github.com/findy-network/findy-agent-auth v0.2.91-0.20240408102110-423f8065e88b
 	github.com/findy-network/findy-common-go v0.2.70-0.20240408093930-fea7b4cd528d
-	github.com/findy-network/findy-wrapper-go v0.30.70
+	github.com/findy-network/findy-wrapper-go v0.30.71
 	github.com/go-co-op/gocron v1.37.0
 	github.com/golang/glog v1.2.1
 	github.com/golang/mock v1.6.0
