@@ -18,6 +18,6 @@ jobs:
       - uses: findy-network/releaser-action@master
         with:
           token: ${{ steps.generate_token.outputs.token }}
-          gate: test,iop
+          gate: test
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}

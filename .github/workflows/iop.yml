@@ -1,9 +1,9 @@
 name: interop
 
 on:
-  push:
-    branches:
-      - "dev"
+  # push:
+  #   branches:
+  #     - "dev"
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
       matrix:
         include:
           - their_agent: "acapy-main"
-#          - their_agent: "javascript"
+          #          - their_agent: "javascript"
           - their_agent: "findy"
     env:
       NO_TTY: "1"
