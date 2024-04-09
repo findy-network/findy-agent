@@ -48,13 +48,13 @@ ledger-ready:
 	curl http://localhost:9000/genesis > conf/genesis.txt
 
 agency: ledger-ready
-	docker-compose up --build
+	docker compose up --build
 
 agency-d: ledger-ready
-	docker-compose up --build -d
+	docker compose up --build -d
 
 down: clone
-	docker-compose down
+	docker compose down
 	cd .docker/von-network && ./manage down
 
 onboard:
