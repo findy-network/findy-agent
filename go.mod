@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/findy-network/findy-agent-auth v0.2.94
+	github.com/findy-network/findy-agent-auth v0.2.95
 	github.com/findy-network/findy-common-go v0.2.70
 	github.com/findy-network/findy-wrapper-go v0.30.72
 	github.com/go-co-op/gocron v1.37.0
