@@ -4,6 +4,11 @@
 [![interop](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml/badge.svg?branch=dev)](https://github.com/findy-network/findy-agent/actions/workflows/iop.yml)
 [![codecov](https://codecov.io/gh/findy-network/findy-agent/branch/dev/graph/badge.svg?token=6ALFRN3WDS)](https://codecov.io/gh/findy-network/findy-agent)
 
+> Findy Agency is an open-source project for a decentralized identity agency.
+> OP Lab developed it from 2019 to 2024. The project is no longer maintained,
+> but the work will continue with new goals and a new mission.
+> Follow [the blog](https://findy-network.github.io/blog/) for updates.
+
 - [findy-agent](#findy-agent)
   - [About findy-agent](#about-findy-agent) - [Onboard Binding](#onboard-binding)
   - [Get Started](#get-started)
